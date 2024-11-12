@@ -1,8 +1,18 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { Product } from './product.entity';
 import { UUID } from 'crypto';
+import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -23,5 +33,20 @@ export class ProductController {
     @Query('code') code: number,
   ): Promise<Product> {
     return this.productService.getProductById(id, code);
+  }
+
+  @Post()
+  async createProduct(@Body() product) {
+    return await this.productService.createProduct(product);
+  }
+
+  @Put(':id')
+  async updateProduct(@Body() product: UpdateProductDto, @Param() id: string) {
+    return await this.productService.updateProduct(id, product);
+  }
+
+  @Delete(':id')
+  async deleteProduct(@Param() id: UUID) {
+    return await this.productService.deleteProduct(id);
   }
 }
