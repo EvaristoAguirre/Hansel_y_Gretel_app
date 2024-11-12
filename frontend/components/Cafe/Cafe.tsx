@@ -27,6 +27,8 @@ const Cafe = () => {
             {sala}
           </h3>
         ))}
+
+        
       </div>
 
       <div

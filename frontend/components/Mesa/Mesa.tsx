@@ -116,17 +116,19 @@ const Mesa = () => {
             width: "60%",
           }}
         >
-          <div
-            className="boton"
-            style={{
-              backgroundColor: "#856D5E",
-              padding: "0.5rem 1rem",
-              borderRadius: "5px",
-              margin: "0.6rem 0",
-            }}
-          >
-            <h3>Abrir mesa</h3>
-          </div>
+          <a href="">
+            <div
+              className="boton"
+              style={{
+                backgroundColor: "#856D5E",
+                padding: "0.5rem 1rem",
+                borderRadius: "5px",
+                margin: "0.6rem 0",
+              }}
+            >
+              <h3>Abrir mesa</h3>
+            </div>
+          </a>
         </div>
       </div>
     </div>
