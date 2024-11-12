@@ -30,9 +30,6 @@ export class Product {
   @Column({ nullable: true, type: 'decimal' })
   cost: number;
 
-  @Column()
-  quantityIngredients: number;
-
   @Column({
     type: 'enum',
     enum: State,
