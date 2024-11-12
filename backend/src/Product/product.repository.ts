@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './product.entity';
 import { Repository } from 'typeorm';
 import { UUID } from 'crypto';
+import { CreateProductDto } from 'src/DTOs/create-product.dto';
+import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 
 @Injectable()
 export class ProductRepository {
@@ -29,5 +31,17 @@ export class ProductRepository {
         where: { code },
       });
     }
+  }
+
+  async createProduct(product: CreateProductDto) {
+    return await this.productRepository.create(product);
+  }
+
+  async updateProduct(id: string, product: UpdateProductDto) {
+    return await this.productRepository.update(id, product);
+  }
+
+  async deleteProduct(id: string) {
+    return await this.productRepository.delete(id);
   }
 }
