@@ -11,6 +11,9 @@ import {
   TextField,
   MenuItem,
 } from "@mui/material";
+import Swal from "sweetalert2";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const Producto = () => {
   const [open, setOpen] = React.useState(false);
@@ -22,8 +25,18 @@ const Producto = () => {
     { id: "", nombre: "", costo: "", precio: "", categoria: "" },
   ]);
   const [categoria, setCategoria] = React.useState("");
-
   const categorias = ["Bebidas", "Cafetería", "Pastelería"];
+  const Swal = require("sweetalert2");
+
+  const handleEliminar = (id: string) => {
+    // Lógica para eliminar el producto con el id dado
+    alert(`Producto con id ${id} eliminado`);
+  };
+
+  const handleModificar = (id: string) => {
+    // Lógica para modificar el producto con el id dado
+    alert(`Producto con id ${id} modificado`);
+  };
 
   const rows: GridRowsProp = productos.map((producto) => ({
     id: producto.id,
@@ -37,6 +50,40 @@ const Producto = () => {
     { field: "col1", headerName: "Producto", width: 150 },
     { field: "col2", headerName: "Costo", width: 150 },
     { field: "col3", headerName: "Precio", width: 150 },
+    {
+      field: "col4",
+      headerName: "Acciones",
+      width: 150,
+      renderCell: (params) => (
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            style={{ margin: "1rem 0" }}
+            onClick={() => handleModificar(params.row.id)}
+          >
+            <FontAwesomeIcon icon={faEdit} />
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            style={{ margin: "1rem 0" }}
+            onClick={() => handleEliminar(params.row.id)}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   // Funciones para abrir y cerrar el modal
@@ -82,7 +129,46 @@ const Producto = () => {
         >
           Productos
         </h3>
-
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            color: "#ffffff",
+            fontWeight: "400",
+            margin: "0 50px",
+          }}
+        >
+          Ingredientes
+        </h3>
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            color: "#ffffff",
+            fontWeight: "400",
+            margin: "0 50px",
+          }}
+        >
+          Categorías Productos
+        </h3>
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            color: "#ffffff",
+            fontWeight: "400",
+            margin: "0 20px",
+          }}
+        >
+          Categorías Ingredientes
+        </h3>
+        <h3
+          style={{
+            fontSize: "1.25rem",
+            color: "#ffffff",
+            fontWeight: "400",
+            margin: "0 50px",
+          }}
+        >
+          Control de Stock
+        </h3>
         <div
           onClick={handleOpen}
           style={{
@@ -146,6 +232,7 @@ const Producto = () => {
                 <MenuItem value="categoria">{categoria}</MenuItem>
               ))}
             </TextField>
+      
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">
