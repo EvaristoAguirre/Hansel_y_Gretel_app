@@ -1,5 +1,12 @@
 import { IsInt, Max, Min } from 'class-validator';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Category } from 'src/Category/category.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 
 // Definir el Enum para el estado
 export enum State {
@@ -7,7 +14,7 @@ export enum State {
   NO_URGENTE = 'no urgente',
 }
 
-@Entity()
+@Entity({ name: 'products' })
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -18,7 +25,7 @@ export class Product {
   @Max(9999)
   code: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, unique: true })
   name: string;
 
   @Column({ nullable: true })
@@ -36,4 +43,10 @@ export class Product {
     default: State.NO_URGENTE,
   })
   state: State;
+
+  // ---------       Relaciones   -----------
+
+  @ManyToMany(() => Category, (category) => category.products)
+  @JoinTable() // Este decorador se coloca en un solo lado de la relación, generalmente en el lado "propietario"
+  categories: Category[];
 }
