@@ -3,6 +3,7 @@ import { ProductRepository } from './product.repository';
 import { UUID } from 'crypto';
 import { CreateProductDto } from '../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
+import { Product } from './product.entity';
 
 @Injectable()
 export class ProductService {
@@ -16,12 +17,12 @@ export class ProductService {
     return await this.productRepository.getProductById(id, code);
   }
 
-  async createProduct(product: CreateProductDto) {
-    return await this.productRepository.createProduct(product);
+  async createProduct(productToCreate: CreateProductDto): Promise<Product> {
+    return await this.productRepository.createProduct(productToCreate);
   }
 
-  async updateProduct(id: string, product: UpdateProductDto) {
-    return await this.productRepository.updateProduct(id, product);
+  async updateProduct(id: string, productToUpdate: UpdateProductDto) {
+    return await this.productRepository.updateProduct(id, productToUpdate);
   }
 
   async deleteProduct(id: UUID) {

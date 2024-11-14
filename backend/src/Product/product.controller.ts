@@ -13,6 +13,7 @@ import { ProductService } from './product.service';
 import { Product } from './product.entity';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
+import { CreateProductDto } from 'src/DTOs/create-product.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -36,13 +37,16 @@ export class ProductController {
   }
 
   @Post()
-  async createProduct(@Body() product) {
-    return await this.productService.createProduct(product);
+  async createProduct(@Body() productToCreate: CreateProductDto) {
+    return await this.productService.createProduct(productToCreate);
   }
 
   @Put(':id')
-  async updateProduct(@Body() product: UpdateProductDto, @Param() id: string) {
-    return await this.productService.updateProduct(id, product);
+  async updateProduct(
+    @Body() productToUpdate: UpdateProductDto,
+    @Param() id: string,
+  ) {
+    return await this.productService.updateProduct(id, productToUpdate);
   }
 
   @Delete(':id')

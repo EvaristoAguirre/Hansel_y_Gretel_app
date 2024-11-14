@@ -1,9 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-
-@Entity()
-export class CreateCategory {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-  @Column({ nullable: false })
+import { IsNotEmpty, IsString } from 'class-validator';
+export class CreateCategoryDto {
+  @IsNotEmpty()
+  @IsString()
   name: string;
 }

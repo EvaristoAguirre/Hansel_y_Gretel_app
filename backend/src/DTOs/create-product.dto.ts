@@ -1,6 +1,16 @@
 // create-product.dto.ts
 import { State } from '../Product/product.entity';
-import { IsInt, Max, Min, IsOptional, IsString, IsEnum } from 'class-validator';
+import {
+  IsInt,
+  Max,
+  Min,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsArray,
+  ArrayNotEmpty,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsOptional()
@@ -25,4 +35,10 @@ export class CreateProductDto {
   @IsEnum(State)
   @IsOptional()
   state?: State;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsUUID('all', { each: true })
+  categories?: string[];
 }
