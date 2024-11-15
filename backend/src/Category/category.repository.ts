@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './category.entity';
-import { DeleteResult, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateCategoryDto } from 'src/DTOs/create-category.dto';
 import { UpdateCategoryDto } from 'src/DTOs/update-category.dto';
 
@@ -12,7 +12,9 @@ export class CategoryRepository {
     private readonly categoryRepository: Repository<Category>,
   ) {}
   async createCategory(category: CreateCategoryDto): Promise<Category> {
-    return await this.categoryRepository.create(category);
+    const categoryCreated = await this.categoryRepository.create(category);
+    await this.categoryRepository.save(categoryCreated);
+    return categoryCreated;
   }
 
   async updateCategory(
@@ -23,12 +25,14 @@ export class CategoryRepository {
     return await this.categoryRepository.findOneOrFail({ where: { id } });
   }
 
-  async deleteCategory(id: string): Promise<DeleteResult> {
-    return await this.categoryRepository.delete(id);
+  async deleteCategory(id: string): Promise<string> {
+    await this.categoryRepository.update(id, { isActive: false });
+    return 'Categoría borrada';
   }
 
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
     return await this.categoryRepository.find({
+      where: { isActive: true },
       skip: (page - 1) * limit,
       take: limit,
     });

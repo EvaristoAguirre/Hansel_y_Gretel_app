@@ -3,7 +3,6 @@ import { CreateCategoryDto } from '../DTOs/create-category.dto';
 import { UpdateCategoryDto } from '../DTOs/update-category.dto';
 import { CategoryRepository } from './category.repository';
 import { Category } from './category.entity';
-import { DeleteResult } from 'typeorm';
 
 @Injectable()
 export class CategoryService {
@@ -19,7 +18,7 @@ export class CategoryService {
     return await this.categoryRepository.updateCategory(id, category);
   }
 
-  async deleteCategory(id: string): Promise<DeleteResult> {
+  async deleteCategory(id: string): Promise<string> {
     return await this.categoryRepository.deleteCategory(id);
   }
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
