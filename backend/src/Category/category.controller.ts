@@ -12,7 +12,6 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto } from '../DTOs/create-category.dto';
 import { UpdateCategoryDto } from '../DTOs/update-category.dto';
 import { Category } from './category.entity';
-import { DeleteResult } from 'typeorm';
 
 @Controller('category')
 export class CategoryController {
@@ -45,7 +44,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  deleteCategory(@Param('id') id: string): Promise<DeleteResult> {
+  deleteCategory(@Param('id') id: string): Promise<string> {
     return this.categoryService.deleteCategory(id);
   }
 }
