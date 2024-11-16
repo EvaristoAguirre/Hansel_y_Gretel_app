@@ -29,12 +29,10 @@ const Producto = () => {
   const Swal = require("sweetalert2");
 
   const handleEliminar = (id: string) => {
-    // Lógica para eliminar el producto con el id dado
     alert(`Producto con id ${id} eliminado`);
   };
 
   const handleModificar = (id: string) => {
-    // Lógica para modificar el producto con el id dado
     alert(`Producto con id ${id} modificado`);
   };
 
@@ -169,6 +167,9 @@ const Producto = () => {
         >
           Control de Stock
         </h3>
+
+        {/*botón modal crear producto */}
+
         <div
           onClick={handleOpen}
           style={{
@@ -193,6 +194,7 @@ const Producto = () => {
               margin="dense"
               label="Nombre del producto"
               onChange={(e) => setNombre(e.target.value)}
+              value={nombre}
               fullWidth
               variant="outlined"
             />
@@ -200,6 +202,7 @@ const Producto = () => {
               margin="dense"
               label="Precio"
               onChange={(e) => setPrecio(e.target.value)}
+              value={precio}
               type="number"
               fullWidth
               variant="outlined"
@@ -208,6 +211,7 @@ const Producto = () => {
               margin="dense"
               label="Costo"
               onChange={(e) => setCosto(e.target.value)}
+              value={costo}
               type="number"
               fullWidth
               variant="outlined"
@@ -216,6 +220,7 @@ const Producto = () => {
               margin="dense"
               label="Código"
               onChange={(e) => setCodigo(e.target.value)}
+              value={codigo}
               type="number"
               fullWidth
               variant="outlined"
@@ -226,13 +231,11 @@ const Producto = () => {
               onChange={(e) => setCategoria(e.target.value)}
               select
               fullWidth
-              variant="outlined"
             >
               {categorias.map((categoria) => (
-                <MenuItem value="categoria">{categoria}</MenuItem>
+                <MenuItem value={categoria}>{categoria}</MenuItem>
               ))}
             </TextField>
-      
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">
