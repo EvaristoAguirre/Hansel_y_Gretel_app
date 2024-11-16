@@ -12,28 +12,33 @@ export class CategoryRepository {
     private readonly categoryRepository: Repository<Category>,
   ) {}
   async createCategory(category: CreateCategoryDto): Promise<Category> {
-    return await this.categoryRepository.create(category);
+    const categoryCreated = await this.categoryRepository.create(category);
+    await this.categoryRepository.save(categoryCreated);
+    return categoryCreated;
   }
 
   async updateCategory(
     id: string,
     category: UpdateCategoryDto,
   ): Promise<Category> {
-    return await this.categoryRepository.update(id, category);
+    await this.categoryRepository.update(id, category);
+    return await this.categoryRepository.findOneOrFail({ where: { id } });
   }
 
-  async deleteCategory(id: string) {
-    return await this.categoryRepository.delete(id);
+  async deleteCategory(id: string): Promise<string> {
+    await this.categoryRepository.update(id, { isActive: false });
+    return 'Categoría borrada';
   }
 
-  async getAllCategorys(page: number, limit: number) {
+  async getAllCategorys(page: number, limit: number): Promise<Category[]> {
     return await this.categoryRepository.find({
+      where: { isActive: true },
       skip: (page - 1) * limit,
       take: limit,
     });
   }
 
-  async getCategoryById(id: string) {
+  async getCategoryById(id: string): Promise<Category> {
     return await this.categoryRepository.findOne({ where: { id } });
   }
 }

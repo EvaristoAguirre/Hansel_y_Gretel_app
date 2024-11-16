@@ -1,6 +1,15 @@
 // update-product.dto.ts
 import { State } from '../Product/product.entity';
-import { IsOptional, IsInt, Max, Min, IsString, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  Max,
+  Min,
+  IsString,
+  IsEnum,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -26,4 +35,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsEnum(State)
   state?: State;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  categories?: string[];
 }
