@@ -19,7 +19,7 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, unique: true })
   @IsInt()
   @Min(0)
   @Max(9999)
@@ -46,7 +46,9 @@ export class Product {
 
   // ---------       Relaciones   -----------
 
-  @ManyToMany(() => Category, (category) => category.products)
-  @JoinTable() // Este decorador se coloca en un solo lado de la relación, generalmente en el lado "propietario"
+  @ManyToMany(() => Category, (category) => category.products, {
+    cascade: true,
+  })
+  @JoinTable()
   categories: Category[];
 }
