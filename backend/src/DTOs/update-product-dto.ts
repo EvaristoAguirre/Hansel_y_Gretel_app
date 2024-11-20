@@ -38,6 +38,6 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsArray()
-  @IsUUID('all', { each: true })
-  categories?: string[];
+  @IsUUID('4', { each: true })
+  categoriesIds?: string[];
 }

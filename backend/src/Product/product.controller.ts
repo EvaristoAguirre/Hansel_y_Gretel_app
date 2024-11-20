@@ -43,10 +43,10 @@ export class ProductController {
 
   @Put(':id')
   async updateProduct(
-    @Body() productToUpdate: UpdateProductDto,
-    @Param() id: string,
+    @Body() updateData: UpdateProductDto,
+    @Param('id') id: string,
   ) {
-    return await this.productService.updateProduct(id, productToUpdate);
+    return await this.productService.updateProduct(id, updateData);
   }
 
   @Delete(':id')

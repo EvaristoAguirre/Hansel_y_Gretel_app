@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './product.entity';
 import { In, Repository } from 'typeorm';
-import { UUID } from 'crypto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Category } from 'src/Category/category.entity';
@@ -23,7 +22,7 @@ export class ProductRepository {
     });
   }
 
-  async getProductById(id: UUID, code: number) {
+  async getProductById(id: string, code: number) {
     if (id) {
       return await this.productRepository.findOne({
         where: { id },
@@ -54,19 +53,28 @@ export class ProductRepository {
     return await this.productRepository.save(product);
   }
 
-  async updateProduct(id: string, productToUpdate: UpdateProductDto) {
-    const { categories, ...productData } = productToUpdate;
-    let categoryEntities: Category[] = [];
-    if (categories && categories.length > 0) {
-      categoryEntities = await this.categoryRepository.find({
-        where: { id: In(categories) },
-      });
-    }
-    await this.productRepository.update(id, {
-      ...productData,
-      categories: categoryEntities,
+  async updateProduct(id: string, updateData: UpdateProductDto) {
+    const { categoriesIds, ...otherAttributes } = updateData;
+    const product = await this.productRepository.findOne({
+      where: { id: id },
+      relations: ['categories'],
     });
-    return await this.productRepository.findOneOrFail({ where: { id } });
+    if (!product) {
+      throw new Error('Product not found');
+    }
+    Object.assign(product, otherAttributes);
+
+    if (categoriesIds && categoriesIds.length > 0) {
+      const categoriesFinded = await this.categoryRepository.find({
+        where: { id: In(categoriesIds), isActive: true },
+      });
+
+      if (categoriesFinded.length === 0) {
+        throw new Error('No valid categories found');
+      }
+      product.categories = categoriesFinded;
+    }
+    return this.productRepository.save(product);
   }
 
   async deleteProduct(id: string) {
