@@ -6,6 +6,7 @@ import typeorm from '../config/typeORMconig';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './Product/product.module';
 import { CategoryModule } from './Category/category.module';
+import { UserModule } from './User/user.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +22,7 @@ import { CategoryModule } from './Category/category.module';
     }),
     ProductModule,
     CategoryModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
