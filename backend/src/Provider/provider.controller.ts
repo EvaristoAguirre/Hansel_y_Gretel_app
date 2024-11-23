@@ -10,36 +10,37 @@ import {
 import { ProviderService } from './provider.service';
 import { CreateProviderDto } from '../DTOs/create-provider.dto';
 import { UpdateProviderDto } from '../DTOs/update-provider.dto';
+import { Provider } from './provider.entity';
 
 @Controller('provider')
 export class ProviderController {
   constructor(private readonly providerService: ProviderService) {}
 
   @Post()
-  create(@Body() createProviderDto: CreateProviderDto) {
-    return this.providerService.create(createProviderDto);
+  createProvider(
+    @Body() createProviderDto: CreateProviderDto,
+  ): Promise<Provider> {
+    return this.providerService.createProvider(createProviderDto);
   }
-
-  @Get()
-  findAll() {
-    return this.providerService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.providerService.findOne(+id);
-  }
-
   @Patch(':id')
-  update(
+  updateProvider(
     @Param('id') id: string,
     @Body() updateProviderDto: UpdateProviderDto,
   ) {
-    return this.providerService.update(+id, updateProviderDto);
+    return this.providerService.updateProvider(id, updateProviderDto);
+  }
+  @Delete(':id')
+  deleteProvider(@Param('id') id: string): Promise<string> {
+    return this.providerService.deleteProvider(id);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.providerService.remove(+id);
+  @Get()
+  getAllProviders(page: number, limit: number): Promise<Provider[]> {
+    return this.providerService.getAllProviders(page, limit);
+  }
+
+  @Get(':id')
+  getProviderById(@Param('id') id: string): Promise<Provider> {
+    return this.providerService.getProviderById(id);
   }
 }

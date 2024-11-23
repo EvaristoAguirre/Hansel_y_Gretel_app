@@ -78,7 +78,8 @@ export class ProductRepository {
   }
 
   async deleteProduct(id: string) {
-    return await this.productRepository.delete(id);
+    await this.productRepository.update(id, { isActive: false });
+    return 'Producto borrado';
   }
 
   // async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {

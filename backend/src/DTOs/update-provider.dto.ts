@@ -1,4 +1,5 @@
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Product } from 'src/Product/product.entity';
 
 export class UpdateProviderDto {
   @IsOptional()
@@ -12,4 +13,7 @@ export class UpdateProviderDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  products?: Product[];
 }

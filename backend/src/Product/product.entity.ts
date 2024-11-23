@@ -10,12 +10,6 @@ import {
   ManyToOne,
 } from 'typeorm';
 
-// Definir el Enum para el estado
-export enum State {
-  URGENTE = 'urgente',
-  NO_URGENTE = 'no urgente',
-}
-
 @Entity({ name: 'products' })
 export class Product {
   @PrimaryGeneratedColumn('uuid')
@@ -39,12 +33,8 @@ export class Product {
   @Column({ nullable: true, type: 'decimal' })
   cost: number;
 
-  @Column({
-    type: 'enum',
-    enum: State,
-    default: State.NO_URGENTE,
-  })
-  state: State;
+  @Column({ default: true })
+  isActive: boolean;
 
   // ---------       Relaciones   -----------
 
