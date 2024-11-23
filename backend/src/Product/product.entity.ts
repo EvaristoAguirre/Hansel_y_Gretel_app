@@ -1,11 +1,13 @@
 import { IsInt, Max, Min } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
+import { Provider } from 'src/Provider/provider.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToMany,
   JoinTable,
+  ManyToOne,
 } from 'typeorm';
 
 // Definir el Enum para el estado
@@ -51,4 +53,7 @@ export class Product {
   })
   @JoinTable()
   categories: Category[];
+
+  @ManyToOne(() => Provider, (provider) => provider.products)
+  provider: Provider;
 }
