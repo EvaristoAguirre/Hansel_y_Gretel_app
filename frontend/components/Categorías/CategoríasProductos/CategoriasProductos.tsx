@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import {
@@ -16,25 +16,51 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const CategoriasProductos = () => {
+  const [listaCategorias, setListaCategorias] = React.useState([
+    { name: "", id: "" },
+  ]);
   const [nombre, setNombre] = React.useState("");
-  const categorias = [
-    {
-      nombre: "Bebidas",
-      productos: ["Coca-cola", "Sprite", "Cerveza"],
-      id: "1",
-    },
-    {
-      nombre: "Cafetería",
-      productos: ["Café mediano", "Café grande"],
-      id: "2",
-    },
-    {
-      nombre: "Pastelería",
-      productos: ["Torta", "Struddel de manzana"],
-      id: "3",
-    },
-  ];
-  const [categoria, setCategoria] = React.useState(categorias);
+
+  //OBJETO CATEGORÍA
+  const data = {
+    name: nombre, // Reemplaza con el valor que necesites
+  };
+
+  //USE EFFECTS
+  useEffect(() => {
+    async function listarCategoria() {
+      try {
+        const response = await fetch(GET_CATEGORIES, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json", // Asegura que el servidor entienda JSON
+          },
+          mode: "cors", // Convierte los datos en JSON
+        });
+
+        if (!response.ok) {
+          // Manejo de errores si la respuesta no es exitosa
+          const errorData = await response.json();
+          console.error("Error al crear la categoría:", errorData);
+          return;
+        }
+
+        // Obtener la respuesta en formato JSON
+        const result = await response.json();
+        setListaCategorias(result);
+      } catch (error) {
+        // Manejo de errores de red u otros problemas
+        console.error("Error en la petición:", error);
+      }
+    }
+    listarCategoria();
+  }, []);
+
+  //URIS
+  const CREATE_CATEGORY = "http://localhost:3000/category";
+  const EDIT_CATEGORY = "http://localhost:3000/category/";
+  const GET_CATEGORIES = "http://localhost:3000/category";
+
   const [open, setOpen] = React.useState(false);
   const [openCrear, setOpenCrear] = React.useState(false);
   const [id, setId] = React.useState("");
@@ -48,32 +74,70 @@ const CategoriasProductos = () => {
     }
   };
 
-  const handleModificar = (id: string, nombreNuevo: string) => {
-    alert(`Categoría con id ${id} modificado`);
-    categorias.forEach((categoria) => {
-      if (categoria.id == id) {
-        categoria.nombre = nombreNuevo;
-      }
-    });
-  };
+  async function editarCategoria(id: string) {
+    try {
+      const response = await fetch(EDIT_CATEGORY + id, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json", // Asegura que el servidor entienda JSON
+        },
+        body: JSON.stringify(data),
+        mode: "cors", // Convierte los datos en JSON
+      });
 
-  const CrearCategoria = (nombre: string) => {
-    categorias.push({nombre: nombre, productos: [], id: "4"})
+      if (!response.ok) {
+        // Manejo de errores si la respuesta no es exitosa
+        const errorData = await response.json();
+        console.error("Error al crear la categoría:", errorData);
+        return;
+      }
+
+      // Obtener la respuesta en formato JSON
+      const result = await response.json();
+      console.log("Categoría creada con éxito:", result);
+    } catch (error) {
+      // Manejo de errores de red u otros problemas
+      console.error("Error en la petición:", error);
+    }
+  }
+
+  async function crearCategoria() {
+    try {
+      const response = await fetch(CREATE_CATEGORY, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Asegura que el servidor entienda JSON
+        },
+        body: JSON.stringify(data),
+        mode: "cors", // Convierte los datos en JSON
+      });
+
+      if (!response.ok) {
+        // Manejo de errores si la respuesta no es exitosa
+        const errorData = await response.json();
+        console.error("Error al crear la categoría:", errorData);
+        return;
+      }
+
+      // Obtener la respuesta en formato JSON
+      const result = await response.json();
+      console.log("Categoría creada con éxito:", result);
+    } catch (error) {
+      // Manejo de errores de red u otros problemas
+      console.error("Error en la petición:", error);
+    }
   }
 
   //Configuración DataGrid
-  const rows: GridRowsProp = categorias.map((categoria) => ({
-    col1: categoria.nombre,
-    col2: categoria.productos.length,
+  const rows: GridRowsProp = listaCategorias.map((categoria) => ({
+    col1: categoria.name,
     id: categoria.id,
   }));
 
   const columns: GridColDef[] = [
     { field: "col1", headerName: "Nombre", width: 150 },
-    { field: "col2", headerName: "Cantidad de productos", width: 150 },
-    { field: "id", headerName: "ID", width: 150 },
     {
-      field: "col4",
+      field: "col2",
       headerName: "Acciones",
       width: 150,
       renderCell: (params) => (
@@ -115,8 +179,6 @@ const CategoriasProductos = () => {
   const handleOpenCrear = () => setOpenCrear(true);
   const handleClose = () => setOpen(false);
   const handleCloseCrear = () => setOpenCrear(false);
-
-
 
   return (
     <div>
@@ -224,7 +286,7 @@ const CategoriasProductos = () => {
           </Button>
           <Button
             onClick={() => {
-              handleClose(), handleModificar(id, nombre);
+              handleClose(), editarCategoria(id);
             }}
             color="primary"
           >
@@ -252,7 +314,7 @@ const CategoriasProductos = () => {
           </Button>
           <Button
             onClick={() => {
-              handleCloseCrear(), CrearCategoria(nombre);
+              handleCloseCrear(), crearCategoria();
             }}
             color="primary"
           >

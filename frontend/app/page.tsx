@@ -9,8 +9,8 @@ export default function Home() {
     <div>
       {/* <Cafe></Cafe> */}
       {/* <Producto></Producto> */}
-      {/* <CategoriasProductos></CategoriasProductos> */}
-      <CategoriasIngredientes></CategoriasIngredientes>
+      <CategoriasProductos></CategoriasProductos>
+      {/* <CategoriasIngredientes></CategoriasIngredientes> */}
     </div>
   );
 }
