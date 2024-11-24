@@ -1,18 +1,14 @@
 import { IsInt, Max, Min } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
+import { Provider } from 'src/Provider/provider.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToMany,
   JoinTable,
+  ManyToOne,
 } from 'typeorm';
-
-// Definir el Enum para el estado
-export enum State {
-  URGENTE = 'urgente',
-  NO_URGENTE = 'no urgente',
-}
 
 @Entity({ name: 'products' })
 export class Product {
@@ -37,18 +33,19 @@ export class Product {
   @Column({ nullable: true, type: 'decimal' })
   cost: number;
 
-  @Column({
-    type: 'enum',
-    enum: State,
-    default: State.NO_URGENTE,
-  })
-  state: State;
+  @Column({ default: true })
+  isActive: boolean;
 
   // ---------       Relaciones   -----------
 
   @ManyToMany(() => Category, (category) => category.products, {
     cascade: true,
   })
-  @JoinTable()
+  @JoinTable({ name: 'product_categories' })
   categories: Category[];
+
+  @ManyToOne(() => Provider, (provider) => provider.products, {
+    nullable: true,
+  })
+  provider: Provider;
 }

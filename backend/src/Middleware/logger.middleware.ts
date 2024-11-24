@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 export function LoggerMidleware(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) {
   const actualdate = new Date();
   const date = actualdate.toLocaleDateString();
