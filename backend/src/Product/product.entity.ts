@@ -41,9 +41,11 @@ export class Product {
   @ManyToMany(() => Category, (category) => category.products, {
     cascade: true,
   })
-  @JoinTable()
+  @JoinTable({ name: 'product_categories' })
   categories: Category[];
 
-  @ManyToOne(() => Provider, (provider) => provider.products)
+  @ManyToOne(() => Provider, (provider) => provider.products, {
+    nullable: true,
+  })
   provider: Provider;
 }

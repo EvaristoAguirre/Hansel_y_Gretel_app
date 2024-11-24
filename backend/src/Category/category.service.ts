@@ -13,7 +13,7 @@ export class CategoryService {
 
   async updateCategory(
     id: string,
-    category: UpdateCategoryDto,
+    category: UpdateCategoryDto
   ): Promise<Category> {
     return await this.categoryRepository.updateCategory(id, category);
   }

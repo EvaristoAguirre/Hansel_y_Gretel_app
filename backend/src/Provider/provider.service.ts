@@ -3,10 +3,14 @@ import { CreateProviderDto } from '../DTOs/create-provider.dto';
 import { UpdateProviderDto } from '../DTOs/update-provider.dto';
 import { Repository } from 'typeorm';
 import { Provider } from './provider.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ProviderService {
-  constructor(private readonly providerRepository: Repository<Provider>) {}
+  constructor(
+    @InjectRepository(Provider)
+    private readonly providerRepository: Repository<Provider>,
+  ) {}
   async createProvider(
     createProviderDto: CreateProviderDto,
   ): Promise<Provider> {

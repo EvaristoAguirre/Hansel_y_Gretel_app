@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -18,14 +19,14 @@ export class ProviderController {
 
   @Post()
   createProvider(
-    @Body() createProviderDto: CreateProviderDto,
+    @Body() createProviderDto: CreateProviderDto
   ): Promise<Provider> {
     return this.providerService.createProvider(createProviderDto);
   }
   @Patch(':id')
   updateProvider(
     @Param('id') id: string,
-    @Body() updateProviderDto: UpdateProviderDto,
+    @Body() updateProviderDto: UpdateProviderDto
   ) {
     return this.providerService.updateProvider(id, updateProviderDto);
   }
