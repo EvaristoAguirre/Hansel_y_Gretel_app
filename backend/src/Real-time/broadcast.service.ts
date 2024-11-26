@@ -10,7 +10,7 @@ export class BroadcastService {
   }
 
   broadcast(event: string, data: any) {
-    console.log('algo esta pasando por aca', data);
+    console.log(`Emitido por WS: ${event}`, data);
     this.server.emit(event, data);
   }
 }

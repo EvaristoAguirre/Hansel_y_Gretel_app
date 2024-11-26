@@ -3,10 +3,14 @@ import { ProductRepository } from './product.repository';
 import { CreateProductDto } from '../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Product } from './product.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async getAllProducts(page: number, limit: number) {
     return await this.productRepository.getAllProducts(page, limit);
@@ -17,7 +21,13 @@ export class ProductService {
   }
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
-    return await this.productRepository.createProduct(productToCreate);
+    const productCreated =
+      await this.productRepository.createProduct(productToCreate);
+
+    await this.eventEmitter.emit('product.created', {
+      product: productCreated,
+    });
+    return productCreated;
   }
 
   async updateProduct(id: string, updateData: UpdateProductDto) {
