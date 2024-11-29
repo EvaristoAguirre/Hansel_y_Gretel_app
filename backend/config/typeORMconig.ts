@@ -14,7 +14,7 @@ const config = {
   autoLoadEntities: true,
   synchronize: false,
   dropSchema: false,
-  logging: true,
+  logging: ['errors'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],

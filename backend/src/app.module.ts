@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './Product/product.module';
 import { CategoryModule } from './Category/category.module';
 import { ProviderModule } from './Provider/provider.module';
+import { RealTimeModule } from './Real-time/real-time.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,9 +22,11 @@ import { ProviderModule } from './Provider/provider.module';
         return config;
       },
     }),
+    EventEmitterModule.forRoot(),
     ProductModule,
     CategoryModule,
     ProviderModule,
+    RealTimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

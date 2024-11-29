@@ -23,17 +23,18 @@ export class ProductController {
   @Get()
   async getAllProducts(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10
+    @Query('limit') limit: number = 10,
   ): Promise<Product[]> {
     return this.productService.getAllProducts(page, limit);
   }
 
   @Get(':id')
-  async getProductById(
-    @Param('id') id: UUID,
-    @Query('code') code: number
-  ): Promise<Product> {
-    return this.productService.getProductById(id, code);
+  async getProductById(@Param('id') id: UUID): Promise<Product> {
+    return this.productService.getProductById(id);
+  }
+  @Get('by-code')
+  async getProductByCode(@Query('code') code: string): Promise<Product> {
+    return this.productService.getProductByCode(+code);
   }
 
   @Post()
@@ -44,7 +45,7 @@ export class ProductController {
   @Put(':id')
   async updateProduct(
     @Body() updateData: UpdateProductDto,
-    @Param('id') id: string
+    @Param('id') id: string,
   ) {
     return await this.productService.updateProduct(id, updateData);
   }
