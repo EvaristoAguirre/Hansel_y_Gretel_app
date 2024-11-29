@@ -25,7 +25,7 @@ export class CategoryController {
   @Get()
   getAllCategorys(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('limit') limit: number = 1000000,
   ): Promise<Category[]> {
     return this.categoryService.getAllCategorys(page, limit);
   }
