@@ -29,11 +29,12 @@ export class ProductController {
   }
 
   @Get(':id')
-  async getProductById(
-    @Param('id') id: UUID,
-    @Query('code') code: number,
-  ): Promise<Product> {
-    return this.productService.getProductById(id, code);
+  async getProductById(@Param('id') id: UUID): Promise<Product> {
+    return this.productService.getProductById(id);
+  }
+  @Get('by-code')
+  async getProductByCode(@Query('code') code: string): Promise<Product> {
+    return this.productService.getProductByCode(+code);
   }
 
   @Post()

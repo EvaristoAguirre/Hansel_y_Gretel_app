@@ -7,6 +7,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './Product/product.module';
 import { CategoryModule } from './Category/category.module';
 import { UserModule } from './User/user.module';
+import { ProviderModule } from './Provider/provider.module';
+import { RealTimeModule } from './Real-time/real-time.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,9 +23,12 @@ import { UserModule } from './User/user.module';
         return config;
       },
     }),
+    EventEmitterModule.forRoot(),
     ProductModule,
     CategoryModule,
     UserModule,
+    ProviderModule,
+    RealTimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

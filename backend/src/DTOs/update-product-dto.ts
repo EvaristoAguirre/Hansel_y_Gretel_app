@@ -1,12 +1,9 @@
-// update-product.dto.ts
-import { State } from '../Product/product.entity';
 import {
   IsOptional,
   IsInt,
   Max,
   Min,
   IsString,
-  IsEnum,
   IsArray,
   IsUUID,
 } from 'class-validator';
@@ -33,11 +30,11 @@ export class UpdateProductDto {
   cost?: number;
 
   @IsOptional()
-  @IsEnum(State)
-  state?: State;
-
-  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
   categoriesIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  providerId?: string;
 }
