@@ -16,8 +16,11 @@ export class ProductService {
     return await this.productRepository.getAllProducts(page, limit);
   }
 
-  async getProductById(id: string, code: number) {
-    return await this.productRepository.getProductById(id, code);
+  async getProductById(id: string) {
+    return await this.productRepository.getProductById(id);
+  }
+  async getProductByCode(code: number) {
+    return await this.productRepository.getProductByCode(code);
   }
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
@@ -31,10 +34,21 @@ export class ProductService {
   }
 
   async updateProduct(id: string, updateData: UpdateProductDto) {
-    return await this.productRepository.updateProduct(id, updateData);
+    const productUpdated = await this.productRepository.updateProduct(
+      id,
+      updateData,
+    );
+    await this.eventEmitter.emit('product.updated', {
+      product: productUpdated,
+    });
+    return productUpdated;
   }
 
   async deleteProduct(id: string) {
-    return await this.productRepository.deleteProduct(id);
+    const productDeleted = await this.productRepository.deleteProduct(id);
+    await this.eventEmitter.emit('product.deleted', {
+      product: productDeleted,
+    });
+    return productDeleted;
   }
 }
