@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
+import { useCategoryStore } from "../useCategoryStore";
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import {
@@ -9,129 +10,43 @@ import {
   DialogActions,
   Button,
   TextField,
-  MenuItem,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
+import { URI_CATEGORY } from "../../URI/URI";
 
 const CategoriasProductos = () => {
-  const [listaCategorias, setListaCategorias] = React.useState([
-    { name: "", id: "" },
-  ]);
+  const {
+    categories,
+    setCategories,
+    addCategory,
+    removeCategory,
+    updateCategory,
+    connectWebSocket,
+  } = useCategoryStore();
+
   const [nombre, setNombre] = React.useState("");
 
-  //OBJETO CATEGORÍA
-  const data = {
-    name: nombre, // Reemplaza con el valor que necesites
-  };
-
-  //USE EFFECTS
   useEffect(() => {
-    async function listarCategoria() {
+    // Fetch inicial para obtener categorías.
+    async function fetchCategories() {
       try {
-        const response = await fetch(GET_CATEGORIES, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json", // Asegura que el servidor entienda JSON
-          },
-          mode: "cors", // Convierte los datos en JSON
-        });
-
-        if (!response.ok) {
-          // Manejo de errores si la respuesta no es exitosa
-          const errorData = await response.json();
-          console.error("Error al crear la categoría:", errorData);
-          return;
-        }
-
-        // Obtener la respuesta en formato JSON
-        const result = await response.json();
-        setListaCategorias(result);
+        const response = await fetch(URI_CATEGORY, { method: "GET" });
+        const data = await response.json();
+        setCategories(data);
       } catch (error) {
-        // Manejo de errores de red u otros problemas
-        console.error("Error en la petición:", error);
+        console.error("Error al listar las categorías:", error);
       }
     }
-    listarCategoria();
-  }, []);
 
-  //URIS
-  const CREATE_CATEGORY = "http://localhost:3000/category";
-  const EDIT_CATEGORY = "http://localhost:3000/category/";
-  const GET_CATEGORIES = "http://localhost:3000/category";
+    fetchCategories();
+    connectWebSocket(); // Conectar WebSocket.
+  }, [setCategories, connectWebSocket]);
 
-  const [open, setOpen] = React.useState(false);
-  const [openCrear, setOpenCrear] = React.useState(false);
-  const [id, setId] = React.useState("");
-
-  //handlers
-  const handleEliminar = (id: string) => {
-    alert(`Categoría con id ${id} eliminado`);
-    const index = categorias.findIndex((item) => item.id === id);
-    if (index > -1) {
-      categorias.splice(index, 1);
-    }
-  };
-
-  async function editarCategoria(id: string) {
-    try {
-      const response = await fetch(EDIT_CATEGORY + id, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json", // Asegura que el servidor entienda JSON
-        },
-        body: JSON.stringify(data),
-        mode: "cors", // Convierte los datos en JSON
-      });
-
-      if (!response.ok) {
-        // Manejo de errores si la respuesta no es exitosa
-        const errorData = await response.json();
-        console.error("Error al crear la categoría:", errorData);
-        return;
-      }
-
-      // Obtener la respuesta en formato JSON
-      const result = await response.json();
-      console.log("Categoría creada con éxito:", result);
-    } catch (error) {
-      // Manejo de errores de red u otros problemas
-      console.error("Error en la petición:", error);
-    }
-  }
-
-  async function crearCategoria() {
-    try {
-      const response = await fetch(CREATE_CATEGORY, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Asegura que el servidor entienda JSON
-        },
-        body: JSON.stringify(data),
-        mode: "cors", // Convierte los datos en JSON
-      });
-
-      if (!response.ok) {
-        // Manejo de errores si la respuesta no es exitosa
-        const errorData = await response.json();
-        console.error("Error al crear la categoría:", errorData);
-        return;
-      }
-
-      // Obtener la respuesta en formato JSON
-      const result = await response.json();
-      console.log("Categoría creada con éxito:", result);
-    } catch (error) {
-      // Manejo de errores de red u otros problemas
-      console.error("Error en la petición:", error);
-    }
-  }
-
-  //Configuración DataGrid
-  const rows: GridRowsProp = listaCategorias.map((categoria) => ({
-    col1: categoria.name,
-    id: categoria.id,
+  const rows: GridRowsProp = categories.map((category) => ({
+    id: category.id,
+    col1: category.name,
   }));
 
   const columns: GridColDef[] = [
@@ -141,22 +56,12 @@ const CategoriasProductos = () => {
       headerName: "Acciones",
       width: 150,
       renderCell: (params) => (
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
           <Button
             variant="contained"
             color="secondary"
             size="small"
-            style={{ margin: "1rem 0" }}
-            onClick={() => {
-              handleOpen(), setId(params.row.id);
-            }}
+            onClick={() => handleOpen()}
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -164,8 +69,7 @@ const CategoriasProductos = () => {
             variant="contained"
             color="secondary"
             size="small"
-            style={{ margin: "1rem 0" }}
-            onClick={() => handleEliminar(params.row.id)}
+            onClick={() => handleDelete(params.row.id)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
@@ -174,6 +78,48 @@ const CategoriasProductos = () => {
     },
   ];
 
+  async function handleDelete(id: string) {
+    try {
+      await fetch(`${URI_CATEGORY}/${id}`, { method: "DELETE" });
+      removeCategory(id); // Actualiza el estado local.
+    } catch (error) {
+      console.error("Error al eliminar la categoría:", error);
+    }
+  }
+
+  async function handleCreate() {
+    try {
+      const response = await fetch(URI_CATEGORY, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nombre }),
+      });
+      const newCategory = await response.json();
+      addCategory(newCategory); // Actualiza el estado local.
+    } catch (error) {
+      console.error("Error al crear la categoría:", error);
+    }
+  }
+
+  async function handleEdit(id: string) {
+    try {
+      const response = await fetch(`${URI_CATEGORY}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nombre }),
+      });
+      const updatedCategory = await response.json();
+      updateCategory(updatedCategory); // Actualiza el estado local.
+    } catch (error) {
+      console.error("Error al editar la categoría:", error);
+    }
+  }
+
+  
+  const [open, setOpen] = React.useState(false);
+  const [openCrear, setOpenCrear] = React.useState(false);
+  const [id, setId] = React.useState("");
+  
   //handlers modal
   const handleOpen = () => setOpen(true);
   const handleOpenCrear = () => setOpenCrear(true);
@@ -182,6 +128,8 @@ const CategoriasProductos = () => {
 
   return (
     <div>
+
+      {/*Barra de navegación secundaria*/}
       <div
         style={{
           height: "50px",
@@ -258,6 +206,7 @@ const CategoriasProductos = () => {
         </div>
       </div>
 
+      {/*Tabla*/}
       <div style={{ height: 300, width: "60%", margin: "1.5rem" }}>
         <DataGrid
           rows={rows}
@@ -286,7 +235,7 @@ const CategoriasProductos = () => {
           </Button>
           <Button
             onClick={() => {
-              handleClose(), editarCategoria(id);
+              handleClose(), handleEdit(id);
             }}
             color="primary"
           >
@@ -295,6 +244,7 @@ const CategoriasProductos = () => {
         </DialogActions>
       </Dialog>
 
+      {/*modal crear categoría*/}
       <Dialog open={openCrear} onClose={handleCloseCrear}>
         <DialogTitle>Crear categoría</DialogTitle>
         <DialogContent>
@@ -314,7 +264,7 @@ const CategoriasProductos = () => {
           </Button>
           <Button
             onClick={() => {
-              handleCloseCrear(), crearCategoria();
+              handleCloseCrear(), handleCreate();
             }}
             color="primary"
           >

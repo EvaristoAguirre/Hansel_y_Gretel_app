@@ -20,7 +20,8 @@
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "sweetalert2": "^11.14.5",
-    "tabulator-tables": "^6.3.0"
+    "tabulator-tables": "^6.3.0",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
