@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useCategoryStore } from "../useCategoryStore";
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
@@ -16,7 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 
-const CategoriasProductos = () => {
+const CategoriasProductos: React.FC = () => {
   const {
     categories,
     setCategories,
@@ -26,33 +26,41 @@ const CategoriasProductos = () => {
     connectWebSocket,
   } = useCategoryStore();
 
-  const [nombre, setNombre] = React.useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [nombre, setNombre] = useState("");
 
+  // Obtener categorías al cargar el componente
   useEffect(() => {
-    // Fetch inicial para obtener categorías.
     async function fetchCategories() {
       try {
         const response = await fetch(URI_CATEGORY, { method: "GET" });
         const data = await response.json();
         setCategories(data);
       } catch (error) {
-        console.error("Error al listar las categorías:", error);
+        Swal.fire("Error", "No se pudieron cargar las categorías.", "error");
+        console.error(error);
       }
     }
 
     fetchCategories();
-    connectWebSocket(); // Conectar WebSocket.
+    connectWebSocket();
   }, [setCategories, connectWebSocket]);
 
+  // Filas para la DataGrid
   const rows: GridRowsProp = categories.map((category) => ({
     id: category.id,
-    col1: category.name,
+    name: category.name,
   }));
 
+  // Columnas para la DataGrid
   const columns: GridColDef[] = [
-    { field: "col1", headerName: "Nombre", width: 150 },
+    { field: "name", headerName: "Nombre", width: 200 },
     {
-      field: "col2",
+      field: "actions",
       headerName: "Acciones",
       width: 150,
       renderCell: (params) => (
@@ -61,7 +69,7 @@ const CategoriasProductos = () => {
             variant="contained"
             color="secondary"
             size="small"
-            onClick={() => handleOpen()}
+            onClick={() => handleOpenEditModal(params.row.id, params.row.name)}
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -78,16 +86,28 @@ const CategoriasProductos = () => {
     },
   ];
 
-  async function handleDelete(id: string) {
-    try {
-      await fetch(`${URI_CATEGORY}/${id}`, { method: "DELETE" });
-      removeCategory(id); // Actualiza el estado local.
-    } catch (error) {
-      console.error("Error al eliminar la categoría:", error);
-    }
-  }
+  // Manejo de modal
+  const handleOpenCreateModal = () => {
+    setNombre("");
+    setModalType("create");
+    setModalOpen(true);
+  };
 
-  async function handleCreate() {
+  const handleOpenEditModal = (id: string, name: string) => {
+    setSelectedCategoryId(id);
+    setNombre(name);
+    setModalType("edit");
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setNombre("");
+    setSelectedCategoryId(null);
+    setModalOpen(false);
+  };
+
+  // Crear categoría
+  const handleCreate = async () => {
     try {
       const response = await fetch(URI_CATEGORY, {
         method: "POST",
@@ -95,119 +115,85 @@ const CategoriasProductos = () => {
         body: JSON.stringify({ name: nombre }),
       });
       const newCategory = await response.json();
-      addCategory(newCategory); // Actualiza el estado local.
+      addCategory(newCategory);
+      Swal.fire("Éxito", "Categoría creada correctamente.", "success");
+      handleCloseModal();
     } catch (error) {
-      console.error("Error al crear la categoría:", error);
+      Swal.fire("Error", "No se pudo crear la categoría.", "error");
+      console.error(error);
     }
-  }
+  };
 
-  async function handleEdit(id: string) {
+  // Editar categoría
+  const handleEdit = async () => {
+    if (!selectedCategoryId) return;
+
     try {
-      const response = await fetch(`${URI_CATEGORY}/${id}`, {
+      const response = await fetch(`${URI_CATEGORY}/${selectedCategoryId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: nombre }),
       });
       const updatedCategory = await response.json();
-      updateCategory(updatedCategory); // Actualiza el estado local.
+      updateCategory(updatedCategory);
+      Swal.fire("Éxito", "Categoría actualizada correctamente.", "success");
+      handleCloseModal();
     } catch (error) {
-      console.error("Error al editar la categoría:", error);
+      Swal.fire("Error", "No se pudo actualizar la categoría.", "error");
+      console.error(error);
     }
-  }
+  };
 
-  
-  const [open, setOpen] = React.useState(false);
-  const [openCrear, setOpenCrear] = React.useState(false);
-  const [id, setId] = React.useState("");
-  
-  //handlers modal
-  const handleOpen = () => setOpen(true);
-  const handleOpenCrear = () => setOpenCrear(true);
-  const handleClose = () => setOpen(false);
-  const handleCloseCrear = () => setOpenCrear(false);
+  // Eliminar categoría
+  const handleDelete = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await fetch(`${URI_CATEGORY}/${id}`, { method: "DELETE" });
+        removeCategory(id);
+        Swal.fire("Eliminado", "Categoría eliminada correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo eliminar la categoría.", "error");
+        console.error(error);
+      }
+    }
+  };
 
   return (
     <div>
-
-      {/*Barra de navegación secundaria*/}
+      {/* Barra de navegación */}
       <div
         style={{
           height: "50px",
           backgroundColor: "#515050",
           display: "flex",
           alignItems: "center",
+          padding: "0 20px",
         }}
       >
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Productos
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Ingredientes
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
+        <h3 style={{ color: "#ffffff", margin: "0 20px" }}>
           Categorías Productos
         </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 20px",
-          }}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleOpenCreateModal}
+          style={{ marginLeft: "auto" }}
         >
-          Categorías Ingredientes
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Control de Stock
-        </h3>
-
-        <div
-          onClick={handleOpenCrear}
-          style={{
-            backgroundColor: "#ededed",
-            borderRadius: "5px",
-            width: "9rem",
-            height: "2rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <h3 style={{ color: "#2b2b2b" }}>Nueva categoría</h3>
-        </div>
+          Nueva Categoría
+        </Button>
       </div>
 
-      {/*Tabla*/}
-      <div style={{ height: 300, width: "60%", margin: "1.5rem" }}>
+      {/* Tabla */}
+      <div style={{ height: 300, width: "60%", margin: "1.5rem auto" }}>
         <DataGrid
           rows={rows}
           columns={columns}
@@ -215,9 +201,11 @@ const CategoriasProductos = () => {
         />
       </div>
 
-      {/*modal editar categoría*/}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Editar categoría</DialogTitle>
+      {/* Modal */}
+      <Dialog open={modalOpen} onClose={handleCloseModal}>
+        <DialogTitle>
+          {modalType === "create" ? "Crear Categoría" : "Editar Categoría"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -230,42 +218,11 @@ const CategoriasProductos = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button onClick={handleCloseModal} color="primary">
             Cancelar
           </Button>
           <Button
-            onClick={() => {
-              handleClose(), handleEdit(id);
-            }}
-            color="primary"
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/*modal crear categoría*/}
-      <Dialog open={openCrear} onClose={handleCloseCrear}>
-        <DialogTitle>Crear categoría</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Nombre de la categoría"
-            onChange={(e) => setNombre(e.target.value)}
-            value={nombre}
-            fullWidth
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCrear} color="primary">
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              handleCloseCrear(), handleCreate();
-            }}
+            onClick={modalType === "create" ? handleCreate : handleEdit}
             color="primary"
           >
             Guardar

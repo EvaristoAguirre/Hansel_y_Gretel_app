@@ -37,13 +37,13 @@ export const useCategoryStore = create<CategoryState>((set) => ({
 
       set((state) => {
         switch (action) {
-          case "add":
+          case "category.created":
             return { categories: [...state.categories, data] };
-          case "remove":
+          case "category.deleted":
             return {
               categories: state.categories.filter((cat) => cat.id !== data.id),
             };
-          case "update":
+          case "category.updated":
             return {
               categories: state.categories.map((cat) =>
                 cat.id === data.id ? data : cat
