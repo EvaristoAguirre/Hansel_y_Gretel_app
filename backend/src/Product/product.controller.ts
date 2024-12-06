@@ -37,6 +37,11 @@ export class ProductController {
     return this.productService.getProductByCode(+code);
   }
 
+  @Get('by-categories')
+  async getProductsByCategories(@Query('categoryIds') categoryIds: string[]) {
+    return this.productService.getProductsByCategories(categoryIds);
+  }
+
   @Post()
   async createProduct(@Body() productToCreate: CreateProductDto) {
     return await this.productService.createProduct(productToCreate);

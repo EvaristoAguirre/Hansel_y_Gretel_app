@@ -10,6 +10,9 @@ import { UserModule } from './User/user.module';
 import { ProviderModule } from './Provider/provider.module';
 import { RealTimeModule } from './Real-time/real-time.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TableModule } from './Table/table.module';
+import { OrderModule } from './Order/order.module';
+import { RoomModule } from './Room/room.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,6 +32,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UserModule,
     ProviderModule,
     RealTimeModule,
+    TableModule,
+    OrderModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [AppService],
