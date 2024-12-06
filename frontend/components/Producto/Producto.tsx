@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useProductStore } from "./useProductStore"; // Hook similar a useCategoryStore, pero para productos
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import {
@@ -9,64 +10,93 @@ import {
   DialogActions,
   Button,
   TextField,
-  MenuItem,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
+import { URI_PRODUCT } from "../URI/URI";
 
-const Producto = () => {
-  const [open, setOpen] = React.useState(false);
-  const [nombre, setNombre] = React.useState("");
-  const [costo, setCosto] = React.useState("");
-  const [precio, setPrecio] = React.useState("");
-  const [codigo, setCodigo] = React.useState("");
-  const [productos, setProductos] = React.useState([
-    { id: "", nombre: "", costo: "", precio: "", categoria: "" },
-  ]);
-  const [categoria, setCategoria] = React.useState("");
-  const categorias = ["Bebidas", "Cafetería", "Pastelería"];
-  const Swal = require("sweetalert2");
+interface ProductForm {
+  code: null;
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+}
 
-  const handleEliminar = (id: string) => {
-    alert(`Producto con id ${id} eliminado`);
-  };
+const Productos: React.FC = () => {
+  const {
+    products,
+    setProducts,
+    addProduct,
+    removeProduct,
+    updateProduct,
+    connectWebSocket,
+  } = useProductStore();
 
-  const handleModificar = (id: string) => {
-    alert(`Producto con id ${id} modificado`);
-  };
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  );
+  const [form, setForm] = useState<ProductForm>({
+    code: null,
+    name: "",
+    description: "",
+    price: 0,
+    cost: 0,
+  });
 
-  const rows: GridRowsProp = productos.map((producto) => ({
-    id: producto.id,
-    col1: producto.nombre,
-    col2: producto.costo,
-    col3: producto.precio,
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch(URI_PRODUCT, { method: "GET" });
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        Swal.fire("Error", "No se pudieron cargar los productos.", "error");
+        console.error(error);
+      }
+    }
+
+    fetchProducts();
+    connectWebSocket();
+  }, [setProducts, connectWebSocket]);
+
+  const rows: GridRowsProp = products.map((product, index) => ({
+    id: product.id,
+    code: product.code,
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    cost: product.cost,
   }));
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "Código", width: 150 },
-    { field: "col1", headerName: "Producto", width: 150 },
-    { field: "col2", headerName: "Costo", width: 150 },
-    { field: "col3", headerName: "Precio", width: 150 },
+    { field: "code", headerName: "Código", width: 100 },
+    { field: "name", headerName: "Nombre", width: 200 },
+    { field: "description", headerName: "Descripción", width: 300 },
+    { field: "price", headerName: "Precio", width: 100 },
+    { field: "cost", headerName: "Costo", width: 100 },
     {
-      field: "col4",
+      field: "actions",
       headerName: "Acciones",
       width: 150,
       renderCell: (params) => (
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
           <Button
             variant="contained"
             color="secondary"
             size="small"
-            style={{ margin: "1rem 0" }}
-            onClick={() => handleModificar(params.row.id)}
+            onClick={() =>
+              handleOpenEditModal(params.row.id, {
+                code: params.row.code,
+                name: params.row.name,
+                description: params.row.description,
+                price: params.row.price,
+                cost: params.row.cost,
+              })
+            }
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -74,8 +104,7 @@ const Producto = () => {
             variant="contained"
             color="secondary"
             size="small"
-            style={{ margin: "1rem 0" }}
-            onClick={() => handleEliminar(params.row.id)}
+            onClick={() => handleDelete(params.row.id)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
@@ -84,27 +113,82 @@ const Producto = () => {
     },
   ];
 
-  // Funciones para abrir y cerrar el modal
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleOpenCreateModal = (product: ProductForm) => {
+    setForm(product);
+    setModalType("create");
+    setModalOpen(true);
+  };
 
-  //Función para crear un producto (MOCK)
+  const handleOpenEditModal = (id: string, product: ProductForm) => {
+    setSelectedProductId(id);
+    setForm(product);
+    setModalType("edit");
+    setModalOpen(true);
+  };
 
-  const createProduct = (
-    nombre: string,
-    costo: string,
-    precio: string,
-    categoria: string,
-    codigo: string
-  ) => {
-    const producto = {
-      id: codigo,
-      nombre: nombre,
-      costo: costo,
-      precio: precio,
-      categoria: categoria,
-    };
-    setProductos([...productos, producto]);
+  const handleCloseModal = () => {
+    setForm({ code: null, name: "", description: "", price: 0, cost: 0 });
+    setSelectedProductId(null);
+    setModalOpen(false);
+  };
+
+  const handleCreate = async () => {
+    try {
+      const response = await fetch(URI_PRODUCT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const newProduct = await response.json();
+      console.log(newProduct);
+      addProduct(newProduct);
+      Swal.fire("Éxito", "Producto creado correctamente.", "success");
+      handleCloseModal();
+    } catch (error) {
+      Swal.fire("Error", "No se pudo crear el producto.", "error");
+      console.error(error);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!selectedProductId) return;
+
+    try {
+      const response = await fetch(`${URI_PRODUCT}/${selectedProductId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const updatedProduct = await response.json();
+      updateProduct(updatedProduct);
+      Swal.fire("Éxito", "Producto actualizado correctamente.", "success");
+      handleCloseModal();
+    } catch (error) {
+      Swal.fire("Error", "No se pudo actualizar el producto.", "error");
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
+        removeProduct(id);
+        Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo eliminar el producto.", "error");
+        console.error(error);
+      }
+    }
   };
 
   return (
@@ -115,192 +199,81 @@ const Producto = () => {
           backgroundColor: "#515050",
           display: "flex",
           alignItems: "center",
+          padding: "0 20px",
         }}
       >
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
+        <h3 style={{ color: "#ffffff", margin: "0 20px" }}>Productos</h3>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleOpenCreateModal(form)}
+          style={{ marginLeft: "auto" }}
         >
-          Productos
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Ingredientes
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Categorías Productos
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 20px",
-          }}
-        >
-          Categorías Ingredientes
-        </h3>
-        <h3
-          style={{
-            fontSize: "1.25rem",
-            color: "#ffffff",
-            fontWeight: "400",
-            margin: "0 50px",
-          }}
-        >
-          Control de Stock
-        </h3>
-
-        {/*botón modal crear producto */}
-
-        <div
-          onClick={handleOpen}
-          style={{
-            backgroundColor: "#ededed",
-            borderRadius: "5px",
-            width: "9rem",
-            height: "2rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <h3 style={{ color: "#2b2b2b" }}>Nuevo producto</h3>
-        </div>
-
-        <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>Nuevo Producto</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Nombre del producto"
-              onChange={(e) => setNombre(e.target.value)}
-              value={nombre}
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              margin="dense"
-              label="Precio"
-              onChange={(e) => setPrecio(e.target.value)}
-              value={precio}
-              type="number"
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              margin="dense"
-              label="Costo"
-              onChange={(e) => setCosto(e.target.value)}
-              value={costo}
-              type="number"
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              margin="dense"
-              label="Código"
-              onChange={(e) => setCodigo(e.target.value)}
-              value={codigo}
-              type="number"
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              margin="dense"
-              label="Categoría"
-              onChange={(e) => setCategoria(e.target.value)}
-              select
-              fullWidth
-            >
-              {categorias.map((categoria) => (
-                <MenuItem value={categoria}>{categoria}</MenuItem>
-              ))}
-            </TextField>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose} color="primary">
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                handleClose(),
-                  createProduct(nombre, costo, precio, categoria, codigo);
-              }}
-              color="primary"
-            >
-              Guardar
-            </Button>
-          </DialogActions>
-        </Dialog>
+          Nuevo Producto
+        </Button>
       </div>
 
-      <div
-        className="layout-categorias"
-        style={{
-          display: "flex",
-          height: "100%",
-        }}
-      >
-        <div
-          className="categorias"
-          style={{
-            backgroundColor: "#2B2B2B",
-            height: "30rem",
-          }}
-        >
-          {categorias.map((categoria) => (
-            <div
-              style={{
-                width: "14rem",
-                height: "4rem",
-                backgroundColor: "#2B2B2B",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1rem",
-                  color: "#ededed",
-                }}
-              >
-                {categoria}
-              </h3>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ height: 300, width: "100%", margin: "1.5rem" }}>
+      {/* Verifica si no hay productos */}
+      {products.length === 0 ? (
+        <p style={{ textAlign: "center", marginTop: "2rem" }}>
+          No hay productos disponibles.
+        </p>
+      ) : (
+        <div style={{ height: 400, width: "80%", margin: "1.5rem auto" }}>
           <DataGrid
             rows={rows}
             columns={columns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            getRowId={(row) => row.id}
           />
         </div>
-      </div>
+      )}
+
+      <Dialog open={modalOpen} onClose={handleCloseModal}>
+        <DialogTitle>
+          {modalType === "create" ? "Crear Producto" : "Editar Producto"}
+        </DialogTitle>
+        <DialogContent>
+          {(
+            ["code", "name", "description", "price", "cost"] as Array<
+              keyof ProductForm
+            >
+          ).map((field) => (
+            <TextField
+              key={field}
+              margin="dense"
+              label={field}
+              type={
+                ["code", "price", "cost"].includes(field) ? "number" : "text"
+              } // Cambiar el tipo para inputs numéricos
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  [field]: ["code", "price", "cost"].includes(field)
+                    ? e.target.value === "" ? null : parseInt(e.target.value) // Convierte a null si está vacío
+                    : e.target.value,
+                })
+              }
+              value={form[field] ?? ""}
+              fullWidth
+              variant="outlined"
+            />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancelar
+          </Button>
+          <Button
+            onClick={modalType === "create" ? handleCreate : handleEdit}
+            color="primary"
+          >
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
 
-export default Producto;
+export default Productos;
