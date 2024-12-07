@@ -63,6 +63,7 @@ export class ProviderService {
         );
       }
       return await this.providerRepository.find({
+        where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
       });
