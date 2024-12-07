@@ -1,312 +1,330 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TextField,
-  Select,
-  MenuItem,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
 } from "@mui/material";
 import Swal from "sweetalert2";
+import { useProductStore } from "../Producto/useProductStore"; // Ruta según tu estructura
+import { URI_PRODUCT } from "../URI/URI";
 
 const Cafe = () => {
   const [salas, setSalas] = useState([
     { id: "1", nombre: "Sala Principal" },
     { id: "2", nombre: "Terraza" },
-  ]); 
-  
+  ]);
+
   const [mesas, setMesas] = useState([
     {
       id: "101",
-      nombre: 1,
+      nombre: "Mesa 1",
       cliente: null,
-      pedido: null,
       comentario: "",
       estado: "disponible",
       disponibilidad: "disponible",
       salaId: "1",
+      pedido: [], // Pedido asociado a la mesa
     },
     {
       id: "102",
       nombre: "Mesa VIP",
       cliente: "Juan Pérez",
-      pedido: "Pedido001",
       comentario: "Celebración cumpleaños",
       estado: "pidioCuenta",
       disponibilidad: "ocupada",
       salaId: "2",
+      pedido: [
+        { id: "1", name: "Café", price: 200, cantidad: 2 },
+        { id: "2", name: "Tostado", price: 500, cantidad: 1 },
+      ],
     },
-  ]); 
-  
-  const [selectedSala, setSelectedSala] = useState(null); // Sala seleccionada
+  ]);
 
-  const URI_SALAS = "http://localhost:3000/salas"; // Endpoint para Salas
-  const URI_MESAS = "http://localhost:3000/mesas"; // Endpoint para Mesas
-
-
+  const [selectedSala, setSelectedSala] = useState(null);
   const [selectedMesa, setSelectedMesa] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [productosDisponibles, setProductosDisponibles] = useState([]);
+  const [productosSeleccionados, setProductosSeleccionados] = useState([]);
+  const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
 
-  // Abrir modal al seleccionar una mesa
-  const handleOpenModal = (mesa) => {
+  // Zustand para manejar los productos
+  const { products, setProducts, connectWebSocket } = useProductStore();
+
+  // Cargar productos desde la base de datos (API)
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(URI_PRODUCT, { method: "GET" });
+      if (!response.ok) throw new Error("Error al cargar productos");
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      Swal.fire("Error", "No se pudieron cargar los productos.", "error");
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts(); // Cargar productos al inicio
+    connectWebSocket();
+  }, [setProducts, connectWebSocket]);
+
+  useEffect(() => {
+    setProductosDisponibles(products); // Sincronizar productos disponibles
+  }, [products]);
+
+  // Manejar selección de mesa
+  const handleSeleccionarMesa = (mesa) => {
     setSelectedMesa(mesa);
-    setModalOpen(true);
+    setMostrarEditorPedido(false);
   };
 
-  // Cerrar modal
-  const handleCloseModal = () => {
-    setSelectedMesa(null);
-    setModalOpen(false);
+  // Abrir editor de pedidos
+  const handleAbrirMesa = () => {
+    fetchProducts(); // Asegurar que los productos están actualizados
+    setMostrarEditorPedido(true);
   };
 
-  // Actualizar datos de la mesa
-  const handleUpdateMesa = () => {
+  // Mostrar detalles del pedido
+  const handleVerPedido = () => {
+    setMostrarEditorPedido(true);
+  };
+
+  // Manejar selección de productos
+  const handleSeleccionarProducto = (producto) => {
+    // Comprobar si el producto ya está en el pedido
+    const pedidoActual = selectedMesa.pedido || [];
+    const productoExistente = pedidoActual.find((p) => p.id === producto.id);
+
+    if (productoExistente) {
+      // Incrementar la cantidad si ya existe
+      productoExistente.cantidad += 1;
+    } else {
+      // Agregar nuevo producto al pedido
+      pedidoActual.push({ ...producto, cantidad: 1 });
+    }
+
+    // Actualizar el estado de la mesa seleccionada
+    setSelectedMesa((prevMesa) => ({
+      ...prevMesa,
+      pedido: [...pedidoActual],
+    }));
+
+    // Actualizar las mesas en el estado general
     setMesas((prevMesas) =>
       prevMesas.map((mesa) =>
-        mesa.id === selectedMesa.id ? selectedMesa : mesa
+        mesa.id === selectedMesa.id
+          ? { ...selectedMesa, pedido: pedidoActual }
+          : mesa
       )
     );
-    setModalOpen(false);
   };
 
-  // Manejar cambios en los campos del formulario
-  const handleChange = (field, value) => {
-    setSelectedMesa({ ...selectedMesa, [field]: value });
-  };
+  // Agregar productos al pedido
+  const handleAgregarProductosAlPedido = () => {
+    const mesaActualizada = {
+      ...selectedMesa,
+      pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
+    };
 
+    setMesas((prevMesas) =>
+      prevMesas.map((mesa) =>
+        mesa.id === selectedMesa.id ? mesaActualizada : mesa
+      )
+    );
 
-  // Función para crear una nueva sala
-  const handleCreateSala = async () => {
-    const { value: nombre } = await Swal.fire({
-      title: "Crear nueva sala",
-      input: "text",
-      inputLabel: "Nombre de la sala",
-      inputPlaceholder: "Ej. Sala 1",
-      showCancelButton: true,
-      confirmButtonText: "Crear",
-      cancelButtonText: "Cancelar",
-    });
-
-    if (nombre) {
-      try {
-        const response = await fetch(URI_SALAS, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ nombre }),
-        });
-
-        if (!response.ok) throw new Error("Error al crear la sala");
-
-        const newSala = await response.json();
-        setSalas([...salas, newSala]);
-        Swal.fire("Éxito", "Sala creada correctamente.", "success");
-      } catch (error) {
-        Swal.fire("Error", "No se pudo crear la sala.", "error");
-        console.error(error);
-      }
-    }
-  };
-
-  // Función para crear una nueva mesa
-  const handleCreateMesa = async () => {
-    if (!selectedSala) {
-      Swal.fire("Error", "Debes seleccionar una sala primero.", "error");
-      return;
-    }
-
-    const { value: nombre } = await Swal.fire({
-      title: "Crear nueva mesa",
-      input: "text",
-      inputLabel: "Nombre o número de la mesa",
-      inputPlaceholder: "Ej. Mesa 1",
-      showCancelButton: true,
-      confirmButtonText: "Crear",
-      cancelButtonText: "Cancelar",
-    });
-
-    if (nombre) {
-      try {
-        const response = await fetch(URI_MESAS, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            nombre,
-            salaId: selectedSala.id, // Relación con la sala seleccionada
-          }),
-        });
-
-        if (!response.ok) throw new Error("Error al crear la mesa");
-
-        const newMesa = await response.json();
-        setMesas([...mesas, newMesa]);
-        Swal.fire("Éxito", "Mesa creada correctamente.", "success");
-      } catch (error) {
-        Swal.fire("Error", "No se pudo crear la mesa.", "error");
-        console.error(error);
-      }
-    }
+    setProductosSeleccionados([...productosSeleccionados]);
+    Swal.fire(
+      "Pedido Actualizado",
+      `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
+      "success"
+    );
+    setMostrarEditorPedido(false);
   };
 
   return (
-    <div>
-      {/* Header con las salas */}
-      <div
-        style={{
-          height: "50px",
-          backgroundColor: "#515050",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 20px",
-        }}
-      >
-        {salas.map((sala) => (
-          <h3
-            key={sala.id}
-            style={{
-              fontSize: "1.25rem",
-              color: "#ffffff",
-              fontWeight: "400",
-              margin: "0 20px",
-              cursor: "pointer",
-              borderBottom: selectedSala?.id === sala.id ? "2px solid #ffffff" : "none",
-            }}
-            onClick={() => setSelectedSala(sala)}
-          >
-            {sala.nombre}
-          </h3>
-        ))}
-        <button
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* Lista de mesas */}
+      <div style={{ width: "70%", padding: "20px" }}>
+        <div
           style={{
-            marginLeft: "auto",
-            backgroundColor: "#4CAF50",
-            color: "#ffffff",
-            border: "none",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            cursor: "pointer",
+            height: "50px",
+            backgroundColor: "#515050",
+            display: "flex",
+            alignItems: "center",
+            padding: "0 20px",
           }}
-          onClick={handleCreateSala}
         >
-          Crear Sala
-        </button>
-        <button
+          {salas.map((sala) => (
+            <h3
+              key={sala.id}
+              style={{
+                fontSize: "1.25rem",
+                color: "#ffffff",
+                fontWeight: "400",
+                margin: "0 20px",
+                cursor: "pointer",
+                borderBottom:
+                  selectedSala?.id === sala.id ? "2px solid #ffffff" : "none",
+              }}
+              onClick={() => setSelectedSala(sala)}
+            >
+              {sala.nombre}
+            </h3>
+          ))}
+        </div>
+
+        <div
           style={{
-            marginLeft: "10px",
-            backgroundColor: "#2196F3",
-            color: "#ffffff",
-            border: "none",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            cursor: "pointer",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+            padding: "20px",
           }}
-          onClick={handleCreateMesa}
         >
-          Crear Mesa
-        </button>
+          {mesas.map((mesa) => (
+            <div
+              key={mesa.id}
+              style={{
+                width: "14rem",
+                height: "4rem",
+                backgroundColor:
+                  mesa.disponibilidad === "ocupada" ? "#f28b82" : "#aed581",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+              onClick={() => handleSeleccionarMesa(mesa)}
+            >
+              <h3 style={{ fontSize: "1rem" }}>{mesa.nombre}</h3>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Mesas de la sala seleccionada */}
+      {/* Cuadro de detalles */}
       <div
-        className="layout-mesas"
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
+          width: "30%",
+          borderLeft: "1px solid #ccc",
           padding: "20px",
         }}
       >
-        {mesas.map((mesa) => (
-          <div
-            key={mesa.id}
-            style={{
-              width: "14rem",
-              height: "4rem",
-              backgroundColor: mesa.disponibilidad === "ocupada" ? "#f28b82" : "#aed581",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-            onClick={() => handleOpenModal(mesa)}
-          >
-            <h3 style={{ fontSize: "1rem" }}>{mesa.nombre}</h3>
+        {selectedMesa && !mostrarEditorPedido && (
+          <div>
+            <h2>Editar Mesa</h2>
+            <TextField
+              label="Nombre/Número"
+              fullWidth
+              margin="dense"
+              value={selectedMesa.nombre}
+              onChange={(e) =>
+                setSelectedMesa({ ...selectedMesa, nombre: e.target.value })
+              }
+            />
+            <TextField
+              label="Cliente"
+              fullWidth
+              margin="dense"
+              value={selectedMesa.cliente || ""}
+              onChange={(e) =>
+                setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
+              }
+            />
+            <Button
+              fullWidth
+              color="primary"
+              variant="contained"
+              onClick={handleAbrirMesa}
+            >
+              Abrir Mesa
+            </Button>
+            <Button
+              fullWidth
+              color="secondary"
+              variant="outlined"
+              style={{ marginTop: "10px" }}
+              disabled={
+                !selectedMesa.pedido || selectedMesa.pedido.length === 0
+              }
+              onClick={handleVerPedido}
+            >
+              Ver Pedido
+            </Button>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Modal para editar datos de la mesa */}
-      <Dialog open={modalOpen} onClose={handleCloseModal}>
-        <DialogTitle>Editar Mesa</DialogTitle>
-        <DialogContent>
-          {selectedMesa && (
-            <>
-              <TextField
-                label="Nombre/Número"
-                fullWidth
-                margin="dense"
-                value={selectedMesa.nombre}
-                onChange={(e) => handleChange("nombre", e.target.value)}
-              />
-              <TextField
-                label="Cliente"
-                fullWidth
-                margin="dense"
-                value={selectedMesa.cliente || ""}
-                onChange={(e) => handleChange("cliente", e.target.value)}
-              />
-              <TextField
-                label="Pedido"
-                fullWidth
-                margin="dense"
-                value={selectedMesa.pedido || ""}
-                onChange={(e) => handleChange("pedido", e.target.value)}
-              />
-              <TextField
-                label="Comentario"
-                fullWidth
-                margin="dense"
-                value={selectedMesa.comentario}
-                onChange={(e) => handleChange("comentario", e.target.value)}
-              />
-              <Select
-                fullWidth
-                label="Estado"
-                margin="dense"
-                value={selectedMesa.estado}
-                onChange={(e) => handleChange("estado", e.target.value)}
-              >
-                <MenuItem value="abierta">Abierta</MenuItem>
-                <MenuItem value="pidioCuenta">Pidió Cuenta</MenuItem>
-                <MenuItem value="cerrada">Cerrada</MenuItem>
-              </Select>
-              <Select
-                fullWidth
-                margin="dense"
-                value={selectedMesa.disponibilidad}
-                onChange={(e) => handleChange("disponibilidad", e.target.value)}
-              >
-                <MenuItem value="disponible">Disponible</MenuItem>
-                <MenuItem value="ocupada">Ocupada</MenuItem>
-              </Select>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} color="secondary">
-            Cancelar
-          </Button>
-          <Button onClick={handleUpdateMesa} color="primary">
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {mostrarEditorPedido && (
+          <div>
+            <h2>Pedido</h2>
+
+            {/* Buscador de productos */}
+            <TextField
+              fullWidth
+              placeholder="Buscar productos por nombre o código"
+              variant="outlined"
+              margin="normal"
+              onChange={(e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                setProductosDisponibles(
+                  products.filter(
+                    (producto) =>
+                      producto.name.toLowerCase().includes(searchTerm) ||
+                      producto.code.toLowerCase().includes(searchTerm)
+                  )
+                );
+              }}
+            />
+
+            {/* Lista de productos disponibles para seleccionar */}
+            <List>
+              {productosDisponibles.map((producto) => (
+                <ListItem
+                  key={producto.id}
+                  button
+                  onClick={() => handleSeleccionarProducto(producto)}
+                >
+                  <ListItemText
+                    primary={`${producto.name} - $${producto.price}`}
+                    secondary={`Código: ${producto.code}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            {/* Mostrar productos seleccionados en el pedido */}
+            <h3>Productos en el Pedido</h3>
+            {selectedMesa.pedido && selectedMesa.pedido.length > 0 ? (
+              <List>
+                {selectedMesa.pedido.map((item, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={`${item.name} x${item.cantidad}`}
+                      secondary={`$${item.price * item.cantidad}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography>No hay productos en el pedido</Typography>
+            )}
+
+            {/* Botón para guardar el pedido */}
+            <Button
+              fullWidth
+              color="primary"
+              variant="contained"
+              style={{ marginTop: "10px" }}
+              onClick={handleAgregarProductosAlPedido}
+            >
+              Guardar Pedido
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

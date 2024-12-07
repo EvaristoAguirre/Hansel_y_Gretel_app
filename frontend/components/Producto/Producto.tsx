@@ -63,7 +63,7 @@ const Productos: React.FC = () => {
     connectWebSocket();
   }, [setProducts, connectWebSocket]);
 
-  const rows: GridRowsProp = products.map((product, index) => ({
+  const rows: GridRowsProp = products.map((product) => ({
     id: product.id,
     code: product.code,
     name: product.name,
