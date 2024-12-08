@@ -9,6 +9,9 @@ export class Room {
   @Column({ nullable: false, unique: true })
   name: string;
 
+  @Column({ default: true })
+  isActive: boolean;
+
   @OneToMany(() => Table, (table) => table.room)
   tables: Table[];
 }
