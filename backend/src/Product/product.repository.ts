@@ -28,6 +28,7 @@ export class ProductRepository {
     }
     try {
       return await this.productRepository.find({
+        where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
       });
@@ -43,7 +44,7 @@ export class ProductRepository {
 
     try {
       const product = await this.productRepository.findOne({
-        where: { id },
+        where: { id, isActive: true },
         relations: ['categories'],
       });
       if (!product) {
@@ -63,7 +64,10 @@ export class ProductRepository {
     }
 
     try {
-      const product = await this.productRepository.findOneBy({ code });
+      const product = await this.productRepository.findOneBy({
+        code,
+        isActive: true,
+      });
 
       if (!product) {
         throw new NotFoundException(`Product not found with  code: ${code}`);
@@ -88,7 +92,10 @@ export class ProductRepository {
       const products = await this.productRepository
         .createQueryBuilder('product')
         .innerJoin('product.categories', 'category')
-        .where('category.id IN (:...categoryIds)', { categoryIds })
+        .where('category.id IN (:...categoryIds)', {
+          categoryIds,
+          isActive: true,
+        })
         .groupBy('product.id')
         .having('COUNT(product.id) = :numCategories', {
           numCategories: categoryIds.length,
@@ -121,7 +128,7 @@ export class ProductRepository {
       let categoryEntities: Category[] = [];
       if (categories && categories.length > 0) {
         categoryEntities = await this.categoryRepository.find({
-          where: { id: In(categories) },
+          where: { id: In(categories), isActive: true },
         });
         if (categoryEntities.length !== categories.length) {
           throw new BadRequestException('Some categories do not exist');
@@ -151,7 +158,7 @@ export class ProductRepository {
 
     try {
       const product = await this.productRepository.findOne({
-        where: { id: id },
+        where: { id: id, isActive: true },
         relations: ['categories'],
       });
 

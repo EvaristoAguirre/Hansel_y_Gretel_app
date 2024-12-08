@@ -1,5 +1,6 @@
-import { IsInt, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
+import { OrderDetails } from 'src/Order/order_details.entity';
 import { Provider } from 'src/Provider/provider.entity';
 import {
   Entity,
@@ -8,6 +9,7 @@ import {
   ManyToMany,
   JoinTable,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 
 @Entity({ name: 'products' })
@@ -16,6 +18,7 @@ export class Product {
   id: string;
 
   @Column({ type: 'int', nullable: true, unique: true })
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(9999)
@@ -27,10 +30,10 @@ export class Product {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ nullable: true, type: 'decimal' })
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @Column({ nullable: true, type: 'decimal' })
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   cost: number;
 
   @Column({ default: true })
@@ -48,4 +51,7 @@ export class Product {
     nullable: true,
   })
   provider: Provider;
+
+  @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.product)
+  orderDetails: OrderDetails[];
 }

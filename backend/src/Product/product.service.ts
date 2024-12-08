@@ -23,6 +23,10 @@ export class ProductService {
     return await this.productRepository.getProductByCode(code);
   }
 
+  async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
+    return await this.productRepository.getProductsByCategories(categoryIds);
+  }
+
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
     const productCreated =
       await this.productRepository.createProduct(productToCreate);
