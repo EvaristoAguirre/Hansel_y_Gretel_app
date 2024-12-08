@@ -3,21 +3,37 @@ import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  async createOrder(order: CreateOrderDto): Promise<Order> {
-    return this.orderRepository.createOrder(order);
+  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+    const orderCreated = await this.orderRepository.createOrder(orderToCreate);
+    await this.eventEmitter.emit('order.created', {
+      order: orderCreated,
+    });
+    return orderCreated;
   }
 
   async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
-    return await this.orderRepository.updateOrder(id, updateData);
+    const orderUpdated = await this.orderRepository.updateOrder(id, updateData);
+    await this.eventEmitter.emit('order.updated', {
+      order: orderUpdated,
+    });
+    return orderUpdated;
   }
 
   async deleteOrder(id: string): Promise<string> {
-    return await this.orderRepository.deleteOrder(id);
+    const orderDeleted = await this.orderRepository.deleteOrder(id);
+    await this.eventEmitter.emit('order.deleted', {
+      order: orderDeleted,
+    });
+    return orderDeleted;
   }
 
   async getAllOrders(page: number, limit: number): Promise<Order[]> {
