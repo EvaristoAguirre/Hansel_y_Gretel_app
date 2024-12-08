@@ -3,7 +3,7 @@ import { TableRepository } from './table.repository';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Table } from './table.entity';
-import EventEmitter2 from 'eventemitter2';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TableService {
