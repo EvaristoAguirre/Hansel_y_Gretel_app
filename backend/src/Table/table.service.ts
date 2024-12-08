@@ -3,17 +3,25 @@ import { TableRepository } from './table.repository';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Table } from './table.entity';
+import EventEmitter2 from 'eventemitter2';
 
 @Injectable()
 export class TableService {
-  constructor(private readonly tableRepository: TableRepository) {}
+  constructor(
+    private readonly tableRepository: TableRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async createTable(table: CreateTableDto): Promise<Table> {
     return await this.tableRepository.createTable(table);
   }
 
   async updateTable(id: string, updateData: UpdateTableDto): Promise<Table> {
-    return await this.tableRepository.updateTable(id, updateData);
+    const tableUpdated = await this.tableRepository.updateTable(id, updateData);
+    await this.eventEmitter.emit('table.updated', {
+      table: tableUpdated,
+    });
+    return tableUpdated;
   }
 
   async deleteTable(id: string): Promise<string> {
