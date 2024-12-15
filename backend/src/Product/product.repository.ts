@@ -1,12 +1,13 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './product.entity';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Category } from 'src/Category/category.entity';
@@ -18,6 +19,7 @@ export class ProductRepository {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getAllProducts(page: number, limit: number): Promise<Product[]> {
@@ -31,9 +33,16 @@ export class ProductRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['categories'],
       });
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching products', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the product',
+        error.message,
+      );
     }
   }
 
@@ -52,13 +61,17 @@ export class ProductRepository {
       }
       return product;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error fetching the product',
-        error,
+        error.message,
       );
     }
   }
   async getProductByCode(code: number): Promise<Product> {
+    console.log(code);
     if (!code) {
       throw new BadRequestException('Either code must be provided.');
     }
@@ -74,49 +87,36 @@ export class ProductRepository {
       }
       return product;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException(
         'Error fetching the product',
-        error,
+        error.message,
       );
     }
   }
 
   async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
+    console.log('Category IDs:', categoryIds); // Imprime los IDs
     if (!categoryIds || categoryIds.length === 0) {
-      throw new BadRequestException(
-        'At least one category ID must be provided.',
-      );
+      throw new Error('At least one category ID must be provided.');
     }
-
     try {
-      const products = await this.productRepository
-        .createQueryBuilder('product')
-        .innerJoin('product.categories', 'category')
-        .where('category.id IN (:...categoryIds)', {
-          categoryIds,
-          isActive: true,
-        })
+      return await this.dataSource
+        .createQueryBuilder(Product, 'product')
+        .innerJoinAndSelect('product.categories', 'category')
+        .where('category.id IN (:...categoryIds)', { categoryIds })
         .groupBy('product.id')
-        .having('COUNT(product.id) = :numCategories', {
+        .having('COUNT(DISTINCT category.id) = :numCategories', {
           numCategories: categoryIds.length,
         })
         .getMany();
-
-      if (products.length === 0) {
-        throw new NotFoundException(
-          `No products found for the given categories: ${categoryIds.join(', ')}`,
-        );
-      }
-
-      return products;
     } catch (error) {
-      if (error instanceof QueryFailedError) {
-        throw new InternalServerErrorException(
-          'Database query failed. Please check the query syntax or data integrity.',
-        );
-      }
       throw new InternalServerErrorException(
-        'An unexpected error occurred while fetching products.',
+        'An error occurred while fetching products. Please try again.',
+        error,
       );
     }
   }
@@ -140,9 +140,12 @@ export class ProductRepository {
       });
       return await this.productRepository.save(product);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
-        'Error creating the product.',
-        error,
+        'Error fetching the product',
+        error.message,
       );
     }
   }
@@ -199,9 +202,12 @@ export class ProductRepository {
       }
       return 'Product deleted successfully.';
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
-        'Error deleting the product.',
-        error,
+        'Error fetching the product',
+        error.message,
       );
     }
   }

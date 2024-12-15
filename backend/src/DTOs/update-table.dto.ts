@@ -18,6 +18,10 @@ export class UpdateTableDto {
   number?: number;
 
   @IsOptional()
+  @IsString()
+  coment?: string;
+
+  @IsOptional()
   @IsEnum({ enum: TableState })
   state?: TableState;
 
