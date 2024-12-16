@@ -7,6 +7,7 @@ import {
   ListItem,
   ListItemText,
   Typography,
+  Autocomplete,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { useProductStore } from "../Producto/useProductStore"; // Ruta según tu estructura
@@ -167,7 +168,7 @@ const Cafe = () => {
                 margin: "0 20px",
                 cursor: "pointer",
                 borderBottom:
-                  selectedSala?.id === sala.id ? "2px solid #ffffff" : "none",
+                  selectedSala?.id === sala.id ? "1px solid #ffffff" : "none",
               }}
               onClick={() => setSelectedSala(sala)}
             >
@@ -215,18 +216,37 @@ const Cafe = () => {
       >
         {selectedMesa && !mostrarEditorPedido && (
           <div>
-            <h2>Editar Mesa</h2>
+            <h2>{selectedMesa.nombre}</h2>
             <TextField
-              label="Nombre/Número"
+              label="Cantidad de personas"
+              type="number"
               fullWidth
               margin="dense"
-              value={selectedMesa.nombre}
-              onChange={(e) =>
-                setSelectedMesa({ ...selectedMesa, nombre: e.target.value })
-              }
+              // value={selectedMesa.nombre}
+              // onChange={(e) =>
+              //   setSelectedMesa({ ...selectedMesa, nombre: e.target.value })
+              // }
             />
             <TextField
               label="Cliente"
+              fullWidth
+              margin="dense"
+              value={selectedMesa.cliente || ""}
+              onChange={(e) =>
+                setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
+              }
+            />
+            <TextField
+              label="Mozo/a"
+              fullWidth
+              margin="dense"
+              value={selectedMesa.cliente || ""}
+              onChange={(e) =>
+                setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
+              }
+            />
+            <TextField
+              label="Comentario"
               fullWidth
               margin="dense"
               value={selectedMesa.cliente || ""}
@@ -259,10 +279,47 @@ const Cafe = () => {
 
         {mostrarEditorPedido && (
           <div>
+            <h2>{selectedMesa.nombre}</h2>
+            <h2>Datos de la mesa</h2>
+            <h3>2 personas, Cliente: Evaristo Aguirre, Mozo/a: Julieta Sosa</h3>
             <h2>Pedido</h2>
-
+          
+            {/* Buscador de productos con dropdown */}
+            <Autocomplete
+              options={products} // Lista completa de productos
+              getOptionLabel={(producto) =>
+                `${producto.name} - $${producto.price} (Código: ${producto.code})`
+              } // Cómo se muestra cada opción en el dropdown
+              onInputChange={(event, value) => {
+                const searchTerm = value.toLowerCase();
+                setProductosDisponibles(
+                  products.filter(
+                    (producto) =>
+                      producto.name.toLowerCase().includes(searchTerm)
+                  )
+                );
+              }}
+              onChange={(event, selectedProducto) => {
+                if (selectedProducto) {
+                  handleSeleccionarProducto(selectedProducto); // Maneja la selección de un producto
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Buscar productos por nombre o código"
+                  variant="outlined"
+                  fullWidth
+                />
+              )}
+              renderOption={(props, producto) => (
+                <li {...props} key={producto.id}>
+                  {`${producto.name} - $${producto.price} (Código: ${producto.code})`}
+                </li>
+              )}
+            />
             {/* Buscador de productos */}
-            <TextField
+            {/* <TextField
               fullWidth
               placeholder="Buscar productos por nombre o código"
               variant="outlined"
@@ -277,10 +334,9 @@ const Cafe = () => {
                   )
                 );
               }}
-            />
-
+            /> */}
             {/* Lista de productos disponibles para seleccionar */}
-            <List>
+            {/* <List>
               {productosDisponibles.map((producto) => (
                 <ListItem
                   key={producto.id}
@@ -293,8 +349,7 @@ const Cafe = () => {
                   />
                 </ListItem>
               ))}
-            </List>
-
+            </List> */}
             {/* Mostrar productos seleccionados en el pedido */}
             <h3>Productos en el Pedido</h3>
             {selectedMesa.pedido && selectedMesa.pedido.length > 0 ? (
@@ -311,7 +366,6 @@ const Cafe = () => {
             ) : (
               <Typography>No hay productos en el pedido</Typography>
             )}
-
             {/* Botón para guardar el pedido */}
             <Button
               fullWidth

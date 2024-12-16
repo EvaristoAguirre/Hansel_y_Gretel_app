@@ -1,7 +1,9 @@
-import React from "react";
-import Image from "next/image";
+"use client";
+import React, { useState } from "react";
+import Image, { StaticImageData } from "next/image";
 import logo from "../../public/logo.png";
-import cafe from "../../public/cafe.png";
+import cafeSvg from "../../public/cafe.svg";
+import cafePng from "../../public/cafe.png";
 import producto from "../../public/producto.png";
 import cliente from "../../public/cliente.png";
 import proveedor from "../../public/proveedor.png";
@@ -9,6 +11,8 @@ import configuracion from "../../public/configuracion.png";
 import user from "../../public/user.svg";
 
 const Navbar = () => {
+  
+
   return (
     <nav>
       <div
@@ -37,69 +41,137 @@ const Navbar = () => {
             flexDirection: "row",
           }}
         >
-          <div
+          <a
+            href="#"
             style={{
+              margin: "0",
               width: "100px",
               height: "60px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
+            
           >
-            <Image
-              src={cafe}
-              alt="Logo pestaña café"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-              backgroundColor: "#856D5E",
-            }}
-          >
-            <Image
-              src={producto}
-              alt="Logo pestaña producto"
+            <div
+              id="icono"
               style={{
-                margin: "10px 30px",
+                width: "100px",
+                height: "60px",
               }}
-            ></Image>
-          </div>
-          <div
+            >
+              <Image
+                src={cafeSvg}
+                width={0}
+                height={0}
+                alt="Logo pestaña café"
+                style={{ margin: "10px 30px", width: "3rem" }}
+              ></Image>
+            </div>
+          </a>
+          <a
+            href=""
             style={{
+              margin: "0",
               width: "100px",
               height: "60px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Image
-              src={cliente}
-              alt="Logo pestaña cliente"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
+            <div
+              id="icono"
+              style={{
+                width: "100px",
+                height: "60px",
+                backgroundColor: "#856D5E",
+              }}
+            >
+              <Image
+                src={producto}
+                alt="Logo pestaña producto"
+                style={{
+                  margin: "10px 30px",
+                }}
+              ></Image>
+            </div>
+          </a>
+          <a
+            href=""
             style={{
+              margin: "0",
               width: "100px",
               height: "60px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Image
-              src={proveedor}
-              alt="Logo pestaña proveedor"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
+            <div
+              id="icono"
+              style={{
+                width: "100px",
+                height: "60px",
+              }}
+            >
+              <Image
+                src={cliente}
+                alt="Logo pestaña cliente"
+                style={{ margin: "10px 30px" }}
+              ></Image>
+            </div>
+          </a>
+          <a
+            href=""
             style={{
+              margin: "0",
               width: "100px",
               height: "60px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Image
-              src={configuracion}
-              alt="Logo pestaña configuración"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
+            <div
+              id="icono"
+              style={{
+                width: "100px",
+                height: "60px",
+              }}
+            >
+              <Image
+                src={proveedor}
+                alt="Logo pestaña proveedor"
+                style={{ margin: "10px 30px" }}
+              ></Image>
+            </div>
+          </a>
+          <a
+            href=""
+            style={{
+              margin: "0",
+              width: "100px",
+              height: "60px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              id="icono"
+              style={{
+                width: "100px",
+                height: "60px",
+              }}
+            >
+              <Image
+                src={configuracion}
+                alt="Logo pestaña configuración"
+                style={{ margin: "10px 30px" }}
+              ></Image>
+            </div>
+          </a>
         </div>
         <div
           className="sesion"
