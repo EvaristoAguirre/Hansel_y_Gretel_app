@@ -1,4 +1,4 @@
-import { IsInt, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { Provider } from 'src/Provider/provider.entity';
 import {
@@ -16,6 +16,7 @@ export class Product {
   id: string;
 
   @Column({ type: 'int', nullable: true, unique: true })
+  @IsOptional()
   @IsInt()
   @Min(0)
   @Max(9999)

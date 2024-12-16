@@ -44,8 +44,9 @@ export class CategoryRepository {
       const existingCategory = await this.categoryRepository.findOneOrFail({
         where: { id },
       });
-      await this.categoryRepository.update(id, category);
-      return await this.categoryRepository.findOneOrFail({ where: { id } });
+      const categoryToUpdate = await this.categoryRepository.update(id, category);
+      const categoryUpdated = await this.categoryRepository.findOneOrFail({ where: { id } }); 
+      return await this.categoryRepository.save(categoryUpdated);
     } catch (error) {
       throw new NotFoundException(`Category with ID ${id} not found`, error);
     }
