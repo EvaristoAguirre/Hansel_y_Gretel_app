@@ -10,10 +10,12 @@ import {
   Autocomplete,
 } from "@mui/material";
 import Swal from "sweetalert2";
-import { useProductStore } from "../Producto/useProductStore"; // Ruta según tu estructura
+import { useProductStore } from "../Producto/useProductStore"; 
 import { URI_PRODUCT } from "../URI/URI";
 
 const Cafe = () => {
+
+  // Mocks de salas, mesas y mozos
   const [salas, setSalas] = useState([
     { id: "1", nombre: "Sala Principal" },
     { id: "2", nombre: "Terraza" },
@@ -23,21 +25,25 @@ const Cafe = () => {
     {
       id: "101",
       nombre: "Mesa 1",
+      cantidadPersonas: 0,
       cliente: null,
       comentario: "",
       estado: "disponible",
       disponibilidad: "disponible",
       salaId: "1",
+      mozo: null,
       pedido: [], // Pedido asociado a la mesa
     },
     {
       id: "102",
-      nombre: "Mesa VIP",
+      nombre: "Mesa 2",
+      cantidadPersonas: 0,
       cliente: "Juan Pérez",
       comentario: "Celebración cumpleaños",
       estado: "pidioCuenta",
       disponibilidad: "ocupada",
       salaId: "2",
+      mozo: null,
       pedido: [
         { id: "1", name: "Café", price: 200, cantidad: 2 },
         { id: "2", name: "Tostado", price: 500, cantidad: 1 },
@@ -45,8 +51,19 @@ const Cafe = () => {
     },
   ]);
 
+  const [mozos, setMozos] = useState([
+    { nombre: "Julia", id: "1" },
+    { nombre: "Ariel", id: "2" },
+    { nombre: "Sol", id: "3" },
+    { nombre: "Gustavo", id: "4" },
+  ]);
+
+
+  // useStates para handlers y funciones varias
   const [selectedSala, setSelectedSala] = useState(null);
   const [selectedMesa, setSelectedMesa] = useState(null);
+  const [mozoSeleccionado, setMozoSeleccionado] = useState(null);
+  const [mozosDisponibles, setMozosDisponibles] = useState(null);
   const [productosDisponibles, setProductosDisponibles] = useState([]);
   const [productosSeleccionados, setProductosSeleccionados] = useState([]);
   const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
@@ -145,7 +162,39 @@ const Cafe = () => {
     setMostrarEditorPedido(false);
   };
 
+  // Manejar selección de mozo
+  const handleSeleccionarMozo = (mozoSeleccionado) => {
+    setSelectedMesa((prevMesa) => ({
+      ...prevMesa,
+      mozo: mozoSeleccionado,
+    }));
+  };
+
+  const handleAgregarMozoALaMesa = () => {
+    const mesaActualizada = {
+      ...selectedMesa,
+      mozo: mozoSeleccionado,
+    };
+
+    setMesas((prevMesas) =>
+      prevMesas.map((mesa) =>
+        mesa.id === selectedMesa.id ? mesaActualizada : mesa
+      )
+    );
+  };
+
+  // Operación de subtotal y total
+  const sumaSubtotal = () => {
+    const subtotal = selectedMesa.pedido.reduce((acumulador, item) => {
+      return acumulador + item.price;
+    }, 0); 
+    
+    return subtotal;
+  };
+
+  
   return (
+    
     <div style={{ display: "flex", height: "100vh" }}>
       {/* Lista de mesas */}
       <div style={{ width: "70%", padding: "20px" }}>
@@ -222,10 +271,13 @@ const Cafe = () => {
               type="number"
               fullWidth
               margin="dense"
-              // value={selectedMesa.nombre}
-              // onChange={(e) =>
-              //   setSelectedMesa({ ...selectedMesa, nombre: e.target.value })
-              // }
+              value={selectedMesa.cantidadPersonas}
+              onChange={(e) =>
+                setSelectedMesa({
+                  ...selectedMesa,
+                  cantidadPersonas: e.target.value,
+                })
+              }
             />
             <TextField
               label="Cliente"
@@ -236,7 +288,39 @@ const Cafe = () => {
                 setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
               }
             />
-            <TextField
+
+            <Autocomplete
+              options={mozos} // Lista completa de mozos
+              getOptionLabel={(mozo) => mozo.nombre} // Cómo se muestra cada opción en el dropdown
+              onInputChange={(event, value) => {
+                const searchTerm = value.toLowerCase();
+                setMozosDisponibles(
+                  mozos.filter((mozo) =>
+                    mozo.nombre.toLowerCase().includes(searchTerm)
+                  )
+                );
+              }}
+              onChange={(event, mozoSeleccionado) => {
+                if (mozoSeleccionado) {
+                  handleSeleccionarMozo(mozoSeleccionado); // Maneja la selección de un mozo
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Buscar mozos por nombre"
+                  variant="outlined"
+                  fullWidth
+                />
+              )}
+              renderOption={(props, mozo) => (
+                <li {...props} key={mozo.id}>
+                  {`${mozo.nombre}`}
+                </li>
+              )}
+            />
+
+            {/* <TextField
               label="Mozo/a"
               fullWidth
               margin="dense"
@@ -244,21 +328,24 @@ const Cafe = () => {
               onChange={(e) =>
                 setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
               }
-            />
+            /> */}
             <TextField
               label="Comentario"
               fullWidth
               margin="dense"
-              value={selectedMesa.cliente || ""}
+              value={selectedMesa.comentario || ""}
               onChange={(e) =>
-                setSelectedMesa({ ...selectedMesa, cliente: e.target.value })
+                setSelectedMesa({ ...selectedMesa, comentario: e.target.value })
               }
             />
             <Button
               fullWidth
               color="primary"
               variant="contained"
-              onClick={handleAbrirMesa}
+              onClick={() => {
+                handleAbrirMesa();
+                handleAgregarMozoALaMesa();
+              }}
             >
               Abrir Mesa
             </Button>
@@ -280,12 +367,43 @@ const Cafe = () => {
         {mostrarEditorPedido && (
           <div>
             <h2>{selectedMesa.nombre}</h2>
-            <h2>Datos de la mesa</h2>
-            <h3>2 personas, Cliente: Evaristo Aguirre, Mozo/a: Julieta Sosa</h3>
-            <h2>Pedido</h2>
-          
+            <div
+              style={{
+                height: "2rem",
+                backgroundColor: "#856D5E",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "#ffffff",
+                margin: "1rem 0",
+              }}
+            >
+              <h2>Datos de la mesa</h2>
+            </div>
+            <div>
+              <h3>
+                {`${selectedMesa.cantidadPersonas} personas`} <br />
+                {`Cliente: ${selectedMesa.cliente}`} <br />
+                {`Mozo/a: ${selectedMesa.mozo}`}
+              </h3>
+            </div>
+            <div
+              style={{
+                height: "2rem",
+                backgroundColor: "#856D5E",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "#ffffff",
+                margin: "1rem 0",
+              }}
+            >
+              <h2>Pedido</h2>
+            </div>
+
             {/* Buscador de productos con dropdown */}
             <Autocomplete
+              style={{ margin: "1rem 0" }}
               options={products} // Lista completa de productos
               getOptionLabel={(producto) =>
                 `${producto.name} - $${producto.price} (Código: ${producto.code})`
@@ -293,9 +411,8 @@ const Cafe = () => {
               onInputChange={(event, value) => {
                 const searchTerm = value.toLowerCase();
                 setProductosDisponibles(
-                  products.filter(
-                    (producto) =>
-                      producto.name.toLowerCase().includes(searchTerm)
+                  products.filter((producto) =>
+                    producto.name.toLowerCase().includes(searchTerm)
                   )
                 );
               }}
@@ -351,7 +468,7 @@ const Cafe = () => {
               ))}
             </List> */}
             {/* Mostrar productos seleccionados en el pedido */}
-            <h3>Productos en el Pedido</h3>
+            <h3>Productos a confirmar</h3>
             {selectedMesa.pedido && selectedMesa.pedido.length > 0 ? (
               <List>
                 {selectedMesa.pedido.map((item, index) => (
@@ -364,7 +481,17 @@ const Cafe = () => {
                 ))}
               </List>
             ) : (
-              <Typography>No hay productos en el pedido</Typography>
+              <Typography style={{ margin: "1rem 0" }}>
+                No hay productos en el pedido
+              </Typography>
+            )}
+
+            {selectedMesa.pedido && selectedMesa.pedido.length > 0 ? (
+              <div>
+                <h4>{`Total: ${}`}</h4>
+              </div>
+            ) : (
+              ""
             )}
             {/* Botón para guardar el pedido */}
             <Button
@@ -379,7 +506,8 @@ const Cafe = () => {
           </div>
         )}
       </div>
-    </div>
+    </div> 
+    
   );
 };
 
