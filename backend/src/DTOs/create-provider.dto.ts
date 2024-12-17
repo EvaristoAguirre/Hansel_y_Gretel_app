@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateProviderDto {
   @IsNotEmpty()
@@ -8,4 +14,8 @@ export class CreateProviderDto {
   @IsNotEmpty()
   @IsNumber()
   phone: number;
+
+  @IsOptional()
+  @IsUUID('4', { each: true })
+  productsIds?: string[];
 }

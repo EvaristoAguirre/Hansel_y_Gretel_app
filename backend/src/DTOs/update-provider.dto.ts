@@ -15,5 +15,5 @@ export class UpdateProviderDto {
   isActive?: boolean;
 
   @IsOptional()
-  products?: Product[];
+  productsIds?: Product[];
 }

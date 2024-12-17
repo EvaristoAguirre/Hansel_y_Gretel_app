@@ -40,18 +40,17 @@ export class ProductController {
     return this.productService.getProductByCode(+code);
   }
 
-  @Get('by-categories')
+  @Post('by-categories')
   async getProductsByCategories(
-    @Query(ValidationPipe) query: GetProductsByCategoriesDto,
+    @Body(ValidationPipe) body: GetProductsByCategoriesDto,
   ): Promise<Product[]> {
-    const { categoryIds } = query;
-    console.log('Category IDs:', query.categoryIds);
+    const { categoryIds } = body;
     if (!categoryIds || categoryIds.length === 0) {
       throw new BadRequestException(
         'At least one category ID must be provided.',
       );
     }
-    return this.productService.getProductsByCategories(query.categoryIds);
+    return this.productService.getProductsByCategories(categoryIds);
   }
 
   @Post()

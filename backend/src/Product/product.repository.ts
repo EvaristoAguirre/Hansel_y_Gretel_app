@@ -99,14 +99,13 @@ export class ProductRepository {
   }
 
   async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
-    console.log('Category IDs:', categoryIds); // Imprime los IDs
     if (!categoryIds || categoryIds.length === 0) {
       throw new Error('At least one category ID must be provided.');
     }
     try {
       return await this.dataSource
         .createQueryBuilder(Product, 'product')
-        .innerJoinAndSelect('product.categories', 'category')
+        .innerJoin('product.categories', 'category')
         .where('category.id IN (:...categoryIds)', { categoryIds })
         .groupBy('product.id')
         .having('COUNT(DISTINCT category.id) = :numCategories', {
@@ -114,6 +113,7 @@ export class ProductRepository {
         })
         .getMany();
     } catch (error) {
+      console.error('error in get...', error);
       throw new InternalServerErrorException(
         'An error occurred while fetching products. Please try again.',
         error,
