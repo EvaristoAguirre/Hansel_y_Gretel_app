@@ -31,9 +31,13 @@ export class Product {
   description: string;
 
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @IsInt()
+  @Min(0)
   price: number;
 
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @IsInt()
+  @Min(0)
   cost: number;
 
   @Column({ default: true })

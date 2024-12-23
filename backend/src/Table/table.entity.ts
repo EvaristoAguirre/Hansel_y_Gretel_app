@@ -17,6 +17,9 @@ export class Table {
   @Column({ nullable: false, unique: true })
   name: string;
 
+  @Column({ nullable: true })
+  coment: string;
+
   @Column({ nullable: true, unique: true })
   number: number;
 

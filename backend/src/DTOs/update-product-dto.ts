@@ -24,9 +24,13 @@ export class UpdateProductDto {
   description?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
   price?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
   cost?: number;
 
   @IsOptional()

@@ -9,6 +9,10 @@ export class CreateTableDto {
   @IsNumber()
   number: number;
 
+  @IsOptional()
+  @IsString()
+  coment?: string;
+
   @IsString()
   roomId: string;
 }

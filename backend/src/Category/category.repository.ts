@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -42,7 +43,7 @@ export class CategoryRepository {
   ): Promise<Category> {
     try {
       const existingCategory = await this.categoryRepository.findOne({
-        where: { id, isActive: true },
+        where: { id },
       });
       if (!existingCategory) {
         throw new BadRequestException('Category not found');
@@ -87,11 +88,24 @@ export class CategoryRepository {
 
   async getCategoryById(id: string): Promise<Category> {
     try {
-      return await this.categoryRepository.findOneOrFail({
-        where: { id, isActive: true },
+      const categoryFinded = await this.categoryRepository.findOneOrFail({
+        where: { id },
       });
+      if (categoryFinded.isActive === false) {
+        throw new NotFoundException(`Category with ID ${id} is disabled`);
+      }
+      if (!categoryFinded) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+      return categoryFinded;
     } catch (error) {
-      throw new NotFoundException(`Category with ID ${id} not found`, error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the category',
+        error.message,
+      );
     }
   }
 }
