@@ -9,12 +9,15 @@ import { Order } from './order.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+import { OrderDetails } from './order_details.entity';
 
 @Injectable()
 export class OrderRepository {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    @InjectRepository(OrderDetails)
+    private readonly orderDetailsRepository: Repository<OrderDetails>,
   ) {}
 
   async createOrder(order: CreateOrderDto): Promise<Order> {

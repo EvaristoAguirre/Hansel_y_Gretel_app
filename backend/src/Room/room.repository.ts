@@ -59,7 +59,10 @@ export class RoomRepository {
 
   async getAllRooms(): Promise<Room[]> {
     try {
-      return await this.roomRepository.find({ where: { isActive: true } });
+      return await this.roomRepository.find({
+        where: { isActive: true },
+        relations: ['tables'],
+      });
     } catch (error) {
       throw new InternalServerErrorException('Error fetching rooms', error);
     }

@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateTableDto {
   @IsOptional()
@@ -15,4 +15,9 @@ export class CreateTableDto {
 
   @IsString()
   roomId: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  numberCustomers: number;
 }

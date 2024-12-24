@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { TableService } from './table.service';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
@@ -36,8 +37,8 @@ export class TableController {
 
   @Get()
   getAllTables(
-    @Param('page') page: number,
-    @Param('limit') limit: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
   ): Promise<Table[]> {
     return this.tableService.getAllTables(page, limit);
   }

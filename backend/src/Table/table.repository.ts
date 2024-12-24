@@ -8,17 +8,31 @@ import { Repository } from 'typeorm';
 import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
+import { Room } from 'src/Room/room.entity';
 
 @Injectable()
 export class TableRepository {
   constructor(
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    @InjectRepository(Room)
+    private readonly roomRepository: Repository<Room>,
   ) {}
 
   async createTable(table: CreateTableDto): Promise<Table> {
+    const { roomId, ...tableData } = table;
     try {
-      return await this.tableRepository.save(table);
+      const roomSelected = await this.roomRepository.findOne({
+        where: { id: roomId, isActive: true },
+      });
+      if (!roomSelected) {
+        throw new BadRequestException(`Room with ID: ${roomId} not found`);
+      }
+      const tableCreate = await this.tableRepository.create({
+        ...tableData,
+        room: roomSelected,
+      });
+      return await this.tableRepository.save(tableCreate);
     } catch (error) {
       throw new InternalServerErrorException('Error creating the table', error);
     }
