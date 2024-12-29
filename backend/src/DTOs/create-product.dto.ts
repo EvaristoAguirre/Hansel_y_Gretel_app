@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
   IsArray,
-  ArrayNotEmpty,
+  // ArrayNotEmpty,
   IsUUID,
 } from 'class-validator';
 
@@ -24,14 +24,18 @@ export class CreateProductDto {
   description?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
   price?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
   cost?: number;
 
   @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
+  // @ArrayNotEmpty()    Definir si es un campo obligatorio o no.
   @IsUUID('all', { each: true })
   categories?: string[];
 

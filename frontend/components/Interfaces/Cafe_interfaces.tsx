@@ -1,3 +1,6 @@
+import { TableState } from "../Enums/Enums";
+import { TableCreated } from "../Mesa/useTableStore";
+
 export interface PedidoInterface {
   id: string;
   name: string;
@@ -12,14 +15,41 @@ export interface MozoInterface {
 
 export interface MesaInterface {
   id: string;
-  nombre: string;
-  numero: number;
-  comentario: string;
-  cantidadPersonas: number;
-  cliente: string | null;
-  estado: "disponible" | "abierta" | "pendienteDePago" | "cerrada"; // Estados posibles de la mesa
-  salaId: string; // ID de la sala a la que pertenece
-  mozo: MozoInterface | null;
-  pedido: PedidoInterface[]; // Lista de pedidos asociados
+  name: string;
+  number: number;
+  coment: string;
+  // cantidadPersonas: number;
+  // cliente: string | null;
+  state: TableState; // Estados posibles de la mesa
+  room: string; // ID de la sala a la que pertenece
+  // mozo: MozoInterface | null;
+  // pedido: PedidoInterface[]; // Lista de pedidos asociados
 }
 
+export interface MesaForm {
+  name: string;
+  number: number;
+  coment: string;
+  // state: TableState;
+}
+
+export interface MesaCardProps {
+  mesa: MesaInterface;
+  handleOpenModal: (type: "create" | "edit", mesa?: MesaInterface) => void;
+  handleDelete: (id: string) => void;
+  setSelectedMesa: (mesa: MesaInterface) => void;
+}
+
+export interface MesaModalProps {
+  open: boolean;
+  type: "create" | "edit";
+  form: MesaForm;
+  onClose: () => void;
+  onSave: () => void;
+  onChange: (field: keyof MesaForm, value: any) => void;
+}
+
+export interface MesaProps {
+  mesas: TableCreated[];
+  salaId: string;
+}

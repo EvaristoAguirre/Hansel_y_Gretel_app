@@ -19,15 +19,15 @@ export class ProviderController {
 
   @Post()
   createProvider(
-    @Body() createProviderDto: CreateProviderDto
+    @Body() createProviderDto: CreateProviderDto,
   ): Promise<Provider> {
     return this.providerService.createProvider(createProviderDto);
   }
   @Patch(':id')
   updateProvider(
     @Param('id') id: string,
-    @Body() updateProviderDto: UpdateProviderDto
-  ) {
+    @Body() updateProviderDto: UpdateProviderDto,
+  ): Promise<Provider> {
     return this.providerService.updateProvider(id, updateProviderDto);
   }
   @Delete(':id')
@@ -36,7 +36,7 @@ export class ProviderController {
   }
 
   @Get()
-  getAllProviders(page: number, limit: number): Promise<Provider[]> {
+  getAllProviders(page: number = 1, limit: number = 1000): Promise<Provider[]> {
     return this.providerService.getAllProviders(page, limit);
   }
 

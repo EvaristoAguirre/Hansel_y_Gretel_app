@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -19,7 +21,7 @@ export class CategoryRepository {
   async createCategory(category: CreateCategoryDto): Promise<Category> {
     try {
       const categoryExists = await this.categoryRepository.findOne({
-        where: { name: category.name },
+        where: { name: category.name, isActive: true },
       });
       if (categoryExists) {
         throw new ConflictException(
@@ -40,13 +42,14 @@ export class CategoryRepository {
     category: UpdateCategoryDto,
   ): Promise<Category> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const existingCategory = await this.categoryRepository.findOneOrFail({
+      const existingCategory = await this.categoryRepository.findOne({
         where: { id },
       });
-      const categoryToUpdate = await this.categoryRepository.update(id, category);
-      const categoryUpdated = await this.categoryRepository.findOneOrFail({ where: { id } }); 
-      return await this.categoryRepository.save(categoryUpdated);
+      if (!existingCategory) {
+        throw new BadRequestException('Category not found');
+      }
+      Object.assign(existingCategory, category);
+      return await this.categoryRepository.save(existingCategory);
     } catch (error) {
       throw new NotFoundException(`Category with ID ${id} not found`, error);
     }
@@ -85,9 +88,24 @@ export class CategoryRepository {
 
   async getCategoryById(id: string): Promise<Category> {
     try {
-      return await this.categoryRepository.findOneOrFail({ where: { id } });
+      const categoryFinded = await this.categoryRepository.findOneOrFail({
+        where: { id },
+      });
+      if (categoryFinded.isActive === false) {
+        throw new NotFoundException(`Category with ID ${id} is disabled`);
+      }
+      if (!categoryFinded) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+      return categoryFinded;
     } catch (error) {
-      throw new NotFoundException(`Category with ID ${id} not found`, error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the category',
+        error.message,
+      );
     }
   }
 }

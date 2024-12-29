@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Product } from 'src/Product/product.entity';
 import { Entity } from 'typeorm';
 
@@ -6,6 +6,7 @@ import { Entity } from 'typeorm';
 export class UpdateCategoryDto {
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   name?: string;
 
   @IsOptional()

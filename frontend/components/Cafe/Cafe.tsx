@@ -28,33 +28,33 @@ const Cafe = () => {
   ]);
   // Mocks de salas, mesas y mozos
   const [mesas, setMesas] = useState<MesaInterface[]>([
-    {
-      id: "101",
-      nombre: "Mesa 1",
-      numero: 1,
-      cantidadPersonas: 0,
-      cliente: null,
-      comentario: "",
-      estado: "disponible",
-      salaId: "1",
-      mozo: { id: "1", nombre: "Julia" },
-      pedido: [], // Pedido asociado a la mesa
-    },
-    {
-      id: "102",
-      nombre: "Mesa 2",
-      numero: 2,
-      cantidadPersonas: 0,
-      cliente: "Juan Pérez",
-      comentario: "Celebración cumpleaños",
-      estado: "abierta",
-      salaId: "2",
-      mozo: null,
-      pedido: [
-        { id: "1", name: "Café", price: 200, cantidad: 2 },
-        { id: "2", name: "Tostado", price: 500, cantidad: 1 },
-      ],
-    },
+    // {
+    //   id: "101",
+    //   nombre: "Mesa 1",
+    //   numero: 1,
+    //   cantidadPersonas: 0,
+    //   cliente: null,
+    //   comentario: "",
+    //   estado: "disponible",
+    //   salaId: "1",
+    //   mozo: { id: "1", nombre: "Julia" },
+    //   pedido: [], // Pedido asociado a la mesa
+    // },
+    // {
+    //   id: "102",
+    //   nombre: "Mesa 2",
+    //   numero: 2,
+    //   cantidadPersonas: 0,
+    //   cliente: "Juan Pérez",
+    //   comentario: "Celebración cumpleaños",
+    //   estado: "abierta",
+    //   salaId: "2",
+    //   mozo: null,
+    //   pedido: [
+    //     { id: "1", name: "Café", price: 200, cantidad: 2 },
+    //     { id: "2", name: "Tostado", price: 500, cantidad: 1 },
+    //   ],
+    // },
   ]);
 
   // useStates para handlers y funciones varias

@@ -1,21 +1,34 @@
 import React, { useState } from "react";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { MesaInterface, MesaProps } from "../Interfaces/Cafe_interfaces";
 import MesaDatos from "./MesaDatos";
+import useMesa from "../Hooks/useMesa";
+import MesaCard from "./MesaCard";
+import MesaModal from "./MesaModal";
 
-interface MesaProps {
-  mesas: MesaInterface[]; // Prop de tipo arreglo de mesas
-}
-
-const Mesa: React.FC<MesaProps> = ({ mesas }) => {
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface>();
-  const [mesaDatos, setMesaDatos] = useState(false);
-
+const Mesa: React.FC<MesaProps> = ({ mesas, salaId }) => {
   // Manejar selección de mesa
-  const handleSeleccionarMesa = (mesa: MesaInterface) => {
-    setSelectedMesa(mesa);
-    setMesaDatos(true);
-    // setMostrarEditorPedido(false);
-  };
+  // const handleSeleccionarMesa = (mesa: MesaInterface) => {
+  //   setSelectedMesa(mesa);
+  //   setMesaDatos(true);
+  //   // setMostrarEditorPedido(false);
+  // };
+
+  const {
+    selectedMesa,
+    modalOpen,
+    modalType,
+    form,
+    tables,
+    handleOpenModal,
+    handleCloseModal,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    setForm,
+    setSelectedMesa,
+  } = useMesa(salaId);
+
+ 
 
   return (
     <div
@@ -27,23 +40,45 @@ const Mesa: React.FC<MesaProps> = ({ mesas }) => {
       }}
     >
       {mesas.map((mesa) => (
-        <div
+        <MesaCard
           key={mesa.id}
-          style={{
-            width: "14rem",
-            height: "4rem",
-            backgroundColor: mesa.estado === "abierta" ? "#f28b82" : "#aed581",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            cursor: "pointer",
-          }}
-          onClick={() => handleSeleccionarMesa(mesa)}
-        >
-          <h3 style={{ fontSize: "1rem" }}>{mesa.nombre}</h3>
-        </div>
+          mesa={mesa}
+          setSelectedMesa={setSelectedMesa}
+          handleOpenModal={handleOpenModal}
+          handleDelete={handleDelete}
+        />
       ))}
-      {mesaDatos ? <MesaDatos selectedMesa={selectedMesa} setSelectedMesa={setSelectedMesa}/> : null}
+      <div
+        style={{
+          width: "14rem",
+          height: "5rem",
+          backgroundColor: "#e0e0e0",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
+        }}
+        onClick={() => handleOpenModal("create")}
+      >
+        <h3 style={{ fontSize: "1rem" }}>Agregar mesa</h3>
+      </div>
+      <MesaModal
+        open={modalOpen}
+        type={modalType}
+        form={form}
+        onClose={handleCloseModal}
+        onSave={
+          modalType === "create"
+            ? handleCreate
+            : () => handleEdit(selectedMesa?.id!)
+        }
+        onChange={(field, value) =>
+          setForm((prev) => ({
+            ...prev,
+            [field]: field === "number" ? Number(value) : value,
+          }))
+        }
+      />
     </div>
   );
 };

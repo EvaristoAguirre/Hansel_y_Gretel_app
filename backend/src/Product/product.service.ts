@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductRepository } from './product.repository';
 import { CreateProductDto } from '../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
@@ -21,6 +21,17 @@ export class ProductService {
   }
   async getProductByCode(code: number) {
     return await this.productRepository.getProductByCode(code);
+  }
+
+  async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
+    const products =
+      await this.productRepository.getProductsByCategories(categoryIds);
+    if (products.length === 0) {
+      throw new NotFoundException(
+        `No products found for the given categories: ${categoryIds.join(', ')}`,
+      );
+    }
+    return products;
   }
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
