@@ -5,8 +5,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Max,
-  Min,
+  // Max,
+  // Min,
 } from 'class-validator';
 import { TableState } from 'src/Enums/states.enum';
 
@@ -39,9 +39,9 @@ export class UpdateTableDto {
   @IsArray()
   ordersIds?: string[];
 
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(100)
-  numberCustomers?: number;
+  // @IsOptional()
+  // @IsNumber()
+  // @Min(1)
+  // @Max(100)
+  // numberCustomers?: number;
 }

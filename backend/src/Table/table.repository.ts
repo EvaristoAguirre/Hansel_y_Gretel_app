@@ -52,7 +52,10 @@ export class TableRepository {
       Object.assign(table, updateData);
       return await this.tableRepository.save(table);
     } catch (error) {
-      throw new InternalServerErrorException('Error updating the table', error);
+      throw new InternalServerErrorException(
+        'Error updating the table',
+        error.message,
+      );
     }
   }
 
