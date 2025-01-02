@@ -23,9 +23,6 @@ export class Table {
   @Column({ nullable: true, unique: true })
   number: number;
 
-  // @Column({ nullable: false })
-  // numberCustomers: number;
-
   @Column({ default: true })
   isActive: boolean;
 

@@ -8,7 +8,7 @@ export class OrderDetails {
   id: string;
 
   @Column()
-  cantity: number;
+  quantity: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
   unitaryPrice: number;

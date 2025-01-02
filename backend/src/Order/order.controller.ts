@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+// import { OrderDetails } from './order_details.entity';
 
 @Controller('order')
 export class OrderController {
@@ -36,8 +38,8 @@ export class OrderController {
 
   @Get()
   getAllOrders(
-    @Param('page') page: number,
-    @Param('limit') limit: number,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ): Promise<Order[]> {
     return this.orderService.getAllOrders(page, limit);
   }
@@ -46,4 +48,12 @@ export class OrderController {
   getOrderById(@Param('id') id: string): Promise<Order> {
     return this.orderService.getOrderById(id);
   }
+
+  // @Get('order-detail')
+  // getOrderDetails(
+  //   @Query('page') page: number,
+  //   @Query('limit') limit: number,
+  // ): Promise<OrderDetails[]> {
+  //   return this.orderService.getOrderDetails(page, limit);
+  // }
 }

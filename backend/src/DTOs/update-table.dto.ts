@@ -38,10 +38,4 @@ export class UpdateTableDto {
   @IsOptional()
   @IsArray()
   ordersIds?: string[];
-
-  // @IsOptional()
-  // @IsNumber()
-  // @Min(1)
-  // @Max(100)
-  // numberCustomers?: number;
 }

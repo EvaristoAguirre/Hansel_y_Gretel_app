@@ -23,6 +23,12 @@ export class Order {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  total: number;
+
+  @Column({ nullable: false })
+  numberCustomers: number;
+
   @ManyToOne(() => Table, (table) => table.orders)
   table: Table;
 
