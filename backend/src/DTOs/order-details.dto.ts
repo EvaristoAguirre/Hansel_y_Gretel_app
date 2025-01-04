@@ -6,7 +6,4 @@ export class OrderDetailsDto {
 
   @IsNumber()
   quantity: number;
-
-  @IsNumber()
-  unitaryPrice: number;
 }

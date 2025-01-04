@@ -29,6 +29,9 @@ export class Order {
   @Column({ nullable: false })
   numberCustomers: number;
 
+  @Column({ type: 'varchar', length: 20, unique: true })
+  commandNumber: string;
+
   @ManyToOne(() => Table, (table) => table.orders)
   table: Table;
 
