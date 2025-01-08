@@ -11,10 +11,12 @@ export class TableWSListener {
   handleTableCreate(event: { table: Table }) {
     this.broadcastService.broadcast('tableCreated', event.table);
   }
+
   @OnEvent('table.updated')
   handleTableUpdated(event: { table: Table }) {
     this.broadcastService.broadcast('tableUpdated', event.table);
   }
+
   @OnEvent('table.deleted')
   handleTableDelete(event: { table: Table }) {
     this.broadcastService.broadcast('tableDelete', event.table);

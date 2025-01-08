@@ -28,6 +28,7 @@ export class TableRepository {
       if (!roomSelected) {
         throw new BadRequestException(`Room with ID: ${roomId} not found`);
       }
+
       const tableCreate = await this.tableRepository.create({
         ...tableData,
         room: roomSelected,
