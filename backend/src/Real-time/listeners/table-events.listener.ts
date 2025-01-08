@@ -7,8 +7,16 @@ import { Table } from 'src/Table/table.entity';
 export class TableWSListener {
   constructor(private readonly broadcastService: BroadcastService) {}
 
+  @OnEvent('table.created')
+  handleTableCreate(event: { table: Table }) {
+    this.broadcastService.broadcast('tableCreated', event.table);
+  }
   @OnEvent('table.updated')
   handleTableUpdated(event: { table: Table }) {
     this.broadcastService.broadcast('tableUpdated', event.table);
+  }
+  @OnEvent('table.deleted')
+  handleTableDelete(event: { table: Table }) {
+    this.broadcastService.broadcast('tableDelete', event.table);
   }
 }
