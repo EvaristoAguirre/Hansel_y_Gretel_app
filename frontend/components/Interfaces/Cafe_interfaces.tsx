@@ -1,5 +1,6 @@
-import { TableState } from "../Enums/Enums";
+import { OrderState, TableState } from "../Enums/Enums";
 import { TableCreated } from "../Mesa/useTableStore";
+import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
 
 export interface PedidoInterface {
   id: string;
@@ -11,7 +12,7 @@ export interface PedidoInterface {
 export interface MozoInterface {
   id: string;
   nombre: string;
-} 
+}
 
 export interface MesaInterface {
   id: string;
@@ -21,9 +22,9 @@ export interface MesaInterface {
   // cantidadPersonas: number;
   // cliente: string | null;
   state: TableState; // Estados posibles de la mesa
-  room: string; // ID de la sala a la que pertenece
+  room: ISala; // ID de la sala a la que pertenece
   // mozo: MozoInterface | null;
-  // pedido: PedidoInterface[]; // Lista de pedidos asociados
+  orderId?: string; // Lista de pedidos asociados
 }
 
 export interface MesaForm {
@@ -50,6 +51,22 @@ export interface MesaModalProps {
 }
 
 export interface MesaProps {
-  mesas: TableCreated[];
   salaId: string;
+  onSelectMesa: (mesa: MesaInterface) => void;
+}
+
+export interface ISala {
+  id: string;
+  name: string;
+  isActive: boolean;
+  tables: MesaInterface[];
+}
+
+export interface IOrder {
+  id: string;
+  date: Date;
+  state: OrderState;
+  isActive: boolean;
+  table: MesaInterface;
+  orderDetails: OrderDetailsCreated[];
 }

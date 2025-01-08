@@ -1,18 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MesaInterface, MesaProps } from "../Interfaces/Cafe_interfaces";
 import MesaDatos from "./MesaDatos";
 import useMesa from "../Hooks/useMesa";
 import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";
+import { TableCreated } from "./useTableStore";
 
-const Mesa: React.FC<MesaProps> = ({ mesas, salaId }) => {
-  // Manejar selección de mesa
-  // const handleSeleccionarMesa = (mesa: MesaInterface) => {
-  //   setSelectedMesa(mesa);
-  //   setMesaDatos(true);
-  //   // setMostrarEditorPedido(false);
-  // };
-
+const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
+  
   const {
     selectedMesa,
     modalOpen,
@@ -28,7 +23,17 @@ const Mesa: React.FC<MesaProps> = ({ mesas, salaId }) => {
     setSelectedMesa,
   } = useMesa(salaId);
 
- 
+  const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
+
+  const filtrarMesasPorSala = (tables: TableCreated[]) => {
+    console.log("Tables:", tables);
+    console.log("Sala ID:", salaId);
+    setMesasFiltradas(tables.filter((mesa) => mesa.room.id === salaId));
+  };
+
+  useEffect(() => {
+    filtrarMesasPorSala(tables);
+  }, [salaId, tables]);
 
   return (
     <div
@@ -39,11 +44,14 @@ const Mesa: React.FC<MesaProps> = ({ mesas, salaId }) => {
         padding: "20px",
       }}
     >
-      {mesas.map((mesa) => (
+      {mesasFiltradas.map((mesa) => (
         <MesaCard
           key={mesa.id}
           mesa={mesa}
-          setSelectedMesa={setSelectedMesa}
+          setSelectedMesa={(mesaSeleccionada) => {
+            setSelectedMesa(mesaSeleccionada); // Actualiza el estado interno
+            onSelectMesa(mesaSeleccionada); // Notifica al componente padre
+          }}
           handleOpenModal={handleOpenModal}
           handleDelete={handleDelete}
         />

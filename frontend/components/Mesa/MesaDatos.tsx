@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import EditorPedido from "../Pedido/EditorPedido";
+import EditorPedido from "../Pedido/PedidoEditor";
 import { Autocomplete, TextField } from "@mui/material";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 
@@ -120,7 +120,7 @@ const MesaDatos: React.FC<MesaDatosProps> = ({ selectedMesa, setSelectedMesa }) 
 
       {/* 
     {mostrarEditorPedido && (
-      <EditorPedido></EditorPedido>
+      // <EditorPedido></EditorPedido>
     )} */}
     </div>
   );

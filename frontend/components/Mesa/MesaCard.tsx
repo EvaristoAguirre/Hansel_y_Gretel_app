@@ -19,6 +19,7 @@ const MesaCard: React.FC<MesaCardProps> = ({ mesa, handleOpenModal, handleDelete
         justifyContent: "center",
         alignItems: "center",
       }}
+      onClick={() => setSelectedMesa(mesa)}
     >
       <h3 style={{ fontSize: "1rem" }}>{mesa.name}</h3>
       <div style={{ display: "flex", justifyContent: "center", flexDirection: "row", alignItems: "center" }}>
@@ -27,13 +28,19 @@ const MesaCard: React.FC<MesaCardProps> = ({ mesa, handleOpenModal, handleDelete
         </Button>
         <Button
           style={{ marginLeft: "0.5rem" }}
-          onClick={() => {handleOpenModal("edit", mesa); setSelectedMesa(mesa);}}
+          onClick={(e) => {
+            e.stopPropagation(); // Evita que el evento onClick de la tarjeta también se dispare
+            handleOpenModal("edit", mesa);
+          }}
         >
           <EditIcon />
         </Button>
         <Button
           style={{ marginLeft: "0.5rem" }}
-          onClick={() => handleDelete(mesa.id)}
+          onClick={(e) => {
+            e.stopPropagation(); // Evita conflictos con el onClick de la tarjeta
+            handleDelete(mesa.id);
+          }}
         >
           <DeleteIcon />
         </Button>

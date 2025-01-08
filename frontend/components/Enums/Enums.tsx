@@ -4,3 +4,9 @@ export enum TableState {
   PENDING_PAYMENT = "pending_payment",
   CLOSED = "closed",
 }
+
+
+export enum OrderState {
+  PENDING = 'pending',
+  CLOSED = 'closed',
+}

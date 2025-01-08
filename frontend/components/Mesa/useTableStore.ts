@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { TableState } from "../Enums/Enums";
+import { ISala } from "../Interfaces/Cafe_interfaces";
+import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
+import { OrderCreated } from "../Pedido/useOrderStore";
 
 export interface TableCreated {
   id: string;
@@ -8,7 +11,8 @@ export interface TableCreated {
   number: number;
   // isActive: boolean;
   state: TableState;
-  room: string;
+  room: ISala;
+  orders: OrderCreated[];
 }
 
 interface TableStateZustand {
@@ -22,7 +26,8 @@ interface TableStateZustand {
 
 export const useTableStore = create<TableStateZustand>((set) => ({
   tables: [],
-  setTables: (tables) => set({ tables }),
+  setTables: (tables) =>( set({ tables }), console.log(tables)),
+  
   addTable: (table) =>
     set((state) => ({ tables: [...state.tables, table] })),
   removeTable: (id) =>
