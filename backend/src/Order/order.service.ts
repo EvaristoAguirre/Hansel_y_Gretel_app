@@ -4,6 +4,7 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OrderDetails } from './order_details.entity';
 
 @Injectable()
 export class OrderService {
@@ -42,5 +43,9 @@ export class OrderService {
 
   async getOrderById(id: string): Promise<Order> {
     return await this.orderRepository.getOrderById(id);
+  }
+
+  async getOrderDetails(page: number, limit: number): Promise<OrderDetails[]> {
+    return await this.orderRepository.getOrderDetails(page, limit);
   }
 }

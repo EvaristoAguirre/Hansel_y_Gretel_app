@@ -77,9 +77,9 @@ export class ProductRepository {
     }
 
     try {
-      const product = await this.productRepository.findOneBy({
-        code,
-        isActive: true,
+      const product = await this.productRepository.findOne({
+        where: { code: code, isActive: true },
+        relations: ['categories'],
       });
 
       if (!product) {
@@ -116,7 +116,7 @@ export class ProductRepository {
       console.error('error in get...', error);
       throw new InternalServerErrorException(
         'An error occurred while fetching products. Please try again.',
-        error,
+        error.message,
       );
     }
   }
@@ -158,13 +158,11 @@ export class ProductRepository {
       throw new BadRequestException('Product ID must be provided.');
     }
     const { categoriesIds, ...otherAttributes } = updateData;
-
     try {
       const product = await this.productRepository.findOne({
         where: { id: id, isActive: true },
         relations: ['categories'],
       });
-
       if (!product) {
         throw new Error(`Product with ID: ${id} not found`);
       }
@@ -180,11 +178,11 @@ export class ProductRepository {
         }
         product.categories = categoriesFinded;
       }
-      return this.productRepository.save(product);
+      return await this.productRepository.save(product);
     } catch (error) {
       throw new InternalServerErrorException(
         'Error updating the product.',
-        error,
+        error.message,
       );
     }
   }

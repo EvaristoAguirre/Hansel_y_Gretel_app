@@ -59,9 +59,21 @@ export class RoomRepository {
 
   async getAllRooms(): Promise<Room[]> {
     try {
-      return await this.roomRepository.find({ where: { isActive: true } });
+      return await this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoinAndSelect(
+          'room.tables',
+          'table',
+          'table.isActive = :isActive',
+          { isActive: true },
+        )
+        .where('room.isActive = :roomIsActive', { roomIsActive: true })
+        .getMany();
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching rooms', error);
+      throw new InternalServerErrorException(
+        'Error fetching rooms',
+        error.message,
+      );
     }
   }
 

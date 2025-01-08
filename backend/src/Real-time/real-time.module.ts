@@ -5,6 +5,7 @@ import { RealTimeGateway } from './real-time.gateway';
 import { CategoryWSListener } from './listeners/category-events.listener';
 import { OrderWSListener } from './listeners/order-events.listener';
 import { TableWSListener } from './listeners/table-events.listener';
+import { OrderDetailsWSListener } from './listeners/orderDetails-events.listener';
 
 @Module({
   imports: [],
@@ -15,6 +16,7 @@ import { TableWSListener } from './listeners/table-events.listener';
     CategoryWSListener,
     OrderWSListener,
     TableWSListener,
+    OrderDetailsWSListener,
   ],
   exports: [
     BroadcastService,
@@ -22,6 +24,7 @@ import { TableWSListener } from './listeners/table-events.listener';
     CategoryWSListener,
     OrderWSListener,
     TableWSListener,
+    OrderDetailsWSListener,
   ],
 })
 export class RealTimeModule {

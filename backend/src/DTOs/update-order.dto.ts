@@ -7,6 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 import { OrderState } from 'src/Enums/states.enum';
+import { OrderDetailsDto } from './order-details.dto';
 
 export class UpdateOrderDto {
   @IsOptional()
@@ -31,5 +32,5 @@ export class UpdateOrderDto {
 
   @IsOptional()
   @IsArray()
-  orderDetails: string[];
+  productsDetails?: OrderDetailsDto[];
 }

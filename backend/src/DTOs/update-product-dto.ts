@@ -6,6 +6,7 @@ import {
   IsString,
   IsArray,
   IsUUID,
+  IsDecimal,
 } from 'class-validator';
 
 export class UpdateProductDto {
@@ -24,12 +25,12 @@ export class UpdateProductDto {
   description?: string;
 
   @IsOptional()
-  @IsInt()
+  @IsDecimal()
   @Min(0)
   price?: number;
 
   @IsOptional()
-  @IsInt()
+  @IsDecimal()
   @Min(0)
   cost?: number;
 

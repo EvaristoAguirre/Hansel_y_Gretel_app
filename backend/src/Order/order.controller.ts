@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+import { OrderDetails } from './order_details.entity';
 
 @Controller('order')
 export class OrderController {
@@ -21,7 +23,7 @@ export class OrderController {
     return this.orderService.createOrder(order);
   }
 
-  @Patch()
+  @Patch(':id')
   updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
@@ -36,10 +38,18 @@ export class OrderController {
 
   @Get()
   getAllOrders(
-    @Param('page') page: number,
-    @Param('limit') limit: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
   ): Promise<Order[]> {
     return this.orderService.getAllOrders(page, limit);
+  }
+
+  @Get('order_detail')
+  getOrderDetails(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ): Promise<OrderDetails[]> {
+    return this.orderService.getOrderDetails(page, limit);
   }
 
   @Get(':id')
