@@ -8,7 +8,7 @@ import { Room } from 'src/Room/room.entity';
 import { RoomRepository } from 'src/Room/room.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Table, Room]),],
+  imports: [TypeOrmModule.forFeature([Table, Room])],
   controllers: [TableController],
   providers: [TableService, TableRepository, RoomRepository],
 })
