@@ -10,12 +10,14 @@ export const useMesa = (salaId: string) => {
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
+
   const [form, setForm] = useState<MesaForm>({
     name: "",
     number: 0,
     coment: "",
     // state: TableState.AVAILABLE,
   });
+
   const {
     tables,
     setTables,
@@ -142,6 +144,10 @@ export const useMesa = (salaId: string) => {
       }
     }
   };
+
+  
+
+ 
 
   return {
     tables,
