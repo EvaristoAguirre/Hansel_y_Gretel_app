@@ -67,15 +67,15 @@ export const useTableStore = create<TableStateZustand>((set) => ({
     };
 
     socket.onopen = () => {
-      console.log("WebSocket conectado");
+      console.log("WebSocket conectado - Table");
     };
 
     socket.onerror = (error) => {
-      console.error("Error en WebSocket:", error);
+      console.error("Error en WebSocket - Table:", error);
     };
 
     socket.onclose = () => {
-      console.log("WebSocket cerrado");
+      console.log("WebSocket cerrado - Table");
     };
   },
 }));

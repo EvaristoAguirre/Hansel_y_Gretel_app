@@ -58,8 +58,15 @@ export interface MesaProps {
 export interface ISala {
   id: string;
   name: string;
-  isActive: boolean;
-  tables: MesaInterface[];
+  // isActive: boolean;
+  // tables: MesaInterface[];
+}
+
+export interface SalaModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (sala: { id?: string; name: string }) => void;
+  sala?: { id?: string; name: string } | null;
 }
 
 export interface IOrder {
@@ -70,3 +77,5 @@ export interface IOrder {
   table: MesaInterface;
   orderDetails: OrderDetailsCreated[];
 }
+
+//---------------------------------------------------------------------

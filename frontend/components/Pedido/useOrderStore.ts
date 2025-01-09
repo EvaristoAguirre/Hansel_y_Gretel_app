@@ -20,7 +20,7 @@ interface OrderStateZustand {
   connectWebSocket: () => void;
 }
 
-export const useProductStore = create<OrderStateZustand>((set) => ({
+export const useOrderStore = create<OrderStateZustand>((set) => ({
   orders: [],
   setOrders: (orders) => set({ orders }),
   addOrder: (order) =>
@@ -62,15 +62,15 @@ export const useProductStore = create<OrderStateZustand>((set) => ({
     };
 
     socket.onopen = () => {
-      console.log("WebSocket conectado");
+      console.log("WebSocket conectado - Order");
     };
 
     socket.onerror = (error) => {
-      console.error("Error en WebSocket:", error);
+      console.error("Error en WebSocket - Order:", error);
     };
 
     socket.onclose = () => {
-      console.log("WebSocket cerrado");
+      console.log("WebSocket cerrado - Order");
     };
   },
 }));

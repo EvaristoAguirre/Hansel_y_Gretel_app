@@ -145,10 +145,6 @@ export const useMesa = (salaId: string) => {
     }
   };
 
-  
-
- 
-
   return {
     tables,
     selectedMesa,

@@ -57,15 +57,15 @@ const useOrderDetailsStore = create<OrderDetailsState>((set) => ({
     };
 
     socket.onopen = () => {
-      console.log("WebSocket conectado");
+      console.log("WebSocket conectado - OrderDetails");
     };
 
     socket.onerror = (error) => {
-      console.error("Error en WebSocket:", error);
+      console.error("Error en WebSocket - OrderDetails:", error);
     };
 
     socket.onclose = () => {
-      console.log("WebSocket cerrado");
+      console.log("WebSocket cerrado - OrderDetails");
     };
   },
 }));
