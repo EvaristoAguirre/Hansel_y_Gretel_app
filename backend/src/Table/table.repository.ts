@@ -28,11 +28,12 @@ export class TableRepository {
       if (!roomSelected) {
         throw new BadRequestException(`Room with ID: ${roomId} not found`);
       }
-      const tableCreated = await this.tableRepository.create({
+
+      const tableCreate = await this.tableRepository.create({
         ...tableData,
         room: roomSelected,
       });
-      return await this.tableRepository.save(tableCreated);
+      return await this.tableRepository.save(tableCreate);
     } catch (error) {
       throw new InternalServerErrorException('Error creating the table', error);
     }
@@ -52,7 +53,10 @@ export class TableRepository {
       Object.assign(table, updateData);
       return await this.tableRepository.save(table);
     } catch (error) {
-      throw new InternalServerErrorException('Error updating the table', error);
+      throw new InternalServerErrorException(
+        'Error updating the table',
+        error.message,
+      );
     }
   }
 

@@ -23,6 +23,15 @@ export class Order {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  total: number;
+
+  @Column({ nullable: false })
+  numberCustomers: number;
+
+  @Column({ type: 'varchar', length: 20, unique: true })
+  commandNumber: string;
+
   @ManyToOne(() => Table, (table) => table.orders)
   table: Table;
 

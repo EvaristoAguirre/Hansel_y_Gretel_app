@@ -8,7 +8,7 @@ export class OrderDetails {
   id: string;
 
   @Column()
-  cantity: number;
+  quantity: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
   unitaryPrice: number;
@@ -16,9 +16,14 @@ export class OrderDetails {
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
 
+  @Column({ default: true })
+  isActive: boolean;
+
   @ManyToOne(() => Product, (product) => product.orderDetails)
   product: Product;
 
-  @ManyToOne(() => Order, (order) => order.orderDetails)
+  @ManyToOne(() => Order, (order) => order.orderDetails, {
+    onDelete: 'CASCADE',
+  })
   order: Order;
 }

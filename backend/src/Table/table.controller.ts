@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { TableService } from './table.service';
@@ -23,13 +22,11 @@ export class TableController {
     return this.tableService.createTable(table);
   }
 
-  @Put(':id')
+  @Patch(':id')
   updateTable(
     @Param('id') id: string,
     @Body() updateData: UpdateTableDto,
   ): Promise<Table> {
-    console.log(id);
-    console.log(updateData);
     return this.tableService.updateTable(id, updateData);
   }
 

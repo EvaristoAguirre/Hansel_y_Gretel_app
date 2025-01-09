@@ -5,6 +5,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  // Max,
+  // Min,
 } from 'class-validator';
 import { TableState } from 'src/Enums/states.enum';
 
