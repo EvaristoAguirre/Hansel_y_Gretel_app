@@ -13,6 +13,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TableModule } from './Table/table.module';
 import { OrderModule } from './Order/order.module';
 import { RoomModule } from './Room/room.module';
+import { PrinterModule } from './Printer/printer.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,6 +36,7 @@ import { RoomModule } from './Room/room.module';
     TableModule,
     OrderModule,
     RoomModule,
+    PrinterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

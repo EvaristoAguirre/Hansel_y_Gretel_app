@@ -13,10 +13,23 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { PrinterService } from 'src/Printer/printer.service';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { PrinterOrderDto } from 'src/DTOs/printer-order.dto';
+import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
 
 @Controller('order')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    // private readonly printerService: PrinterService,
+  ) {}
+
+  @Post('open')
+  openOrder(@Body() openOrder: CreateOrderDto): Promise<OrderOpenDto> {
+    return this.orderService.openOrder(openOrder);
+  }
 
   @Post()
   createOrder(@Body() order: CreateOrderDto): Promise<Order> {
@@ -60,4 +73,10 @@ export class OrderController {
   getOrderById(@Param('id') id: string): Promise<Order> {
     return this.orderService.getOrderById(id);
   }
+
+  // @Post('print')
+  // async printerOrder(@Body() orderToPrint: PrinterOrderDto) {
+  //   await this.printerService.printerOrder(orderToPrint);
+  //   return 'Order printed successfully';
+  // }
 }

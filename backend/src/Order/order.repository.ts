@@ -13,6 +13,7 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { TableState } from 'src/Enums/states.enum';
+import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
 
 @Injectable()
 export class OrderRepository {
@@ -26,6 +27,59 @@ export class OrderRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
+
+  async openOrder(openOrder: CreateOrderDto): Promise<OrderOpenDto> {
+    const { tableId, numberCustomers, comment } = openOrder;
+
+    try {
+      const tableInUse = await this.tableRepository.findOne({
+        where: { id: tableId, isActive: true },
+      });
+
+      if (!tableInUse) {
+        throw new NotFoundException(`Table with ID: ${tableId} not found`);
+      }
+
+      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      await this.tableRepository.save(tableInUse);
+
+      const newOrder = this.orderRepository.create({
+        date: new Date(),
+        total: 0,
+        numberCustomers: numberCustomers,
+        table: tableInUse,
+        comment: comment,
+        orderDetails: [],
+      });
+
+      const savedOrder = await this.orderRepository.save(newOrder);
+
+      const responseOrder = {
+        date: savedOrder.date,
+        total: savedOrder.total,
+        numberCustomers: savedOrder.numberCustomers,
+        comment: savedOrder.comment,
+        tableId: savedOrder.table.id, // Aquí se reemplaza table con tableId
+        orderDetails: savedOrder.orderDetails,
+        commandNumber: savedOrder.commandNumber,
+        id: savedOrder.id,
+        state: savedOrder.state,
+        isActive: savedOrder.isActive,
+      };
+
+      return responseOrder as OrderOpenDto;
+    } catch (error) {
+      console.error(`[CreateOrder Error]: ${error.message}`, error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'An error occurred while creating the order. Please try again later.',
+      );
+    }
+  }
 
   async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
     const { tableId, numberCustomers, productsDetails, comment } =
