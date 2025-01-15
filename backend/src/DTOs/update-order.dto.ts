@@ -28,7 +28,7 @@ export class UpdateOrderDto {
 
   @IsOptional()
   @IsString()
-  table: string;
+  table?: string;
 
   @IsOptional()
   @IsArray()

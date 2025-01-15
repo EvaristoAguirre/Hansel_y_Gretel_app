@@ -113,9 +113,7 @@ const MesaEditor = ({ mesa }: { mesa: MesaInterface }) => {
           </div>
         </div>
       ) : (
-        <>
-          <PedidoEditor />
-        </>
+        <>{/* <PedidoEditor /> */}</>
       )}
     </>
   );
