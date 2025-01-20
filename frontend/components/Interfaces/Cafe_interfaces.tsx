@@ -24,7 +24,7 @@ export interface MesaInterface {
   state: TableState; // Estados posibles de la mesa
   room: ISala; // ID de la sala a la que pertenece
   // mozo: MozoInterface | null;
-  orderId?: string; // Lista de pedidos asociados
+  orderId?: string | null; // Lista de pedidos asociados
 }
 
 export interface MesaForm {
@@ -58,8 +58,15 @@ export interface MesaProps {
 export interface ISala {
   id: string;
   name: string;
-  isActive: boolean;
-  tables: MesaInterface[];
+  // isActive: boolean;
+  // tables: MesaInterface[];
+}
+
+export interface SalaModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (sala: { id?: string; name: string }) => void;
+  sala?: { id?: string; name: string } | null;
 }
 
 export interface IOrder {
@@ -70,3 +77,5 @@ export interface IOrder {
   table: MesaInterface;
   orderDetails: OrderDetailsCreated[];
 }
+
+//---------------------------------------------------------------------

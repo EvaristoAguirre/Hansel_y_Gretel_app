@@ -26,8 +26,6 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
   const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
 
   const filtrarMesasPorSala = (tables: TableCreated[]) => {
-    console.log("Tables:", tables);
-    console.log("Sala ID:", salaId);
     setMesasFiltradas(tables.filter((mesa) => mesa.room.id === salaId));
   };
 

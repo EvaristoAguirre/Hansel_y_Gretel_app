@@ -7,7 +7,10 @@ import { Button } from "@mui/material";
 import useMesa from "../Hooks/useMesa";
 
 
+
 const MesaCard: React.FC<MesaCardProps> = ({ mesa, handleOpenModal, handleDelete, setSelectedMesa }) => {
+
+
   return (
     <div
       style={{

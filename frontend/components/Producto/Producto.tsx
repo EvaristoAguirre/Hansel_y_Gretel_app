@@ -245,12 +245,23 @@ const Productos: React.FC = () => {
               label={field}
               type={
                 ["code", "price", "cost"].includes(field) ? "number" : "text"
-              } // Cambiar el tipo para inputs numéricos
+              } // Mantén el tipo "number" para campos numéricos
+              inputProps={
+                ["price", "cost"].includes(field)
+                  ? { step: "0.50" } // Permite decimales con un paso de 0.01
+                  : undefined
+              }
               onChange={(e) =>
                 setForm({
                   ...form,
-                  [field]: ["code", "price", "cost"].includes(field)
-                    ? e.target.value === "" ? null : parseInt(e.target.value) // Convierte a null si está vacío
+                  [field]: ["price", "cost"].includes(field)
+                    ? e.target.value === ""
+                      ? null
+                      : parseFloat(e.target.value) // Convierte a decimal
+                    : ["code"].includes(field)
+                    ? e.target.value === ""
+                      ? null
+                      : parseInt(e.target.value, 10) // Sigue permitiendo enteros para "code"
                     : e.target.value,
                 })
               }
@@ -260,6 +271,7 @@ const Productos: React.FC = () => {
             />
           ))}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleCloseModal} color="primary">
             Cancelar
