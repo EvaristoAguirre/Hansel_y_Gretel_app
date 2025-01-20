@@ -11,14 +11,10 @@ import {
 } from "@mui/material";
 import { useProductStore } from "../Producto/useProductStore";
 import Swal from "sweetalert2";
+import { OrderCreated, useOrderStore } from "./useOrderStore";
+import usePedido from "../Hooks/usePedido";
 
-const PedidoEditor = ({
-  mesa,
-  onVolver,
-}: {
-  mesa: MesaInterface;
-  onVolver: () => void;
-}) => {
+const PedidoEditor = ({ mesa }: { mesa: MesaInterface }) => {
   const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
@@ -26,10 +22,20 @@ const PedidoEditor = ({
     []
   );
   const { products } = useProductStore();
+  const { orders, removeOrder, findOrderByTableId } = useOrderStore();
+  const { orderId, pedidoForm, fetchOrderById } = usePedido();
+  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated | null>();
 
-  const handleVerPedido = () => {
-    setMostrarEditorPedido(true);
+  const ordenArenderizar = (mesa: MesaInterface): void => {
+    const order = orders.find((order) => order.id === mesa.orderId);
+    setOrdenAbierta(order);
   };
+
+  console.log("Mesa recibida en PedidoEditor:", mesa);
+
+  // const handleVerPedido = () => {
+  //   setMostrarEditorPedido(true);
+  // };
 
   useEffect(() => {
     setProductosDisponibles(products); // Sincronizar productos disponibles
@@ -70,9 +76,6 @@ const PedidoEditor = ({
       // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
     };
 
-    // Aquí puedes actualizar el estado de las mesas en tu lógica principal
-    console.log("Mesa actualizada:", mesaActualizada);
-
     Swal.fire(
       "Pedido Actualizado",
       `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
@@ -84,7 +87,22 @@ const PedidoEditor = ({
 
   return (
     <div>
-      <h2>{selectedMesa?.name || "Selecciona una mesa"}</h2>
+      <h2
+        style={{
+          height: "3rem",
+          backgroundColor: "#856D5E",
+          fontSize: "1.2rem",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "#ffffff",
+          margin: "1rem 0",
+          fontWeight: "bold",
+          textTransform: "uppercase",
+        }}
+      >
+        {mesa.name}
+      </h2>
       <div
         style={{
           height: "2rem",
@@ -99,7 +117,8 @@ const PedidoEditor = ({
         <h2>Datos de la mesa</h2>
       </div>
       <div>
-        <h3>{/* Aquí puedes mostrar datos adicionales de la mesa */}</h3>
+        <h3>Cantidad de personas: {pedidoForm.numberCustomers}</h3>
+        <h3>Comentario: {pedidoForm.comment}</h3>
       </div>
       <div
         style={{
@@ -178,6 +197,15 @@ const PedidoEditor = ({
         onClick={handleAgregarProductosAlPedido}
       >
         Guardar Pedido
+      </Button>
+      <Button
+        fullWidth
+        color="warning"
+        variant="contained"
+        style={{ marginTop: "10px" }}
+        onClick={() => removeOrder(mesa.orderId!)}
+      >
+        Anular Pedido
       </Button>
     </div>
   );

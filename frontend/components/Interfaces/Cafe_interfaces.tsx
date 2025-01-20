@@ -24,7 +24,7 @@ export interface MesaInterface {
   state: TableState; // Estados posibles de la mesa
   room: ISala; // ID de la sala a la que pertenece
   // mozo: MozoInterface | null;
-  orderId?: string; // Lista de pedidos asociados
+  orderId?: string | null; // Lista de pedidos asociados
 }
 
 export interface MesaForm {

@@ -7,21 +7,26 @@ export interface OrderCreated {
   date: Date;
   state: OrderState;
   isActive: boolean;
-  table: string;
+  tableId: string;
   orderDetails: OrderDetailsCreated[];
 }
 
 interface OrderStateZustand {
   orders: OrderCreated[];
-  setOrders: (products: OrderCreated[]) => void;
-  addOrder: (product: OrderCreated) => void;
+  findOrderByTableId: (tableId: string) => OrderCreated | null;
+  setOrders: (orders: OrderCreated[]) => void;
+  addOrder: (order: OrderCreated) => void;
   removeOrder: (id: string) => void;
   updateOrder: (updatedOrder: OrderCreated) => void;
   connectWebSocket: () => void;
 }
 
-export const useOrderStore = create<OrderStateZustand>((set) => ({
+export const useOrderStore = create<OrderStateZustand>((set, get) => ({
   orders: [],
+  findOrderByTableId: (tableId: string) => {
+    const orders = get().orders;
+    return orders.find((order) => order.tableId === tableId) || null;
+  },
   setOrders: (orders) => set({ orders }),
   addOrder: (order) =>
     set((state) => ({ orders: [...state.orders, order] })),

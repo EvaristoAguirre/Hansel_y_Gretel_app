@@ -3,7 +3,7 @@ import { OrderCreated } from "./useOrderStore";
 
 export interface OrderDetailsCreated {
   id: string;
-  cantity: number;
+  quantity: number;
   unitaryPrice: number;
   subtotal: number;
   product: string;

@@ -26,7 +26,7 @@ interface TableStateZustand {
 
 export const useTableStore = create<TableStateZustand>((set) => ({
   tables: [],
-  setTables: (tables) =>( set({ tables }), console.log(tables)),
+  setTables: (tables) =>( set({ tables })),
   
   addTable: (table) =>
     set((state) => ({ tables: [...state.tables, table] })),

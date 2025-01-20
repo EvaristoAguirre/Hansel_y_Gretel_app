@@ -100,6 +100,7 @@ const Sala = () => {
 
   const handleAbrirPedido = () => {
     setView("pedidoEditor");
+
   };
 
   const handleVolverAMesaEditor = () => {
@@ -107,10 +108,10 @@ const Sala = () => {
   };
 
   const handleMenuOpen = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: React.MouseEvent<SVGSVGElement>,
     sala: ISala
   ) => {
-    setMenuAnchorEl(event.currentTarget);
+    setMenuAnchorEl(event.currentTarget as unknown as HTMLElement);
     setMenuSala(sala);
   };
 
@@ -209,12 +210,12 @@ const Sala = () => {
           {view === "mesaEditor" && selectedMesa && (
             <MesaEditor mesa={selectedMesa} onAbrirPedido={handleAbrirPedido} />
           )}
-          {view === "pedidoEditor" && selectedMesa && (
+          {/* {view === "pedidoEditor" && selectedMesa && (
             <PedidoEditor
               mesa={selectedMesa}
               onVolver={handleVolverAMesaEditor}
             />
-          )}
+          )} */}
         </div>
       </div>
     </>

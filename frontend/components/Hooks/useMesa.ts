@@ -56,7 +56,6 @@ export const useMesa = (salaId: string) => {
         const response = await fetch(URI_TABLE, { method: "GET" });
         const data = await response.json();
         setTables(data);
-        console.log("Mesas cargadas:", data);
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar las mesas.", "error");
         console.error(error);
@@ -97,8 +96,6 @@ export const useMesa = (salaId: string) => {
       Swal.fire("Error", "ID de la mesa no válido.", "error");
       return;
     }
-    console.log("ID enviado:", id);
-    console.log("Formulario enviado:", form);
     try {
       const response = await fetch(`${URI_TABLE}/${id}`, {
         method: "PUT",

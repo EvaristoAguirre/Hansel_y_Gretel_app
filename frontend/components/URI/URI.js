@@ -18,4 +18,8 @@ export const URI_TABLE = "http://localhost:3000/tables"
 
 //ORDERS
 
+export const URI_ORDER_OPEN = "http://localhost:3000/order/open"
+
 export const URI_ORDER = "http://localhost:3000/order"
+
+
