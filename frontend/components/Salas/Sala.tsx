@@ -140,7 +140,7 @@ const Sala = () => {
             alignItems: "center",
           }}
         >
-          {salas.map((sala) => (
+          {Array.isArray(salas) && salas.map((sala) => (
             <h3
               key={sala.id}
               style={{
@@ -164,6 +164,7 @@ const Sala = () => {
             </h3>
           ))}
         </div>
+
         <Button
           variant="contained"
           color="primary"
