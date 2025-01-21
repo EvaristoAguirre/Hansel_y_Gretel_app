@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { OrderState } from "../Enums/Enums";
 import { OrderDetailsCreated } from "./useOrderDetailsStore";
+import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 
 export interface OrderCreated {
   id: string;
@@ -8,6 +9,7 @@ export interface OrderCreated {
   state: OrderState;
   isActive: boolean;
   tableId: string;
+  table: MesaInterface;
   orderDetails: OrderDetailsCreated[];
 }
 

@@ -29,16 +29,17 @@ const MesaEditor = ({
   useEffect(() => {
     const ordenArenderizar = (mesa: MesaInterface): void => {
       const order = orders.find((order) => order.tableId === mesa.id);
+
       setOrdenAbierta(order || null);
-      console.log("order:", order);
-      console.log("ordenAbierta:", ordenAbierta);
+      // console.log("order:", order);
+      // console.log("ordenAbierta:", ordenAbierta);
     };
     ordenArenderizar(mesa);
   }, [orders, mesa.orderId]);
 
-  console.log("Orders en useOrderStore:", orders);
-  console.log("orderId en PedidoEditor:", mesa.orderId);
-  console.log("mesa en MesaEditor:", mesa);
+  // console.log("Orders en useOrderStore:", orders);
+  // console.log("orderId en PedidoEditor:", mesa.orderId);
+  // console.log("mesa en MesaEditor:", mesa);
 
   //Método a reemplazar
   // const abrirPedido = async () => {
