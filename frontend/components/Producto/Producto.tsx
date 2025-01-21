@@ -63,15 +63,17 @@ const Productos: React.FC = () => {
     connectWebSocket();
   }, [setProducts, connectWebSocket]);
 
-  const rows: GridRowsProp = products.map((product) => ({
-    id: product.id,
-    code: product.code,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    cost: product.cost,
-  }));
-
+  const rows: GridRowsProp = Array.isArray(products)
+  ? products.map((product) => ({
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      cost: product.cost,
+    }))
+  : [];
+  
   const columns: GridColDef[] = [
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
