@@ -3,7 +3,7 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
@@ -11,6 +11,27 @@ import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./tabsNavigations";
 
 const Productos: React.FC = () => {
+  const [tabIndex, setTabIndex] = useState(0);
+  const [tabs, setTabs] = useState([
+    "Productos",
+    "Ingredientes",
+    "Categoría productos",
+    "Categoría ingredientes",
+    "Control de Stock",
+  ]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    if (newValue !== 0) {
+      const selectedTab = tabs[newValue];
+      const newTabsOrder = [
+        selectedTab,
+        ...tabs.filter((_, index) => index !== newValue),
+      ];
+      setTabs(newTabsOrder);
+      setTabIndex(0); // El tab seleccionado siempre estará en el índice 0 tras el reordenamiento
+    }
+  };
+
   const {
     loading,
     modalOpen,
@@ -45,7 +66,7 @@ const Productos: React.FC = () => {
         <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
           <Button
             variant="contained"
-            color="secondary"
+            className="bg-[--color-primary] text-bold mt-2"
             size="small"
             onClick={() => {
               setForm({
@@ -64,8 +85,8 @@ const Productos: React.FC = () => {
             <FontAwesomeIcon icon={faEdit} />
           </Button>
           <Button
+            className="bg-[--color-primary] text-bold mt-2 p-1"
             variant="contained"
-            color="secondary"
             size="small"
             onClick={() => handleDelete(params.row.id)}
           >
@@ -79,7 +100,7 @@ const Productos: React.FC = () => {
   return (
     <Box display="flex" flexDirection="column" height="100vh">
       {/* Tabs Navigation */}
-      <TabsNavigation tabIndex={0} onTabChange={() => { }} />
+      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
 
       {/* Main Content */}
       <Box display="flex" flex={1} overflow="hidden">
@@ -88,7 +109,6 @@ const Productos: React.FC = () => {
 
         {/* Main Content */}
         <Box flex={1} p={2} overflow="auto">
-
           {/* Product Table */}
           <ProductTable
             loading={loading}

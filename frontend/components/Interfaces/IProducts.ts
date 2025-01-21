@@ -19,7 +19,7 @@ export interface ProductTableProps {
 }
 
 export interface ProductCreated {
-  id: string;
+  [key: string]: string | number | boolean | null;
   code: number;
   name: string;
   description: string;

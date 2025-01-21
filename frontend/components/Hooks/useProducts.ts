@@ -1,9 +1,14 @@
-import { useState } from "react";
-import { useProductStore } from "../Producto/useProductStore";
+import { createProduct, fetchProducts } from "@/helpers/products";
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { useProductStore } from "./useProductStore";
+import { URI_PRODUCT } from "../URI/URI";
+import { editProduct } from '../../helpers/products';
 
 export const useProductos = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [loading, setLoading] = useState<boolean>(true);
   const [form, setForm] = useState({
     id: "",
     code: 0,
@@ -15,34 +20,84 @@ export const useProductos = () => {
   });
 
   // Estado global desde el store
-  const { products, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
+  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
 
-  // Métodos CRUD conectados al store
-  const handleCreate = () => {
-    if (!form.name || !form.code || !form.price || !form.cost) {
-      alert("Por favor, completa todos los campos.");
-      return;
+ // Llamada inicial para cargar productos
+useEffect(() => {
+  const fetchAndSetProducts = async () => {
+    setLoading(true);
+    try {
+      const fetchedProducts = await fetchProducts(); 
+      setProducts(fetchedProducts); 
+    } catch (error) {
+      console.error("Error al cargar los productos:", error);
+    } finally {
+      setLoading(false);
     }
-    const newProduct = { ...form, id: crypto.randomUUID(),
-      price: form.price ?? 0, 
-    cost: form.cost ?? 0,
-    inActive: form.inActive, };
-    addProduct(newProduct); // Usamos el método del store
-    setModalOpen(false);
   };
 
-  const handleEdit = () => {
-    if (!form.name || !form.code || !form.price || !form.cost) {
-      alert("Por favor, completa todos los campos.");
-      return;
+  fetchAndSetProducts();
+}, [connectWebSocket]);
+  const handleCreate = async () => {
+    try {
+      const preparedForm = {
+        ...form,
+        code: parseInt(form.code as any, 10),        
+      };
+
+      const newProduct = await createProduct(preparedForm); 
+
+      addProduct(newProduct);
+
+      Swal.fire("Éxito", "Producto creado correctamente.", "success");
+
+      handleCloseModal(); 
+    } catch (error) {
+      Swal.fire("Error", "No se pudo crear el producto.", "error");
+      console.error(error);
     }
-    updateProduct(form); // Usamos el método del store
-    setModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-      removeProduct(id); // Usamos el método del store
+  const handleEdit = async () => {
+    try {
+      const preparedForm = {
+        ...form,
+        code: parseInt(form.code as any, 10), 
+        id: form.id,
+      };
+      const updatedProduct = await editProduct(preparedForm); 
+      updateProduct(updatedProduct);
+  
+      Swal.fire("Éxito", "Producto editado correctamente.", "success");
+  
+      handleCloseModal(); 
+
+    } catch (error) {
+      Swal.fire("Error", "No se pudo editar el producto.", "error");
+      console.error(error);
+    }
+  };
+  
+
+  const handleDelete = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
+        removeProduct(id);
+        Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo eliminar el producto.", "error");
+        console.error(error);
+      }
     }
   };
 
@@ -60,11 +115,11 @@ export const useProductos = () => {
   };
 
   return {
-    loading: false, // Si usas un loader para el WebSocket, actualízalo aquí
+    loading,
     modalOpen,
     modalType,
     form,
-    products, // Productos desde el estado global
+    products,
     setModalOpen,
     setModalType,
     setForm,
@@ -72,6 +127,7 @@ export const useProductos = () => {
     handleEdit,
     handleDelete,
     handleCloseModal,
-    connectWebSocket, // Para inicializar el WebSocket cuando sea necesario
+    fetchProducts,
+    connectWebSocket,
   };
 };

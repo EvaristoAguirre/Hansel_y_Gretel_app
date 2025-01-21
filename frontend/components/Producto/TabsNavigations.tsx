@@ -4,19 +4,40 @@ import { AppBar, Tabs, Tab } from "@mui/material";
 interface TabsNavigationProps {
   tabIndex: number;
   onTabChange: (event: React.SyntheticEvent, newValue: number) => void;
+  tabs: string[];
 }
 
 export const TabsNavigation: React.FC<TabsNavigationProps> = ({
   tabIndex,
   onTabChange,
+  tabs,
 }) => (
-  <AppBar position="static" color="default">
-    <Tabs value={tabIndex} onChange={onTabChange} textColor="inherit">
-      <Tab label="Productos" />
-      <Tab label="Ingredientes" />
-      <Tab label="Categoría productos" />
-      <Tab label="Categoría ingredientes" />
-      <Tab label="Control de Stock" />
+  <AppBar
+    position="static"
+    sx={{ backgroundColor: "#7d716a4e", color: "black", gap: 4 }}
+  >
+    <Tabs
+      value={tabIndex}
+      onChange={onTabChange}
+      textColor="inherit"
+      sx={{
+        "& .MuiTab-root": {
+          fontWeight: "bold !important" as any,
+          width: "auto", 
+          flex: 1,
+        },
+        "& .MuiTab-root.Mui-selected": {
+          color: "white !important",
+          backgroundColor: "var(--color-primary)!important",
+        },
+        "& .MuiTabs-indicator": {
+          backgroundColor: "#f3d49a !important",
+        },
+      }}
+    >
+      {tabs.map((label, index) => (
+        <Tab key={index} label={label} />
+      ))}
     </Tabs>
   </AppBar>
 );
