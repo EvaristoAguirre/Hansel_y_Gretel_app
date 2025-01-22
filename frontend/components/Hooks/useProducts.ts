@@ -39,11 +39,16 @@ useEffect(() => {
   fetchAndSetProducts();
 }, [connectWebSocket]);
   const handleCreate = async () => {
+    console.log("⬅️⬅️⬅️⬅️⬅️data del form", form);
+    
     try {
       const preparedForm = {
         ...form,
-        code: parseInt(form.code as any, 10),        
+        code: parseInt(form.code as any, 10),
+        price: parseFloat(form.price as any),
+        cost: parseFloat(form.cost as any),        
       };
+console.log("➡️➡️➡️➡️data preparada", preparedForm);
 
       const newProduct = await createProduct(preparedForm); 
 
@@ -63,6 +68,8 @@ useEffect(() => {
       const preparedForm = {
         ...form,
         code: parseInt(form.code as any, 10), 
+        price: parseFloat(form.price as any),
+        cost: parseFloat(form.cost as any),   
         id: form.id,
       };
       const updatedProduct = await editProduct(preparedForm); 
