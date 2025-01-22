@@ -10,7 +10,7 @@ import {
   Autocomplete,
 } from "@mui/material";
 import Swal from "sweetalert2";
-import { useProductStore } from "../Producto/useProductStore";
+import { useProductStore } from "../Hooks/useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
 import Mesa from "../Mesa/Mesa";
 import Mesa_menu from "../Mesa/MesaDatos";

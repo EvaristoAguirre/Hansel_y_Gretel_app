@@ -9,7 +9,7 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { useProductStore } from "../Producto/useProductStore";
+import { useProductStore } from "../Hooks/useProductStore";
 import Swal from "sweetalert2";
 import { OrderCreated, useOrderStore } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
