@@ -39,7 +39,6 @@ useEffect(() => {
   fetchAndSetProducts();
 }, [connectWebSocket]);
   const handleCreate = async () => {
-    console.log("⬅️⬅️⬅️⬅️⬅️data del form", form);
     
     try {
       const preparedForm = {
@@ -48,7 +47,6 @@ useEffect(() => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),        
       };
-console.log("➡️➡️➡️➡️data preparada", preparedForm);
 
       const newProduct = await createProduct(preparedForm); 
 

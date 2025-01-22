@@ -1,3 +1,4 @@
+import { IsNumber } from 'class-validator';
 import {
   IsInt,
   Max,
@@ -25,12 +26,12 @@ export class CreateProductDto {
   description?: string;
 
   @IsOptional()
-  @IsDecimal()
+  @IsNumber()
   @Min(0)
   price?: number;
 
   @IsOptional()
-  @IsDecimal()
+  @IsNumber()
   @Min(0)
   cost?: number;
 
