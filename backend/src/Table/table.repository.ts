@@ -89,6 +89,7 @@ export class TableRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['room'],
       });
     } catch (error) {
       throw new InternalServerErrorException('Error fetching tables', error);

@@ -13,10 +13,16 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
+import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  @Post('open')
+  openOrder(@Body() openOrder: CreateOrderDto): Promise<OrderOpenDto> {
+    return this.orderService.openOrder(openOrder);
+  }
 
   @Post()
   createOrder(@Body() order: CreateOrderDto): Promise<Order> {
@@ -43,7 +49,10 @@ export class OrderController {
   ): Promise<Order[]> {
     return this.orderService.getAllOrders(page, limit);
   }
-
+  @Get('active')
+  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
+    return await this.orderService.getOrdersForOpenOrPendingTables();
+  }
   @Get('order_detail')
   getOrderDetails(
     @Query('page') page: number = 1,
