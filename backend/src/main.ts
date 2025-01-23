@@ -8,7 +8,7 @@ import { WsAdapter } from '@nestjs/platform-ws';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  
   const documentConfig = new DocumentBuilder()
     .setTitle('Hansel & Gretel')
     .setDescription('Documentacion técnica')
@@ -26,7 +26,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(3000, '0.0.0.0'); // Cambiá 'localhost' a '0.0.0.0'
   const port = app.getHttpServer().address().port;
   console.log(`Server listening on http://localhost:${port}`);
 }
