@@ -3,6 +3,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
 import { ProductTableProps } from "../Interfaces/IProducts";
 import { useProductStore } from "../Hooks/useProductStore";
+import { esES } from "@mui/x-data-grid/locales/esES";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -108,6 +109,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         <DataGrid
           rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
           columns={columns}
+          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         />
       </Box>
     </Box>
