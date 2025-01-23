@@ -1,15 +1,14 @@
-// create-product.dto.ts
-import { State } from '../Product/product.entity';
+import { IsNumber } from 'class-validator';
 import {
   IsInt,
   Max,
   Min,
   IsOptional,
   IsString,
-  IsEnum,
   IsArray,
-  ArrayNotEmpty,
+  // ArrayNotEmpty,
   IsUUID,
+  IsDecimal,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -27,18 +26,22 @@ export class CreateProductDto {
   description?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
   price?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
   cost?: number;
-
-  @IsEnum(State)
-  @IsOptional()
-  state?: State;
 
   @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
+  // @ArrayNotEmpty()    Definir si es un campo obligatorio o no.
   @IsUUID('all', { each: true })
   categories?: string[];
+
+  @IsOptional()
+  @IsString()
+  providerId?: string;
 }

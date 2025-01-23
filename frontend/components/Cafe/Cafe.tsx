@@ -1,73 +1,69 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
+  Autocomplete,
+} from "@mui/material";
+import Swal from "sweetalert2";
+import { useProductStore } from "../Hooks/useProductStore";
+import { URI_PRODUCT } from "../URI/URI";
 import Mesa from "../Mesa/Mesa";
+import Mesa_menu from "../Mesa/MesaDatos";
+import Sala from "../Salas/Sala";
+import { MesaInterface, MozoInterface } from "../Interfaces/Cafe_interfaces";
+
+
 
 const Cafe = () => {
-  const salas = ["Principal", "Entrada", "Patio"];
-  const mesas = ["MESA 1", "MESA 2", "MESA 3", "MESA 4", "MESA 5", "MESA 6"];
+
+  
+  // Zustand para manejar los productos
+  const { products, setProducts, connectWebSocket } = useProductStore();
+
+  // Manejar selección de mozo
+  // const handleSeleccionarMozo = (mozoSeleccionado) => {
+  //   setSelectedMesa((prevMesa) => ({
+  //     ...prevMesa,
+  //     mozo: mozoSeleccionado,
+  //   }));
+  // };
+
+  // const handleAgregarMozoALaMesa = () => {
+  //   const mesaActualizada = {
+  //     ...selectedMesa,
+  //     mozo: mozoSeleccionado,
+  //   };
+
+  //   setMesas((prevMesas) =>
+  //     prevMesas.map((mesa) =>
+  //       mesa.id === selectedMesa.id ? mesaActualizada : mesa
+  //     )
+  //   );
+  // };
+
+  // Operación de subtotal y total
+  // const sumaSubtotal = () => {
+  //   const subtotal = selectedMesa.pedido.reduce((acumulador, item) => {
+  //     return acumulador + item.price;
+  //   }, 0);
+
+  //   return subtotal;
+  // };
 
   return (
-    <div>
-      <div
-        style={{
-          height: "50px",
-          backgroundColor: "#515050",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {salas.map((sala) => (
-          <h3
-            style={{
-              fontSize: "1.25rem",
-              color: "#ffffff",
-              fontWeight: "400",
-              margin: "0 50px",
-            }}
-          >
-            {sala}
-          </h3>
-        ))}
-
-        
+    <div className="cafe" style={{ display: "flex", height: "100vh" }}>
+      {/* Lista de mesas */}
+      <div className="salas-y-mesas" style={{ width: "100%", padding: "20px" }}>
+        <Sala></Sala>
+       
       </div>
 
-      <div
-        className="layout-mesas"
-        style={{
-          display: "flex",
-        }}
-      >
-        <div className="mesas">
-          {mesas.map((mesa) => (
-            <div
-              style={{
-                width: "14rem",
-                height: "4rem",
-                backgroundColor: "#ededed",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1rem",
-                }}
-              >
-                {mesa}
-              </h3>
-            </div>
-          ))}
-        </div>
-        <div
-          className="datos-mesa"
-          style={{
-            width: "35%",
-          }}
-        >
-          <Mesa></Mesa>
-        </div>
-      </div>
+      {/* <Mesa_menu></Mesa_menu> */}
     </div>
   );
 };

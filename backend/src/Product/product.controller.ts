@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ProductService } from './product.service';
@@ -14,6 +16,7 @@ import { Product } from './product.entity';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
+import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -29,11 +32,25 @@ export class ProductController {
   }
 
   @Get(':id')
-  async getProductById(
-    @Param('id') id: UUID,
-    @Query('code') code: number,
-  ): Promise<Product> {
-    return this.productService.getProductById(id, code);
+  async getProductById(@Param('id') id: UUID): Promise<Product> {
+    return this.productService.getProductById(id);
+  }
+  @Get('by-code/:code')
+  async getProductByCode(@Param('code') code: string): Promise<Product> {
+    return this.productService.getProductByCode(+code);
+  }
+
+  @Post('by-categories')
+  async getProductsByCategories(
+    @Body(ValidationPipe) body: GetProductsByCategoriesDto,
+  ): Promise<Product[]> {
+    const { categoryIds } = body;
+    if (!categoryIds || categoryIds.length === 0) {
+      throw new BadRequestException(
+        'At least one category ID must be provided.',
+      );
+    }
+    return this.productService.getProductsByCategories(categoryIds);
   }
 
   @Post()

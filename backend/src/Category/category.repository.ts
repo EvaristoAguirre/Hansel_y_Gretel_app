@@ -1,4 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './category.entity';
 import { Repository } from 'typeorm';
@@ -12,33 +19,93 @@ export class CategoryRepository {
     private readonly categoryRepository: Repository<Category>,
   ) {}
   async createCategory(category: CreateCategoryDto): Promise<Category> {
-    const categoryCreated = await this.categoryRepository.create(category);
-    await this.categoryRepository.save(categoryCreated);
-    return categoryCreated;
+    try {
+      const categoryExists = await this.categoryRepository.findOne({
+        where: { name: category.name, isActive: true },
+      });
+      if (categoryExists) {
+        throw new ConflictException(
+          'Category with the same name already exists',
+        );
+      }
+      return await this.categoryRepository.save(category);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to create category',
+        error,
+      );
+    }
   }
 
   async updateCategory(
     id: string,
     category: UpdateCategoryDto,
   ): Promise<Category> {
-    await this.categoryRepository.update(id, category);
-    return await this.categoryRepository.findOneOrFail({ where: { id } });
+    try {
+      const existingCategory = await this.categoryRepository.findOne({
+        where: { id },
+      });
+      if (!existingCategory) {
+        throw new BadRequestException('Category not found');
+      }
+      Object.assign(existingCategory, category);
+      return await this.categoryRepository.save(existingCategory);
+    } catch (error) {
+      throw new NotFoundException(`Category with ID ${id} not found`, error);
+    }
   }
 
   async deleteCategory(id: string): Promise<string> {
-    await this.categoryRepository.update(id, { isActive: false });
-    return 'Categoría borrada';
+    try {
+      const category = await this.categoryRepository.findOne({ where: { id } });
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+      await this.categoryRepository.update(id, { isActive: false });
+      return 'Category successfully deleted';
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to deactivate category',
+        error,
+      );
+    }
   }
 
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
-    return await this.categoryRepository.find({
-      where: { isActive: true },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    try {
+      return await this.categoryRepository.find({
+        where: { isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve all categories',
+        error,
+      );
+    }
   }
 
   async getCategoryById(id: string): Promise<Category> {
-    return await this.categoryRepository.findOne({ where: { id } });
+    try {
+      const categoryFinded = await this.categoryRepository.findOneOrFail({
+        where: { id },
+      });
+      if (categoryFinded.isActive === false) {
+        throw new NotFoundException(`Category with ID ${id} is disabled`);
+      }
+      if (!categoryFinded) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+      return categoryFinded;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the category',
+        error.message,
+      );
+    }
   }
 }

@@ -1,159 +1,91 @@
-import React from "react";
+"use client";
+import React, { useState } from "react";
 import Image from "next/image";
-import logo from "../../public/logo.png";
-import cafe from "../../public/cafe.png";
-import producto from "../../public/producto.png";
-import cliente from "../../public/cliente.png";
-import proveedor from "../../public/proveedor.png";
-import configuracion from "../../public/configuracion.png";
+import Link from "next/link";
+import logo from "../../public/logo.svg";
+import cafe from "../../public/icons/coffe.png";
+import products from "../../public/icons/products.png";
+import clients from "../../public/icons/clients.png";
+import proveedor from "../../public/icons/providers.jpeg";
+import configuracion from "../../public/icons/settings.png";
 import user from "../../public/user.svg";
 
 const Navbar = () => {
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+
+  const sections = [
+    { label: "Cafe", path: "/views/cafe", icon: cafe },
+    { label: "Productos", path: "/views/products", icon: products },
+    { label: "Clientes", path: "/views/clientes", icon: clients },
+    { label: "Proveedores", path: "/views/proveedores", icon: proveedor },
+    { label: "Configuración", path: "/views/configuracion", icon: configuracion },
+  ];
+
+  const sessionActions = [
+    { label: "Nombre", path: "/", icon: user },
+    { label: "Cerrar Sesión", path: "/" },
+    { label: "Crear Usuario", path: "/" },
+  ];
+
   return (
-    <nav>
-      <div
-        className="w-5/7"
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <div className="logo">
-          <Image
-            src={logo}
-            alt="Logo Hansel y Gretel"
-            style={{
-              width: "40px",
-              height: "40px",
-              margin: "10px 30px",
-            }}
-          ></Image>
+    <nav className="bg-black shadow-md ] py-4">
+      <div className="flex justify-between items-center px-8 border-b-8 border-[#856D5E]">
+        {/* Logo */}
+        <div className="flex items-center">
+          <Link href="/">
+            <Image src={logo} alt="Logo Hansel y Gretel" width={100} height={100} />
+          </Link>
         </div>
-        <div
-          className="secciones"
-          style={{
-            display: "flex",
-            flexDirection: "row",
-          }}
-        >
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-            }}
-          >
-            <Image
-              src={cafe}
-              alt="Logo pestaña café"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-              backgroundColor: "#856D5E",
-            }}
-          >
-            <Image
-              src={producto}
-              alt="Logo pestaña producto"
-              style={{
-                margin: "10px 30px",
-              }}
-            ></Image>
-          </div>
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-            }}
-          >
-            <Image
-              src={cliente}
-              alt="Logo pestaña cliente"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-            }}
-          >
-            <Image
-              src={proveedor}
-              alt="Logo pestaña proveedor"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
-          <div
-            style={{
-              width: "100px",
-              height: "60px",
-            }}
-          >
-            <Image
-              src={configuracion}
-              alt="Logo pestaña configuración"
-              style={{ margin: "10px 30px" }}
-            ></Image>
-          </div>
+
+        {/* Sections */}
+        <div className="flex gap-8 items-center">
+          {sections.map((section) => (
+            <Link key={section.label} href={section.path}>
+              <div
+                onClick={() => setSelectedSection(section.label)}
+                className={`relative group cursor-pointer p-3 transition-colors ${
+                  selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
+                }`}
+              >
+                <Image
+                  src={section.icon}
+                  alt={`Logo pestaña ${section.label.toLowerCase()}`}
+                  width={40}
+                  height={40}
+                  className="group-hover:scale-105 transition-transform"
+                />
+                <div className="absolute bottom-[-30px] left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-sm px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                  {section.label}
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-        <div
-          className="sesion"
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            margin: "0 10px",
-          }}
-        >
-          <div
-            style={{
-              border: "1px solid #856D5E",
-              borderRadius: "10px",
-              height: "70%",
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "1px 5px",
-              margin: "0 10px",
-            }}
-          >
-            <h3>Nombre</h3>
-            <Image
-              src={user}
-              alt="Logo usuario"
-              style={{
-                width: "20px",
-                height: "20px",
-                margin: "0px 5px",
-              }}
-            ></Image>
-          </div>
-          <a
-            href="#"
-            style={{
-              margin: "0 10px",
-            }}
-          >
-            Cerrar sesión
-          </a>
-          <a
-            href="#"
-            style={{
-              margin: "0 10px",
-            }}
-          >
-            Crear usuario
-          </a>
+
+        {/* Session Actions */}
+        <div className="flex items-center gap-4 text-white">
+          {sessionActions.map((action) => (
+            <div key={action.label} className="flex items-center gap-2">
+              {action.icon && (
+                <div className="border border-[#856D5E] rounded-md p-2 flex items-center">
+                  <h3 className="text-sm font-medium mr-2">{action.label}</h3>
+                  <Image
+                    src={action.icon}
+                    alt={`Icono de ${action.label.toLowerCase()}`}
+                    width={20}
+                    height={20}
+                  />
+                </div>
+              )}
+              {!action.icon && (
+                <Link href={action.path} className="text-sm font-medium hover:underline">
+                  {action.label}
+                </Link>
+              )}
+            </div>
+          ))}
         </div>
       </div>
-      <div style={{ height: "10px", backgroundColor: "#856D5E" }}></div>
     </nav>
   );
 };
