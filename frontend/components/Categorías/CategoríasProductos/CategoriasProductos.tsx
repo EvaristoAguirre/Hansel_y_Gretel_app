@@ -40,6 +40,8 @@ const CategoriasProductos: React.FC = () => {
         const response = await fetch(URI_CATEGORY, { method: "GET" });
         const data = await response.json();
         setCategories(data);
+        console.log("🎸🎸🎸categories:", data);
+        
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar las categorías.", "error");
         console.error(error);

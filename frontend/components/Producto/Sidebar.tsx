@@ -1,13 +1,23 @@
 import React, { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
+import { useCategoryStore } from "../Categorías/useCategoryStore";
 
 interface SidebarProps {
   categories: string[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ categories }) => {
+export const Sidebar: React.FC<SidebarProps> = () => {
   // Estado para la categoría seleccionada
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const {
+    categories,
+    setCategories,
+    addCategory,
+    removeCategory,
+    updateCategory,
+    connectWebSocket,
+  } = useCategoryStore();
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category); // Cambia la categoría seleccionada
@@ -17,10 +27,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ categories }) => {
     <Drawer
       variant="permanent"
       sx={{
-        width: 253,
+        width: '20%',
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: 253,
+          width: '100%',
           backgroundColor: "var(--color-primary)",
           boxSizing: "border-box",
           position: "sticky",
@@ -30,18 +40,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ categories }) => {
       }}
     >
       <List>
-        {categories.map((text) => (
-          <ListItem key={text} disablePadding>
+        {categories && categories.map((category) => (
+          <ListItem key={category.id} disablePadding>
             <ListItemButton
-              onClick={() => handleCategoryClick(text)} // Al hacer clic, cambia la categoría seleccionada
+              onClick={() => handleCategoryClick(category.name)} // Al hacer clic, cambia la categoría seleccionada
               sx={{
-                backgroundColor: selectedCategory === text ? "#f3d49ab8" : "transparent", // Cambia el color de fondo si es seleccionado
+                backgroundColor: selectedCategory === category.name ? "#f3d49ab8" : "transparent", // Cambia el color de fondo si es seleccionado
                 "& .MuiTypography-root": {
-                  color: selectedCategory === text ? "black" : "white", // Cambia el color del texto si es seleccionado
+                  color: selectedCategory === category.name ? "black" : "white", // Cambia el color del texto si es seleccionado
                 },
               }}
             >
-              <ListItemText primary={text} />
+              <ListItemText primary={category.name} />
             </ListItemButton>
           </ListItem>
         ))}

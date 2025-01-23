@@ -18,7 +18,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [products]);
 
   // Actualizar los productos seleccionados al cambiar `products`
-  // Actualizar los productos seleccionados al cambiar `products`
   useEffect(() => {
     const updatedSelectedProducts = selectedProducts.map((selectedProduct) =>
       products.find((product) => product.id === selectedProduct.id) || selectedProduct
