@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
+import { useCategoryStore } from "../Categorías/useCategoryStore";
 import { useProductos } from "../Hooks/useProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
@@ -28,6 +29,10 @@ const Productos: React.FC = () => {
     handleCloseModal,
     connectWebSocket,
   } = useProductos();
+
+  const {
+    categories,
+  } = useCategoryStore();
 
   useEffect(() => {
     connectWebSocket();
@@ -79,30 +84,31 @@ const Productos: React.FC = () => {
   ];
 
   return (
-        <Box flex={1} p={2} overflow="auto">
-          {/* Product Table */}
-          <ProductTable
-            loading={loading}
-            rows={products}
-            columns={columns}
-            onCreate={() => {
-              setModalType("create");
-              setModalOpen(true);
-            }}
-          />
+    <Box flex={1} p={2} overflow="auto">
+      {/* Product Table */}
+      <ProductTable
+        loading={loading}
+        rows={products}
+        columns={columns}
+        onCreate={() => {
+          setModalType("create");
+          setModalOpen(true);
+        }}
+      />
 
-          {/* Product Dialog */}
-          <ProductDialog
-            open={modalOpen}
-            modalType={modalType}
-            form={form}
-            products={products} // Lista de productos existentes
-            onChange={(field, value) => setForm({ ...form, [field]: value })}
-            onClose={handleCloseModal}
-            onSave={modalType === "create" ? handleCreate : handleEdit}
-          />
-        </Box>
-    
+      {/* Product Dialog */}
+      <ProductDialog
+        open={modalOpen}
+        modalType={modalType}
+        form={form}
+        categories={categories}
+        products={products} // Lista de productos existentes
+        onChange={(field, value) => setForm({ ...form, [field]: value })}
+        onClose={handleCloseModal}
+        onSave={modalType === "create" ? handleCreate : handleEdit}
+      />
+    </Box>
+
   );
 };
 

@@ -12,11 +12,6 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
   const {
     categories,
-    setCategories,
-    addCategory,
-    removeCategory,
-    updateCategory,
-    connectWebSocket,
   } = useCategoryStore();
 
   const handleCategoryClick = (category: string) => {

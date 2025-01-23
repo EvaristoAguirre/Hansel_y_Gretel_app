@@ -16,6 +16,7 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
+import { fetchCategories } from "@/helpers/categories";
 
 const CategoriasProductos: React.FC = () => {
   const {
@@ -36,21 +37,16 @@ const CategoriasProductos: React.FC = () => {
 
   // Obtener categorías al cargar el componente
   useEffect(() => {
-    async function fetchCategories() {
+    const fetchData = async () => {
       try {
-        const response = await fetch(URI_CATEGORY, { method: "GET" });
-        const data = await response.json();
+        const data  = await fetchCategories();
         setCategories(data);
-        console.log("🎸🎸🎸categories:", data);
-
+        connectWebSocket();
       } catch (error) {
-        Swal.fire("Error", "No se pudieron cargar las categorías.", "error");
         console.error(error);
       }
-    }
-
-    fetchCategories();
-    connectWebSocket();
+    };
+    fetchData();
   }, [setCategories, connectWebSocket]);
 
   // Filas para la DataGrid
@@ -70,7 +66,8 @@ const CategoriasProductos: React.FC = () => {
         <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
           <Button
             variant="contained"
-            color="secondary"
+            color="primary"
+            sx={{ mt: 2 }}
             size="small"
             onClick={() => handleOpenEditModal(params.row.id, params.row.name)}
           >
@@ -78,7 +75,8 @@ const CategoriasProductos: React.FC = () => {
           </Button>
           <Button
             variant="contained"
-            color="secondary"
+            color="primary"
+            sx={{ mt: 2 }}
             size="small"
             onClick={() => handleDelete(params.row.id)}
           >
@@ -172,25 +170,25 @@ const CategoriasProductos: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex' }}>
         <Button
           variant="contained"
           color="primary"
           onClick={handleOpenCreateModal}
-          sx={{ margin: 2 }}
+          sx={{ margin: 2, height: 56 }}
         >
           Nueva Categoría
         </Button>
       </Box>
 
       {/* Tabla */}
-      <div style={{ height: 300, width: "60%", margin: "1.5rem auto" }}>
+      <Box sx={{ height: 450, ml: 2 }}>
         <DataGrid
           rows={rows}
           columns={columns}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         />
-      </div>
+      </Box>
 
       {/* Modal */}
       <Dialog open={modalOpen} onClose={handleCloseModal}>

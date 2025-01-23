@@ -11,6 +11,10 @@ import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./tabsNavigations";
 import CategoriasProductos from '../Categorías/CategoríasProductos/CategoriasProductos';
 import CategoriasIngredientes from '../Categorías/CategoríasIngredientes/CategoriasIngredientes';
+import { useCategoryStore } from "../Categorías/useCategoryStore";
+import { URI_CATEGORY } from "../URI/URI";
+import Swal from "sweetalert2";
+import { fetchCategories } from "@/helpers/categories";
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -37,20 +41,27 @@ const ProductsPage: React.FC = () => {
   };
 
   const {
-    loading,
-    modalOpen,
-    modalType,
-    form,
-    products,
-    setModalOpen,
-    setModalType,
-    setForm,
-    handleCreate,
-    handleEdit,
-    handleDelete,
-    handleCloseModal,
     connectWebSocket,
   } = useProductos();
+
+  const {
+    categories,
+    setCategories,
+  }  = useCategoryStore();
+
+    // Obtener categorías al cargar el componente
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const data  = await fetchCategories();
+          setCategories(data);
+          connectWebSocket();
+        } catch (error) {
+          console.error(error);
+        }
+      };
+      fetchData();
+    }, [setCategories, connectWebSocket]);
 
   useEffect(() => {
     connectWebSocket();

@@ -6,44 +6,53 @@ import {
   TextField,
   DialogActions,
   Button,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  FormHelperText,
 } from "@mui/material";
 import { ProductForm, ProductCreated } from "../Interfaces/IProducts";
+import { ICategory } from "../Interfaces/ICategories";
 
 interface ProductDialogProps {
   open: boolean;
   modalType: "create" | "edit";
   form: ProductCreated;
-  products: ProductCreated[]; // Para verificar códigos únicos
+  products: ProductCreated[];
+  categories: ICategory[];
   onChange: (field: keyof ProductForm, value: string | number | null) => void;
   onClose: () => void;
   onSave: () => void;
 }
+
 interface Errors {
   [clave: string]: string;
 }
+
 export const ProductDialog: React.FC<ProductDialogProps> = ({
   open,
   modalType,
   form,
   products,
+  categories,
   onChange,
   onClose,
   onSave,
 }) => {
-
-//Código para validaciones del formulario
   const [errors, setErrors] = useState<Errors>({
     code: "",
     name: "",
     price: "",
     cost: "",
+    category: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
 
   const validateField = (field: string, value: any) => {
     let error = "";
 
-    if (["code", "name", "price", "cost"].includes(field)) {
+    if (["code", "name", "price", "cost", "category"].includes(field)) {
       if (!value) {
         error = "Este campo es obligatorio";
       } else if (field === "code" && products.some((p) => p.code === value && p.id !== form.id)) {
@@ -54,14 +63,14 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     }
 
     setErrors((prevErrors) => ({ ...prevErrors, [field as string]: error }));
-
   };
 
   const validateForm = () => {
     const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields = ["code", "name", "price", "cost"].some((field) => !form[field as keyof ProductForm]);
+    const hasEmptyFields = ["code", "name", "price", "cost", "category"].some(
+      (field) => !form[field as keyof ProductForm]
+    );
     setIsFormValid(!hasErrors && !hasEmptyFields);
-    // limpiamos errors para que no dé errores al enviar el form
     setErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -76,6 +85,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     description: "Descripción",
     price: "Precio",
     cost: "Costo",
+    category: "Categoría",
     isActive: "Inactivo",
     id: "ID",
   };
@@ -113,6 +123,31 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             variant="outlined"
           />
         ))}
+        
+        {/* CATEGORIAS */}
+        <FormControl
+          fullWidth
+          margin="dense"
+          error={!!errors.category}
+          variant="outlined"
+        >
+          <InputLabel>{fieldLabels.category}</InputLabel>
+          <Select
+            value={form.category || ""}
+            onChange={(e) => {
+              const value = e.target.value as string | null; 
+              validateField("category", value);
+            }}
+            label={fieldLabels.category}
+          >
+            {categories.map((category) => (
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>{errors.category}</FormHelperText>
+        </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">
