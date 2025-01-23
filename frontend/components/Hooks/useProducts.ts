@@ -16,7 +16,7 @@ export const useProductos = () => {
     description: "",
     price: 0,
     cost: 0,
-    inActive: true,
+    isActive: true,
   });
 
   // Estado global desde el store
@@ -115,7 +115,7 @@ useEffect(() => {
       description: "",
       price: 0,
       cost: 0,
-      inActive: true,
+      isActive: true,
     });
   };
 

@@ -76,7 +76,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     description: "Descripción",
     price: "Precio",
     cost: "Costo",
-    inActive: "Inactivo",
+    isActive: "Inactivo",
     id: "ID",
   };
 

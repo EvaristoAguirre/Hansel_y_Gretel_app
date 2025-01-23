@@ -57,7 +57,7 @@ const Productos: React.FC = () => {
                 description: params.row.description,
                 price: params.row.price,
                 cost: params.row.cost,
-                inActive: true,
+                isActive: true,
               });
               setModalType("edit");
               setModalOpen(true);
@@ -79,9 +79,6 @@ const Productos: React.FC = () => {
   ];
 
   return (
-   
-
-  
         <Box flex={1} p={2} overflow="auto">
           {/* Product Table */}
           <ProductTable

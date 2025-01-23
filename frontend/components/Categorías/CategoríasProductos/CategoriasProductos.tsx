@@ -10,6 +10,7 @@ import {
   DialogActions,
   Button,
   TextField,
+  Box,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -41,7 +42,7 @@ const CategoriasProductos: React.FC = () => {
         const data = await response.json();
         setCategories(data);
         console.log("🎸🎸🎸categories:", data);
-        
+
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar las categorías.", "error");
         console.error(error);
@@ -170,29 +171,17 @@ const CategoriasProductos: React.FC = () => {
   };
 
   return (
-    <div>
-      {/* Barra de navegación */}
-      <div
-        style={{
-          height: "50px",
-          backgroundColor: "#515050",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 20px",
-        }}
-      >
-        <h3 style={{ color: "#ffffff", margin: "0 20px" }}>
-          Categorías Productos
-        </h3>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         <Button
           variant="contained"
           color="primary"
           onClick={handleOpenCreateModal}
-          style={{ marginLeft: "auto" }}
+          sx={{ margin: 2 }}
         >
           Nueva Categoría
         </Button>
-      </div>
+      </Box>
 
       {/* Tabla */}
       <div style={{ height: 300, width: "60%", margin: "1.5rem auto" }}>
@@ -231,7 +220,7 @@ const CategoriasProductos: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 
