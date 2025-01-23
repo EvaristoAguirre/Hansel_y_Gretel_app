@@ -21,7 +21,7 @@ interface ProductDialogProps {
   form: ProductCreated;
   products: ProductCreated[];
   categories: ICategory[];
-  onChange: (field: keyof ProductForm, value: string | number | null) => void;
+  onChange: (field: keyof ProductForm, value: string | number | null | string[]) => void;
   onClose: () => void;
   onSave: () => void;
 }
@@ -45,14 +45,17 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     name: "",
     price: "",
     cost: "",
-    category: "",
+    categories: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
 
   const validateField = (field: string, value: any) => {
     let error = "";
 
-    if (["code", "name", "price", "cost", "category"].includes(field)) {
+    if (field === "categories" && Array.isArray(value) && value.length === 0) {
+      error = "Debe seleccionar al menos una categoría";
+    }
+    if (["code", "name", "price", "cost"].includes(field)) {
       if (!value) {
         error = "Este campo es obligatorio";
       } else if (field === "code" && products.some((p) => p.code === value && p.id !== form.id)) {
@@ -67,12 +70,12 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
 
   const validateForm = () => {
     const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields = ["code", "name", "price", "cost", "category"].some(
+    
+    const hasEmptyFields = ["code", "name", "price", "cost"].some(
       (field) => !form[field as keyof ProductForm]
-    );
+    ) || !Array.isArray(form.categories) || form.categories.length === 0;
+  
     setIsFormValid(!hasErrors && !hasEmptyFields);
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
   };
 
   useEffect(() => {
@@ -85,7 +88,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     description: "Descripción",
     price: "Precio",
     cost: "Costo",
-    category: "Categoría",
+    categories: "Categoría",
     isActive: "Inactivo",
     id: "ID",
   };
@@ -123,31 +126,42 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             variant="outlined"
           />
         ))}
-        
+
         {/* CATEGORIAS */}
         <FormControl
           fullWidth
           margin="dense"
-          error={!!errors.category}
+          error={!!errors.categories}
           variant="outlined"
         >
-          <InputLabel>{fieldLabels.category}</InputLabel>
+          <InputLabel>{fieldLabels.categories}</InputLabel>
           <Select
-            value={form.category || ""}
+            multiple 
+            value={form.categories || []} 
             onChange={(e) => {
-              const value = e.target.value as string | null; 
-              validateField("category", value);
+              const value = e.target.value as string[]; 
+              onChange("categories", value);
+              validateField("categories", value);
             }}
-            label={fieldLabels.category}
+            label={fieldLabels.categories}
+            renderValue={(selected) =>
+              Array.isArray(selected)
+                ? categories
+                    .filter((categories) => selected.includes(categories.id))
+                    .map((cat) => cat.name)
+                    .join(", ")
+                : ""
+            }
           >
-            {categories.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
+            {categories.map((categories) => (
+              <MenuItem key={categories.id} value={categories.id}>
+                {categories.name}
               </MenuItem>
             ))}
           </Select>
-          <FormHelperText>{errors.category}</FormHelperText>
+          <FormHelperText>{errors.categories}</FormHelperText>
         </FormControl>
+
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">

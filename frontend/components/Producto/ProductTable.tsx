@@ -4,10 +4,12 @@ import { Button, Box, Autocomplete, TextField } from "@mui/material";
 import { ProductTableProps } from "../Interfaces/IProducts";
 import { useProductStore } from "../Hooks/useProductStore";
 import { esES } from "@mui/x-data-grid/locales/esES";
+import { ProductsByCategory } from "@/helpers/categories";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
   onCreate,
+  selectedCategoryId
 }) => {
   const { products } = useProductStore(); // Obtener todos los productos
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
@@ -26,6 +28,18 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     setSelectedProducts(updatedSelectedProducts);
   }, [products]);
 
+  useEffect(() => {
+    if (selectedCategoryId) {
+      const fetchProductsByCategory = async () => {
+        const productsById = await ProductsByCategory(selectedCategoryId);
+        setSearchResults(productsById);
+      };
+      fetchProductsByCategory();
+    } else {
+      // Obtener todos los productos si no hay categoría seleccionada
+      setSearchResults(products);
+    }
+  }, [selectedCategoryId]);
 
   // Manejar búsqueda de productos
   const handleSearch = (value: string) => {
@@ -101,7 +115,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           color="primary"
           onClick={handleClearSearch}
         >
-          Limpiar Búsqueda
+          Limpiar Filtros
         </Button>
       </Box>
       {/* Tabla de productos */}
@@ -110,6 +124,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
           columns={columns}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+
         />
       </Box>
     </Box>

@@ -6,6 +6,9 @@ export const URI_CATEGORY = "http://localhost:3000/category";
 
 export const URI_PRODUCT = "http://localhost:3000/product"
 
+export const URI_PRODUCT_BY_CATEGORY = "http://localhost:3000/product/by-categories"
+
+
 //INGREDIENTS
 
 //ROOMS

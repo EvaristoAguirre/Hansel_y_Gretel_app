@@ -1,19 +1,13 @@
 "use client";
-import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button } from "@mui/material";
-import { GridCellParams } from "@mui/x-data-grid";
+import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
 import Productos from "./Producto";
-import { ProductTable } from "./ProductTable";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./tabsNavigations";
 import CategoriasProductos from '../Categorías/CategoríasProductos/CategoriasProductos';
 import CategoriasIngredientes from '../Categorías/CategoríasIngredientes/CategoriasIngredientes';
 import { useCategoryStore } from "../Categorías/useCategoryStore";
-import { URI_CATEGORY } from "../URI/URI";
-import Swal from "sweetalert2";
 import { fetchCategories } from "@/helpers/categories";
 
 const ProductsPage: React.FC = () => {
@@ -26,7 +20,7 @@ const ProductsPage: React.FC = () => {
     "Control de Stock",
   ]);
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
-
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     if (newValue !== 0) {
       const selectedTab = tabs[newValue];
@@ -40,14 +34,9 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const {
-    connectWebSocket,
-  } = useProductos();
+  const {  connectWebSocket } = useProductos();
 
-  const {
-    categories,
-    setCategories,
-  }  = useCategoryStore();
+  const {categories, setCategories, }  = useCategoryStore();
 
     // Obtener categorías al cargar el componente
     useEffect(() => {
@@ -67,24 +56,18 @@ const ProductsPage: React.FC = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
-
+  const handleCategorySelected = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+  };
 
   return (
     <Box display="flex" flexDirection="column" height="100vh">
-      {/* Tabs Navigation */}
-      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
-
-      {/* Main Content */}
+      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} /> 
       <Box display="flex" flex={1} overflow="hidden">
-        {/* Sidebar */}
-        <Sidebar categories={["Cafetería", "Bebidas", "Pastelería"]} />
-
-        {selectedTab === "Productos" && <Productos />}
-
+        <Sidebar onCategorySelected={handleCategorySelected} />
+        {selectedTab === "Productos" && <Productos selectedCategoryId={selectedCategoryId}/>}
         {selectedTab === "Ingredientes" && <CategoriasIngredientes />}
-
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
-
       </Box>
     </Box>
   );

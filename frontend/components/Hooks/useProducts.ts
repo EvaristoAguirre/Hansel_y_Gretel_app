@@ -16,6 +16,7 @@ export const useProductos = () => {
     description: "",
     price: 0,
     cost: 0,
+    categories: [],
     isActive: true,
   });
 
@@ -47,6 +48,7 @@ useEffect(() => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),        
       };
+      
 
       const newProduct = await createProduct(preparedForm); 
 
@@ -115,6 +117,7 @@ useEffect(() => {
       description: "",
       price: 0,
       cost: 0,
+      categories: [],
       isActive: true,
     });
   };

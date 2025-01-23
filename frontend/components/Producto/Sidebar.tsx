@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
 import { useCategoryStore } from "../Categorías/useCategoryStore";
+import { ICategory } from '../Interfaces/ICategories';
 
-interface SidebarProps {
-  categories: string[];
-}
 
-export const Sidebar: React.FC<SidebarProps> = () => {
+
+export const Sidebar: React.FC<{ onCategorySelected: (categoryId: string) => void }> = ({ onCategorySelected }) => {
   // Estado para la categoría seleccionada
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -14,8 +13,9 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     categories,
   } = useCategoryStore();
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category); // Cambia la categoría seleccionada
+  const handleCategoryClick = (category: ICategory) => {
+    setSelectedCategory(category.name); 
+    onCategorySelected(category.id);
   };
 
   return (
@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
         {categories && categories.map((category) => (
           <ListItem key={category.id} disablePadding>
             <ListItemButton
-              onClick={() => handleCategoryClick(category.name)} // Al hacer clic, cambia la categoría seleccionada
+              onClick={() => handleCategoryClick(category)} // Al hacer clic, cambia la categoría seleccionada
               sx={{
                 backgroundColor: selectedCategory === category.name ? "#f3d49ab8" : "transparent", // Cambia el color de fondo si es seleccionado
                 "& .MuiTypography-root": {

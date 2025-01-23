@@ -3,15 +3,16 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useCategoryStore } from "../Categorías/useCategoryStore";
 import { useProductos } from "../Hooks/useProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
-import { Sidebar } from "./Sidebar";
-import { TabsNavigation } from "./tabsNavigations";
 
-const Productos: React.FC = () => {
+interface ProductosProps {
+  selectedCategoryId: string | null;
+}
+const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
 
 
   const {
@@ -62,6 +63,7 @@ const Productos: React.FC = () => {
                 description: params.row.description,
                 price: params.row.price,
                 cost: params.row.cost,
+                categories: params.row.categories,
                 isActive: true,
               });
               setModalType("edit");
@@ -89,6 +91,7 @@ const Productos: React.FC = () => {
       <ProductTable
         loading={loading}
         rows={products}
+        selectedCategoryId={selectedCategoryId}
         columns={columns}
         onCreate={() => {
           setModalType("create");
