@@ -1,4 +1,5 @@
 import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import { ICategory } from './ICategories';
 
 export interface ProductForm {
   [key: string]: string | number | boolean | null | string[];
@@ -29,13 +30,24 @@ export interface ProductCreated {
   cost: number;
   categories: string[];
   isActive: boolean;
+};
+
+export interface ProductResponse {
+  id: string;
+  code: number;
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+  categories: ICategory[];
+  isActive: boolean;
 }
 
 export interface ProductState {
   products: ProductCreated[];
-  setProducts: (products: ProductCreated[]) => void;
-  addProduct: (product: ProductCreated) => void;
+  setProducts: (products: ProductResponse[]) => void;
+  addProduct: (product: ProductResponse) => void;
   removeProduct: (id: string) => void;
-  updateProduct: (updatedProduct: ProductCreated) => void;
+  updateProduct: (updatedProduct: ProductResponse) => void;
   connectWebSocket: () => void;
 }

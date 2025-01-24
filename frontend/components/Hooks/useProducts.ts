@@ -4,12 +4,13 @@ import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../helpers/products';
+import { ProductForm } from '../Interfaces/IProducts';
 
 export const useProductos = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
   const [loading, setLoading] = useState<boolean>(true);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductForm>({
     id: "",
     code: 0,
     name: "",
@@ -29,7 +30,8 @@ useEffect(() => {
     setLoading(true);
     try {
       const fetchedProducts = await fetchProducts(); 
-      setProducts(fetchedProducts); 
+
+      setProducts(fetchedProducts);
     } catch (error) {
       console.error("Error al cargar los productos:", error);
     } finally {
@@ -48,15 +50,14 @@ useEffect(() => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),        
       };
-      
 
       const newProduct = await createProduct(preparedForm); 
 
       addProduct(newProduct);
+      handleCloseModal(); 
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
 
-      handleCloseModal(); 
     } catch (error) {
       Swal.fire("Error", "No se pudo crear el producto.", "error");
       console.error(error);
@@ -72,7 +73,9 @@ useEffect(() => {
         cost: parseFloat(form.cost as any),   
         id: form.id,
       };
-      const updatedProduct = await editProduct(preparedForm); 
+
+      const updatedProduct = await editProduct(preparedForm);
+
       updateProduct(updatedProduct);
   
       Swal.fire("Éxito", "Producto editado correctamente.", "success");

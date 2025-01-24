@@ -139,19 +139,23 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             multiple 
             value={form.categories || []} 
             onChange={(e) => {
-              const value = e.target.value as string[]; 
+              const value = e.target.value; 
+
               onChange("categories", value);
               validateField("categories", value);
             }}
             label={fieldLabels.categories}
-            renderValue={(selected) =>
-              Array.isArray(selected)
-                ? categories
-                    .filter((categories) => selected.includes(categories.id))
-                    .map((cat) => cat.name)
-                    .join(", ")
-                : ""
-            }
+            renderValue={(selected: string[]) => {
+              if (Array.isArray(selected)) {
+                const categoriesFiltered = categories
+                .filter((categories) => selected.includes(categories.id))
+  
+                const selectedValue = categoriesFiltered.map((cat) => cat.name).join(", ");
+  
+                return selectedValue;
+              }
+              return [];
+            }}
           >
             {categories.map((categories) => (
               <MenuItem key={categories.id} value={categories.id}>

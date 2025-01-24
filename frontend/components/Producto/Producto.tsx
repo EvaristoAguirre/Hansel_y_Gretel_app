@@ -6,6 +6,7 @@ import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect } from "react";
 import { useCategoryStore } from "../Categorías/useCategoryStore";
 import { useProductos } from "../Hooks/useProducts";
+import { ProductForm } from "../Interfaces/IProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 
@@ -38,6 +39,11 @@ const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
+
+  const handleChangeProductInfo = (
+    field: keyof ProductForm, 
+    value: string | number | null | string[]
+  ) => setForm({ ...form, [field]: value });
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
@@ -100,16 +106,18 @@ const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
       />
 
       {/* Product Dialog */}
-      <ProductDialog
-        open={modalOpen}
-        modalType={modalType}
-        form={form}
-        categories={categories}
-        products={products} // Lista de productos existentes
-        onChange={(field, value) => setForm({ ...form, [field]: value })}
-        onClose={handleCloseModal}
-        onSave={modalType === "create" ? handleCreate : handleEdit}
-      />
+      {modalOpen && (
+        <ProductDialog
+          open={modalOpen}
+          modalType={modalType}
+          form={form}
+          categories={categories}
+          products={products} // Lista de productos existentes
+          onChange={handleChangeProductInfo}
+          onClose={handleCloseModal}
+          onSave={modalType === "create" ? handleCreate : handleEdit}
+        />
+      )}
     </Box>
 
   );
