@@ -8,6 +8,8 @@ export interface OrderCreated {
   date: Date;
   state: OrderState;
   isActive: boolean;
+  numberCustomers: number;
+  comment: string;
   tableId: string;
   table: MesaInterface;
   orderDetails: OrderDetailsCreated[];

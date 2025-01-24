@@ -7,12 +7,18 @@ import useMesa from "../Hooks/useMesa";
 import usePedido from "../Hooks/usePedido";
 import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
 import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
+import {
+  OrderDetailsCreated,
+  useOrderDetailsStore,
+} from "../Pedido/useOrderDetailsStore";
 
 const MesaEditor = ({
   mesa,
+  view,
   onAbrirPedido,
 }: {
   mesa: MesaInterface;
+  view: string;
   onAbrirPedido: () => void;
 }) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
@@ -20,6 +26,7 @@ const MesaEditor = ({
   const [comentario, setComentario] = useState("");
   const mozos = ["Mozo 1", "Mozo 2", "Mozo 3"];
   const [pedido, setPedido] = useState<OrderCreated | null>();
+  const { orderDetails } = useOrderDetailsStore();
   const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated | null>();
 
   const { handleCreateOrder, fetchOrderById, handleEditOrder } = usePedido();
@@ -28,12 +35,11 @@ const MesaEditor = ({
 
   useEffect(() => {
     const ordenArenderizar = (mesa: MesaInterface): void => {
-      const order = orders.find((order) => order.tableId === mesa.id);
-
-      setOrdenAbierta(order || null);
-      // console.log("order:", order);
-      // console.log("ordenAbierta:", ordenAbierta);
+      const order = orders.find((order) => order.id === mesa.orderId);
+      setOrdenAbierta(order);
+      console.log("Orden a renderizar:", order);
     };
+
     ordenArenderizar(mesa);
   }, [orders, mesa.orderId]);
 
@@ -59,43 +65,44 @@ const MesaEditor = ({
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
     >
-      <div style={{ width: "90%" }}>
-        <div>
-          <h2
-            style={{
-              height: "3rem",
-              backgroundColor: "#856D5E",
-              fontSize: "1.2rem",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#ffffff",
-              margin: "1rem 0",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-            }}
-          >
-            {mesa.name}
-          </h2>
-        </div>
-        <form>
-          <div
-            style={{
-              margin: "10px 0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <label>Cantidad de personas:</label>
-            <input
-              style={{ padding: "3px 10px" }}
-              type="number"
-              value={cantidadPersonas}
-              onChange={(e) => setCantidadPersonas(Number(e.target.value))}
-            />
+      {view === "mesaEditor" && (
+        <div style={{ width: "90%" }}>
+          <div>
+            <h2
+              style={{
+                height: "3rem",
+                backgroundColor: "#856D5E",
+                fontSize: "1.2rem",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "#ffffff",
+                margin: "1rem 0",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+              }}
+            >
+              {mesa.name}
+            </h2>
           </div>
-          {/* <div
+          <form>
+            <div
+              style={{
+                margin: "10px 0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>Cantidad de personas:</label>
+              <input
+                style={{ padding: "3px 10px" }}
+                type="number"
+                value={cantidadPersonas}
+                onChange={(e) => setCantidadPersonas(Number(e.target.value))}
+              />
+            </div>
+            {/* <div
             style={{
               margin: "10px 0",
               display: "flex",
@@ -117,73 +124,74 @@ const MesaEditor = ({
               ))}
             </select>
           </div> */}
-          <div
-            style={{
-              margin: "10px 0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <label>Comentario:</label>
-            <textarea
-              style={{ padding: "3px 10px" }}
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              flexDirection: "column",
-            }}
-          >
-            <Button
-              type="button"
-              fullWidth
-              color="primary"
-              variant="contained"
-              style={{ marginTop: "10px" }}
-              onClick={() => {
-                if (cantidadPersonas <= 0) {
-                  Swal.fire(
-                    "Error",
-                    "La cantidad de personas debe ser mayor a 0.",
-                    "error"
-                  );
-                  return;
-                } else if (mesa.state !== "open") {
-                  onAbrirPedido();
-                  handleCreateOrder(mesa, cantidadPersonas, comentario);
-                } else {
-                  // handleEditOrder(order.id);
-                }
+            <div
+              style={{
+                margin: "10px 0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              {mesa.state === "open" ? "Guardar Cambios" : "Abrir Mesa"}
-            </Button>
+              <label>Comentario:</label>
+              <textarea
+                style={{ padding: "3px 10px" }}
+                value={comentario}
+                onChange={(e) => setComentario(e.target.value)}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                flexDirection: "column",
+              }}
+            >
+              <Button
+                type="button"
+                fullWidth
+                color="primary"
+                variant="contained"
+                style={{ marginTop: "10px" }}
+                onClick={() => {
+                  if (cantidadPersonas <= 0) {
+                    Swal.fire(
+                      "Error",
+                      "La cantidad de personas debe ser mayor a 0.",
+                      "error"
+                    );
+                    return;
+                  } else if (mesa.state !== "open") {
+                    handleCreateOrder(mesa, cantidadPersonas, comentario);
+                    onAbrirPedido();
+                  } else {
+                    // handleEditOrder(order.id);
+                  }
+                }}
+              >
+                {mesa.state === "open" ? "Guardar Cambios" : "Abrir Mesa"}
+              </Button>
 
-            <Button
-              disabled={mesa.state !== "open"}
-              type="button"
-              fullWidth
-              color="primary"
-              variant="contained"
-              style={{ marginTop: "10px" }}
-              onClick={() => {
-                // abrirPedido();
-                if (mesa.orderId !== null) {
-                  onAbrirPedido();
-                }
-              }}
-            >
-              Abrir Pedido
-            </Button>
-          </div>
-        </form>
-      </div>
-      {ordenAbierta ? <PedidoEditor mesa={mesa}></PedidoEditor> : null}
+              <Button
+                disabled={mesa.state !== "open"}
+                type="button"
+                fullWidth
+                color="primary"
+                variant="contained"
+                style={{ marginTop: "10px" }}
+                onClick={() => {
+                  // abrirPedido();
+                  if (mesa.orderId !== null) {
+                    onAbrirPedido();
+                  }
+                }}
+              >
+                Abrir Pedido
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+      {ordenAbierta && <PedidoEditor mesa={mesa} ordenAbierta={ordenAbierta}></PedidoEditor>}
     </div>
   );
 };

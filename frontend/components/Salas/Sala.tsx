@@ -100,7 +100,6 @@ const Sala = () => {
 
   const handleAbrirPedido = () => {
     setView("pedidoEditor");
-
   };
 
   const handleVolverAMesaEditor = () => {
@@ -140,29 +139,30 @@ const Sala = () => {
             alignItems: "center",
           }}
         >
-          {Array.isArray(salas) && salas.map((sala) => (
-            <h3
-              key={sala.id}
-              style={{
-                fontSize: "1.25rem",
-                color: "#ffffff",
-                fontWeight: "400",
-                margin: "0 20px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                borderBottom:
-                  selectedSala?.id === sala.id ? "1px solid #ffffff" : "none",
-              }}
-              onClick={() => setSelectedSala(sala)}
-            >
-              {sala.name}
-              <MoreVertIcon
-                style={{ cursor: "pointer", marginLeft: "10px" }}
-                onClick={(e) => handleMenuOpen(e, sala)}
-              />
-            </h3>
-          ))}
+          {Array.isArray(salas) &&
+            salas.map((sala) => (
+              <h3
+                key={sala.id}
+                style={{
+                  fontSize: "1.25rem",
+                  color: "#ffffff",
+                  fontWeight: "400",
+                  margin: "0 20px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  borderBottom:
+                    selectedSala?.id === sala.id ? "1px solid #ffffff" : "none",
+                }}
+                onClick={() => setSelectedSala(sala)}
+              >
+                {sala.name}
+                <MoreVertIcon
+                  style={{ cursor: "pointer", marginLeft: "10px" }}
+                  onClick={(e) => handleMenuOpen(e, sala)}
+                />
+              </h3>
+            ))}
         </div>
 
         <Button
@@ -208,9 +208,14 @@ const Sala = () => {
           )}
         </div>
         <div style={{ flex: 0.5, padding: "20px", backgroundColor: "#f7f7f7" }}>
-          {view === "mesaEditor" && selectedMesa && (
-            <MesaEditor mesa={selectedMesa} onAbrirPedido={handleAbrirPedido} />
+          {selectedMesa && (
+            <MesaEditor
+              mesa={selectedMesa}
+              onAbrirPedido={handleAbrirPedido}
+              view={view || ""}
+            />
           )}
+
           {/* {view === "pedidoEditor" && selectedMesa && (
             <PedidoEditor
               mesa={selectedMesa}

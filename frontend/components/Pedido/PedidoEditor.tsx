@@ -10,11 +10,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useProductStore } from "../Hooks/useProductStore";
+import { useOrderDetailsStore } from "./useOrderDetailsStore";
 import Swal from "sweetalert2";
 import { OrderCreated, useOrderStore } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
+import { OrderDetailsCreated } from "./useOrderDetailsStore";
 
-const PedidoEditor = ({ mesa }: { mesa: MesaInterface }) => {
+const PedidoEditor = ({ mesa, ordenAbierta }: { mesa: MesaInterface, ordenAbierta: OrderCreated }) => {
   const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
@@ -23,14 +25,10 @@ const PedidoEditor = ({ mesa }: { mesa: MesaInterface }) => {
   );
   const { products } = useProductStore();
   const { orders, removeOrder, findOrderByTableId } = useOrderStore();
+ 
   const { orderId, pedidoForm, fetchOrderById } = usePedido();
-  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated | null>();
-
-  const ordenArenderizar = (mesa: MesaInterface): void => {
-    const order = orders.find((order) => order.id === mesa.orderId);
-    setOrdenAbierta(order);
-  };
-
+  
+ 
   console.log("Mesa recibida en PedidoEditor:", mesa);
 
   // const handleVerPedido = () => {
@@ -117,8 +115,8 @@ const PedidoEditor = ({ mesa }: { mesa: MesaInterface }) => {
         <h2>Datos de la mesa</h2>
       </div>
       <div>
-        <h3>Cantidad de personas: {pedidoForm.numberCustomers}</h3>
-        <h3>Comentario: {pedidoForm.comment}</h3>
+        <h3>Cantidad de personas: {ordenAbierta.numberCustomers}</h3>
+        <h3>Comentario: {ordenAbierta?.comment}</h3>
       </div>
       <div
         style={{

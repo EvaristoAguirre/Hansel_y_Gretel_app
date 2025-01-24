@@ -92,6 +92,7 @@ const usePedido = () => {
 
       const newOrder = await response.json();
       addOrder(newOrder);
+      mesa.orderId = newOrder.id;
 
       Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
     } catch (error) {

@@ -8,7 +8,7 @@ export interface ProductForm {
   description: string;
   price: number;
   cost: number;
-  inActive: boolean;
+  isActive: boolean;
 }
 
 export interface ProductTableProps {
@@ -25,7 +25,7 @@ export interface ProductCreated {
   description: string;
   price: number;
   cost: number;
-  inActive: boolean;
+  isActive: boolean;
 }
 
 export interface ProductState {

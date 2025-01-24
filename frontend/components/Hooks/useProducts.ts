@@ -16,7 +16,7 @@ export const useProductos = () => {
     description: "",
     price: 0,
     cost: 0,
-    inActive: true,
+    isActive: true,
   });
 
   // Estado global desde el store
@@ -27,7 +27,7 @@ useEffect(() => {
   const fetchAndSetProducts = async () => {
     setLoading(true);
     try {
-      const fetchedProducts = await fetchProducts(); 
+      const fetchedProducts = await fetchProducts();
       setProducts(fetchedProducts); 
     } catch (error) {
       console.error("Error al cargar los productos:", error);
@@ -115,7 +115,7 @@ useEffect(() => {
       description: "",
       price: 0,
       cost: 0,
-      inActive: true,
+      isActive: true,
     });
   };
 
