@@ -4,6 +4,9 @@ import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
 import Swal from "sweetalert2";
 import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { useProductStore } from "./useProductStore";
+import useMesa from "./useMesa";
+import { TableCreated, useTableStore } from "../Mesa/useTableStore";
 
 const usePedido = () => {
   const {
@@ -15,6 +18,9 @@ const usePedido = () => {
     connectWebSocket,
   } = useOrderStore();
 
+  const { tables } = useTableStore();
+
+
   const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
     tableId: "",
     numberCustomers: 0,
@@ -23,6 +29,66 @@ const usePedido = () => {
   });
 
   const [orderId, setOrderId] = useState<string | null>(null);
+
+  const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
+  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
+  const [productosSeleccionados, setProductosSeleccionados] = useState<any[]>(
+    []
+  );
+  const { products } = useProductStore();
+
+  // const handleVerPedido = () => {
+  //   setMostrarEditorPedido(true);
+  // };
+
+  useEffect(() => {
+    setProductosDisponibles(products); // Sincronizar productos disponibles
+  }, [products]);
+
+  // Manejar selección de productos
+  const handleSeleccionarProducto = (producto: any) => {
+    const productoExistente = productosSeleccionados.find(
+      (p) => p.id === producto.id
+    );
+
+    if (productoExistente) {
+      // Incrementar la cantidad si ya existe
+      productoExistente.cantidad += 1;
+      setProductosSeleccionados([...productosSeleccionados]);
+    } else {
+      // Agregar nuevo producto al pedido
+      setProductosSeleccionados([
+        ...productosSeleccionados,
+        { ...producto, cantidad: 1 },
+      ]);
+    }
+  };
+
+  // Agregar productos al pedido
+  const handleAgregarProductosAlPedido = () => {
+    if (!selectedMesa) {
+      Swal.fire(
+        "Error",
+        "Por favor, selecciona una mesa antes de agregar productos al pedido.",
+        "error"
+      );
+      return;
+    }
+
+    const mesaActualizada = {
+      ...selectedMesa,
+      // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
+    };
+
+    Swal.fire(
+      "Pedido Actualizado",
+      `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
+      "success"
+    );
+    setProductosSeleccionados([]);
+    setMostrarEditorPedido(false);
+  };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -92,7 +158,11 @@ const usePedido = () => {
 
       const newOrder = await response.json();
       addOrder(newOrder);
-      mesa.orderId = newOrder.id;
+
+      const mesaActualizada = tables.find(table => table.id === mesa.id);
+      if (mesaActualizada) {
+        mesaActualizada.orders.push(newOrder);
+      }
 
       Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
     } catch (error) {
@@ -153,11 +223,21 @@ const usePedido = () => {
     orders,
     orderId,
     pedidoForm,
+    selectedMesa,
+    productosDisponibles,
+    productosSeleccionados,
+    products,
     setOrderId,
     handleCreateOrder,
     handleEditOrder,
     handleDeleteOrder,
     fetchOrderById,
+    setProductosDisponibles,
+    setProductosSeleccionados,
+    setMostrarEditorPedido,
+    removeOrder,
+    handleSeleccionarProducto,
+    handleAgregarProductosAlPedido,
   };
 };
 

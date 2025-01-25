@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import {
   Autocomplete,
@@ -9,79 +9,25 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { useProductStore } from "../Hooks/useProductStore";
-import { useOrderDetailsStore } from "./useOrderDetailsStore";
-import Swal from "sweetalert2";
-import { OrderCreated, useOrderStore } from "./useOrderStore";
+import { OrderCreated } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
-import { OrderDetailsCreated } from "./useOrderDetailsStore";
 
-const PedidoEditor = ({ mesa, ordenAbierta }: { mesa: MesaInterface, ordenAbierta: OrderCreated }) => {
-  const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
-  const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
-  const [productosSeleccionados, setProductosSeleccionados] = useState<any[]>(
-    []
-  );
-  const { products } = useProductStore();
-  const { orders, removeOrder, findOrderByTableId } = useOrderStore();
- 
-  const { orderId, pedidoForm, fetchOrderById } = usePedido();
-  
- 
-  console.log("Mesa recibida en PedidoEditor:", mesa);
-
-  // const handleVerPedido = () => {
-  //   setMostrarEditorPedido(true);
-  // };
-
-  useEffect(() => {
-    setProductosDisponibles(products); // Sincronizar productos disponibles
-  }, [products]);
-
-  // Manejar selección de productos
-  const handleSeleccionarProducto = (producto: any) => {
-    const productoExistente = productosSeleccionados.find(
-      (p) => p.id === producto.id
-    );
-
-    if (productoExistente) {
-      // Incrementar la cantidad si ya existe
-      productoExistente.cantidad += 1;
-      setProductosSeleccionados([...productosSeleccionados]);
-    } else {
-      // Agregar nuevo producto al pedido
-      setProductosSeleccionados([
-        ...productosSeleccionados,
-        { ...producto, cantidad: 1 },
-      ]);
-    }
-  };
-
-  // Agregar productos al pedido
-  const handleAgregarProductosAlPedido = () => {
-    if (!selectedMesa) {
-      Swal.fire(
-        "Error",
-        "Por favor, selecciona una mesa antes de agregar productos al pedido.",
-        "error"
-      );
-      return;
-    }
-
-    const mesaActualizada = {
-      ...selectedMesa,
-      // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
-    };
-
-    Swal.fire(
-      "Pedido Actualizado",
-      `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
-      "success"
-    );
-    setProductosSeleccionados([]);
-    setMostrarEditorPedido(false);
-  };
+const PedidoEditor = ({
+  mesa,
+  ordenAbierta,
+}: {
+  mesa: MesaInterface;
+  ordenAbierta: OrderCreated;
+}) => {
+  const {
+    productosDisponibles,
+    productosSeleccionados,
+    products,
+    handleSeleccionarProducto,
+    setProductosDisponibles,
+    handleAgregarProductosAlPedido,
+    removeOrder,
+  } = usePedido();
 
   return (
     <div>
@@ -155,7 +101,7 @@ const PedidoEditor = ({ mesa, ordenAbierta }: { mesa: MesaInterface, ordenAbiert
         renderInput={(params) => (
           <TextField
             {...params}
-            label="Buscar productos por nombre o código"
+            label="Buscar productos por nombre, código o categoría"
             variant="outlined"
             fullWidth
           />

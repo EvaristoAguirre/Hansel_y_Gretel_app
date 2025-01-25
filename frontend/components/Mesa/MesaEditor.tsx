@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { ISala, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
 import PedidoEditor from "../Pedido/PedidoEditor";
 import useMesa from "../Hooks/useMesa";
@@ -11,6 +11,7 @@ import {
   OrderDetailsCreated,
   useOrderDetailsStore,
 } from "../Pedido/useOrderDetailsStore";
+import { TableCreated, useTableStore } from "./useTableStore";
 
 const MesaEditor = ({
   mesa,
@@ -27,17 +28,22 @@ const MesaEditor = ({
   const mozos = ["Mozo 1", "Mozo 2", "Mozo 3"];
   const [pedido, setPedido] = useState<OrderCreated | null>();
   const { orderDetails } = useOrderDetailsStore();
-  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated | null>();
-
+  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated>();
   const { handleCreateOrder, fetchOrderById, handleEditOrder } = usePedido();
-
   const { updateOrder, orders } = useOrderStore();
+  const { tables } = useTableStore();
 
   useEffect(() => {
+    console.log("Orders en useOrderStore:", orders);
+    console.log("mesa en MesaEditor:", mesa);
     const ordenArenderizar = (mesa: MesaInterface): void => {
-      const order = orders.find((order) => order.id === mesa.orderId);
+      const mesaTableCreated = tables.find((table) => table.id === mesa.id);
+
+      console.log("mesaTableCreated: ", mesaTableCreated);
+
+      const order = orders.find((order) => order.id === mesaTableCreated?.orders[0]?.id);
+    
       setOrdenAbierta(order);
-      console.log("Orden a renderizar:", order);
     };
 
     ordenArenderizar(mesa);
@@ -191,7 +197,9 @@ const MesaEditor = ({
           </form>
         </div>
       )}
-      {ordenAbierta && <PedidoEditor mesa={mesa} ordenAbierta={ordenAbierta}></PedidoEditor>}
+      {view === "pedidoEditor" && ordenAbierta && (
+        <PedidoEditor mesa={mesa} ordenAbierta={ordenAbierta}></PedidoEditor>
+      )}
     </div>
   );
 };

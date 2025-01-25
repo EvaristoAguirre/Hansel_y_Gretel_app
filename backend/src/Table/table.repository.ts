@@ -78,19 +78,36 @@ export class TableRepository {
     }
   }
 
-  async getAllTables(page: number, limit: number): Promise<Table[]> {
+  async getAllTables(page: number, limit: number): Promise<any[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
+
     try {
-      return await this.tableRepository.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['room'],
-      });
+      const tables = await this.tableRepository
+        .createQueryBuilder('table') 
+        .leftJoinAndSelect('table.orders', 'order') 
+        .select(['table', 'order.id']) 
+        .where('table.isActive = :isActive', { isActive: true }) 
+        .skip((page - 1) * limit)
+        .take(limit) 
+        .getMany(); 
+
+      
+      const result = tables.map((table) => ({
+        id: table.id,
+        name: table.name,
+        coment: table.coment,
+        number: table.number,
+        isActive: table.isActive,
+        state: table.state,
+        room: table.room,
+        orders: table.orders.map((order) => order.id), 
+      }));
+
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching tables', error);
     }
