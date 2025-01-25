@@ -14,7 +14,7 @@ const MesaModal: React.FC<MesaModalProps> = ({
   open,
   type,
   form,
-   onClose,
+  onClose,
   onSave,
   onChange,
 }) => {
@@ -43,10 +43,7 @@ const MesaModal: React.FC<MesaModalProps> = ({
         <Button onClick={onClose} color="primary">
           Cancelar
         </Button>
-        <Button
-          onClick={onSave}
-          color="primary"
-        >
+        <Button onClick={onSave} color="primary">
           Guardar
         </Button>
       </DialogActions>

@@ -1,23 +1,7 @@
 import { create } from "zustand";
+import { ProductState } from "../Interfaces/IProducts";
 
-interface ProductCreated {
-  id: string;
-  code: number;
-  name: string;
-  description: string;
-  price: number;
-  cost: number;
-  isActive: boolean;
-}
 
-interface ProductState {
-  products: ProductCreated[];
-  setProducts: (products: ProductCreated[]) => void;
-  addProduct: (product: ProductCreated) => void;
-  removeProduct: (id: string) => void;
-  updateProduct: (updatedProduct: ProductCreated) => void;
-  connectWebSocket: () => void;
-}
 
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
