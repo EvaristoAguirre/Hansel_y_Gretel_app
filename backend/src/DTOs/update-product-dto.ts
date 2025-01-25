@@ -6,6 +6,7 @@ import {
   IsString,
   IsArray,
   IsUUID,
+  IsDecimal,
   IsNumber,
 } from 'class-validator';
 

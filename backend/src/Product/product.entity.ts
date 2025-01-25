@@ -1,4 +1,4 @@
-import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { OrderDetails } from 'src/Order/order_details.entity';
 import { Provider } from 'src/Provider/provider.entity';
