@@ -147,7 +147,7 @@ const PedidoEditor = ({
         color="warning"
         variant="contained"
         style={{ marginTop: "10px" }}
-        onClick={() => removeOrder(mesa.orderId!)}
+        // onClick={() => removeOrder(mesa.orderId!)}
       >
         Anular Pedido
       </Button>

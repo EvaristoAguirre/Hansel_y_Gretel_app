@@ -87,15 +87,20 @@ export class TableRepository {
 
     try {
       const tables = await this.tableRepository
-        .createQueryBuilder('table') 
-        .leftJoinAndSelect('table.orders', 'order') 
-        .select(['table', 'order.id']) 
-        .where('table.isActive = :isActive', { isActive: true }) 
+        .createQueryBuilder('table')
+        .leftJoinAndSelect('table.orders', 'order') // Incluye las órdenes asociadas
+        .leftJoinAndSelect('table.room', 'room') // Incluye la información de la sala asociada
+        .select([
+          'table', 
+          'order.id', // Solo selecciona el ID de las órdenes
+          'room.id', 
+          'room.name' // Selecciona los campos necesarios de la sala
+        ])
+        .where('table.isActive = :isActive', { isActive: true })
         .skip((page - 1) * limit)
-        .take(limit) 
-        .getMany(); 
-
-      
+        .take(limit)
+        .getMany();
+  
       const result = tables.map((table) => ({
         id: table.id,
         name: table.name,
@@ -103,11 +108,15 @@ export class TableRepository {
         number: table.number,
         isActive: table.isActive,
         state: table.state,
-        room: table.room,
-        orders: table.orders.map((order) => order.id), 
+        room: {
+          id: table.room?.id,
+          name: table.room?.name,
+        },
+        orders: table.orders.map((order) => order.id), // Array de IDs de las órdenes
       }));
-
-      return result;
+  
+      console.log(result);
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching tables', error);
     }

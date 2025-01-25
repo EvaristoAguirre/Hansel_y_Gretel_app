@@ -18,8 +18,7 @@ const usePedido = () => {
     connectWebSocket,
   } = useOrderStore();
 
-  const { tables } = useTableStore();
-
+  const { tables, updateTable } = useTableStore();
 
   const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
     tableId: "",
@@ -134,7 +133,7 @@ const usePedido = () => {
   const handleCreateOrder = async (
     mesa: MesaInterface,
     cantidadPersonas: number,
-    comentario: string
+    comentario: string,
   ) => {
     try {
       const pedido = {
@@ -157,13 +156,16 @@ const usePedido = () => {
       }
 
       const newOrder = await response.json();
-      addOrder(newOrder);
-
-      const mesaActualizada = tables.find(table => table.id === mesa.id);
+      
+      const mesaActualizada = tables.find((table) => table.id === mesa.id);
       if (mesaActualizada) {
         mesaActualizada.orders.push(newOrder);
+        updateTable(mesaActualizada);
       }
+      
+      addOrder(newOrder);
 
+      
       Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");

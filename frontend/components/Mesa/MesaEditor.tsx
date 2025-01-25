@@ -34,20 +34,43 @@ const MesaEditor = ({
   const { tables } = useTableStore();
 
   useEffect(() => {
-    console.log("Orders en useOrderStore:", orders);
-    console.log("mesa en MesaEditor:", mesa);
-    const ordenArenderizar = (mesa: MesaInterface): void => {
-      const mesaTableCreated = tables.find((table) => table.id === mesa.id);
+    console.log("Mesa en MesaEditor:", mesa);
+    console.log("View en MesaEditor:", view);
 
-      console.log("mesaTableCreated: ", mesaTableCreated);
+    const mesaTableCreated: TableCreated | undefined = tables.find(
+      (table) => table.id === mesa.id
+    );
 
-      const order = orders.find((order) => order.id === mesaTableCreated?.orders[0]?.id);
-    
+    console.log("MesaTableCreated en MesaEditor:", mesaTableCreated);
+
+    if (!mesaTableCreated) {
+      console.warn("No se encontró una mesa con el ID proporcionado.");
+      return;
+    }
+
+    if (
+      !Array.isArray(mesaTableCreated.orders) ||
+      mesaTableCreated.orders.length === 0
+    ) {
+      console.warn(
+        "La mesa no tiene órdenes asociadas o el formato no es válido."
+      );
+      return;
+    }
+
+    // Buscar la orden correspondiente
+    const order = orders.find((order) =>
+      mesaTableCreated.orders.some((orderId) => orderId === order.id)
+    );
+
+    console.log("Order en MesaEditor:", order);
+
+    if (!order) {
+      console.warn("No se encontró una orden correspondiente.");
+    } else {
       setOrdenAbierta(order);
-    };
-
-    ordenArenderizar(mesa);
-  }, [orders, mesa.orderId]);
+    }
+  }, [orders, mesa.id, tables, view]);
 
   // console.log("Orders en useOrderStore:", orders);
   // console.log("orderId en PedidoEditor:", mesa.orderId);
@@ -187,7 +210,13 @@ const MesaEditor = ({
                 onClick={() => {
                   // abrirPedido();
                   if (mesa.orderId !== null) {
-                    onAbrirPedido();
+                    onAbrirPedido(); // Abre el pedido existente
+                  } else {
+                    Swal.fire(
+                      "Error",
+                      "No se ha abierto un pedido para esta mesa.",
+                      "error"
+                    );
                   }
                 }}
               >
