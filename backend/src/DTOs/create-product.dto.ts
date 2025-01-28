@@ -1,4 +1,3 @@
-import { IsNumber } from 'class-validator';
 import {
   IsInt,
   Max,
@@ -6,9 +5,9 @@ import {
   IsOptional,
   IsString,
   IsArray,
-  // ArrayNotEmpty,
   IsUUID,
-  IsDecimal,
+  IsNumber,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -18,6 +17,7 @@ export class CreateProductDto {
   @Max(9999)
   code?: number;
 
+  @IsNotEmpty({ message: 'El nombre del producto es obligatorio' })
   @IsString()
   name: string;
 
@@ -37,7 +37,6 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsArray()
-  // @ArrayNotEmpty()    Definir si es un campo obligatorio o no.
   @IsUUID('all', { each: true })
   categories?: string[];
 

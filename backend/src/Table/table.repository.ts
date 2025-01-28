@@ -78,18 +78,45 @@ export class TableRepository {
     }
   }
 
-  async getAllTables(page: number, limit: number): Promise<Table[]> {
+  async getAllTables(page: number, limit: number): Promise<any[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
+
     try {
-      return await this.tableRepository.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-      });
+      const tables = await this.tableRepository
+        .createQueryBuilder('table')
+        .leftJoinAndSelect('table.orders', 'order') // Incluye las órdenes asociadas
+        .leftJoinAndSelect('table.room', 'room') // Incluye la información de la sala asociada
+        .select([
+          'table',
+          'order.id', // Solo selecciona el ID de las órdenes
+          'room.id',
+          'room.name', // Selecciona los campos necesarios de la sala
+        ])
+        .where('table.isActive = :isActive', { isActive: true })
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany();
+
+      const result = tables.map((table) => ({
+        id: table.id,
+        name: table.name,
+        coment: table.coment,
+        number: table.number,
+        isActive: table.isActive,
+        state: table.state,
+        room: {
+          id: table.room?.id,
+          name: table.room?.name,
+        },
+        orders: table.orders.map((order) => order.id), // Array de IDs de las órdenes
+      }));
+
+      console.log(result);
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching tables', error);
     }

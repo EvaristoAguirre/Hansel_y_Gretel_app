@@ -43,6 +43,10 @@ export class OrderController {
   ): Promise<Order[]> {
     return this.orderService.getAllOrders(page, limit);
   }
+  @Get('active')
+  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
+    return await this.orderService.getOrdersForOpenOrPendingTables();
+  }
 
   @Get('order_detail')
   getOrderDetails(

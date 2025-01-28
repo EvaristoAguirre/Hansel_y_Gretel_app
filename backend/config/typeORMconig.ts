@@ -6,11 +6,11 @@ dotenvConfig({ path: '.env' });
 
 const config = {
   type: 'postgres',
-  host: 'localhost',
-  port:  5432,
-  username: 'sam',
-  password: 'mysamword',
-  database: 'hansel_y_gretel',
+  host: process.env.DB_HOST || 'localhost',
+  port: 5433,
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB,
   autoLoadEntities: true,
   synchronize: true,
   dropSchema: false,
