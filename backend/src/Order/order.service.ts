@@ -48,4 +48,7 @@ export class OrderService {
   async getOrderDetails(page: number, limit: number): Promise<OrderDetails[]> {
     return await this.orderRepository.getOrderDetails(page, limit);
   }
+  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
+    return await this.orderRepository.getOrdersForOpenOrPendingTables();
+  }
 }

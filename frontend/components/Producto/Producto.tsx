@@ -125,6 +125,7 @@ const Productos: React.FC = () => {
             open={modalOpen}
             modalType={modalType}
             form={form}
+            products={products} // Lista de productos existentes
             onChange={(field, value) => setForm({ ...form, [field]: value })}
             onClose={handleCloseModal}
             onSave={modalType === "create" ? handleCreate : handleEdit}

@@ -12,6 +12,7 @@ import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
+import { TableState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class OrderRepository {
@@ -27,7 +28,8 @@ export class OrderRepository {
   ) {}
 
   async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
-    const { tableId, numberCustomers, productsDetails } = orderToCreate;
+    const { tableId, numberCustomers, productsDetails, comment } =
+      orderToCreate;
 
     try {
       const tableInUse = await this.tableRepository.findOne({
@@ -38,11 +40,15 @@ export class OrderRepository {
         throw new NotFoundException(`Table with ID: ${tableId} not found`);
       }
 
+      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      await this.tableRepository.save(tableInUse);
+
       const newOrder = this.orderRepository.create({
         date: new Date(),
         total: 0,
         numberCustomers: numberCustomers,
         table: tableInUse,
+        comment: comment,
         orderDetails: [],
       });
 
@@ -206,7 +212,7 @@ export class OrderRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
-        relations: ['orderDetails', 'orderDetails.product'],
+        relations: ['orderDetails', 'orderDetails.product', 'table'],
       });
     } catch (error) {
       throw new InternalServerErrorException(
@@ -250,6 +256,23 @@ export class OrderRepository {
         take: limit,
         relations: ['product', 'order'],
       });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error fetching orders',
+        error.message,
+      );
+    }
+  }
+
+  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
+    try {
+      return this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.table', 'table')
+        .where('table.state IN (:...states)', {
+          states: ['open', 'pending_payment'],
+        })
+        .getMany();
     } catch (error) {
       throw new InternalServerErrorException(
         'Error fetching orders',

@@ -44,13 +44,13 @@ export class ProductController {
   async getProductsByCategories(
     @Body(ValidationPipe) body: GetProductsByCategoriesDto,
   ): Promise<Product[]> {
-    const { categoryIds } = body;
-    if (!categoryIds || categoryIds.length === 0) {
+    const { categories } = body;
+    if (!categories || categories.length === 0) {
       throw new BadRequestException(
         'At least one category ID must be provided.',
       );
     }
-    return this.productService.getProductsByCategories(categoryIds);
+    return this.productService.getProductsByCategories(categories);
   }
 
   @Post()
