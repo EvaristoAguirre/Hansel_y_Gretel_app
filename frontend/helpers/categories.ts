@@ -10,22 +10,22 @@ export const fetchCategories = async () => {
   }
 }
 
-export const ProductsByCategory = async (id: string) => {
+// export const ProductsByCategory = async (id: string) => {
 
-  try {
-    const response = await fetch(`${URI_PRODUCT_BY_CATEGORY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        "categoryIds": [id],
-      }),
-    });
+//   try {
+//     const response = await fetch(`${URI_PRODUCT_BY_CATEGORY}`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         "categoryIds": [id],
+//       }),
+//     });
     
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-  }
-}
+//     const data = await response.json();
+//     return data;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }

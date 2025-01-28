@@ -1,4 +1,4 @@
-import ProductsPage from "@/components/Producto/ProductsPage";
+import ProductsPage from "@/components/Products/ProductsPage";
 const ViewProducts = () => {
   return (
     <div>

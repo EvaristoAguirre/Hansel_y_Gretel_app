@@ -2,7 +2,7 @@
 import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
-import Productos from "./Producto";
+import Productos from "./Products";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./tabsNavigations";
 import CategoriasProductos from '../Categorías/CategoríasProductos/CategoriasProductos';
@@ -34,23 +34,23 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const {  connectWebSocket } = useProductos();
+  const { connectWebSocket } = useProductos();
 
-  const {categories, setCategories, }  = useCategoryStore();
+  const { categories, setCategories, } = useCategoryStore();
 
-    // Obtener categorías al cargar el componente
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const data  = await fetchCategories();
-          setCategories(data);
-          connectWebSocket();
-        } catch (error) {
-          console.error(error);
-        }
-      };
-      fetchData();
-    }, [setCategories, connectWebSocket]);
+  // Obtener categorías al cargar el componente
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data);
+        connectWebSocket();
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, [setCategories, connectWebSocket]);
 
   useEffect(() => {
     connectWebSocket();
@@ -60,12 +60,23 @@ const ProductsPage: React.FC = () => {
     setSelectedCategoryId(categoryId);
   };
 
+  const clearSelectedCategory = () => {
+    setSelectedCategoryId(null); 
+  };
+
   return (
     <Box display="flex" flexDirection="column" height="100vh">
-      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} /> 
+      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
-        <Sidebar onCategorySelected={handleCategorySelected} />
-        {selectedTab === "Productos" && <Productos selectedCategoryId={selectedCategoryId}/>}
+        <Sidebar
+          onCategorySelected={handleCategorySelected}
+          selectedCategoryId={selectedCategoryId}
+        />
+        {selectedTab === "Productos" &&
+          <Productos
+            selectedCategoryId={selectedCategoryId}
+            onClearSelectedCategory={clearSelectedCategory}
+          />}
         {selectedTab === "Ingredientes" && <CategoriasIngredientes />}
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
       </Box>

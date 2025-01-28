@@ -10,10 +10,11 @@ import { ProductForm } from "../Interfaces/IProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 
-interface ProductosProps {
+interface ProductsProps {
   selectedCategoryId: string | null;
+  onClearSelectedCategory: () => void;
 }
-const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
+const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelectedCategory}) => {
 
 
   const {
@@ -99,6 +100,7 @@ const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
         rows={products}
         selectedCategoryId={selectedCategoryId}
         columns={columns}
+        onClearSelectedCategory={ onClearSelectedCategory }
         onCreate={() => {
           setModalType("create");
           setModalOpen(true);
@@ -112,7 +114,7 @@ const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
           modalType={modalType}
           form={form}
           categories={categories}
-          products={products} // Lista de productos existentes
+          products={products} 
           onChange={handleChangeProductInfo}
           onClose={handleCloseModal}
           onSave={modalType === "create" ? handleCreate : handleEdit}
@@ -123,4 +125,4 @@ const Productos: React.FC <ProductosProps> = ({selectedCategoryId}) => {
   );
 };
 
-export default Productos;
+export default Products;

@@ -6,19 +6,18 @@ import {
   TextField,
   DialogActions,
   Button,
-  MenuItem,
-  Select,
   FormControl,
-  InputLabel,
-  FormHelperText,
+  Chip,
 } from "@mui/material";
 import { ProductForm, ProductCreated } from "../Interfaces/IProducts";
 import { ICategory } from "../Interfaces/ICategories";
+import { Autocomplete } from "@mui/material";
+import { getProductByCode } from "@/helpers/products";
 
 interface ProductDialogProps {
   open: boolean;
   modalType: "create" | "edit";
-  form: ProductCreated;
+  form: ProductForm;
   products: ProductCreated[];
   categories: ICategory[];
   onChange: (field: keyof ProductForm, value: string | number | null | string[]) => void;
@@ -34,7 +33,6 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   open,
   modalType,
   form,
-  products,
   categories,
   onChange,
   onClose,
@@ -48,8 +46,9 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     categories: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
 
-  const validateField = (field: string, value: any) => {
+  const validateField = async (field: string, value: any) => {
     let error = "";
 
     if (field === "categories" && Array.isArray(value) && value.length === 0) {
@@ -58,23 +57,41 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     if (["code", "name", "price", "cost"].includes(field)) {
       if (!value) {
         error = "Este campo es obligatorio";
-      } else if (field === "code" && products.some((p) => p.code === value && p.id !== form.id)) {
-        error = "El código ya está en uso";
+      } else if (field === "code") {
+        // Validación del código
+        setIsCheckingCode(true);
+        try {
+          const result = await getProductByCode(value);
+        
+          if (result.ok) {
+            error = "El código ya está en uso"; 
+          } else if (result.status === 404) {
+            error = ""; 
+          } else {
+            error = result.error || "Error al validar el código";
+          }
+        } catch (err) {
+          console.error("Error al validar el código:", err);
+          error = "Error al conectar con el servidor";
+        } finally {
+          setIsCheckingCode(false);
+        }
+        
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
       }
     }
 
-    setErrors((prevErrors) => ({ ...prevErrors, [field as string]: error }));
+    setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
   };
 
   const validateForm = () => {
     const hasErrors = Object.values(errors).some((error) => error);
-    
-    const hasEmptyFields = ["code", "name", "price", "cost"].some(
-      (field) => !form[field as keyof ProductForm]
-    ) || !Array.isArray(form.categories) || form.categories.length === 0;
-  
+    const hasEmptyFields =
+      ["code", "name", "price", "cost"].some((field) => !form[field as keyof ProductForm]) ||
+      !Array.isArray(form.categories) ||
+      form.categories.length === 0;
+
     setIsFormValid(!hasErrors && !hasEmptyFields);
   };
 
@@ -91,6 +108,11 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     categories: "Categoría",
     isActive: "Inactivo",
     id: "ID",
+  };
+
+  const handleDelete = (id: string) => {
+    const updatedCategories = form.categories.filter((category) => category !== id);
+    onChange("categories", updatedCategories);
   };
 
   return (
@@ -113,59 +135,66 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                  ? e.target.value === ""
-                    ? null
-                    : parseInt(e.target.value, 10)
-                  : e.target.value;
+                ? e.target.value === ""
+                  ? null
+                  : parseInt(e.target.value, 10)
+                : e.target.value;
               onChange(field as keyof ProductForm, value);
-              validateField(field, value);
+              if (field !== "code") {
+                validateField(field, value);
+              }
+            }}
+            onBlur={(e) => {
+              if (field === "code") {
+                validateField(field, e.target.value);
+              }
             }}
             error={!!errors[field as keyof ProductForm]}
-            helperText={errors[field as keyof ProductForm]}
+            helperText={
+              isCheckingCode && field === "code"
+                ? "Verificando código..."
+                : errors[field as keyof ProductForm]
+            }
             fullWidth
             variant="outlined"
           />
         ))}
 
         {/* CATEGORIAS */}
-        <FormControl
-          fullWidth
-          margin="dense"
-          error={!!errors.categories}
-          variant="outlined"
-        >
-          <InputLabel>{fieldLabels.categories}</InputLabel>
-          <Select
-            multiple 
-            value={form.categories || []} 
-            onChange={(e) => {
-              const value = e.target.value; 
-
-              onChange("categories", value);
-              validateField("categories", value);
+        <FormControl fullWidth margin="dense" error={!!errors.categories} variant="outlined">
+          <Autocomplete
+            multiple
+            options={categories}
+            getOptionLabel={(option) => option.name}
+            value={categories.filter((category) => form.categories.includes(category.id))}
+            onChange={(_, newValue) => {
+              const selectedIds = newValue.map((category) => category.id);
+              onChange("categories", selectedIds);
+              validateField("categories", selectedIds);
             }}
-            label={fieldLabels.categories}
-            renderValue={(selected: string[]) => {
-              if (Array.isArray(selected)) {
-                const categoriesFiltered = categories
-                .filter((categories) => selected.includes(categories.id))
-  
-                const selectedValue = categoriesFiltered.map((cat) => cat.name).join(", ");
-  
-                return selectedValue;
-              }
-              return [];
-            }}
-          >
-            {categories.map((categories) => (
-              <MenuItem key={categories.id} value={categories.id}>
-                {categories.name}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>{errors.categories}</FormHelperText>
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                label={fieldLabels.categories}
+                placeholder="Selecciona categorías"
+                error={!!errors.categories}
+                helperText={errors.categories}
+              />
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option.id}
+                  label={option.name}
+                  sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }}
+                />
+              ))
+            }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+          />
         </FormControl>
-
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">

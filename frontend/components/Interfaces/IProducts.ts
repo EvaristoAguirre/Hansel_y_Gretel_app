@@ -4,11 +4,11 @@ import { ICategory } from './ICategories';
 export interface ProductForm {
   [key: string]: string | number | boolean | null | string[];
   id: string;
-  code: number;
+  code:  null | number;
   name: string;
   description: string;
-  price: number;
-  cost: number;
+  price: null | number;
+  cost: null | number;
   categories: string[];
   isActive: boolean;
 }
@@ -18,12 +18,14 @@ export interface ProductTableProps {
   columns: GridColDef[];
   onCreate: () => void;
   loading: boolean;
-  selectedCategoryId: string | null
+  selectedCategoryId: string | null;
+  onClearSelectedCategory: () => void;
+
 }
 
 export interface ProductCreated {
   [key: string]: string | number | boolean | null | string[];
-  code: number;
+  code: number ;
   name: string;
   description: string;
   price: number;
