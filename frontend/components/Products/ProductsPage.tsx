@@ -61,7 +61,7 @@ const ProductsPage: React.FC = () => {
   };
 
   const clearSelectedCategory = () => {
-    setSelectedCategoryId(null); 
+    setSelectedCategoryId(null);
   };
 
   return (
@@ -77,7 +77,6 @@ const ProductsPage: React.FC = () => {
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
           />}
-        {selectedTab === "Ingredientes" && <CategoriasIngredientes />}
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
       </Box>
     </Box>

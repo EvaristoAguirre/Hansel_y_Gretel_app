@@ -7,7 +7,7 @@ dotenvConfig({ path: '.env' });
 const config = {
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  port: 5433,
+  port: process.env.DB_PORT || 5433,
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD,
   database: process.env.DB,
