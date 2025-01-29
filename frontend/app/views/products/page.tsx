@@ -1,8 +1,8 @@
-import Producto from "@/components/Producto/Producto";
+import ProductsPage from "@/components/Products/ProductsPage";
 const ViewProducts = () => {
   return (
     <div>
-      <Producto></Producto>
+      <ProductsPage/>
     </div>
   );
 };

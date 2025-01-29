@@ -1,16 +1,12 @@
 import { create } from "zustand";
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { ICategory } from "../Interfaces/ICategories";
 
 interface CategoryState {
-  categories: Category[];
-  setCategories: (categories: Category[]) => void;
-  addCategory: (category: Category) => void;
+  categories: ICategory[];
+  setCategories: (categories: ICategory[]) => void;
+  addCategory: (category: ICategory) => void;
   removeCategory: (id: string) => void;
-  updateCategory: (updatedCategory: Category) => void;
+  updateCategory: (updatedCategory: ICategory) => void;
   connectWebSocket: () => void;
 }
 
