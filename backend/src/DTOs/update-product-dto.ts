@@ -6,7 +6,6 @@ import {
   IsString,
   IsArray,
   IsUUID,
-  IsDecimal,
   IsNumber,
 } from 'class-validator';
 
@@ -38,7 +37,7 @@ export class UpdateProductDto {
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  categoriesIds?: string[];
+  categories?: string[];
 
   @IsOptional()
   @IsString()

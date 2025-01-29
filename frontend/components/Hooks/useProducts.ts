@@ -4,31 +4,32 @@ import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../helpers/products';
+import { ProductForm } from '../Interfaces/IProducts';
 
 export const useProductos = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
   const [loading, setLoading] = useState<boolean>(true);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductForm>({
     id: "",
-    code: 0,
+    code: null,
     name: "",
     description: "",
-    price: 0,
-    cost: 0,
+    price: null,
+    cost: null,
+    categories: [],
     isActive: true,
   });
 
   // Estado global desde el store
   const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
 
- // Llamada inicial para cargar productos
-useEffect(() => {
   const fetchAndSetProducts = async () => {
     setLoading(true);
     try {
-      const fetchedProducts = await fetchProducts();
-      setProducts(fetchedProducts); 
+      const fetchedProducts = await fetchProducts("1", "50");
+
+      setProducts(fetchedProducts);
     } catch (error) {
       console.error("Error al cargar los productos:", error);
     } finally {
@@ -36,25 +37,27 @@ useEffect(() => {
     }
   };
 
-  fetchAndSetProducts();
-}, [connectWebSocket]);
+  // Llamada inicial para cargar productos
+  useEffect(() => {
+    fetchAndSetProducts();
+  }, [connectWebSocket]);
   const handleCreate = async () => {
-    
+
     try {
       const preparedForm = {
         ...form,
         code: parseInt(form.code as any, 10),
         price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),        
+        cost: parseFloat(form.cost as any),
       };
-
-      const newProduct = await createProduct(preparedForm); 
+      
+      const newProduct = await createProduct(preparedForm);
 
       addProduct(newProduct);
+      handleCloseModal();
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
 
-      handleCloseModal(); 
     } catch (error) {
       Swal.fire("Error", "No se pudo crear el producto.", "error");
       console.error(error);
@@ -65,24 +68,26 @@ useEffect(() => {
     try {
       const preparedForm = {
         ...form,
-        code: parseInt(form.code as any, 10), 
+        code: parseInt(form.code as any, 10),
         price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),   
+        cost: parseFloat(form.cost as any),
         id: form.id,
       };
-      const updatedProduct = await editProduct(preparedForm); 
+
+      const updatedProduct = await editProduct(preparedForm);
+
       updateProduct(updatedProduct);
-  
+
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
-  
-      handleCloseModal(); 
+
+      handleCloseModal();
 
     } catch (error) {
       Swal.fire("Error", "No se pudo editar el producto.", "error");
       console.error(error);
     }
   };
-  
+
 
   const handleDelete = async (id: string) => {
     const confirm = await Swal.fire({
@@ -110,11 +115,12 @@ useEffect(() => {
     setModalOpen(false);
     setForm({
       id: "",
-      code: 0,
+      code: null,
       name: "",
       description: "",
-      price: 0,
-      cost: 0,
+      price: null,
+      cost: null,
+      categories: [],
       isActive: true,
     });
   };
@@ -132,7 +138,7 @@ useEffect(() => {
     handleEdit,
     handleDelete,
     handleCloseModal,
-    fetchProducts,
+    fetchAndSetProducts,
     connectWebSocket,
   };
 };

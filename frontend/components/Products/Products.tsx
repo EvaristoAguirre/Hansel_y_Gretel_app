@@ -3,34 +3,19 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useCategoryStore } from "../Categorías/useCategoryStore";
 import { useProductos } from "../Hooks/useProducts";
+import { ProductForm } from "../Interfaces/IProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
-import { Sidebar } from "./Sidebar";
-import { TabsNavigation } from "./tabsNavigations";
 
-const Productos: React.FC = () => {
-  const [tabIndex, setTabIndex] = useState(0);
-  const [tabs, setTabs] = useState([
-    "Productos",
-    "Ingredientes",
-    "Categoría productos",
-    "Categoría ingredientes",
-    "Control de Stock",
-  ]);
+interface ProductsProps {
+  selectedCategoryId: string | null;
+  onClearSelectedCategory: () => void;
+}
+const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelectedCategory}) => {
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    if (newValue !== 0) {
-      const selectedTab = tabs[newValue];
-      const newTabsOrder = [
-        selectedTab,
-        ...tabs.filter((_, index) => index !== newValue),
-      ];
-      setTabs(newTabsOrder);
-      setTabIndex(0); // El tab seleccionado siempre estará en el índice 0 tras el reordenamiento
-    }
-  };
 
   const {
     loading,
@@ -48,9 +33,18 @@ const Productos: React.FC = () => {
     connectWebSocket,
   } = useProductos();
 
+  const {
+    categories,
+  } = useCategoryStore();
+
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
+
+  const handleChangeProductInfo = (
+    field: keyof ProductForm, 
+    value: string | number | null | string[]
+  ) => setForm({ ...form, [field]: value });
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
@@ -76,7 +70,8 @@ const Productos: React.FC = () => {
                 description: params.row.description,
                 price: params.row.price,
                 cost: params.row.cost,
-                inActive: true,
+                categories: params.row.categories,
+                isActive: true,
               });
               setModalType("edit");
               setModalOpen(true);
@@ -98,42 +93,36 @@ const Productos: React.FC = () => {
   ];
 
   return (
-    <Box display="flex" flexDirection="column" height="100vh">
-      {/* Tabs Navigation */}
-      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
+    <Box flex={1} p={2} overflow="auto">
+      {/* Product Table */}
+      <ProductTable
+        loading={loading}
+        rows={products}
+        selectedCategoryId={selectedCategoryId}
+        columns={columns}
+        onClearSelectedCategory={ onClearSelectedCategory }
+        onCreate={() => {
+          setModalType("create");
+          setModalOpen(true);
+        }}
+      />
 
-      {/* Main Content */}
-      <Box display="flex" flex={1} overflow="hidden">
-        {/* Sidebar */}
-        <Sidebar categories={["Cafetería", "Bebidas", "Pastelería"]} />
-
-        {/* Main Content */}
-        <Box flex={1} p={2} overflow="auto">
-          {/* Product Table */}
-          <ProductTable
-            loading={loading}
-            rows={products}
-            columns={columns}
-            onCreate={() => {
-              setModalType("create");
-              setModalOpen(true);
-            }}
-          />
-
-          {/* Product Dialog */}
-          <ProductDialog
-            open={modalOpen}
-            modalType={modalType}
-            form={form}
-            products={products} // Lista de productos existentes
-            onChange={(field, value) => setForm({ ...form, [field]: value })}
-            onClose={handleCloseModal}
-            onSave={modalType === "create" ? handleCreate : handleEdit}
-          />
-        </Box>
-      </Box>
+      {/* Product Dialog */}
+      {modalOpen && (
+        <ProductDialog
+          open={modalOpen}
+          modalType={modalType}
+          form={form}
+          categories={categories}
+          products={products} 
+          onChange={handleChangeProductInfo}
+          onClose={handleCloseModal}
+          onSave={modalType === "create" ? handleCreate : handleEdit}
+        />
+      )}
     </Box>
+
   );
 };
 
-export default Productos;
+export default Products;

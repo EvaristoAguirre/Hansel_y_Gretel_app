@@ -22,7 +22,7 @@ export class Product {
   @IsInt()
   @Min(0)
   @Max(9999)
-  code: number;
+  code?: number;
 
   @Column({ nullable: false, unique: true })
   name: string;

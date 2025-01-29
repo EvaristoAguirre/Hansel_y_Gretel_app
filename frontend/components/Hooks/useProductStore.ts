@@ -1,23 +1,57 @@
 import { create } from "zustand";
+import { ICategory } from "../Interfaces/ICategories";
 import { ProductState } from "../Interfaces/IProducts";
 
-
+const parseCategories = (categories: ICategory[]): string[] => 
+  categories.map((category) => (
+    category.id
+  ));
 
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
-  setProducts: (products) => set({ products }),
-  addProduct: (product) =>
-    set((state) => ({ products: [...state.products, product] })),
+  //TODO: Métodos originales. Usar si se reciben solo los IDs de las categorías.
+  // setProducts: (products) => set({ products }),
+  // addProduct: (product) =>
+  //   set((state) => ({ products: [...state.products, product] })),
+  // updateProduct: (updatedProduct) =>
+  //   set((state) => ({
+  //     products: state.products.map((product) =>
+  //       product.id === updatedProduct.id ? updatedProduct : product
+  //     ),
+  //   })),
+  setProducts: (products) => {
+    // Se parsean las categorías para setear solo el ID
+    const parsedProduct = products.map((product: any) => ({
+      ...product,
+      categories: parseCategories(product.categories)
+    }));
+
+    return set({ products: parsedProduct });
+  },
+  addProduct: (product) => {
+    const parsedProduct = {
+      ...product,
+      categories: parseCategories(product.categories)
+    };
+
+    return set((state) => ({ products: [...state.products, parsedProduct] }));
+  },
   removeProduct: (id) =>
     set((state) => ({
       products: state.products.filter((product) => product.id !== id),
     })),
-  updateProduct: (updatedProduct) =>
-    set((state) => ({
+  updateProduct: (updatedProduct) => {
+    const parsedProduct = {
+      ...updatedProduct,
+      categories: parseCategories(updatedProduct.categories)
+    };
+
+    return set((state) => ({
       products: state.products.map((product) =>
-        product.id === updatedProduct.id ? updatedProduct : product
+        product.id === parsedProduct.id ? parsedProduct : product
       ),
-    })),
+    }));
+  },
   connectWebSocket: () => {
     const socket = new WebSocket("ws://localhost:3000");
 

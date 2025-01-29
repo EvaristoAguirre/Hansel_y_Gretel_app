@@ -98,18 +98,18 @@ export class ProductRepository {
     }
   }
 
-  async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
-    if (!categoryIds || categoryIds.length === 0) {
+  async getProductsByCategories(categories: string[]): Promise<Product[]> {
+    if (!categories || categories.length === 0) {
       throw new Error('At least one category ID must be provided.');
     }
     try {
       return await this.dataSource
         .createQueryBuilder(Product, 'product')
         .innerJoin('product.categories', 'category')
-        .where('category.id IN (:...categoryIds)', { categoryIds })
+        .where('category.id IN (:...categories)', { categories })
         .groupBy('product.id')
         .having('COUNT(DISTINCT category.id) = :numCategories', {
-          numCategories: categoryIds.length,
+          numCategories: categories.length,
         })
         .getMany();
     } catch (error) {
@@ -157,27 +157,43 @@ export class ProductRepository {
     if (!id) {
       throw new BadRequestException('Product ID must be provided.');
     }
-    const { categoriesIds, ...otherAttributes } = updateData;
+
+    const { categories, ...otherAttributes } = updateData;
+    const categoriesIds = categories;
     try {
       const product = await this.productRepository.findOne({
         where: { id: id, isActive: true },
         relations: ['categories'],
       });
+
       if (!product) {
-        throw new Error(`Product with ID: ${id} not found`);
+        throw new NotFoundException(`Product with ID: ${id} not found`);
       }
+
       Object.assign(product, otherAttributes);
 
-      if (categoriesIds && categoriesIds.length > 0) {
-        const categoriesFinded = await this.categoryRepository.find({
-          where: { id: In(categoriesIds), isActive: true },
-        });
+      if (categoriesIds) {
+        if (categoriesIds.length > 0) {
+          const categories = await this.categoryRepository.find({
+            where: { id: In(categoriesIds), isActive: true },
+          });
 
-        if (categoriesFinded.length === 0) {
-          throw new Error('No valid categories found');
+          const foundIds = categories.map((cat) => cat.id);
+          const invalidIds = categoriesIds.filter(
+            (id) => !foundIds.includes(id),
+          );
+          if (invalidIds.length > 0) {
+            throw new BadRequestException(
+              `Invalid category IDs: ${invalidIds.join(', ')}`,
+            );
+          }
+
+          product.categories = categories;
+        } else {
+          product.categories = [];
         }
-        product.categories = categoriesFinded;
       }
+
       return await this.productRepository.save(product);
     } catch (error) {
       throw new InternalServerErrorException(

@@ -98,11 +98,15 @@ export class OrderRepository {
       tableInUse.state = TableState.OPEN; //pasar por updateTable
       await this.tableRepository.save(tableInUse);
 
+      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      await this.tableRepository.save(tableInUse);
+
       const newOrder = this.orderRepository.create({
         date: new Date(),
         total: 0,
         numberCustomers: numberCustomers,
         table: tableInUse,
+        comment: comment,
         comment: comment,
         orderDetails: [],
       });
@@ -317,6 +321,7 @@ export class OrderRepository {
       );
     }
   }
+
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
     try {
       return this.orderRepository

@@ -91,16 +91,16 @@ export class TableRepository {
         .leftJoinAndSelect('table.orders', 'order') // Incluye las órdenes asociadas
         .leftJoinAndSelect('table.room', 'room') // Incluye la información de la sala asociada
         .select([
-          'table', 
+          'table',
           'order.id', // Solo selecciona el ID de las órdenes
-          'room.id', 
-          'room.name' // Selecciona los campos necesarios de la sala
+          'room.id',
+          'room.name', // Selecciona los campos necesarios de la sala
         ])
         .where('table.isActive = :isActive', { isActive: true })
         .skip((page - 1) * limit)
         .take(limit)
         .getMany();
-  
+
       const result = tables.map((table) => ({
         id: table.id,
         name: table.name,
@@ -114,9 +114,9 @@ export class TableRepository {
         },
         orders: table.orders.map((order) => order.id), // Array de IDs de las órdenes
       }));
-  
+
       console.log(result);
-      return result;
+      return result;
     } catch (error) {
       throw new InternalServerErrorException('Error fetching tables', error);
     }

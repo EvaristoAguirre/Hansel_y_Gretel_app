@@ -3,5 +3,5 @@ import { IsArray, IsUUID } from 'class-validator';
 export class GetProductsByCategoriesDto {
   @IsArray()
   @IsUUID('4', { each: true })
-  categoryIds: string[];
+  categories: string[];
 }

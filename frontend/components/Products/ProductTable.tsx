@@ -3,12 +3,18 @@ import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
 import { ProductTableProps } from "../Interfaces/IProducts";
 import { useProductStore } from "../Hooks/useProductStore";
+import { esES } from "@mui/x-data-grid/locales/esES";
+import { getProductsByCategory } from "@/helpers/products";
+import { useProductos } from '../Hooks/useProducts';
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
   onCreate,
+  selectedCategoryId,
+  onClearSelectedCategory,
 }) => {
-  const { products } = useProductStore(); // Obtener todos los productos
+  const { products, setProducts } = useProductStore(); // Obtener todos los productos
+  const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
 
@@ -18,7 +24,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [products]);
 
   // Actualizar los productos seleccionados al cambiar `products`
-  // Actualizar los productos seleccionados al cambiar `products`
   useEffect(() => {
     const updatedSelectedProducts = selectedProducts.map((selectedProduct) =>
       products.find((product) => product.id === selectedProduct.id) || selectedProduct
@@ -26,6 +31,30 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     setSelectedProducts(updatedSelectedProducts);
   }, [products]);
 
+  useEffect(() => {
+    if (selectedCategoryId) {
+      const fetchProductsByCategory = async () => {
+        const productsByCategoryId = await getProductsByCategory(selectedCategoryId);
+
+        const productsWithCategories = productsByCategoryId.map((product: any) => {
+          return {
+            ...product,
+            categories: [ selectedCategoryId ],
+          }  
+        })
+
+        console.log('productsByCategoryId', productsByCategoryId);
+        // setSearchResults(productsByCategoryId);
+        setProducts(productsWithCategories);
+      };
+      fetchProductsByCategory();
+    } 
+    else {
+      // Obtener todos los productos si no hay categoría seleccionada
+      // setSearchResults(products);
+      fetchAndSetProducts();
+    }
+  }, [selectedCategoryId]);
 
   // Manejar búsqueda de productos
   const handleSearch = (value: string) => {
@@ -43,15 +72,21 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Manejar selección de un producto
   const handleSelectProduct = (product: any) => {
+    console.log('Handle Select Product', product);
     if (!selectedProducts.find((p) => p.id === product.id)) {
       setSelectedProducts([...selectedProducts, product]);
     }
+    else {
+      setSelectedProducts(selectedProducts.filter((p) => p.id !== product.id));
+    };
   };
 
   // Limpiar búsqueda y mostrar todos los productos
   const handleClearSearch = () => {
+    fetchAndSetProducts();
     setSearchResults(products);
     setSelectedProducts([]);
+    onClearSelectedCategory();
   };
 
   return (
@@ -70,7 +105,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Buscador de productos */}
         <Autocomplete
           sx={{ flexGrow: 1, width: '60%', marginRight: 2 }}
-          options={products}
+          // options={searchResults}
+          options={selectedCategoryId ? searchResults : products}
           getOptionLabel={(product) =>
             `${product.name} - $${product.price} (Código: ${product.code})`
           }
@@ -101,14 +137,46 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           color="primary"
           onClick={handleClearSearch}
         >
-          Limpiar Búsqueda
+          Limpiar Filtros
         </Button>
       </Box>
       {/* Tabla de productos */}
       <Box sx={{ height: 450, mt: 2 }}>
+        {/* <DataGrid
+          rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
+          columns={columns}
+          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+          initialState={{
+            pagination: {
+              paginationModel: { page: 1, pageSize: 5 },
+            },
+            sorting: {
+              sortModel: [{ field: 'name', sort: 'asc' }],
+            }
+          }}
+          // onStateChange={(state) => {
+          //   // TODO: Revisar si este método puede ser útil
+          //   console.log('ON STATE CHANGE: ', state);
+          // }}
+          pageSizeOptions={[2, 5, 7, 9, 15]}
+        /> */}
         <DataGrid
           rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
           columns={columns}
+          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+          initialState={{
+            pagination: {
+              paginationModel: { page: 1, pageSize: 5 },
+            },
+            sorting: {
+              sortModel: [{ field: 'name', sort: 'asc' }],
+            }
+          }}
+          // onStateChange={(state) => {
+          //   // TODO: Revisar si este método puede ser útil
+          //   console.log('ON STATE CHANGE: ', state);
+          // }}
+          pageSizeOptions={[2, 5, 7, 9, 15]}
         />
       </Box>
     </Box>

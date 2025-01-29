@@ -23,12 +23,12 @@ export class ProductService {
     return await this.productRepository.getProductByCode(code);
   }
 
-  async getProductsByCategories(categoryIds: string[]): Promise<Product[]> {
+  async getProductsByCategories(categories: string[]): Promise<Product[]> {
     const products =
-      await this.productRepository.getProductsByCategories(categoryIds);
+      await this.productRepository.getProductsByCategories(categories);
     if (products.length === 0) {
       throw new NotFoundException(
-        `No products found for the given categories: ${categoryIds.join(', ')}`,
+        `No products found for the given categories: ${categories.join(', ')}`,
       );
     }
     return products;
