@@ -22,9 +22,9 @@ const Navbar = () => {
   ];
 
   const sessionActions = [
-    { label: "Nombre", path: "/", icon: user },
-    { label: "Cerrar Sesión", path: "/" },
-    { label: "Crear Usuario", path: "/" },
+    { label: "Iniciar sesión", path: "/views/login", icon: user },
+    { label: "Cerrar Sesión", path: "/views/" },
+    { label: "Crear Usuario", path: "/views/register" },
   ];
 
   return (
@@ -43,9 +43,8 @@ const Navbar = () => {
             <Link key={section.label} href={section.path}>
               <div
                 onClick={() => setSelectedSection(section.label)}
-                className={`relative group cursor-pointer p-3 transition-colors ${
-                  selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
-                }`}
+                className={`relative group cursor-pointer p-3 transition-colors ${selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
+                  }`}
               >
                 <Image
                   src={section.icon}
@@ -62,12 +61,12 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Session Actions */}
+        {/* Session login */}
         <div className="flex items-center gap-4 text-white">
           {sessionActions.map((action) => (
-            <div key={action.label} className="flex items-center gap-2">
+            <div key={action.label} className="flex items-center gap-2 hover:scale-105 transition-transform">
               {action.icon && (
-                <div className="border border-[#856D5E] rounded-md p-2 flex items-center">
+                <button onClick={() => window.location.href = action.path} className="border border-[#856D5E] rounded-md p-2 flex items-center">
                   <h3 className="text-sm font-medium mr-2">{action.label}</h3>
                   <Image
                     src={action.icon}
@@ -75,10 +74,10 @@ const Navbar = () => {
                     width={20}
                     height={20}
                   />
-                </div>
+                </button>
               )}
               {!action.icon && (
-                <Link href={action.path} className="text-sm font-medium hover:underline">
+                <Link href={action.path} className="text-sm font-medium hover:scale-105 transition-transform">
                   {action.label}
                 </Link>
               )}
