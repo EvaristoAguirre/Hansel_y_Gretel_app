@@ -34,27 +34,28 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   useEffect(() => {
     if (selectedCategoryId) {
       const fetchProductsByCategory = async () => {
-        const productsByCategoryId = await getProductsByCategory(selectedCategoryId);
+        const response = await getProductsByCategory(selectedCategoryId);
 
-        const productsWithCategories = productsByCategoryId.map((product: any) => {
-          return {
-            ...product,
-            categories: [ selectedCategoryId ],
-          }  
-        })
+        if (!response.ok) {
+          console.warn("No se encontraron productos o hubo un error:", response.message);
+          setProducts([]);
+          return;
+        }
 
-        console.log('productsByCategoryId', productsByCategoryId);
-        // setSearchResults(productsByCategoryId);
+        const productsWithCategories = response.data.map((product: any) => ({
+          ...product,
+          categories: [selectedCategoryId],
+        }));
+
         setProducts(productsWithCategories);
       };
+
       fetchProductsByCategory();
-    } 
-    else {
-      // Obtener todos los productos si no hay categoría seleccionada
-      // setSearchResults(products);
+    } else {
       fetchAndSetProducts();
     }
   }, [selectedCategoryId]);
+
 
   // Manejar búsqueda de productos
   const handleSearch = (value: string) => {
