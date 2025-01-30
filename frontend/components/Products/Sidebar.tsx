@@ -22,9 +22,9 @@ export const Sidebar: React.FC<{
           width: "100%",
           backgroundColor: "var(--color-primary)",
           boxSizing: "border-box",
-          position: "sticky",
+          position: "relative",
+          minHeight: "100vh",
           top: 0,
-          height: "100vh",
         },
       }}
     >

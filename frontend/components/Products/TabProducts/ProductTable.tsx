@@ -21,6 +21,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   // Actualizar los resultados de búsqueda cuando `products` cambie
   useEffect(() => {
     setSearchResults(products);
+    console.log("🌕🌕 products:", products);
+
   }, [products]);
 
   // Actualizar los productos seleccionados al cambiar `products`
@@ -73,7 +75,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Manejar selección de un producto
   const handleSelectProduct = (product: any) => {
-    console.log('Handle Select Product', product);
     if (!selectedProducts.find((p) => p.id === product.id)) {
       setSelectedProducts([...selectedProducts, product]);
     }

@@ -1,105 +1,95 @@
-import { Box, Typography, TextField, Card, CardContent, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Autocomplete } from "@mui/material";
+import { Box, Typography, Card, CardContent, TextField, Autocomplete } from "@mui/material";
+import { esES } from "@mui/x-data-grid/locales/esES";
+import { DataGrid } from "@mui/x-data-grid";
+import { useProductos } from "../../Hooks/useProducts";
 
-const stockData = {
-  productos: [
-    { nombre: "Soda", stock: "20 u.", costo: "$100,00", color: "#795548" },
-    { nombre: "Coca-cola", stock: "20 u.", costo: "$100,00", color: "white" }
-  ],
-  ingredientes: [
-    { nombre: "Leche", stock: "2 L", costo: "$100,00" },
-    { nombre: "Harina", stock: "20 Kg", costo: "$100,00" }
-  ]
-};
+const ingredientes = [
+  { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
+  { id: 2, nombre: "Harina", stock: "20 Kg", costo: "$100,00" },
+];
 
 const costos = ["Costo total productos", "Costo total ingredientes", "Costo total"];
 
 export default function StockControl() {
-  return (
-    <Box width="100%" sx={{ p: 2 }}>
-      <Grid container spacing={2}>
-        {costos.map((text, index) => (
-          <Grid item xs={4} key={index}>
-            <Card>
-              <CardContent>
-                <Typography variant="h5" align="center">$200</Typography>
-                <Typography align="center">{text}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-      {/* Buscador de productos */}
-      <Autocomplete
-        sx={{ flexGrow: 1, width: '40%', marginRight: 2, marginTop: 4 }}
-        // options={searchResults}
-        options={[]}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Buscar productos por nombre o código"
-            variant="outlined"
-            fullWidth
-          />
-        )}
-        renderOption={(option) => (
-          <div></div>
-        )}
-      />
-      <Grid container spacing={2} sx={{ mt: 3 }}>
-        {/* Tabla de Productos */}
-        <Grid item xs={6}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead sx={{ bgcolor: "#856d5e21" }}>
-                <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ bgcolor: "#856d5e59" }}><b>PRODUCTOS</b></TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell><b>Nombre</b></TableCell>
-                  <TableCell><b>Stock</b></TableCell>
-                  <TableCell><b>Costo</b></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stockData.productos.map((producto, index) => (
-                  <TableRow key={index} >
-                    <TableCell>{producto.nombre}</TableCell>
-                    <TableCell>{producto.stock}</TableCell>
-                    <TableCell>{producto.costo}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
+  const { products } = useProductos();
 
-        {/* Tabla de Ingredientes */}
-        <Grid item xs={6}>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead >
-                <TableRow sx={{ bgcolor: "#f3d49ab8" }}>
-                  <TableCell colSpan={3} align="center" ><b>INGREDIENTES</b></TableCell>
-                </TableRow>
-                <TableRow sx={{ bgcolor: "#f3d49a66" }}>
-                  <TableCell><b>Nombre</b></TableCell>
-                  <TableCell><b>Stock</b></TableCell>
-                  <TableCell><b>Costo</b></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {stockData.ingredientes.map((ingrediente, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{ingrediente.nombre}</TableCell>
-                    <TableCell>{ingrediente.stock}</TableCell>
-                    <TableCell>{ingrediente.costo}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
-      </Grid>
+  const productColumns = [
+    { field: "name", headerName: "Nombre", flex: 1 },
+    { field: "price", headerName: "Stock", flex: 1 },
+    { field: "cost", headerName: "Costo", flex: 1 },
+  ];
+
+  const ingredientColumns = [
+    { field: "nombre", headerName: "Nombre", flex: 1 },
+    { field: "stock", headerName: "Stock", flex: 1 },
+    { field: "costo", headerName: "Costo", flex: 1 },
+  ];
+
+  return (
+    <Box width="100%" sx={{ p: 2, height: "100%" }}>
+      {/* Sección de Costos */}
+      <Box display="flex" justifyContent="space-between" gap={2}>
+        {costos.map((text, index) => (
+          <Card key={index} sx={{ flex: 1 }}>
+            <CardContent>
+              <Typography variant="h5" align="center">$200</Typography>
+              <Typography align="center">{text}</Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
+
+      {/* Buscador de productos */}
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Autocomplete
+          sx={{ width: "50%" }}
+          options={products}
+          getOptionLabel={(option) => option.name || ""}
+          renderInput={(params) => (
+            <TextField {...params} label="Buscar productos por nombre o código" variant="outlined" fullWidth />
+          )}
+        />
+      </Box>
+
+      {/* DataGrids */}
+      <Box display="flex" gap={2} sx={{ mt: 3 }}>
+
+        {/* DataGrid de Productos */}
+        <Box flex={1}>
+          <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#856d5e59", p: 1 }}>
+            PRODUCTOS
+          </Typography>
+          <DataGrid
+            rows={products}
+            columns={productColumns}
+            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            initialState={{
+              pagination: { paginationModel: { page: 1, pageSize: 5 } },
+              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+            }}
+            pageSizeOptions={[5, 7, 10]}
+            sx={{ height: "100%" }}
+          />
+        </Box>
+
+        {/* DataGrid de Ingredientes */}
+        <Box flex={1}>
+          <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#f3d49a66", p: 1 }}>
+            INGREDIENTES
+          </Typography>
+          <DataGrid
+            rows={ingredientes}
+            columns={ingredientColumns}
+            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            initialState={{
+              pagination: { paginationModel: { page: 1, pageSize: 5 } },
+              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+            }}
+            pageSizeOptions={[5, 7, 10]}
+            sx={{ height: "100%" }}
+          />
+        </Box>
+      </Box>
     </Box>
   );
 }

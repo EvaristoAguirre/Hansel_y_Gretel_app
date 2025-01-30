@@ -1,7 +1,6 @@
 "use client";
 import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import Productos from "./TabProducts/Products";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/helpers/categories";
@@ -9,6 +8,7 @@ import { useProductos } from "@/components/Hooks/useProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
 import ControlStock from './TabControlStock/ControlStock';
+import Products from "./TabProducts/Products";
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -65,7 +65,7 @@ const ProductsPage: React.FC = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" height="100vh">
+    <Box display="flex" flexDirection="column" min-height="100vh">
       <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
         <Sidebar
@@ -73,12 +73,16 @@ const ProductsPage: React.FC = () => {
           selectedCategoryId={selectedCategoryId}
         />
         {selectedTab === "Productos" &&
-          <Productos
+          <Products
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
           />}
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
-        {selectedTab === "Control de Stock" && <ControlStock />}
+        {selectedTab === "Control de Stock" && (
+          <Box flex={1} overflow="auto">
+            <ControlStock />
+          </Box>
+        )}
       </Box>
     </Box>
   );
