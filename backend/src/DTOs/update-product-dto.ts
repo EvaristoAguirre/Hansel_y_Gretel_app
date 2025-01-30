@@ -7,6 +7,7 @@ import {
   IsArray,
   IsUUID,
   IsNumber,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateProductDto {
@@ -42,4 +43,8 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   providerId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

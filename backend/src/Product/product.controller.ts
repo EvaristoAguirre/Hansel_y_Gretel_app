@@ -31,6 +31,30 @@ export class ProductController {
     return this.productService.getAllProducts(page, limit);
   }
 
+  @Get('search')
+  async searchProducts(
+    @Query('name') name?: string,
+    @Query('code') code?: string,
+    @Query('isActive') isActive?: boolean,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Body('categories') categories?: string[],
+  ): Promise<{ data: Product[]; total: number }> {
+    console.log('Name:', name);
+    console.log('Code:', code);
+    console.log('Categories:', categories);
+    console.log('Page:', page);
+    console.log('Limit:', limit);
+    return this.productService.searchProducts(
+      name,
+      code,
+      categories,
+      isActive,
+      page,
+      limit,
+    );
+  }
+
   @Get(':id')
   async getProductById(@Param('id') id: UUID): Promise<Product> {
     return this.productService.getProductById(id);
