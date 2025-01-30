@@ -1,14 +1,13 @@
 "use client";
 import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useProductos } from "../Hooks/useProducts";
 import Productos from "./Products";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./tabsNavigations";
-import CategoriasProductos from '../Categorías/CategoríasProductos/CategoriasProductos';
-import CategoriasIngredientes from '../Categorías/CategoríasIngredientes/CategoriasIngredientes';
-import { useCategoryStore } from "../Categorías/useCategoryStore";
 import { fetchCategories } from "@/helpers/categories";
+import { useProductos } from "@/components/Hooks/useProducts";
+import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
-import { useCategoryStore } from "../Categorías/useCategoryStore";
-import { ICategory } from "../Interfaces/ICategories";
-
+import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { ICategory } from "@/components/Interfaces/ICategories";
 export const Sidebar: React.FC<{
   onCategorySelected: (categoryId: string) => void;
   selectedCategoryId: string | null; // Nueva prop

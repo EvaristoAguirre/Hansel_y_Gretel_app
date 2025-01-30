@@ -1,8 +1,9 @@
-import ProductsPage from "@/components/Products/ProductsPage";
+import ProductsPage from "@/components/Products/TabProducts/ProductsPage";
+
 const ViewProducts = () => {
   return (
     <div>
-      <ProductsPage/>
+      <ProductsPage />
     </div>
   );
 };

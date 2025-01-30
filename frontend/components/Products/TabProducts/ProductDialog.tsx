@@ -9,8 +9,8 @@ import {
   FormControl,
   Chip,
 } from "@mui/material";
-import { ProductForm, ProductCreated } from "../Interfaces/IProducts";
-import { ICategory } from "../Interfaces/ICategories";
+import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
+import { ICategory } from "../../Interfaces/ICategories";
 import { Autocomplete } from "@mui/material";
 import { getProductByCode } from "@/helpers/products";
 
@@ -62,11 +62,11 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         setIsCheckingCode(true);
         try {
           const result = await getProductByCode(value);
-        
+
           if (result.ok) {
-            error = "El código ya está en uso"; 
+            error = "El código ya está en uso";
           } else if (result.status === 404) {
-            error = ""; 
+            error = "";
           } else {
             error = result.error || "Error al validar el código";
           }
@@ -76,7 +76,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         } finally {
           setIsCheckingCode(false);
         }
-        
+
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
       }
@@ -135,10 +135,10 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseInt(e.target.value, 10)
-                : e.target.value;
+                  ? e.target.value === ""
+                    ? null
+                    : parseInt(e.target.value, 10)
+                  : e.target.value;
               onChange(field as keyof ProductForm, value);
               if (field !== "code") {
                 validateField(field, value);

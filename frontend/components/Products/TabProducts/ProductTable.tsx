@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
-import { ProductTableProps } from "../Interfaces/IProducts";
-import { useProductStore } from "../Hooks/useProductStore";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { getProductsByCategory } from "@/helpers/products";
-import { useProductos } from '../Hooks/useProducts';
+import { ProductTableProps } from "@/components/Interfaces/IProducts";
+import { useProductStore } from "@/components/Hooks/useProductStore";
+import { useProductos } from "@/components/Hooks/useProducts";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -13,7 +13,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   selectedCategoryId,
   onClearSelectedCategory,
 }) => {
-  const { products, setProducts } = useProductStore(); // Obtener todos los productos
+  const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
@@ -67,7 +67,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       );
       setSearchResults(filteredProducts);
     } else {
-      setSearchResults(products); // Mostrar todos los productos si no hay término de búsqueda
+      setSearchResults(products);
     }
   };
 
@@ -143,24 +143,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       </Box>
       {/* Tabla de productos */}
       <Box sx={{ height: 450, mt: 2 }}>
-        {/* <DataGrid
-          rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
-          columns={columns}
-          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 1, pageSize: 5 },
-            },
-            sorting: {
-              sortModel: [{ field: 'name', sort: 'asc' }],
-            }
-          }}
-          // onStateChange={(state) => {
-          //   // TODO: Revisar si este método puede ser útil
-          //   console.log('ON STATE CHANGE: ', state);
-          // }}
-          pageSizeOptions={[2, 5, 7, 9, 15]}
-        /> */}
         <DataGrid
           rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
           columns={columns}
@@ -173,10 +155,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               sortModel: [{ field: 'name', sort: 'asc' }],
             }
           }}
-          // onStateChange={(state) => {
-          //   // TODO: Revisar si este método puede ser útil
-          //   console.log('ON STATE CHANGE: ', state);
-          // }}
           pageSizeOptions={[2, 5, 7, 9, 15]}
         />
       </Box>

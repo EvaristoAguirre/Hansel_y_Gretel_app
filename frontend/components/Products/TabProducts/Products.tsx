@@ -1,12 +1,12 @@
 "use client";
+import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useProductos } from "@/components/Hooks/useProducts";
+import { ProductForm } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect } from "react";
-import { useCategoryStore } from "../Categorías/useCategoryStore";
-import { useProductos } from "../Hooks/useProducts";
-import { ProductForm } from "../Interfaces/IProducts";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 
@@ -14,7 +14,7 @@ interface ProductsProps {
   selectedCategoryId: string | null;
   onClearSelectedCategory: () => void;
 }
-const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelectedCategory}) => {
+const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
 
 
   const {
@@ -42,7 +42,7 @@ const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelected
   }, [connectWebSocket]);
 
   const handleChangeProductInfo = (
-    field: keyof ProductForm, 
+    field: keyof ProductForm,
     value: string | number | null | string[]
   ) => setForm({ ...form, [field]: value });
 
@@ -100,7 +100,7 @@ const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelected
         rows={products}
         selectedCategoryId={selectedCategoryId}
         columns={columns}
-        onClearSelectedCategory={ onClearSelectedCategory }
+        onClearSelectedCategory={onClearSelectedCategory}
         onCreate={() => {
           setModalType("create");
           setModalOpen(true);
@@ -114,7 +114,7 @@ const Products: React.FC <ProductsProps> = ({selectedCategoryId, onClearSelected
           modalType={modalType}
           form={form}
           categories={categories}
-          products={products} 
+          products={products}
           onChange={handleChangeProductInfo}
           onClose={handleCloseModal}
           onSave={modalType === "create" ? handleCreate : handleEdit}
