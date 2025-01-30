@@ -1,13 +1,14 @@
 "use client";
 import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import Productos from "./Products";
+import Productos from "./TabProducts/Products";
 import { Sidebar } from "./Sidebar";
-import { TabsNavigation } from "./tabsNavigations";
+import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/helpers/categories";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
+import ControlStock from './TabControlStock/ControlStock';
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -77,6 +78,7 @@ const ProductsPage: React.FC = () => {
             onClearSelectedCategory={clearSelectedCategory}
           />}
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
+        {selectedTab === "Control de Stock" && <ControlStock />}
       </Box>
     </Box>
   );
