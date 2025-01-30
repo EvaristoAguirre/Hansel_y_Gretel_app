@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './product.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, ILike, In, Raw, Repository } from 'typeorm';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Category } from 'src/Category/category.entity';
@@ -221,6 +221,69 @@ export class ProductRepository {
       }
       throw new InternalServerErrorException(
         'Error fetching the product',
+        error.message,
+      );
+    }
+  }
+
+  async searchProducts(
+    name?: string,
+    code?: string,
+    categories?: string[],
+    isActive: boolean = true,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ data: Product[]; total: number }> {
+    try {
+      if (!name && !code) {
+        throw new BadRequestException(
+          'At least a name or a code must be provided for search.',
+        );
+      }
+
+      let filteredProducts: Product[] = [];
+      if (categories && categories.length > 0) {
+        filteredProducts = await this.getProductsByCategories(categories);
+      }
+
+      const offset = (page - 1) * limit;
+      const whereConditions: any = { isActive };
+      if (name) {
+        whereConditions.name = ILike(`%${name}%`);
+      } else if (code) {
+        whereConditions.code = Raw(
+          (alias) => `CAST(${alias} AS TEXT) ILIKE :code`,
+          {
+            code: `%${code}%`,
+          },
+        );
+      }
+
+      if (filteredProducts.length > 0) {
+        const productIds = filteredProducts.map((product) => product.id);
+        whereConditions.id = In(productIds);
+      }
+
+      const [products, total] = await this.productRepository.findAndCount({
+        where: whereConditions,
+        relations: ['categories'],
+        skip: offset,
+        take: limit,
+      });
+
+      if (products.length === 0) {
+        const searchCriteria = name ? `name: ${name}` : `code: ${code}`;
+        throw new NotFoundException(`No products found with ${searchCriteria}`);
+      }
+
+      return { data: products, total };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error fetching the products',
         error.message,
       );
     }
