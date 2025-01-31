@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
-import { getProductsByCategory } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/helpers/products";
 import { ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";
@@ -17,6 +17,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Actualizar los resultados de búsqueda cuando `products` cambie
   useEffect(() => {
@@ -59,19 +60,18 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [selectedCategoryId]);
 
 
-  // Manejar búsqueda de productos
-  const handleSearch = (value: string) => {
-    const searchTerm = value.toLowerCase();
-    if (searchTerm) {
-      const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.code.toString().toLowerCase().includes(searchTerm)
-      );
-      setSearchResults(filteredProducts);
-    } else {
+  // búsqueda de productos con endpoint 
+  const handleSearch = async (value: string) => {
+    const searchTerm = value.trim();
+    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
+      setSearchTerm(searchTerm);
+      const results = await searchProducts(searchTerm, selectedCategoryId);
+      setSearchResults(results);
+    } else if (searchTerm.length === 0) {
       setSearchResults(products);
     }
   };
+
 
   // Manejar selección de un producto
   const handleSelectProduct = (product: any) => {
@@ -88,6 +88,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     fetchAndSetProducts();
     setSearchResults(products);
     setSelectedProducts([]);
+    setSearchTerm("");
     onClearSelectedCategory();
   };
 
@@ -110,7 +111,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           // options={searchResults}
           options={selectedCategoryId ? searchResults : products}
           getOptionLabel={(product) =>
-            `${product.name} - $${product.price} (Código: ${product.code})`
+            `${product.name} - (Código: ${product.code})`
           }
           onInputChange={(event, value) => handleSearch(value)}
           onChange={(event, selectedProduct) => {
@@ -128,7 +129,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           )}
           renderOption={(props, product) => (
             <li {...props} key={String(product.id)}>
-              {`${product.name} - $${product.price} (Código: ${product.code})`}
+              {`${product.name} - (Código: ${product.code})`}
             </li>
           )}
         />

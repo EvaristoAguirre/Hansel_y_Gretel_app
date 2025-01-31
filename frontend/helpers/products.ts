@@ -80,3 +80,34 @@ export const getProductByCode = async (code: number) => {
     return { ok: false, status: 500, error: "Error al conectar con el servidor" };
   }
 };
+export const searchProducts = async (searchTerm: string, selectedCategoryId: string | null) => {
+  try {
+    // Detectamos si es un número
+    const isNumeric = !isNaN(Number(searchTerm));
+
+    const queryParams = new URLSearchParams({
+      [isNumeric ? "code" : "name"]: searchTerm,
+      limit: "10",
+    });
+
+    const response = await fetch(`${URI_PRODUCT}/search?${queryParams.toString()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "categories": [selectedCategoryId] })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error al buscar productos: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("✅ Productos encontrados:", data);
+    return data.data;
+  } catch (error) {
+    console.error("❌ Error fetching searched products:", error);
+    return [];
+  }
+};
+
+
+
