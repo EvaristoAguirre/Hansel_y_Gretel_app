@@ -85,6 +85,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
   };
 
+
   const validateForm = () => {
     const hasErrors = Object.values(errors).some((error) => error);
     const hasEmptyFields =

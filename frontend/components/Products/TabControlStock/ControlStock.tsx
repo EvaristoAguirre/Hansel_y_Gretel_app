@@ -7,7 +7,7 @@ import { ProductsProps } from "@/components/Interfaces/IProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { getProductsByCategory } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/helpers/products";
 
 const ingredientes = [
   { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
@@ -22,6 +22,8 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
   const { categories } = useCategoryStore();
   const { fetchAndSetProducts } = useProductos();
+  const [searchTerm, setSearchTerm] = useState("");
+
 
 
   useEffect(() => {
@@ -30,7 +32,6 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   useEffect(() => {
     setSearchResults(products);
-    console.log("🌕🌕 products:", products);
   }, [products]);
 
   // Actualizar los productos seleccionados al cambiar `products`
@@ -68,15 +69,13 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   }, [selectedCategoryId]);
 
   // Manejar búsqueda de productos
-  const handleSearch = (value: string) => {
-    const searchTerm = value.toLowerCase();
-    if (searchTerm) {
-      const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.code.toString().toLowerCase().includes(searchTerm)
-      );
-      setSearchResults(filteredProducts);
-    } else {
+  const handleSearch = async (value: string) => {
+    const searchTerm = value.trim();
+    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
+      setSearchTerm(searchTerm);
+      const results = await searchProducts(searchTerm, selectedCategoryId);
+      setSearchResults(results);
+    } else if (searchTerm.length === 0) {
       setSearchResults(products);
     }
   };
@@ -99,6 +98,10 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     onClearSelectedCategory();
   };
 
+  //Edición de Producto
+  const handleEditProduct = (product: any) => {
+    console.log("Editar producto:", product);
+  };
 
   const productColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
@@ -115,7 +118,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   return (
     <Box width="100%" sx={{ p: 2, height: "100%" }}>
       {/* Sección de Costos */}
-      <Box display="flex" justifyContent="space-between" gap={2}>
+      <Box display="flex" justifyContent="space-between" gap={2}  >
         {costos.map((text, index) => (
           <Card key={index} sx={{ flex: 1 }}>
             <CardContent>
@@ -128,18 +131,36 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
       {/* Buscador de productos */}
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
+        {/* Buscador de productos */}
         <Autocomplete
-          sx={{ width: "49%" }}
-          options={products}
-          getOptionLabel={(option) => option.name || ""}
+          sx={{ width: '49%' }}
+          options={selectedCategoryId ? searchResults : products}
+          getOptionLabel={(product) =>
+            `${product.name} - (Código: ${product.code})`
+          }
+          onInputChange={(event, value) => handleSearch(value)}
+          onChange={(event, selectedProduct) => {
+            if (selectedProduct) {
+              handleSelectProduct(selectedProduct);
+            }
+          }}
           renderInput={(params) => (
-            <TextField {...params} label="Buscar productos por nombre o código" variant="outlined" fullWidth />
+            <TextField
+              {...params}
+              label="Buscar productos por nombre o código"
+              variant="outlined"
+              fullWidth
+            />
+          )}
+          renderOption={(props, product) => (
+            <li {...props} key={String(product.id)}>
+              {`${product.name} - (Código: ${product.code})`}
+            </li>
           )}
         />
         <Button
-          sx={{ flexGrow: 1 }}
+          sx={{ flexGrow: 1, border: "2px solid #f9b32d", color: "black" }}
           variant="outlined"
-          color="primary"
           onClick={handleClearSearch}
         >
           Limpiar Filtros
@@ -164,6 +185,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             }}
             pageSizeOptions={[5, 7, 10]}
             sx={{ height: "100%" }}
+            onRowClick={(params) => handleEditProduct(params.row)}
           />
         </Box>
 
@@ -182,6 +204,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             }}
             pageSizeOptions={[5, 7, 10]}
             sx={{ height: "100%" }}
+            onRowClick={(params) => handleEditProduct(params.row)}
           />
         </Box>
       </Box>

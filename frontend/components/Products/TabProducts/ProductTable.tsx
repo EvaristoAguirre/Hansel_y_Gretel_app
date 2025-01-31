@@ -108,7 +108,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Buscador de productos */}
         <Autocomplete
           sx={{ flexGrow: 1, width: '60%', marginRight: 2 }}
-          // options={searchResults}
           options={selectedCategoryId ? searchResults : products}
           getOptionLabel={(product) =>
             `${product.name} - (Código: ${product.code})`
