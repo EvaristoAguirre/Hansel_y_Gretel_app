@@ -80,7 +80,10 @@ const ProductsPage: React.FC = () => {
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
         {selectedTab === "Control de Stock" && (
           <Box flex={1} overflow="auto">
-            <ControlStock />
+            <ControlStock
+              selectedCategoryId={selectedCategoryId}
+              onClearSelectedCategory={clearSelectedCategory}
+            />
           </Box>
         )}
       </Box>

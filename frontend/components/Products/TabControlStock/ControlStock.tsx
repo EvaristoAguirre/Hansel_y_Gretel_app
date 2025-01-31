@@ -1,7 +1,13 @@
-import { Box, Typography, Card, CardContent, TextField, Autocomplete } from "@mui/material";
+'use client';
+import { Box, Typography, Card, CardContent, TextField, Autocomplete, Button } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
 import { useProductos } from "../../Hooks/useProducts";
+import { ProductsProps } from "@/components/Interfaces/IProducts";
+import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useEffect, useState } from "react";
+import { useProductStore } from "@/components/Hooks/useProductStore";
+import { getProductsByCategory } from "@/helpers/products";
 
 const ingredientes = [
   { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
@@ -10,8 +16,89 @@ const ingredientes = [
 
 const costos = ["Costo total productos", "Costo total ingredientes", "Costo total"];
 
-export default function StockControl() {
-  const { products } = useProductos();
+const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
+  const { products, setProducts, connectWebSocket } = useProductStore();
+  const [searchResults, setSearchResults] = useState(products); // Productos filtrados
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
+  const { categories } = useCategoryStore();
+  const { fetchAndSetProducts } = useProductos();
+
+
+  useEffect(() => {
+    connectWebSocket();
+  }, [connectWebSocket]);
+
+  useEffect(() => {
+    setSearchResults(products);
+    console.log("🌕🌕 products:", products);
+  }, [products]);
+
+  // Actualizar los productos seleccionados al cambiar `products`
+  useEffect(() => {
+    const updatedSelectedProducts = selectedProducts.map((selectedProduct) =>
+      products.find((product) => product.id === selectedProduct.id) || selectedProduct
+    );
+    setSelectedProducts(updatedSelectedProducts);
+  }, [products]);
+
+
+  useEffect(() => {
+    if (selectedCategoryId) {
+      const fetchProductsByCategory = async () => {
+        const response = await getProductsByCategory(selectedCategoryId);
+
+        if (!response.ok) {
+          console.warn("No se encontraron productos o hubo un error:", response.message);
+          setProducts([]);
+          return;
+        }
+
+        const productsWithCategories = response.data.map((product: any) => ({
+          ...product,
+          categories: [selectedCategoryId],
+        }));
+
+        setProducts(productsWithCategories);
+      };
+
+      fetchProductsByCategory();
+    } else {
+      fetchAndSetProducts();
+    }
+  }, [selectedCategoryId]);
+
+  // Manejar búsqueda de productos
+  const handleSearch = (value: string) => {
+    const searchTerm = value.toLowerCase();
+    if (searchTerm) {
+      const filteredProducts = products.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm) ||
+        product.code.toString().toLowerCase().includes(searchTerm)
+      );
+      setSearchResults(filteredProducts);
+    } else {
+      setSearchResults(products);
+    }
+  };
+
+  // Manejar selección de un producto
+  const handleSelectProduct = (product: any) => {
+    if (!selectedProducts.find((p) => p.id === product.id)) {
+      setSelectedProducts([...selectedProducts, product]);
+    }
+    else {
+      setSelectedProducts(selectedProducts.filter((p) => p.id !== product.id));
+    };
+  };
+
+  // Limpiar búsqueda y mostrar todos los productos
+  const handleClearSearch = () => {
+    fetchAndSetProducts();
+    setSearchResults(products);
+    setSelectedProducts([]);
+    onClearSelectedCategory();
+  };
+
 
   const productColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
@@ -40,15 +127,23 @@ export default function StockControl() {
       </Box>
 
       {/* Buscador de productos */}
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
         <Autocomplete
-          sx={{ width: "50%" }}
+          sx={{ width: "49%" }}
           options={products}
           getOptionLabel={(option) => option.name || ""}
           renderInput={(params) => (
             <TextField {...params} label="Buscar productos por nombre o código" variant="outlined" fullWidth />
           )}
         />
+        <Button
+          sx={{ flexGrow: 1 }}
+          variant="outlined"
+          color="primary"
+          onClick={handleClearSearch}
+        >
+          Limpiar Filtros
+        </Button>
       </Box>
 
       {/* DataGrids */}
@@ -60,7 +155,7 @@ export default function StockControl() {
             PRODUCTOS
           </Typography>
           <DataGrid
-            rows={products}
+            rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
             columns={productColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
@@ -93,3 +188,4 @@ export default function StockControl() {
     </Box>
   );
 }
+export default StockControl;

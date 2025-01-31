@@ -1,7 +1,7 @@
 "use client";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
-import { ProductForm } from "@/components/Interfaces/IProducts";
+import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
@@ -10,10 +10,7 @@ import React, { useEffect } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 
-interface ProductsProps {
-  selectedCategoryId: string | null;
-  onClearSelectedCategory: () => void;
-}
+
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
 
 
