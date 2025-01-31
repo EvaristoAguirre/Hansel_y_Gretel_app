@@ -106,7 +106,10 @@ export class ProductRepository {
       return await this.dataSource
         .createQueryBuilder(Product, 'product')
         .innerJoin('product.categories', 'category')
-        .where('category.id IN (:...categories)', { categories })
+        .where('category.id IN (:...categories)', {
+          categories,
+          isActive: true,
+        })
         .groupBy('product.id')
         .having('COUNT(DISTINCT category.id) = :numCategories', {
           numCategories: categories.length,
