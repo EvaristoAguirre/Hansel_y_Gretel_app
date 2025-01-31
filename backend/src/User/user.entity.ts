@@ -3,15 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
-export enum UserRole {
-  MOZO = 'mozo',
-  ENCARGADO = 'encargado',
-  ADMIN = 'admin',
-}
-
-@Entity('users')
+import { UserRole } from 'src/Enums/roles.enum';
+@Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -20,21 +16,14 @@ export class User {
   username: string;
 
   @Column()
-  passwordHash: string;
+  password: string;
 
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.MOZO,
-  })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.MOZO })
   role: UserRole;
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ nullable: true })
-  recoveryCode: string;
-
-  @Column({ nullable: true })
-  recoveryCodeExpires: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
