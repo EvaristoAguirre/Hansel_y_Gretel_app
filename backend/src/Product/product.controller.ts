@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -17,9 +18,13 @@ import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
+import { Roles } from 'src/Decorators/roles.decorator';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @ApiTags('Producto')
 @Controller('product')
+@UseGuards(RolesGuard)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
@@ -31,7 +36,7 @@ export class ProductController {
     return this.productService.getAllProducts(page, limit);
   }
 
-  @Get('search')
+  @Post('search')
   async searchProducts(
     @Query('name') name?: string,
     @Query('code') code?: string,
@@ -78,6 +83,7 @@ export class ProductController {
   }
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createProduct(@Body() productToCreate: CreateProductDto) {
     return await this.productService.createProduct(productToCreate);
   }
