@@ -1,26 +1,42 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, Typography, TextField, Button, Box } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Box, MenuItem } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
+import { registerUser } from '@/helpers/login-register';
+import { RegisterRequest, UserRole } from '@/components/Interfaces/IUsers';
+import Swal from 'sweetalert2';
 
 export default function RegisterForm() {
-  const [formData, setFormData] = useState({
-    name: '',
-    rol: '',
-    email: '',
+  const [formData, setFormData] = useState<RegisterRequest>({
+    username: '',
     password: '',
+    role: UserRole.MOZO, // Valor por defecto
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+
+    // Si el campo es 'role', convertirlo a enum
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: name === 'role' ? (value as UserRole) : value,
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Formulario enviado:', formData);
+    try {
+      const result = await registerUser(formData);
+      Swal.fire('Registro exitoso', 'El usuario se ha registrado correctamente', 'success');
+      // redirigir a la vista de login
+      window.location.href = '/views/login';
+    } catch (error: any) {
+      console.error('Error en el registro:', error.message);
+      Swal.fire('Error en el registro', error.message, 'error');
+    }
   };
 
   return (
@@ -42,32 +58,26 @@ export default function RegisterForm() {
                 margin="normal"
                 label="Nombre"
                 variant="outlined"
-                name="name"
-                value={formData.name}
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 required
               />
               <TextField
                 fullWidth
+                select
                 margin="normal"
                 label="Rol"
                 variant="outlined"
-                name="rol"
-                value={formData.rol}
+                name="role"
+                value={formData.role}
                 onChange={handleChange}
                 required
-              />
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Email"
-                variant="outlined"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+              >
+                <MenuItem value={UserRole.MOZO}>Mozo</MenuItem>
+                <MenuItem value={UserRole.ENCARGADO}>Encargado</MenuItem>
+                <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>
+              </TextField>
               <TextField
                 fullWidth
                 margin="normal"
