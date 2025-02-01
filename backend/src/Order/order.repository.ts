@@ -107,7 +107,6 @@ export class OrderRepository {
         numberCustomers: numberCustomers,
         table: tableInUse,
         comment: comment,
-        comment: comment,
         orderDetails: [],
       });
 

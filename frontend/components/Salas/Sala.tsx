@@ -207,7 +207,7 @@ const Sala = () => {
             <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}
         </div>
-        <div style={{ flex: 0.5, padding: "20px", backgroundColor: "#f7f7f7" }}>
+        <div style={{ flex: 0.6, padding: "20px", backgroundColor: "#f7f7f7" }}>
           {selectedMesa && (
             <MesaEditor
               mesa={selectedMesa}

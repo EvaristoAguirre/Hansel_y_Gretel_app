@@ -8,9 +8,11 @@ import {
   ListItem,
   ListItemText,
   Typography,
+  IconButton,
 } from "@mui/material";
 import { OrderCreated } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
+import { Add, Remove, Delete } from "@mui/icons-material";
 
 const PedidoEditor = ({
   mesa,
@@ -30,7 +32,7 @@ const PedidoEditor = ({
   } = usePedido();
 
   return (
-    <div>
+    <div style={{ width: "100%", padding: "1rem" }}>
       <h2
         style={{
           height: "3rem",
@@ -114,23 +116,71 @@ const PedidoEditor = ({
       />
 
       {/* Mostrar productos seleccionados en el pedido */}
-      <h3>Productos a confirmar</h3>
-      {productosSeleccionados.length > 0 ? (
-        <List>
-          {productosSeleccionados.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemText
-                primary={`${item.name} x${item.cantidad}`}
-                secondary={`$${item.price * item.cantidad}`}
-              />
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <Typography style={{ margin: "1rem 0" }}>
-          No hay productos seleccionados
-        </Typography>
-      )}
+      <div>
+        {productosSeleccionados.length > 0 ? (
+          <List>
+            {productosSeleccionados.map((item, index) => (
+              <ListItem
+                key={index}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  backgroundColor: "#cdc5bf",
+                  height: "2.3rem",
+                  margin: "0.3rem 0",
+                  color: "#ffffff",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                  }}
+                >
+                  <IconButton onClick={() => disminuirCantidad(item.id)}>
+                    <Remove />
+                  </IconButton>
+                  <Typography style={{ color: "black", backgroundColor: "white", width: "2rem", textAlign: "center", borderRadius: "5px" }}>{item.cantidad}</Typography>
+                  <IconButton onClick={() => aumentarCantidad(item.id)}>
+                    <Add />
+                  </IconButton>
+                </div>
+                <ListItemText style={{ color: "black" }} primary={item.name} />
+                <Typography style={{ color: "black" }}>
+                  ${item.price}
+                </Typography>
+                <IconButton onClick={() => eliminarProducto(item.id)}>
+                  <Delete />
+                </IconButton>
+              </ListItem>
+            ))}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                color="secondary"
+                variant="contained"
+                style={{ margin: "10px" }}
+                // onClick={confirmarPedido}
+              >
+                Cancelar
+              </Button>
+              <Button
+                color="secondary"
+                variant="contained"
+                style={{ margin: "10px" }}
+                // onClick={confirmarPedido}
+              >
+                Confirmar
+              </Button>
+            </div>
+          </List>
+        ) : (
+          <Typography style={{ margin: "1rem 0" }}>
+            No hay productos seleccionados
+          </Typography>
+        )}
+      </div>
 
       {/* Botón para guardar el pedido */}
       <Button

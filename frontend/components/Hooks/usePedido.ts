@@ -7,6 +7,7 @@ import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useProductStore } from "./useProductStore";
 import useMesa from "./useMesa";
 import { TableCreated, useTableStore } from "../Mesa/useTableStore";
+import Sala from "../Salas/Sala";
 
 const usePedido = () => {
   const {
@@ -19,6 +20,7 @@ const usePedido = () => {
   } = useOrderStore();
 
   const { tables, updateTable } = useTableStore();
+
 
   const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
     tableId: "",
