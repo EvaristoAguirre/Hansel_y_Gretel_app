@@ -32,6 +32,7 @@ export default function RegisterForm() {
       setTimeout(() => {
         window.location.href = "/";
       }, 1000);
+
     } catch (error: any) {
       alert('Error al iniciar sesión: ' + error.message);
     };

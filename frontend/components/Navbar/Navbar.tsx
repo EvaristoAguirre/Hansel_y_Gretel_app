@@ -9,9 +9,22 @@ import clients from "../../public/icons/clients.png";
 import proveedor from "../../public/icons/providers.jpeg";
 import configuracion from "../../public/icons/settings.png";
 import user from "../../public/user.svg";
+import { useAuth } from "@/app/context/authContext";
+import { useEffect } from 'react';
 
 const Navbar = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [showUsername, setShowUsername] = useState<string | null>(null);
+
+  const { usernameFromToken } = useAuth();
+  const username = usernameFromToken();
+
+
+  useEffect(() => {
+    if (username) {
+      setShowUsername(username);
+    }
+  }, [username]);
 
   const sections = [
     { label: "Cafe", path: "/views/cafe", icon: cafe },
@@ -22,7 +35,7 @@ const Navbar = () => {
   ];
 
   const sessionActions = [
-    { label: "Iniciar sesión", path: "/views/login", icon: user },
+    { label: showUsername || "Iniciar sesión", path: "/views/login", icon: user },
     { label: "Cerrar Sesión", path: "/views/" },
     { label: "Crear Usuario", path: "/views/register" },
   ];

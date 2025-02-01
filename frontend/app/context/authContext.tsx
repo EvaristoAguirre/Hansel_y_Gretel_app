@@ -9,10 +9,12 @@ interface AuthContextProps {
   validateUserSession: () => boolean | null;
   userRoleFromToken: () => string | null;
   handleSignOut: () => void;
+  usernameFromToken: () => string | null;
 }
 
 interface CustomJwtPayload extends JwtPayload {
   role: string;
+  username: string;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -21,6 +23,7 @@ const AuthContext = createContext<AuthContextProps>({
   validateUserSession: () => null,
   userRoleFromToken: () => null,
   handleSignOut: () => { },
+  usernameFromToken: () => null
 });
 
 export const AuthProvider = ({ children }: any) => {
@@ -63,6 +66,31 @@ export const AuthProvider = ({ children }: any) => {
     }
   }, []);
 
+  const usernameFromToken = useCallback(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const userSession = localStorage.getItem("user");
+    if (!userSession) {
+      return null;
+    }
+
+    try {
+      const token = JSON.parse(userSession).accessToken;
+      if (!token) {
+        return null;
+      }
+      const decodedToken = jwtDecode<CustomJwtPayload>(token);
+      return decodedToken.username;
+
+    } catch (error) {
+      console.error("Failed to decode token", error);
+      return null;
+    }
+  }, []);
+
+
   const validateUserSession = () => {
     if (typeof window !== "undefined") {
       const userSession = localStorage.getItem("user");
@@ -79,6 +107,7 @@ export const AuthProvider = ({ children }: any) => {
         validateUserSession,
         userRoleFromToken,
         handleSignOut,
+        usernameFromToken
       }}
     >
       {children}
