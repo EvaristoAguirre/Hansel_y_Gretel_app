@@ -77,7 +77,6 @@ const PedidoEditor = ({
     );
   };
 
-
   const cancelarPedido = () => {
     setProductsDetails([]);
   };
@@ -163,9 +162,10 @@ const PedidoEditor = ({
         onInputChange={(event, value) => {
           const searchTerm = value.toLowerCase();
           setProductosDisponibles(
-            products.filter((producto) =>
-              producto.name.toLowerCase().includes(searchTerm) ||
-              producto.code.toString().toLowerCase().includes(searchTerm)
+            products.filter(
+              (producto) =>
+                producto.name.toLowerCase().includes(searchTerm) ||
+                producto.code.toString().toLowerCase().includes(searchTerm)
             )
           );
         }}
@@ -237,7 +237,15 @@ const PedidoEditor = ({
                 </IconButton>
               </ListItem>
             ))}
-            <Typography style={{ margin: "1rem 0" }}>
+            <Typography
+              style={{
+                margin: "1rem 0",
+                backgroundColor: "#cdc5bf",
+                width: "25%",
+                padding: "0.5rem",
+                textAlign: "center",
+              }}
+            >
               Subtotal: ${subtotal}
             </Typography>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -273,14 +281,22 @@ const PedidoEditor = ({
               {productosConfirmados.map((item, index) => (
                 <ListItem
                   key={index}
-                  style={{ backgroundColor: "#cce5ff", margin: "0.3rem 0" }}
+                  style={{ backgroundColor: "#eceae8", margin: "0.3rem 0", display: "flex", alignItems: "center", gap: "0.3rem" }}
                 >
-                  <ListItemText
-                    primary={item.name}
-                    secondary={`Cantidad: ${item.quantity} - $${
-                      item.price * item.quantity
-                    }`}
-                  />
+                  <Typography
+                    style={{
+                      color: "black",
+                      backgroundColor: "white",
+                      width: "2rem",
+                      textAlign: "center",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    {item.quantity}
+                  </Typography>
+                  <ListItemText style={{margin: "0 1rem"}} primary={item.name} />
+                  <Typography>{`$ ${item.price * item.quantity}`}</Typography>
+
                   <IconButton
                     onClick={() => eliminarProductoConfirmado(item.productId)}
                   >
@@ -288,6 +304,18 @@ const PedidoEditor = ({
                   </IconButton>
                 </ListItem>
               ))}
+              <Typography
+                style={{
+                  margin: "1rem 0",
+                  backgroundColor: "#cce5ff",
+                  width: "100%",
+                  padding: "0.5rem",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
+                Total: ${total}
+              </Typography>
             </List>
           </div>
           <Button

@@ -40,7 +40,8 @@ const usePedido = () => {
     { productId: string; quantity: number; price: number; name: string }[]
   >([]);
 
-  const [productoExistente, setProductoExistente] = useState<IOrderDetails>();
+  const [productsDetailsExistente, setProductsDetailsExistente] =
+    useState<{ productId: string; quantity: number }[]>();
 
   const { products } = useProductStore();
 
@@ -49,8 +50,6 @@ const usePedido = () => {
   }, [products]);
 
   const handleSeleccionarProducto = (producto: any) => {
-    console.log("productsDetails antes:", productsDetails);
-
     const foundProduct = productsDetails.find(
       (p) => p.productId === producto.id
     );
@@ -60,6 +59,10 @@ const usePedido = () => {
         p.productId === producto.id ? { ...p, quantity: p.quantity + 1 } : p
       );
       setProductsDetails(updatedDetails);
+      setProductsDetailsExistente([{
+        productId: producto.id,
+        quantity: foundProduct.quantity + 1,
+      }]);
     } else {
       const newProduct = {
         productId: producto.id,
@@ -68,6 +71,10 @@ const usePedido = () => {
         name: producto.name,
       };
       setProductsDetails([...productsDetails, newProduct]);
+      setProductsDetailsExistente([{
+        productId: producto.id,
+        quantity: 1,
+      }]);
     }
 
     // También actualizamos el producto seleccionado individualmente
@@ -193,7 +200,10 @@ const usePedido = () => {
       const response = await fetch(`${URI_ORDER}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productsDetails: productsDetails }),
+        body: JSON.stringify([ 
+          ...productsDetails, 
+          ...(productsDetailsExistente || []) 
+        ]),
       });
 
       if (!response.ok) {
