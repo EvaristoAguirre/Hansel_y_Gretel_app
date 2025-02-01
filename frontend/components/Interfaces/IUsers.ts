@@ -1,8 +1,5 @@
-export enum UserRole {
-  MOZO = 'mozo',
-  ENCARGADO = 'encargado',
-  ADMIN = 'admin',
-}
+import { UserRole } from "../Enums/user";
+
 
 // 📌 Interfaz para el registro de usuario
 export interface RegisterRequest {
@@ -28,7 +25,7 @@ export interface LoginResponse {
   message: string;
   username: string;
   role: UserRole;
-  token?: string; // Si luego agregas autenticación con JWT
+  accessToken?: string;
 }
 
 // 📌 Interfaz para la recuperación de contraseña

@@ -6,8 +6,9 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
 import { registerUser } from '@/helpers/login-register';
-import { RegisterRequest, UserRole } from '@/components/Interfaces/IUsers';
+import { RegisterRequest } from '@/components/Interfaces/IUsers';
 import Swal from 'sweetalert2';
+import { UserRole } from '@/components/Enums/user';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
