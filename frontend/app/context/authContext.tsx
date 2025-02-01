@@ -2,6 +2,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "jwt-decode";
+import Swal from "sweetalert2";
 
 interface AuthContextProps {
   user: any;
@@ -38,8 +39,19 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   const handleSignOut = async () => {
-    localStorage.removeItem("user");
-    window.location.href = "/";
+    Swal.fire({
+      icon: 'warning',
+      title: 'Cerrar sesión',
+      text: '¿Estás seguro de que deseas cerrar sesión?',
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('user');
+        window.location.href = '/views/login';
+      }
+    });
   };
 
   const userRoleFromToken = useCallback(() => {
@@ -67,28 +79,24 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   const usernameFromToken = useCallback(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+    if (typeof window === "undefined") return "";
 
     const userSession = localStorage.getItem("user");
-    if (!userSession) {
-      return null;
-    }
+    if (!userSession) return "";
 
     try {
       const token = JSON.parse(userSession).accessToken;
-      if (!token) {
-        return null;
-      }
+      if (!token) return "";
+
       const decodedToken = jwtDecode<CustomJwtPayload>(token);
-      return decodedToken.username;
+      return decodedToken.username || "";
 
     } catch (error) {
       console.error("Failed to decode token", error);
-      return null;
+      return "";
     }
   }, []);
+
 
 
   const validateUserSession = () => {

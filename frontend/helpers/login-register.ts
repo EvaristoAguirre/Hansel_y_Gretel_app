@@ -28,10 +28,10 @@ export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
   return await postRequest<LoginRequest, LoginResponse>('login', data);
 };
 
-export const recoverPassword = async (data: RecoverRequest): Promise<RecoverResponse> => {
-  return await postRequest<RecoverRequest, RecoverResponse>('recover', data);
-};
+// export const recoverPassword = async (data: RecoverRequest): Promise<RecoverResponse> => {
+//   return await postRequest<RecoverRequest, RecoverResponse>('recover', data);
+// };
 
-export const resetPassword = async (data: ResetPasswordRequest): Promise<ResetPasswordResponse> => {
-  return await postRequest<ResetPasswordRequest, ResetPasswordResponse>('reset-password', data);
-};
+// export const resetPassword = async (data: ResetPasswordRequest): Promise<ResetPasswordResponse> => {
+//   return await postRequest<ResetPasswordRequest, ResetPasswordResponse>('reset-password', data);
+// };

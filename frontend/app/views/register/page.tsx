@@ -43,8 +43,10 @@ export default function RegisterForm() {
           icon: 'error',
           title: 'Error',
           text: 'No tienes permiso para registrar usuarios.',
-        }).then(() => {
-          window.location.href = '/';
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = '/';
+          }
         });
         return;
       }
