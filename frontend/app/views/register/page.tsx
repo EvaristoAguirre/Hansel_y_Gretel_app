@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, TextField, Button, Box, MenuItem } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
@@ -9,13 +9,57 @@ import { registerUser } from '@/helpers/login-register';
 import { RegisterRequest } from '@/components/Interfaces/IUsers';
 import Swal from 'sweetalert2';
 import { UserRole } from '@/components/Enums/user';
+import { useAuth } from '@/app/context/authContext';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
     username: '',
     password: '',
-    role: UserRole.MOZO, // Valor por defecto
+    role: UserRole.MOZO,
   });
+  const [roles, setRoles] = useState<{ admin: boolean }>({
+    admin: false,
+  });
+
+  const { validateUserSession, userRoleFromToken } = useAuth();
+
+  useEffect(() => {
+    const validateSession = async () => {
+      const userSession = validateUserSession();
+      if (!userSession) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Debes iniciar sesión para registrar un usuario.',
+        }).then(() => {
+          window.location.href = '/views/login';
+        });
+        return;
+      }
+
+      const role = userRoleFromToken();
+      if (role === 'Mozo') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No tienes permiso para registrar usuarios.',
+        }).then(() => {
+          window.location.href = '/';
+        });
+        return;
+      }
+      if (role === 'Admin') {
+        setRoles((prevRoles) => ({
+          ...prevRoles,
+          admin: true,
+        }));
+      }
+
+    };
+
+    validateSession();
+  }, [validateUserSession]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -31,9 +75,15 @@ export default function RegisterForm() {
     e.preventDefault();
     try {
       const result = await registerUser(formData);
-      Swal.fire('Registro exitoso', 'El usuario se ha registrado correctamente', 'success');
-      // redirigir a la vista de login
-      window.location.href = '/views/login';
+      Swal.fire({
+        icon: 'success',
+        title: 'Registro exitoso',
+        text: 'El usuario se ha registrado correctamente',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/views/login';
+        }
+      });
     } catch (error: any) {
       console.error('Error en el registro:', error.message);
       Swal.fire('Error en el registro', error.message, 'error');
@@ -76,8 +126,8 @@ export default function RegisterForm() {
                 required
               >
                 <MenuItem value={UserRole.MOZO}>Mozo</MenuItem>
-                <MenuItem value={UserRole.ENCARGADO}>Encargado</MenuItem>
-                <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>
+                {roles.admin && <MenuItem value={UserRole.ENCARGADO}>Encargado</MenuItem>}
+                {roles.admin && <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>}
               </TextField>
               <TextField
                 fullWidth
