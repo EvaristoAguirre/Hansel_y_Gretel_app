@@ -12,6 +12,7 @@ import {
   useOrderDetailsStore,
 } from "../Pedido/useOrderDetailsStore";
 import { TableCreated, useTableStore } from "./useTableStore";
+import useSala from "../Hooks/useSala";
 
 const MesaEditor = ({
   mesa,
@@ -23,25 +24,16 @@ const MesaEditor = ({
   onAbrirPedido: () => void;
 }) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
-  const [mozo, setMozo] = useState("");
   const [comentario, setComentario] = useState("");
-  const mozos = ["Mozo 1", "Mozo 2", "Mozo 3"];
-  const [pedido, setPedido] = useState<OrderCreated | null>();
-  const { orderDetails } = useOrderDetailsStore();
   const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated>();
-  const { handleCreateOrder, fetchOrderById, handleEditOrder } = usePedido();
-  const { updateOrder, orders } = useOrderStore();
+  const { handleCreateOrder } = usePedido();
+  const { orders } = useOrderStore();
   const { tables } = useTableStore();
 
   useEffect(() => {
-    console.log("Mesa en MesaEditor:", mesa);
-    console.log("View en MesaEditor:", view);
-
     const mesaTableCreated: TableCreated | undefined = tables.find(
       (table) => table.id === mesa.id
     );
-
-    console.log("MesaTableCreated en MesaEditor:", mesaTableCreated);
 
     if (!mesaTableCreated) {
       console.warn("No se encontró una mesa con el ID proporcionado.");
@@ -63,8 +55,6 @@ const MesaEditor = ({
       mesaTableCreated.orders.some((orderId) => orderId === order.id)
     );
 
-    console.log("Order en MesaEditor:", order);
-
     if (!order) {
       console.warn("No se encontró una orden correspondiente.");
     } else {
@@ -72,23 +62,6 @@ const MesaEditor = ({
     }
   }, [orders, mesa.id, tables, view]);
 
-  // console.log("Orders en useOrderStore:", orders);
-  // console.log("orderId en PedidoEditor:", mesa.orderId);
-  // console.log("mesa en MesaEditor:", mesa);
-
-  //Método a reemplazar
-  // const abrirPedido = async () => {
-  //   try {
-  //     await fetchOrderById(mesa.orderId);
-  //     const order = orders.find((order) => order.id === mesa.orderId);
-  //     if (order) {
-  //       setPedido(order);
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     Swal.fire("Error", "No se pudo obtener el pedido.", "error");
-  //   }
-  // };
 
   return (
     <div

@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { URI_ORDER, URI_ORDER_OPEN } from "../URI/URI";
-import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
+import { useOrderStore } from "../Pedido/useOrderStore";
 import Swal from "sweetalert2";
 import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useProductStore } from "./useProductStore";
-import useMesa from "./useMesa";
-import { TableCreated, useTableStore } from "../Mesa/useTableStore";
-import Sala from "../Salas/Sala";
+import { useTableStore } from "../Mesa/useTableStore";
+import { IOrderDetails } from "../Interfaces/IOrderDetails";
 
 const usePedido = () => {
   const {
@@ -21,7 +20,6 @@ const usePedido = () => {
 
   const { tables, updateTable } = useTableStore();
 
-
   const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
     tableId: "",
     numberCustomers: 0,
@@ -34,62 +32,75 @@ const usePedido = () => {
   const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
-  const [productosSeleccionados, setProductosSeleccionados] = useState<any[]>(
-    []
-  );
-  const { products } = useProductStore();
+  const [orderDetails, setOrderDetails] = useState<{
+    productId: string;
+    quantity: number;
+  } | null>(null);
+  const [productsDetails, setProductsDetails] = useState<
+    { productId: string; quantity: number; price: number; name: string }[]
+  >([]);
 
-  // const handleVerPedido = () => {
-  //   setMostrarEditorPedido(true);
-  // };
+  const [productoExistente, setProductoExistente] = useState<IOrderDetails>();
+
+  const { products } = useProductStore();
 
   useEffect(() => {
     setProductosDisponibles(products); // Sincronizar productos disponibles
   }, [products]);
 
-  // Manejar selección de productos
   const handleSeleccionarProducto = (producto: any) => {
-    const productoExistente = productosSeleccionados.find(
-      (p) => p.id === producto.id
+    console.log("productsDetails antes:", productsDetails);
+
+    const foundProduct = productsDetails.find(
+      (p) => p.productId === producto.id
     );
 
-    if (productoExistente) {
-      // Incrementar la cantidad si ya existe
-      productoExistente.cantidad += 1;
-      setProductosSeleccionados([...productosSeleccionados]);
+    if (foundProduct) {
+      const updatedDetails = productsDetails.map((p) =>
+        p.productId === producto.id ? { ...p, quantity: p.quantity + 1 } : p
+      );
+      setProductsDetails(updatedDetails);
     } else {
-      // Agregar nuevo producto al pedido
-      setProductosSeleccionados([
-        ...productosSeleccionados,
-        { ...producto, cantidad: 1 },
-      ]);
+      const newProduct = {
+        productId: producto.id,
+        quantity: 1,
+        price: producto.price,
+        name: producto.name,
+      };
+      setProductsDetails([...productsDetails, newProduct]);
     }
+
+    // También actualizamos el producto seleccionado individualmente
+    setOrderDetails({
+      productId: producto.id,
+      quantity: foundProduct ? foundProduct.quantity + 1 : 1,
+    });
   };
 
   // Agregar productos al pedido
-  const handleAgregarProductosAlPedido = () => {
-    if (!selectedMesa) {
-      Swal.fire(
-        "Error",
-        "Por favor, selecciona una mesa antes de agregar productos al pedido.",
-        "error"
-      );
-      return;
-    }
+  // const handleAgregarProductosAlPedido = () => {
+  //   if (!selectedMesa) {
+  //     Swal.fire(
+  //       "Error",
+  //       "Por favor, selecciona una mesa antes de agregar productos al pedido.",
+  //       "error"
+  //     );
+  //     return;
+  //   }
 
-    const mesaActualizada = {
-      ...selectedMesa,
-      // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
-    };
+  //   const mesaActualizada = {
+  //     ...selectedMesa,
+  //     // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
+  //   };
 
-    Swal.fire(
-      "Pedido Actualizado",
-      `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
-      "success"
-    );
-    setProductosSeleccionados([]);
-    setMostrarEditorPedido(false);
-  };
+  //   Swal.fire(
+  //     "Pedido Actualizado",
+  //     `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
+  //     "success"
+  //   );
+  //   setProductosSeleccionados([]);
+  //   setMostrarEditorPedido(false);
+  // };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -135,7 +146,7 @@ const usePedido = () => {
   const handleCreateOrder = async (
     mesa: MesaInterface,
     cantidadPersonas: number,
-    comentario: string,
+    comentario: string
   ) => {
     try {
       const pedido = {
@@ -158,16 +169,15 @@ const usePedido = () => {
       }
 
       const newOrder = await response.json();
-      
+
       const mesaActualizada = tables.find((table) => table.id === mesa.id);
       if (mesaActualizada) {
         mesaActualizada.orders.push(newOrder);
         updateTable(mesaActualizada);
       }
-      
+
       addOrder(newOrder);
 
-      
       Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");
@@ -183,7 +193,7 @@ const usePedido = () => {
       const response = await fetch(`${URI_ORDER}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        // body: JSON.stringify(form),
+        body: JSON.stringify({ productsDetails: productsDetails }),
       });
 
       if (!response.ok) {
@@ -229,7 +239,7 @@ const usePedido = () => {
     pedidoForm,
     selectedMesa,
     productosDisponibles,
-    productosSeleccionados,
+    productsDetails,
     products,
     setOrderId,
     handleCreateOrder,
@@ -237,11 +247,11 @@ const usePedido = () => {
     handleDeleteOrder,
     fetchOrderById,
     setProductosDisponibles,
-    setProductosSeleccionados,
+    setProductsDetails,
     setMostrarEditorPedido,
     removeOrder,
     handleSeleccionarProducto,
-    handleAgregarProductosAlPedido,
+    // handleAgregarProductosAlPedido,
   };
 };
 

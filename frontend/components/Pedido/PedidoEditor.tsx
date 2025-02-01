@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import {
   Autocomplete,
@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { OrderCreated } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
-import { Add, Remove, Delete } from "@mui/icons-material";
+import { Add, Remove, Delete, Print } from "@mui/icons-material";
 
 const PedidoEditor = ({
   mesa,
@@ -23,13 +23,87 @@ const PedidoEditor = ({
 }) => {
   const {
     productosDisponibles,
-    productosSeleccionados,
+    productsDetails,
     products,
+    setProductsDetails,
     handleSeleccionarProducto,
     setProductosDisponibles,
-    handleAgregarProductosAlPedido,
+    handleEditOrder,
+    // handleAgregarProductosAlPedido,
     removeOrder,
   } = usePedido();
+
+  const [productosConfirmados, setProductosConfirmados] = useState<
+    { productId: string; quantity: number; price: number; name: string }[]
+  >([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const confirmarPedido = () => {
+    setProductosConfirmados([...productosConfirmados, ...productsDetails]);
+    handleEditOrder(ordenAbierta.id);
+    setProductsDetails([]);
+  };
+
+  const eliminarProductoSeleccionado = (id: string) => {
+    setProductsDetails(productsDetails.filter((p) => p.productId !== id));
+  };
+  const eliminarProductoConfirmado = (id: string) => {
+    setProductosConfirmados(
+      productosConfirmados.filter((p) => p.productId !== id)
+    );
+  };
+
+  const imprimirComanda = () => {
+    console.log("Imprimiendo comanda:", productosConfirmados);
+    // Aquí podrías integrar la función de impresión
+  };
+
+  const aumentarCantidad = (id: string) => {
+    setProductsDetails(
+      productsDetails.map((p) =>
+        p.productId === id ? { ...p, quantity: p.quantity + 1 } : p
+      )
+    );
+  };
+
+  const disminuirCantidad = (id: string) => {
+    setProductsDetails(
+      productsDetails.map((p) =>
+        p.productId === id && p.quantity > 1
+          ? { ...p, quantity: p.quantity - 1 }
+          : p
+      )
+    );
+  };
+
+
+  const cancelarPedido = () => {
+    setProductsDetails([]);
+  };
+
+  //Totales
+
+  useEffect(() => {
+    const calcularSubtotal = () => {
+      setSubtotal(
+        productsDetails.reduce((acc, item) => {
+          return acc + item.price * item.quantity;
+        }, 0)
+      );
+    };
+
+    const calcularTotal = () => {
+      setTotal(
+        productosConfirmados.reduce((acc, item) => {
+          return acc + item.price * item.quantity;
+        }, 0)
+      );
+    };
+
+    calcularSubtotal();
+    calcularTotal();
+  }, [productsDetails, productosConfirmados]);
 
   return (
     <div style={{ width: "100%", padding: "1rem" }}>
@@ -80,7 +154,6 @@ const PedidoEditor = ({
         <h2>Pedido</h2>
       </div>
 
-      {/* Buscador de productos con dropdown */}
       <Autocomplete
         style={{ margin: "1rem 0" }}
         options={productosDisponibles}
@@ -91,12 +164,14 @@ const PedidoEditor = ({
           const searchTerm = value.toLowerCase();
           setProductosDisponibles(
             products.filter((producto) =>
-              producto.name.toLowerCase().includes(searchTerm)
+              producto.name.toLowerCase().includes(searchTerm) ||
+              producto.code.toString().toLowerCase().includes(searchTerm)
             )
           );
         }}
         onChange={(event, selectedProducto) => {
           if (selectedProducto) {
+            console.log("selectedProducto:", selectedProducto);
             handleSeleccionarProducto(selectedProducto);
           }
         }}
@@ -108,18 +183,12 @@ const PedidoEditor = ({
             fullWidth
           />
         )}
-        renderOption={(props, producto) => (
-          <li {...props} key={producto.id}>
-            {`${producto.name} - $${producto.price} (Código: ${producto.code})`}
-          </li>
-        )}
       />
 
-      {/* Mostrar productos seleccionados en el pedido */}
       <div>
-        {productosSeleccionados.length > 0 ? (
+        {productsDetails.length > 0 ? (
           <List>
-            {productosSeleccionados.map((item, index) => (
+            {productsDetails.map((item, index) => (
               <ListItem
                 key={index}
                 style={{
@@ -139,37 +208,51 @@ const PedidoEditor = ({
                     gap: "0.3rem",
                   }}
                 >
-                  <IconButton onClick={() => disminuirCantidad(item.id)}>
+                  <IconButton onClick={() => disminuirCantidad(item.productId)}>
                     <Remove />
                   </IconButton>
-                  <Typography style={{ color: "black", backgroundColor: "white", width: "2rem", textAlign: "center", borderRadius: "5px" }}>{item.cantidad}</Typography>
-                  <IconButton onClick={() => aumentarCantidad(item.id)}>
+                  <Typography
+                    style={{
+                      color: "black",
+                      backgroundColor: "white",
+                      width: "2rem",
+                      textAlign: "center",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    {item.quantity}
+                  </Typography>
+                  <IconButton onClick={() => aumentarCantidad(item.productId)}>
                     <Add />
                   </IconButton>
                 </div>
                 <ListItemText style={{ color: "black" }} primary={item.name} />
                 <Typography style={{ color: "black" }}>
-                  ${item.price}
+                  ${item.price * item.quantity}
                 </Typography>
-                <IconButton onClick={() => eliminarProducto(item.id)}>
+                <IconButton
+                  onClick={() => eliminarProductoSeleccionado(item.productId)}
+                >
                   <Delete />
                 </IconButton>
               </ListItem>
             ))}
+            <Typography style={{ margin: "1rem 0" }}>
+              Subtotal: ${subtotal}
+            </Typography>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <Button
                 color="secondary"
                 variant="contained"
-                style={{ margin: "10px" }}
-                // onClick={confirmarPedido}
+                style={{ margin: "10px", backgroundColor: "#dddedd" }}
+                onClick={cancelarPedido}
               >
                 Cancelar
               </Button>
               <Button
-                color="secondary"
                 variant="contained"
-                style={{ margin: "10px" }}
-                // onClick={confirmarPedido}
+                style={{ margin: "10px", backgroundColor: "#82d978" }}
+                onClick={confirmarPedido}
               >
                 Confirmar
               </Button>
@@ -182,16 +265,43 @@ const PedidoEditor = ({
         )}
       </div>
 
-      {/* Botón para guardar el pedido */}
-      <Button
-        fullWidth
-        color="primary"
-        variant="contained"
-        style={{ marginTop: "10px" }}
-        onClick={handleAgregarProductosAlPedido}
-      >
-        Guardar Pedido
-      </Button>
+      {productosConfirmados.length > 0 && (
+        <>
+          <div style={{ marginTop: "1rem" }}>
+            <Typography>Productos Confirmados</Typography>
+            <List>
+              {productosConfirmados.map((item, index) => (
+                <ListItem
+                  key={index}
+                  style={{ backgroundColor: "#cce5ff", margin: "0.3rem 0" }}
+                >
+                  <ListItemText
+                    primary={item.name}
+                    secondary={`Cantidad: ${item.quantity} - $${
+                      item.price * item.quantity
+                    }`}
+                  />
+                  <IconButton
+                    onClick={() => eliminarProductoConfirmado(item.productId)}
+                  >
+                    <Delete />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          </div>
+          <Button
+            fullWidth
+            color="secondary"
+            variant="contained"
+            style={{ marginTop: "10px" }}
+            onClick={imprimirComanda}
+          >
+            <Print style={{ marginRight: "5px" }} /> Imprimir Comanda
+          </Button>
+        </>
+      )}
+
       <Button
         fullWidth
         color="warning"
