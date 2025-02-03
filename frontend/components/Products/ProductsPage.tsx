@@ -1,14 +1,15 @@
 "use client";
 import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useProductos } from "../Hooks/useProducts";
-import Productos from "./Products";
 import { Sidebar } from "./Sidebar";
-import { TabsNavigation } from "./tabsNavigations";
-import CategoriasProductos from '../Categorías/CategoríasProductos/CategoriasProductos';
-import CategoriasIngredientes from '../Categorías/CategoríasIngredientes/CategoriasIngredientes';
-import { useCategoryStore } from "../Categorías/useCategoryStore";
+import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/helpers/categories";
+import { useProductos } from "@/components/Hooks/useProducts";
+import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
+import Products from "./TabProducts/Products";
+import StockControl from "./TabControlStock/ControlStock";
+
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
@@ -65,7 +66,7 @@ const ProductsPage: React.FC = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" height="100vh">
+    <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
       <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
         <Sidebar
@@ -73,11 +74,19 @@ const ProductsPage: React.FC = () => {
           selectedCategoryId={selectedCategoryId}
         />
         {selectedTab === "Productos" &&
-          <Productos
+          <Products
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
           />}
         {selectedTab === "Categoría productos" && <CategoriasProductos />}
+        {selectedTab === "Control de Stock" && (
+          <Box flex={1} overflow="auto">
+            <StockControl
+              selectedCategoryId={selectedCategoryId}
+              onClearSelectedCategory={clearSelectedCategory}
+            />
+          </Box>
+        )}
       </Box>
     </Box>
   );

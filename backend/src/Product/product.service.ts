@@ -62,4 +62,22 @@ export class ProductService {
     });
     return productDeleted;
   }
+
+  async searchProducts(
+    name?: string,
+    code?: string,
+    categories?: string[],
+    isActive?: boolean,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ data: Product[]; total: number }> {
+    return this.productRepository.searchProducts(
+      name,
+      code,
+      categories,
+      isActive,
+      page,
+      limit,
+    );
+  }
 }

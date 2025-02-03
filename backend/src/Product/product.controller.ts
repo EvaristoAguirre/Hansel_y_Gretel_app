@@ -21,7 +21,7 @@ import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 @ApiTags('Producto')
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   @Get()
   async getAllProducts(
@@ -29,6 +29,30 @@ export class ProductController {
     @Query('limit') limit: number = 10,
   ): Promise<Product[]> {
     return this.productService.getAllProducts(page, limit);
+  }
+
+  @Post('search')
+  async searchProducts(
+    @Query('name') name?: string,
+    @Query('code') code?: string,
+    @Query('isActive') isActive?: boolean,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Body('categories') categories?: string[],
+  ): Promise<{ data: Product[]; total: number }> {
+    console.log('Name:', name);
+    console.log('Code:', code);
+    console.log('Categories:', categories);
+    console.log('Page:', page);
+    console.log('Limit:', limit);
+    return this.productService.searchProducts(
+      name,
+      code,
+      categories,
+      isActive,
+      page,
+      limit,
+    );
   }
 
   @Get(':id')

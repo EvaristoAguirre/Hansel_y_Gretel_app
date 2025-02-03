@@ -4,7 +4,7 @@ import { ICategory } from './ICategories';
 export interface ProductForm {
   [key: string]: string | number | boolean | null | string[];
   id: string;
-  code:  null | number;
+  code: null | number;
   name: string;
   description: string;
   price: null | number;
@@ -25,7 +25,7 @@ export interface ProductTableProps {
 
 export interface ProductCreated {
   [key: string]: string | number | boolean | null | string[];
-  code: number ;
+  code: number;
   name: string;
   description: string;
   price: number;
@@ -52,4 +52,9 @@ export interface ProductState {
   removeProduct: (id: string) => void;
   updateProduct: (updatedProduct: ProductResponse) => void;
   connectWebSocket: () => void;
+}
+
+export interface ProductsProps {
+  selectedCategoryId: string | null;
+  onClearSelectedCategory: () => void;
 }
