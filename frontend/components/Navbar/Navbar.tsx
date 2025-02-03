@@ -14,12 +14,16 @@ import { useAuth } from "@/app/context/authContext";
 const Navbar = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [showUsername, setShowUsername] = useState<string | null>(null);
-  const { usernameFromToken, handleSignOut } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>("");
 
+  const { usernameFromToken, handleSignOut, userRoleFromToken } = useAuth();
   useEffect(() => {
     const username = usernameFromToken();
+    const userRole = userRoleFromToken();
+
     if (username) {
       setShowUsername(username);
+      setUserRole(userRole);
     }
   }, []);
 
@@ -68,7 +72,7 @@ const Navbar = () => {
         {/* Session login */}
         <div className="flex items-center gap-4 text-white">
           {/* Mostrar nombre de usuario o "Iniciar sesión" */}
-          <Link href={showUsername ? "/dashboard" : "/views/login"}>
+          <Link href={showUsername ? "/" : "/views/login"}>
             <div className="flex items-center gap-2 hover:scale-105 transition-transform">
               <button className="border border-[#856D5E] rounded-md p-2 flex items-center">
                 <h3 className="text-sm font-medium mr-2">{showUsername || "Iniciar sesión"}</h3>
@@ -78,12 +82,13 @@ const Navbar = () => {
           </Link>
 
           {/* Botón de Crear Usuario */}
-          <Link href="/views/register">
-            <button className="border border-green-500 text-green-500 rounded-md p-2 text-sm font-medium hover:bg-green-500 hover:text-white transition-colors">
-              Crear Usuario
-            </button>
-          </Link>
-
+          {
+            userRole === "Admin" || userRole === "Encargado" && <Link href="/views/register">
+              <button className="border border-green-500 text-green-500 rounded-md p-2 text-sm font-medium hover:bg-green-500 hover:text-white transition-colors">
+                Crear Usuario
+              </button>
+            </Link>
+          }
           {/* Botón de Cerrar Sesión (solo si está logueado) */}
           {showUsername && (
             <button
