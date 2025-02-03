@@ -37,7 +37,7 @@ export class OrderController {
     return this.orderService.updateOrder(id, updateData);
   }
 
-  @Delete()
+  @Delete(':id')
   deleteOrder(@Param('id') id: string): Promise<string> {
     return this.orderService.deleteOrder(id);
   }

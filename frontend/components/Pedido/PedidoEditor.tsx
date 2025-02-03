@@ -30,7 +30,7 @@ const PedidoEditor = ({
     setProductosDisponibles,
     handleEditOrder,
     // handleAgregarProductosAlPedido,
-    removeOrder,
+    handleDeleteOrder,
   } = usePedido();
 
   const [productosConfirmados, setProductosConfirmados] = useState<
@@ -40,10 +40,28 @@ const PedidoEditor = ({
   const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
-    setProductosConfirmados([...productosConfirmados, ...productsDetails]);
+    // Crear un nuevo array combinando los productos confirmados con los nuevos detalles
+    const productosActualizados = [...productosConfirmados];
+  
+    productsDetails.forEach((nuevoProducto) => {
+      const productoExistente = productosActualizados.find(
+        (p) => p.productId === nuevoProducto.productId
+      );
+  
+      if (productoExistente) {
+        // Si el producto ya existe, sumamos la cantidad
+        productoExistente.quantity += nuevoProducto.quantity;
+      } else {
+        // Si no existe, lo agregamos
+        productosActualizados.push(nuevoProducto);
+      }
+    });
+  
+    setProductosConfirmados(productosActualizados);
     handleEditOrder(ordenAbierta.id);
     setProductsDetails([]);
   };
+  
 
   const eliminarProductoSeleccionado = (id: string) => {
     setProductsDetails(productsDetails.filter((p) => p.productId !== id));
@@ -281,7 +299,13 @@ const PedidoEditor = ({
               {productosConfirmados.map((item, index) => (
                 <ListItem
                   key={index}
-                  style={{ backgroundColor: "#eceae8", margin: "0.3rem 0", display: "flex", alignItems: "center", gap: "0.3rem" }}
+                  style={{
+                    backgroundColor: "#eceae8",
+                    margin: "0.3rem 0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                  }}
                 >
                   <Typography
                     style={{
@@ -294,7 +318,10 @@ const PedidoEditor = ({
                   >
                     {item.quantity}
                   </Typography>
-                  <ListItemText style={{margin: "0 1rem"}} primary={item.name} />
+                  <ListItemText
+                    style={{ margin: "0 1rem" }}
+                    primary={item.name}
+                  />
                   <Typography>{`$ ${item.price * item.quantity}`}</Typography>
 
                   <IconButton
@@ -335,7 +362,7 @@ const PedidoEditor = ({
         color="warning"
         variant="contained"
         style={{ marginTop: "10px" }}
-        // onClick={() => removeOrder(mesa.orderId!)}
+        onClick={() => handleDeleteOrder(ordenAbierta.id)}
       >
         Anular Pedido
       </Button>

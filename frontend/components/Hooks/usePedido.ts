@@ -198,12 +198,9 @@ const usePedido = () => {
     }
     try {
       const response = await fetch(`${URI_ORDER}/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([ 
-          ...productsDetails, 
-          ...(productsDetailsExistente || []) 
-        ]),
+        body: JSON.stringify([ ...productsDetails, ...(productsDetailsExistente || []) ]),
       });
 
       if (!response.ok) {
