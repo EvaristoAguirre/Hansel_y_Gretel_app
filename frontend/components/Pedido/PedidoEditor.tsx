@@ -58,6 +58,7 @@ const PedidoEditor = ({
     });
   
     setProductosConfirmados(productosActualizados);
+    console.log("ordenAbierta.id", ordenAbierta.id);
     handleEditOrder(ordenAbierta.id);
     setProductsDetails([]);
   };

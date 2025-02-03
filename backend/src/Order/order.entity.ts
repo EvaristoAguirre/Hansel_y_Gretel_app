@@ -2,6 +2,7 @@ import { Table } from 'src/Table/table.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -41,5 +42,6 @@ export class Order {
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {
     cascade: true,
   })
+  @JoinColumn({name: 'orders_orderDetails'})
   orderDetails: OrderDetails[];
 }

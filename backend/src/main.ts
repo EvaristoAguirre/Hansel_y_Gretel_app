@@ -26,7 +26,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(3000); 
+  await app.listen(3000, '0.0.0.0');
   const port = app.getHttpServer().address().port;
   console.log(`Server listening on http://localhost:${port}`);
 }
