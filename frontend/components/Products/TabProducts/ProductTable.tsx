@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
-import { ProductTableProps } from "../Interfaces/IProducts";
-import { useProductStore } from "../Hooks/useProductStore";
 import { esES } from "@mui/x-data-grid/locales/esES";
-import { getProductsByCategory } from "@/helpers/products";
-import { useProductos } from '../Hooks/useProducts';
+import { getProductsByCategory, searchProducts } from "@/helpers/products";
+import { ProductTableProps } from "@/components/Interfaces/IProducts";
+import { useProductStore } from "@/components/Hooks/useProductStore";
+import { useProductos } from "@/components/Hooks/useProducts";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -13,10 +13,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   selectedCategoryId,
   onClearSelectedCategory,
 }) => {
-  const { products, setProducts } = useProductStore(); // Obtener todos los productos
+  const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Actualizar los resultados de búsqueda cuando `products` cambie
   useEffect(() => {
@@ -57,23 +58,21 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [selectedCategoryId]);
 
 
-  // Manejar búsqueda de productos
-  const handleSearch = (value: string) => {
-    const searchTerm = value.toLowerCase();
-    if (searchTerm) {
-      const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.code.toString().toLowerCase().includes(searchTerm)
-      );
-      setSearchResults(filteredProducts);
-    } else {
-      setSearchResults(products); // Mostrar todos los productos si no hay término de búsqueda
+  // búsqueda de productos con endpoint 
+  const handleSearch = async (value: string) => {
+    const searchTerm = value.trim();
+    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
+      setSearchTerm(searchTerm);
+      const results = await searchProducts(searchTerm, selectedCategoryId);
+      setSearchResults(results);
+    } else if (searchTerm.length === 0) {
+      setSearchResults(products);
     }
   };
 
+
   // Manejar selección de un producto
   const handleSelectProduct = (product: any) => {
-    console.log('Handle Select Product', product);
     if (!selectedProducts.find((p) => p.id === product.id)) {
       setSelectedProducts([...selectedProducts, product]);
     }
@@ -87,6 +86,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     fetchAndSetProducts();
     setSearchResults(products);
     setSelectedProducts([]);
+    setSearchTerm("");
     onClearSelectedCategory();
   };
 
@@ -106,10 +106,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Buscador de productos */}
         <Autocomplete
           sx={{ flexGrow: 1, width: '60%', marginRight: 2 }}
-          // options={searchResults}
           options={selectedCategoryId ? searchResults : products}
           getOptionLabel={(product) =>
-            `${product.name} - $${product.price} (Código: ${product.code})`
+            `${product.name} - (Código: ${product.code})`
           }
           onInputChange={(event, value) => handleSearch(value)}
           onChange={(event, selectedProduct) => {
@@ -127,7 +126,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           )}
           renderOption={(props, product) => (
             <li {...props} key={String(product.id)}>
-              {`${product.name} - $${product.price} (Código: ${product.code})`}
+              {`${product.name} - (Código: ${product.code})`}
             </li>
           )}
         />
@@ -143,24 +142,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       </Box>
       {/* Tabla de productos */}
       <Box sx={{ height: 450, mt: 2 }}>
-        {/* <DataGrid
-          rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
-          columns={columns}
-          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 1, pageSize: 5 },
-            },
-            sorting: {
-              sortModel: [{ field: 'name', sort: 'asc' }],
-            }
-          }}
-          // onStateChange={(state) => {
-          //   // TODO: Revisar si este método puede ser útil
-          //   console.log('ON STATE CHANGE: ', state);
-          // }}
-          pageSizeOptions={[2, 5, 7, 9, 15]}
-        /> */}
         <DataGrid
           rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
           columns={columns}
@@ -173,10 +154,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               sortModel: [{ field: 'name', sort: 'asc' }],
             }
           }}
-          // onStateChange={(state) => {
-          //   // TODO: Revisar si este método puede ser útil
-          //   console.log('ON STATE CHANGE: ', state);
-          // }}
           pageSizeOptions={[2, 5, 7, 9, 15]}
         />
       </Box>

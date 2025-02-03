@@ -5,10 +5,12 @@ import { Card, CardContent, Typography, TextField, Button, Box } from '@mui/mate
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
+import { loginUser } from '@/helpers/login-register';
+import Swal from 'sweetalert2';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -16,14 +18,33 @@ export default function RegisterForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Formulario enviado:', formData);
+    try {
+      const response = await loginUser(formData);
+      console.log('Respuesta del servidor:', response);
+      const { accessToken } = response;
+      localStorage.setItem("user", JSON.stringify({ accessToken }));
+      Swal.fire({
+        icon: "success",
+        title: "Ingresaste con éxito!",
+      });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+
+    } catch (error: any) {
+      Swal.fire({
+        icon: "warning",
+        title: "Error al iniciar sesión",
+        text: error.message === "Invalid credentials" ? "Credenciales incorrectas." : "Verifica la información ingresada"
+      });
+    }
   };
 
   return (
     <ThemeProvider theme={theme}>
-      <Box display="flex" justifyContent="center" alignItems="flex-start" minHeight="100vh" bgcolor="black" p={3}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="black" p={3}>
         <Card sx={{ display: 'flex', borderRadius: 2, boxShadow: 3, maxWidth: 600, mt: 4 }}>
           {/* Sección del logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', p: 3, borderRadius: '8px 0 0 8px' }}>
@@ -38,11 +59,11 @@ export default function RegisterForm() {
               <TextField
                 fullWidth
                 margin="normal"
-                label="Email"
+                label="Nombre"
                 variant="outlined"
-                type="email"
-                name="email"
-                value={formData.email}
+                type="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 required
               />
