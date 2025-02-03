@@ -94,7 +94,7 @@ export default function RegisterForm() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box display="flex" justifyContent="center" alignItems="flex-start" minHeight="100vh" bgcolor="black" p={3}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="black" p={3}>
         <Card sx={{ display: 'flex', borderRadius: 2, boxShadow: 3, maxWidth: 600, mt: 4 }}>
           {/* Sección del logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', p: 3, borderRadius: '8px 0 0 8px' }}>

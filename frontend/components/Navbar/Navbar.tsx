@@ -34,9 +34,10 @@ const Navbar = () => {
     { label: "Proveedores", path: "/views/proveedores", icon: proveedor },
     { label: "Configuración", path: "/views/configuracion", icon: configuracion },
   ];
+  console.log(userRole);
 
   return (
-    <nav className="bg-black shadow-md py-4">
+    <nav className="bg-black shadow-md py-4 absolute top-0 left-0 right-0 z-50 w-full">
       <div className="flex justify-between items-center px-8 border-b-8 border-[#856D5E]">
         {/* Logo */}
         <div className="flex items-center">
@@ -83,11 +84,13 @@ const Navbar = () => {
 
           {/* Botón de Crear Usuario */}
           {
-            userRole === "Admin" || userRole === "Encargado" && <Link href="/views/register">
-              <button className="border border-green-500 text-green-500 rounded-md p-2 text-sm font-medium hover:bg-green-500 hover:text-white transition-colors">
-                Crear Usuario
-              </button>
-            </Link>
+            (userRole === "Admin" || userRole === "Encargado") && (
+              <Link href="/views/register">
+                <button className="border border-green-500 text-green-500 rounded-md p-2 text-sm font-medium hover:bg-green-500 hover:text-white transition-colors">
+                  Crear Usuario
+                </button>
+              </Link>
+            )
           }
           {/* Botón de Cerrar Sesión (solo si está logueado) */}
           {showUsername && (

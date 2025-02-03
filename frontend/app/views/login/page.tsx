@@ -34,13 +34,17 @@ export default function RegisterForm() {
       }, 1000);
 
     } catch (error: any) {
-      alert('Error al iniciar sesión: ' + error.message);
-    };
+      Swal.fire({
+        icon: "warning",
+        title: "Error al iniciar sesión",
+        text: error.message === "Invalid credentials" ? "Credenciales incorrectas." : "Verifica la información ingresada"
+      });
+    }
   };
 
   return (
     <ThemeProvider theme={theme}>
-      <Box display="flex" justifyContent="center" alignItems="flex-start" minHeight="100vh" bgcolor="black" p={3}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="black" p={3}>
         <Card sx={{ display: 'flex', borderRadius: 2, boxShadow: 3, maxWidth: 600, mt: 4 }}>
           {/* Sección del logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', p: 3, borderRadius: '8px 0 0 8px' }}>

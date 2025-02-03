@@ -66,7 +66,7 @@ const ProductsPage: React.FC = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" min-height="100vh">
+    <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
       <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
         <Sidebar

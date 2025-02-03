@@ -1,10 +1,13 @@
 import ProductsPage from "@/components/Products/ProductsPage";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 
 const ViewProducts = () => {
   return (
-    <div>
+    <ProtectedRoute>
+
       <ProductsPage />
-    </div>
+
+    </ProtectedRoute>
   );
 };
 export default ViewProducts;
