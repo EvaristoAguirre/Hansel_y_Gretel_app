@@ -11,7 +11,7 @@ export interface OrderDetailsCreated {
 }
 
 interface OrderDetailsState {
-  OrderDetails: OrderDetailsCreated[];
+  orderDetails: OrderDetailsCreated[];
   setOrderDetails: (details: OrderDetailsCreated[]) => void;
   addOrderDetails: (detail: OrderDetailsCreated) => void;
   removeOrderDetails: (id: string) => void;
@@ -19,18 +19,20 @@ interface OrderDetailsState {
   connectWebSocket: () => void;
 }
 
-const useOrderDetailsStore = create<OrderDetailsState>((set) => ({
-  OrderDetails: [],
-  setOrderDetails: (details) => set({ OrderDetails: details }),
-  addOrderDetails: (detail) => set((state) => ({ OrderDetails: [...state.OrderDetails, detail] })),
-  removeOrderDetails: (id) => set((state) => ({
-    OrderDetails: state.OrderDetails.filter((detail) => detail.id !== id),
-  })),
-  updateOrderDetails: (updatedDetail) => set((state) => ({
-    OrderDetails: state.OrderDetails.map((detail) =>
-      detail.id === updatedDetail.id ? updatedDetail : detail
-    ),
-  })),
+export const useOrderDetailsStore = create<OrderDetailsState>((set) => ({
+  orderDetails: [],
+  setOrderDetails: (orderDetails) => set({ orderDetails }),
+  addOrderDetails: (orderDetail) =>
+    set((state) => ({ orderDetails: [...state.orderDetails, orderDetail] })),
+  removeOrderDetails: (id) =>
+    set((state) => ({
+      orderDetails: state.orderDetails.filter((orderDetail) => orderDetail.id !== id),
+    })),
+  updateOrderDetails: (updatedOrderDetail) =>
+    set((state) => ({
+      orderDetails: state.orderDetails.map((orderDetail) =>
+        orderDetail.id === updatedOrderDetail.id ? updatedOrderDetail : orderDetail),
+    })),
   connectWebSocket: () => {
     const socket = new WebSocket("ws://your-websocket-url");
 
@@ -39,15 +41,17 @@ const useOrderDetailsStore = create<OrderDetailsState>((set) => ({
       set((state) => {
         switch (action) {
           case "orderDetails.created":
-            return { OrderDetails: [...state.OrderDetails, data] };
+            return { orderDetails: [...state.orderDetails, data] };
           case "orderDetails.deleted":
             return {
-              OrderDetails: state.OrderDetails.filter((detail) => detail.id !== data.id),
+              orderDetails: state.orderDetails.filter(
+                (orderDetail) => orderDetail.id !== data.id
+              ),
             };
           case "orderDetails.updated":
             return {
-              OrderDetails: state.OrderDetails.map((detail) =>
-                detail.id === data.id ? data : detail
+              orderDetails: state.orderDetails.map((orderDetail) =>
+                orderDetail.id === data.id ? data : orderDetail
               ),
             };
           default:

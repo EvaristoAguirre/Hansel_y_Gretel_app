@@ -19,12 +19,9 @@ export interface MesaInterface {
   name: string;
   number: number;
   coment: string;
-  // cantidadPersonas: number;
-  // cliente: string | null;
-  state: TableState; // Estados posibles de la mesa
-  room: ISala; // ID de la sala a la que pertenece
-  // mozo: MozoInterface | null;
-  orderId?: string | null; // Lista de pedidos asociados
+  state: TableState; 
+  room: ISala; 
+  orderId?: string[];
 }
 
 export interface MesaForm {

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { MesaInterface, MesaProps } from "../Interfaces/Cafe_interfaces";
-import MesaDatos from "./MesaDatos";
 import useMesa from "../Hooks/useMesa";
 import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";

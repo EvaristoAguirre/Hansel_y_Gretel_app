@@ -12,12 +12,14 @@ export class CreateOrderDto {
   @IsString()
   tableId: string;
 
+  @IsNotEmpty()
   @IsNumber()
   numberCustomers: number;
 
   @IsNotEmpty()
   @IsArray()
-  productsDetails?: OrderDetailsDto[];
+  @IsOptional()
+  productsDetails: OrderDetailsDto[];
 
   @IsOptional()
   @IsString()

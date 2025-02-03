@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { URI_ORDER, URI_ORDER_OPEN } from "../URI/URI";
-import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
+import { useOrderStore } from "../Pedido/useOrderStore";
 import Swal from "sweetalert2";
 import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { useProductStore } from "./useProductStore";
+import { useTableStore } from "../Mesa/useTableStore";
+import { IOrderDetails } from "../Interfaces/IOrderDetails";
 
 const usePedido = () => {
   const {
@@ -15,6 +18,8 @@ const usePedido = () => {
     connectWebSocket,
   } = useOrderStore();
 
+  const { tables, updateTable } = useTableStore();
+
   const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
     tableId: "",
     numberCustomers: 0,
@@ -23,6 +28,86 @@ const usePedido = () => {
   });
 
   const [orderId, setOrderId] = useState<string | null>(null);
+
+  const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
+  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
+  const [orderDetails, setOrderDetails] = useState<{
+    productId: string;
+    quantity: number;
+  } | null>(null);
+  const [productsDetails, setProductsDetails] = useState<
+    { productId: string; quantity: number; price: number; name: string }[]
+  >([]);
+
+  const [productsDetailsExistente, setProductsDetailsExistente] =
+    useState<{ productId: string; quantity: number }[]>();
+
+  const { products } = useProductStore();
+
+  useEffect(() => {
+    setProductosDisponibles(products); // Sincronizar productos disponibles
+  }, [products]);
+
+  const handleSeleccionarProducto = (producto: any) => {
+    const foundProduct = productsDetails.find(
+      (p) => p.productId === producto.id
+    );
+
+    if (foundProduct) {
+      const updatedDetails = productsDetails.map((p) =>
+        p.productId === producto.id ? { ...p, quantity: p.quantity + 1 } : p
+      );
+      setProductsDetails(updatedDetails);
+      setProductsDetailsExistente([{
+        productId: producto.id,
+        quantity: foundProduct.quantity + 1,
+      }]);
+    } else {
+      const newProduct = {
+        productId: producto.id,
+        quantity: 1,
+        price: producto.price,
+        name: producto.name,
+      };
+      setProductsDetails([...productsDetails, newProduct]);
+      setProductsDetailsExistente([{
+        productId: producto.id,
+        quantity: 1,
+      }]);
+    }
+
+    // También actualizamos el producto seleccionado individualmente
+    setOrderDetails({
+      productId: producto.id,
+      quantity: foundProduct ? foundProduct.quantity + 1 : 1,
+    });
+  };
+
+  // Agregar productos al pedido
+  // const handleAgregarProductosAlPedido = () => {
+  //   if (!selectedMesa) {
+  //     Swal.fire(
+  //       "Error",
+  //       "Por favor, selecciona una mesa antes de agregar productos al pedido.",
+  //       "error"
+  //     );
+  //     return;
+  //   }
+
+  //   const mesaActualizada = {
+  //     ...selectedMesa,
+  //     // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
+  //   };
+
+  //   Swal.fire(
+  //     "Pedido Actualizado",
+  //     `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
+  //     "success"
+  //   );
+  //   setProductosSeleccionados([]);
+  //   setMostrarEditorPedido(false);
+  // };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -91,7 +176,13 @@ const usePedido = () => {
       }
 
       const newOrder = await response.json();
-      console.log("orders:", newOrder);
+
+      const mesaActualizada = tables.find((table) => table.id === mesa.id);
+      if (mesaActualizada) {
+        mesaActualizada.orders.push(newOrder);
+        updateTable(mesaActualizada);
+      }
+
       addOrder(newOrder);
 
       Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
@@ -107,9 +198,9 @@ const usePedido = () => {
     }
     try {
       const response = await fetch(`${URI_ORDER}/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        // body: JSON.stringify(form),
+        body: JSON.stringify([ ...productsDetails, ...(productsDetailsExistente || []) ]),
       });
 
       if (!response.ok) {
@@ -153,11 +244,21 @@ const usePedido = () => {
     orders,
     orderId,
     pedidoForm,
+    selectedMesa,
+    productosDisponibles,
+    productsDetails,
+    products,
     setOrderId,
     handleCreateOrder,
     handleEditOrder,
     handleDeleteOrder,
     fetchOrderById,
+    setProductosDisponibles,
+    setProductsDetails,
+    setMostrarEditorPedido,
+    removeOrder,
+    handleSeleccionarProducto,
+    // handleAgregarProductosAlPedido,
   };
 };
 

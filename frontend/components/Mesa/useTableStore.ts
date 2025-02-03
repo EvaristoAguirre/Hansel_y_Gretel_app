@@ -3,6 +3,7 @@ import { TableState } from "../Enums/Enums";
 import { ISala } from "../Interfaces/Cafe_interfaces";
 import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
 import { OrderCreated } from "../Pedido/useOrderStore";
+import { strict } from "assert";
 
 export interface TableCreated {
   id: string;
@@ -12,7 +13,7 @@ export interface TableCreated {
   // isActive: boolean;
   state: TableState;
   room: ISala;
-  orders: OrderCreated[];
+  orders: string[];
 }
 
 interface TableStateZustand {
