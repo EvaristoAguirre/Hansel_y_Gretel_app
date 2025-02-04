@@ -17,7 +17,7 @@ export class Order {
   @Column()
   date: Date;
 
-  @Column({ type: 'enum', enum: OrderState, default: OrderState.PENDING })
+  @Column({ type: 'enum', enum: OrderState, default: OrderState.OPEN })
   state: OrderState;
 
   @Column({ default: true })
@@ -40,6 +40,7 @@ export class Order {
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {
     cascade: true,
+    eager: false,
   })
   orderDetails: OrderDetails[];
 }

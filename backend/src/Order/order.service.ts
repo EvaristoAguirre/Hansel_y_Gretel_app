@@ -56,4 +56,12 @@ export class OrderService {
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
     return await this.orderRepository.getOrdersForOpenOrPendingTables();
   }
+
+  async markOrderAsPendingPayment(id: string): Promise<Order> {
+    return await this.orderRepository.markOrderAsPendingPayment(id);
+  }
+
+  async closeOrder(id: string): Promise<Order> {
+    return await this.orderRepository.closeOrder(id);
+  }
 }

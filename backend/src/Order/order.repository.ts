@@ -12,8 +12,9 @@ import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
+import { OrderState, TableState } from 'src/Enums/states.enum';
 import { TableState } from 'src/Enums/states.enum';
-import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
+
 
 @Injectable()
 export class OrderRepository {
@@ -28,8 +29,8 @@ export class OrderRepository {
     private readonly productRepository: Repository<Product>,
   ) {}
 
-  async openOrder(openOrder: CreateOrderDto): Promise<OrderOpenDto> {
-    const { tableId, numberCustomers, comment } = openOrder;
+  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+    const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
       const tableInUse = await this.tableRepository.findOne({
@@ -39,6 +40,16 @@ export class OrderRepository {
       if (!tableInUse) {
         throw new NotFoundException(`Table with ID: ${tableId} not found`);
       }
+
+      if (tableInUse.state !== TableState.AVAILABLE) {
+        throw new BadRequestException(
+          `Table with ID: ${tableId} not available`,
+        );
+      }
+
+      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      await this.tableRepository.save(tableInUse);
+      //event emitter avisara que se actualizo la mesa
 
       tableInUse.state = TableState.OPEN; //pasar por updateTable
       await this.tableRepository.save(tableInUse);
@@ -52,88 +63,6 @@ export class OrderRepository {
         orderDetails: [],
       });
 
-      const savedOrder = await this.orderRepository.save(newOrder);
-
-      const responseOrder = {
-        date: savedOrder.date,
-        total: savedOrder.total,
-        numberCustomers: savedOrder.numberCustomers,
-        comment: savedOrder.comment,
-        tableId: savedOrder.table.id, // Aquí se reemplaza table con tableId
-        orderDetails: savedOrder.orderDetails,
-        commandNumber: savedOrder.commandNumber,
-        id: savedOrder.id,
-        state: savedOrder.state,
-        isActive: savedOrder.isActive,
-      };
-
-      console.log('Order created:', responseOrder);
-      return responseOrder as OrderOpenDto;
-    } catch (error) {
-      console.error(`[CreateOrder Error]: ${error.message}`, error);
-
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'An error occurred while creating the order. Please try again later.',
-      );
-    }
-  }
-
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
-    const { tableId, numberCustomers, productsDetails, comment } =
-      orderToCreate;
-
-    try {
-      const tableInUse = await this.tableRepository.findOne({
-        where: { id: tableId, isActive: true },
-      });
-
-      if (!tableInUse) {
-        throw new NotFoundException(`Table with ID: ${tableId} not found`);
-      }
-
-      tableInUse.state = TableState.OPEN; //pasar por updateTable
-      await this.tableRepository.save(tableInUse);
-
-      tableInUse.state = TableState.OPEN; //pasar por updateTable
-      await this.tableRepository.save(tableInUse);
-
-      const newOrder = this.orderRepository.create({
-        date: new Date(),
-        total: 0,
-        numberCustomers: numberCustomers,
-        table: tableInUse,
-        comment: comment,
-        orderDetails: [],
-      });
-
-      let total = 0;
-
-      for (const { productId, quantity } of productsDetails) {
-        const productFinded = await this.productRepository.findOne({
-          where: { id: productId, isActive: true },
-        });
-
-        if (!productFinded) {
-          throw new NotFoundException(
-            `Product with ID: ${productId} not found`,
-          );
-        }
-
-        const newOrderDetail = this.orderDetailsRepository.create({
-          quantity: quantity,
-          unitaryPrice: productFinded.price,
-          subtotal: quantity * productFinded.price,
-          product: productFinded,
-        });
-        total += newOrderDetail.subtotal;
-        newOrder.orderDetails.push(newOrderDetail);
-      }
-
-      newOrder.total = total;
       return await this.orderRepository.save(newOrder);
     } catch (error) {
       console.error(`[CreateOrder Error]: ${error.message}`, error);
@@ -147,8 +76,8 @@ export class OrderRepository {
       );
     }
   }
+  
   async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
-    console.log(id);
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');
     }
@@ -166,6 +95,7 @@ export class OrderRepository {
       if (updateData.state) {
         order.state = updateData.state;
       }
+
       if (updateData.tableId) {
         const table = await this.tableRepository.findOne({
           where: { id: updateData.tableId, isActive: true },
@@ -179,7 +109,8 @@ export class OrderRepository {
       }
 
       if (updateData.productsDetails) {
-        const updatedDetails = [];
+        const batchId = Date.now().toString();
+        const newProducts = [];
         let total = 0;
 
         for (const { productId, quantity } of updateData.productsDetails) {
@@ -193,37 +124,35 @@ export class OrderRepository {
             );
           }
 
-          const existingDetail = order.orderDetails.find(
-            (detail) => detail.product && detail.product.id === productId,
-          );
+          const newDetail = this.orderDetailsRepository.create({
+            quantity,
+            unitaryPrice: product.price,
+            subtotal: quantity * product.price,
+            product,
+            order,
+            batchId,
+          });
 
-          if (existingDetail) {
-            if (quantity > 0) {
-              existingDetail.quantity = quantity;
-              existingDetail.unitaryPrice = product.price;
-              existingDetail.subtotal = quantity * product.price;
-              updatedDetails.push(existingDetail);
-            } else {
-              await this.orderDetailsRepository.remove(existingDetail);
-            }
-          } else if (quantity > 0) {
-            const newDetail = this.orderDetailsRepository.create({
-              quantity,
-              unitaryPrice: product.price,
-              subtotal: quantity * product.price,
-              product,
-              order,
-            });
-            updatedDetails.push(newDetail);
-          }
+          order.orderDetails.push(newDetail);
+          newProducts.push(product);
 
-          if (quantity > 0) {
-            total += quantity * product.price;
-          }
+          total += quantity * product.price;
         }
 
-        order.orderDetails = updatedDetails;
-        order.total = total;
+        order.total += total;
+
+        if (newProducts.length > 0) {
+          console.log('emitiendo comanda para la tanda actual', {
+            orderId: order.id,
+            products: newProducts,
+            batchId,
+          });
+          // this.eventEmitter.emit('order.updated', {
+          //     orderId: order.id,
+          //     products: newProducts,
+          //     batchId,
+          // });
+        }
       }
 
       return await this.orderRepository.save(order);
@@ -334,6 +263,95 @@ export class OrderRepository {
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
+      );
+    }
+  }
+
+  async markOrderAsPendingPayment(id: string): Promise<Order> {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state !== OrderState.OPEN) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in an open state`,
+        );
+      }
+
+      order.state = OrderState.PENDING_PAYMENT;
+      await this.orderRepository.save(order);
+
+      // Emitir evento para generar el ticket
+      // this.eventEmitter.emit('order.pendingPayment', { orderId: order.id });
+      console.log('estoy emitiendo el ticket de la orden', {
+        orderId: order.id,
+      });
+      console.log(order);
+      return order;
+    } catch (error) {
+      console.error(
+        `[MarkOrderAsPendingPayment Error]: ${error.message}`,
+        error,
+      );
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error marking order as pending payment. Please try again later.',
+      );
+    }
+  }
+
+  async closeOrder(id: string): Promise<Order> {
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state !== OrderState.PENDING_PAYMENT) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in a pending payment state`,
+        );
+      }
+
+      order.state = OrderState.CLOSED;
+      order.table.state = TableState.AVAILABLE; // Liberar la mesa
+      await this.tableRepository.save(order.table);
+      await this.orderRepository.save(order);
+
+      // Emitir evento para notificar que la orden ha sido cerrada
+      // this.eventEmitter.emit('order.closed', { orderId: order.id });
+      console.log('cambiando estado a orden cerrada', { orderId: order.id });
+      console.log(order);
+      return order;
+    } catch (error) {
+      console.error(`[CloseOrder Error]: ${error.message}`, error);
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error closing the order. Please try again later.',
       );
     }
   }
