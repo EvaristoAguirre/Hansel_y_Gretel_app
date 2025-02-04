@@ -1,11 +1,5 @@
-import {
-  IsArray,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { OrderDetailsDto } from './order-details.dto';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+// import { OrderDetailsDto } from './order-details.dto';
 
 export class CreateOrderDto {
   @IsNotEmpty()
@@ -15,9 +9,9 @@ export class CreateOrderDto {
   @IsNumber()
   numberCustomers: number;
 
-  @IsNotEmpty()
-  @IsArray()
-  productsDetails?: OrderDetailsDto[];
+  // @IsNotEmpty()
+  // @IsArray()
+  // productsDetails?: OrderDetailsDto[];
 
   @IsOptional()
   @IsString()
