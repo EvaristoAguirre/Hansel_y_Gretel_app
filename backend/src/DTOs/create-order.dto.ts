@@ -6,6 +6,7 @@ export class CreateOrderDto {
   @IsString()
   tableId: string;
 
+  @IsNotEmpty()
   @IsNumber()
   numberCustomers: number;
 
