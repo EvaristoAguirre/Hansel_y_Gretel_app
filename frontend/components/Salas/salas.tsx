@@ -6,7 +6,6 @@ import MesaEditor from "../Mesa/MesaEditor";
 import SalaModal from "./SalaModal";
 import useSala from "../Hooks/useSala";
 import { border, borderLeft } from "@mui/system";
-import MesaEditorMUI from "../Mesa/mesaEditorMUI";
 
 const Salas = () => {
   const {
@@ -166,7 +165,7 @@ const Salas = () => {
 
       {/* Contenido de las mesas */}
       <Box sx={{ display: "flex", height: "100%" }}>
-        <Box sx={{ flex: 1, backgroundColor: selectedSala ? "#D9CCBC" : "transparent", p: 2 }}>
+        <Box sx={{ flex: 1, backgroundColor: "#D9CCBC", p: 2 }}>
           {/* Verifica que selectedSala tenga datos */}
           {selectedSala && (
             <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
@@ -174,7 +173,7 @@ const Salas = () => {
         </Box>
         <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#D9CCBC" }}>
           {selectedMesa && (
-            <MesaEditorMUI
+            <MesaEditor
               mesa={selectedMesa}
               onAbrirPedido={handleAbrirPedido}
               view={view || ""}

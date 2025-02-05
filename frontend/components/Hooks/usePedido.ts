@@ -200,7 +200,7 @@ const usePedido = () => {
       const response = await fetch(`${URI_ORDER}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([ ...productsDetails, ...(productsDetailsExistente || []) ]),
+        body: JSON.stringify([...productsDetails, ...(productsDetailsExistente || [])]),
       });
 
       if (!response.ok) {
@@ -211,10 +211,10 @@ const usePedido = () => {
 
       const updatedOrder = await response.json();
       updateOrder(updatedOrder);
-      Swal.fire("Éxito", "Pedido actualizado correctamente.", "success");
+      // Swal.fire("Éxito", "Pedido actualizado correctamente.", "success");
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "No se pudo actualizar el pedido.", "error");
+      // Swal.fire("Error", "No se pudo actualizar el pedido.", "error");
     }
   };
 
