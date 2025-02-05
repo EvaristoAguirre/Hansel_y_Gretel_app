@@ -27,7 +27,7 @@ export class OrderRepository {
     private readonly productRepository: Repository<Product>,
   ) {}
   //OpenOrder
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {

@@ -20,8 +20,8 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('open')
-  createOrder(@Body() order: CreateOrderDto): Promise<Order> {
-    return this.orderService.createOrder(order);
+  openOrder(@Body() order: CreateOrderDto): Promise<Order> {
+    return this.orderService.openOrder(order);
   }
 
   @Post('close/:id')

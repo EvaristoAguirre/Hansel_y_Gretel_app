@@ -13,8 +13,8 @@ export class OrderService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
-    const orderCreated = await this.orderRepository.createOrder(orderToCreate);
+  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+    const orderCreated = await this.orderRepository.openOrder(orderToCreate);
     await this.eventEmitter.emit('order.created', {
       order: orderCreated,
     });
