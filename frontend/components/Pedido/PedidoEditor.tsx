@@ -13,6 +13,7 @@ import {
 import { OrderCreated } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
 import { Add, Remove, Delete, Print } from "@mui/icons-material";
+import { Box } from "@mui/system";
 
 const PedidoEditor = ({
   mesa,
@@ -42,12 +43,12 @@ const PedidoEditor = ({
   const confirmarPedido = () => {
     // Crear un nuevo array combinando los productos confirmados con los nuevos detalles
     const productosActualizados = [...productosConfirmados];
-  
+
     productsDetails.forEach((nuevoProducto) => {
       const productoExistente = productosActualizados.find(
         (p) => p.productId === nuevoProducto.productId
       );
-  
+
       if (productoExistente) {
         // Si el producto ya existe, sumamos la cantidad
         productoExistente.quantity += nuevoProducto.quantity;
@@ -56,12 +57,12 @@ const PedidoEditor = ({
         productosActualizados.push(nuevoProducto);
       }
     });
-  
+
     setProductosConfirmados(productosActualizados);
     handleEditOrder(ordenAbierta.id);
     setProductsDetails([]);
   };
-  
+
 
   const eliminarProductoSeleccionado = (id: string) => {
     setProductsDetails(productsDetails.filter((p) => p.productId !== id));
@@ -123,17 +124,15 @@ const PedidoEditor = ({
   }, [productsDetails, productosConfirmados]);
 
   return (
-    <div style={{ width: "100%", padding: "1rem" }}>
+    <div style={{ width: "100%", padding: "1rem", border: "1px solid #d4c0b3", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}>
       <h2
         style={{
           height: "3rem",
-          backgroundColor: "#856D5E",
           fontSize: "1.2rem",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          color: "#ffffff",
-          margin: "1rem 0",
+          color: "black",
           fontWeight: "bold",
           textTransform: "uppercase",
         }}
@@ -168,42 +167,45 @@ const PedidoEditor = ({
           margin: "1rem 0",
         }}
       >
-        <h2>Pedido</h2>
+        <h2>Armar Pedido</h2>
       </div>
+      <Box
+        sx={{ border: "1px solid #d4c0b3", borderRadius: "5px", padding: "1rem", boxShadow: "0px 1px 2px 3px rgba(0, 0, 0, 0.1)" }}
+      >
+        <Autocomplete
 
-      <Autocomplete
-        style={{ margin: "1rem 0" }}
-        options={productosDisponibles}
-        getOptionLabel={(producto) =>
-          `${producto.name} - $${producto.price} (Código: ${producto.code})`
-        }
-        onInputChange={(event, value) => {
-          const searchTerm = value.toLowerCase();
-          setProductosDisponibles(
-            products.filter(
-              (producto) =>
-                producto.name.toLowerCase().includes(searchTerm) ||
-                producto.code.toString().toLowerCase().includes(searchTerm)
-            )
-          );
-        }}
-        onChange={(event, selectedProducto) => {
-          if (selectedProducto) {
-            console.log("selectedProducto:", selectedProducto);
-            handleSeleccionarProducto(selectedProducto);
+          options={productosDisponibles}
+          getOptionLabel={(producto) =>
+            `${producto.name} - $${producto.price} (Código: ${producto.code})`
           }
-        }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Buscar productos por nombre, código o categoría"
-            variant="outlined"
-            fullWidth
-          />
-        )}
-      />
+          onInputChange={(event, value) => {
+            const searchTerm = value.toLowerCase();
+            setProductosDisponibles(
+              products.filter(
+                (producto) =>
+                  producto.name.toLowerCase().includes(searchTerm) ||
+                  producto.code.toString().toLowerCase().includes(searchTerm)
+              )
+            );
+          }}
+          onChange={(event, selectedProducto) => {
+            if (selectedProducto) {
+              console.log("selectedProducto:", selectedProducto);
+              handleSeleccionarProducto(selectedProducto);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Buscar productos por nombre, código o categoría"
+              variant="outlined"
+              fullWidth
+              sx={{ label: { color: "black", fontSize: "0.8rem" } }}
+            />
+          )}
+        />
 
-      <div>
+
         {productsDetails.length > 0 ? (
           <List>
             {productsDetails.map((item, index) => (
@@ -213,26 +215,26 @@ const PedidoEditor = ({
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  backgroundColor: "#cdc5bf",
                   height: "2.3rem",
                   margin: "0.3rem 0",
                   color: "#ffffff",
+                  borderBottom: "1px solid #856D5E",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.3rem",
                   }}
                 >
-                  <IconButton onClick={() => disminuirCantidad(item.productId)}>
+                  <IconButton
+                    onClick={() => disminuirCantidad(item.productId)}>
                     <Remove />
                   </IconButton>
                   <Typography
+                    sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
                     style={{
                       color: "black",
-                      backgroundColor: "white",
                       width: "2rem",
                       textAlign: "center",
                       borderRadius: "5px",
@@ -257,31 +259,35 @@ const PedidoEditor = ({
             ))}
             <Typography
               style={{
+                width: "50%",
                 margin: "1rem 0",
-                backgroundColor: "#cdc5bf",
-                width: "25%",
-                padding: "0.5rem",
-                textAlign: "center",
+                color: "black",
+                fontWeight: "bold",
               }}
             >
               Subtotal: ${subtotal}
             </Typography>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+
+            {/* Botones de confirmar y cancelar */}
+
+            <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
               <Button
                 color="secondary"
                 variant="contained"
-                style={{ margin: "10px", backgroundColor: "#dddedd" }}
+                style={{ margin: "10px", backgroundColor: "#9d8a7e" }}
                 onClick={cancelarPedido}
               >
                 Cancelar
               </Button>
+
               <Button
                 variant="contained"
-                style={{ margin: "10px", backgroundColor: "#82d978" }}
+                style={{ margin: "10px", backgroundColor: "#7e9d8a" }}
                 onClick={confirmarPedido}
               >
                 Confirmar
               </Button>
+
             </div>
           </List>
         ) : (
@@ -289,7 +295,7 @@ const PedidoEditor = ({
             No hay productos seleccionados
           </Typography>
         )}
-      </div>
+      </Box>
 
       {productosConfirmados.length > 0 && (
         <>
@@ -366,6 +372,7 @@ const PedidoEditor = ({
       >
         Anular Pedido
       </Button>
+
     </div>
   );
 };

@@ -5,6 +5,8 @@ import Mesa from "../Mesa/Mesa";
 import MesaEditor from "../Mesa/MesaEditor";
 import SalaModal from "./SalaModal";
 import useSala from "../Hooks/useSala";
+import { border, borderLeft } from "@mui/system";
+import MesaEditorMUI from "../Mesa/mesaEditorMUI";
 
 const Salas = () => {
   const {
@@ -38,18 +40,20 @@ const Salas = () => {
       <AppBar
         position="static"
         sx={{
+          "& .MuiTabs-root css-19dy00f-MuiTabs-root": {
+            height: "100%",
+          },
           backgroundColor: "#f3d49ab8",
-          mt: 13,
           color: "black",
           gap: 4,
           borderBottom: "2px solid #f9b32d",
           boxShadow: "none",
           display: "flex",
           flexDirection: "row",
-          alignItems: "center",
+          alignItems: "flex-end",
           justifyContent: "space-between",
-          px: 2,
-          height: "3rem",
+          height: "4rem",
+          px: 4,
         }}
       >
         <Tabs
@@ -64,13 +68,26 @@ const Salas = () => {
               fontWeight: "bold !important",
               width: "auto",
               flex: 1,
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+
             },
             "& .MuiTab-root.Mui-selected": {
-              color: "white !important",
-              backgroundColor: "#63412c !important",
+              backgroundColor: "#D9CCBC !important",
+              borderTopLeftRadius: "20px",
+              borderTopRightRadius: "20px",
+              borderLeft: "2px solid #f9b32d",
+              borderRight: "2px solid #f9b32d",
+              borderTop: "2px solid #f9b32d",
+              height: "100%",
             },
             "& .MuiTabs-indicator": {
               display: "none",
+            },
+            "& .MuiTabs-flexContainer": {
+              height: "100%",
             },
           }}
         >
@@ -83,7 +100,9 @@ const Salas = () => {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 1,
+                      justifyContent: "space-between",
+                      gap: 2,
+                      height: "100%",
                     }}
                   >
                     {sala.name}
@@ -95,7 +114,8 @@ const Salas = () => {
                 }
                 value={sala.id}
                 sx={{
-                  textTransform: "none",
+                  textTransform: "uppercase",
+                  height: "100%",
                 }}
               />
             ))}
@@ -105,7 +125,13 @@ const Salas = () => {
           variant="outlined"
           sx={{
             border: "1.5px solid #63412c",
-            color: "black",
+            mx: 4,
+            marginBottom: 1,
+            "&:hover": {
+              backgroundColor: "primary.main",
+              color: "white",
+              borderColor: "primary.main",
+            },
           }}
           onClick={() => {
             setEditingSala(null);
@@ -139,13 +165,16 @@ const Salas = () => {
       />
 
       {/* Contenido de las mesas */}
-      <Box sx={{ display: "flex" }}>
-        <Box sx={{ flex: 1, backgroundColor: selectedSala ? "#63412c33" : "transparent", p: 2 }}>
-          {selectedSala && <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />}
+      <Box sx={{ display: "flex", height: "100%" }}>
+        <Box sx={{ flex: 1, backgroundColor: selectedSala ? "#D9CCBC" : "transparent", p: 2 }}>
+          {/* Verifica que selectedSala tenga datos */}
+          {selectedSala && (
+            <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
+          )}
         </Box>
-        <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#f7f7f7" }}>
+        <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#D9CCBC" }}>
           {selectedMesa && (
-            <MesaEditor
+            <MesaEditorMUI
               mesa={selectedMesa}
               onAbrirPedido={handleAbrirPedido}
               view={view || ""}
@@ -153,6 +182,7 @@ const Salas = () => {
           )}
         </Box>
       </Box>
+
     </>
   );
 };
