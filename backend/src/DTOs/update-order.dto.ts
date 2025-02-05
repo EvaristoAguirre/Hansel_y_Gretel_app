@@ -26,7 +26,7 @@ export class UpdateOrderDto {
   @IsEnum({ enum: OrderState })
   state?: OrderState;
 
-  @IsOptional()
+  @IsOptional() //esto esta de mas
   @IsString()
   table?: string;
 
