@@ -164,7 +164,7 @@ const Salas = () => {
       />
 
       {/* Contenido de las mesas */}
-      <Box sx={{ display: "flex", height: "100%" }}>
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
         <Box sx={{ flex: 1, backgroundColor: "#D9CCBC", p: 2 }}>
           {/* Verifica que selectedSala tenga datos */}
           {selectedSala && (

@@ -3,8 +3,9 @@ import { MesaCardProps } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Button, Tooltip } from "@mui/material";
+import { Button, ListItemText, Tooltip } from "@mui/material";
 import useMesa from "../Hooks/useMesa";
+import { fontWeight, style } from "@mui/system";
 
 const MesaCard: React.FC<MesaCardProps> = ({ mesa, handleOpenModal, handleDelete, setSelectedMesa }) => {
   return (
@@ -23,10 +24,24 @@ const MesaCard: React.FC<MesaCardProps> = ({ mesa, handleOpenModal, handleDelete
       }}
       onClick={() => setSelectedMesa(mesa)}
     >
-      <h3 style={{ fontSize: "1rem", textTransform: "uppercase", color: "#fff", margin: 0, fontWeight: "bold" }}>
-        {mesa.name}
-      </h3>
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
+      <Tooltip title={"Mesa: " + mesa.name} arrow>
+        <ListItemText
+          style={{
+            color: "#fff",
+            textTransform: "uppercase",
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 1,
+            overflow: "hidden",
+            padding: "0.5rem",
+          }}
+          primary={mesa.name}
+        />
+      </Tooltip>
+      <div style={{
+        display: "flex", justifyContent: "center",
+        marginTop: "0.5rem"
+      }}>
         {/* BOTON DE VISUALIZAR */}
         <Tooltip title="Ver detalles" arrow>
           <Button

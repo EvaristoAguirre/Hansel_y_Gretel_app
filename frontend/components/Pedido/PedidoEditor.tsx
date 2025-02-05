@@ -9,6 +9,7 @@ import {
   ListItemText,
   Typography,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import { OrderCreated } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
@@ -141,11 +142,12 @@ const PedidoEditor = ({
             textTransform: "uppercase",
           }}
         >
-          {mesa.name}
+          MESA: {mesa.name}
         </h2>
       </div>
       <div style={{
-        width: "100%", display: "flex", justifyContent: "center", flexDirection: "row", gap: "2rem",
+        width: "100%", display: "flex",
+        flexDirection: "row", gap: "2rem",
 
       }}>
         {/* DIV PARA DATOS DE LA MESA */}
@@ -153,6 +155,7 @@ const PedidoEditor = ({
           width: "100%", display: "flex",
           flexDirection: "column", border: "1px solid #d4c0b3",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
+          justifyContent: "space-between"
         }}>
           <div
             style={{
@@ -168,8 +171,8 @@ const PedidoEditor = ({
             <h2>Datos de la mesa</h2>
           </div>
           <div>
-            <h3>Cantidad de personas: {ordenAbierta.numberCustomers}</h3>
-            <h3>Comentario: {ordenAbierta?.comment}</h3>
+            <h4>Cantidad de personas: {ordenAbierta.numberCustomers}</h4>
+            <h4>Comentario: {ordenAbierta?.comment}</h4>
           </div>
           <div
             style={{
@@ -182,13 +185,12 @@ const PedidoEditor = ({
               margin: "1rem 0",
             }}
           >
-            <h2>SELECCIONAR PRODUCTOS</h2>
+            <h2>Seleccionar productos</h2>
           </div>
           <Box
-            sx={{ borderRadius: "5px", padding: "1rem", }}
+            sx={{ borderRadius: "5px" }}
           >
             <Autocomplete
-
               options={productosDisponibles}
               getOptionLabel={(producto) =>
                 `${producto.name} - $${producto.price} (Código: ${producto.code})`
@@ -209,16 +211,19 @@ const PedidoEditor = ({
                   handleSeleccionarProducto(selectedProducto);
                 }
               }}
+
               renderInput={(params) => (
                 <TextField
                   {...params}
+
                   label="Buscar productos por nombre, código o categoría"
                   variant="outlined"
                   fullWidth
-                  sx={{ label: { color: "black", fontSize: "0.8rem" } }}
+                  sx={{ label: { color: "black", fontSize: "1rem" } }}
                 />
               )}
             />
+            {/* //Todo-- 👆🏽 ¿Este buscador está bien que diga que busca por categoria? */}
 
             {/* PRODUCTOS PRE-SELECCIONADOS */}
             {productsDetails.length > 0 ? (
@@ -227,7 +232,6 @@ const PedidoEditor = ({
                 style={{
                   maxHeight: "12rem",
                   overflowY: "auto",
-                  padding: "0.5rem",
                   border: "2px solid #856D5E",
                   borderRadius: "5px",
                   marginTop: "0.5rem",
@@ -244,11 +248,12 @@ const PedidoEditor = ({
                       margin: "0.3rem 0",
                       color: "#ffffff",
                       borderBottom: "1px solid #856D5E",
+                      justifyContent: "space-between",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center" }}>
                       <IconButton onClick={() => disminuirCantidad(item.productId)}>
-                        <Remove />
+                        <Remove color="error" />
                       </IconButton>
                       <Typography
                         sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
@@ -262,10 +267,22 @@ const PedidoEditor = ({
                         {item.quantity}
                       </Typography>
                       <IconButton onClick={() => aumentarCantidad(item.productId)}>
-                        <Add />
+                        <Add color="success" />
                       </IconButton>
                     </div>
-                    <ListItemText style={{ color: "black" }} primary={item.name} />
+                    <Tooltip title={item.name} arrow>
+                      <ListItemText
+                        style={{
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 1,
+                          overflow: "hidden",
+                          maxWidth: "5rem",
+                        }}
+                        primary={item.name}
+                      />
+                    </Tooltip>
                     <Typography style={{ color: "black" }}>
                       ${item.price * item.quantity}
                     </Typography>
@@ -278,7 +295,7 @@ const PedidoEditor = ({
 
               </List>
             ) : (
-              <Typography style={{ margin: "1rem 0", color: "gray" }}>
+              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
                 No hay productos pre-seleccionados.
               </Typography>
             )}
@@ -293,25 +310,27 @@ const PedidoEditor = ({
               Subtotal: ${subtotal}
             </Typography>
 
-            {/* Botones de confirmar y cancelar */}
-            <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-              <Button
-                color="secondary"
-                variant="contained"
-                style={{ margin: "10px", backgroundColor: "#9d8a7e" }}
-                onClick={cancelarPedido}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="contained"
-                style={{ margin: "10px", backgroundColor: "#7e9d8a" }}
-                onClick={confirmarPedido}
-              >
-                Confirmar
-              </Button>
-            </div>
           </Box>
+          {/* Botones de confirmar y cancelar */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
+            <Button
+              color="error"
+              variant="outlined"
+              onClick={cancelarPedido}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#7e9d8a",
+                "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+              }}
+              onClick={confirmarPedido}
+            >
+              Confirmar
+            </Button>
+          </div>
 
         </div>
 
@@ -321,131 +340,144 @@ const PedidoEditor = ({
             width: "100%", display: "flex",
             flexDirection: "column", border: "1px solid #d4c0b3",
             boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
+            justifyContent: "space-between"
           }}>
-            <>
-              <div>
-                <div
-                  style={{
-                    height: "2rem",
-                    backgroundColor: "#7e9d8a",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "black",
-                    margin: "1rem 0",
-                    width: "100%",
-                  }}
-                >
-                  <h2>PEDIDO</h2>
-                </div>
-                <List
-                  className="custom-scrollbar"
-                  style={{
-                    maxHeight: "12rem",
-                    overflowY: "auto",
-                    padding: "0.5rem",
-                    border: "2px solid #7e9d8a",
-                    borderRadius: "5px",
-                    marginTop: "0.5rem",
-                  }}
-                >
-                  {productosConfirmados.map((item, index) => (
-                    <ListItem
-                      key={index}
+
+            <div>
+              <div
+                style={{
+                  height: "2rem",
+                  backgroundColor: "#7e9d8a",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  color: "black",
+                  margin: "1rem 0",
+                  width: "100%",
+                }}
+              >
+                <h2>PEDIDO</h2>
+              </div>
+              <List
+                className="custom-scrollbar"
+                style={{
+                  maxHeight: "12rem",
+                  overflowY: "auto",
+                  padding: "0.5rem",
+                  border: "2px solid #7e9d8a",
+                  borderRadius: "5px",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {productosConfirmados.map((item, index) => (
+                  <ListItem
+                    key={index}
+                    style={{
+                      backgroundColor: "#eceae8",
+                      margin: "0.3rem 0",
+                      display: "flex",
+                      alignItems: "center",
+                      borderRadius: "5px",
+                      height: "3rem",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography
+                      sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
                       style={{
-                        backgroundColor: "#eceae8",
-                        margin: "0.3rem 0",
-                        display: "flex",
-                        alignItems: "center",
+                        color: "black",
+                        width: "2rem",
+                        textAlign: "center",
                         borderRadius: "5px",
                       }}
                     >
-                      <Typography
-                        style={{
-                          color: "black",
-                          backgroundColor: "white",
-                          width: "2rem",
-                          textAlign: "center",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        {item.quantity}
-                      </Typography>
+                      {item.quantity}
+                    </Typography>
+                    <Tooltip title={item.name} arrow>
                       <ListItemText
                         style={{
                           margin: "0 1rem 0 0.5rem",
                           fontSize: "1rem",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 1,
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          minWidth: "5rem",
+                          maxWidth: "5rem",
+
                         }}
                         primary={item.name}
                       />
-                      <Typography
-                        style={{
-                          margin: "0 1rem 0 0.5rem",
-                          fontSize: "1rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >{`$ ${item.price * item.quantity}`}</Typography>
-                      <IconButton onClick={() => eliminarProductoConfirmado(item.productId)}>
-                        <Delete />
-                      </IconButton>
-                    </ListItem>
-                  ))}
-                </List>
-                <Typography
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    textAlign: "left",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Total: ${total}
-                </Typography>
+                    </Tooltip>
+                    <Typography
+                      style={{
+                        margin: "0 1rem 0 0.5rem",
+                        fontSize: "1rem",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {`$ ${item.price * item.quantity}`}
+                    </Typography>
+                    <IconButton onClick={() => eliminarProductoConfirmado(item.productId)}>
+                      <Delete />
+                    </IconButton>
+                  </ListItem>
 
-                {/* 
+                ))}
+              </List>
+              <Typography
+                style={{
+                  width: "100%",
+                  padding: "0.5rem",
+                  textAlign: "left",
+                  fontWeight: "bold",
+                }}
+              >
+                Total: ${total}
+              </Typography>
+
+              {/* 
                 // TODO: SUGERENCIA: Colocar la cantidad de productos que hay en el pedido
                 */}
-                <Typography
-                  style={{
-                    width: "100%",
-                    padding: "0.5rem",
-                    textAlign: "left",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Cantidad de productos: {"6"}
-                </Typography>
-              </div>
+              <Typography
+                style={{
+                  width: "100%",
+                  padding: "0.5rem",
+                  textAlign: "left",
+                  fontWeight: "bold",
+                }}
+              >
+                Cantidad de productos: {"6"}
+              </Typography>
+            </div>
+            <div>
               <Button
                 fullWidth
                 variant="contained"
                 sx={{
                   backgroundColor: "#7e9d8a",
-                  marginTop: "10px",
                   "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
                 onClick={imprimirComanda}
               >
                 <Print style={{ marginRight: "5px" }} /> Imprimir Comanda
               </Button>
-            </>
-            {
-              productosConfirmados.length > 0 &&
-              <Button
-                fullWidth
-                color="error"
-                variant="outlined"
-                style={{ marginTop: "32px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                onClick={() => handleDeleteOrder(ordenAbierta.id)}
-              >
-                Anular Pedido
-              </Button>
-            }
+              {
+                productosConfirmados.length > 0 &&
+                <Button
+                  fullWidth
+                  color="error"
+                  variant="outlined"
+                  style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
+                  onClick={() => handleDeleteOrder(ordenAbierta.id)}
+                >
+                  Anular Pedido
+                </Button>
+              }
+            </div>
+
           </div>
         )
         }

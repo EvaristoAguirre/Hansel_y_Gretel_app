@@ -65,7 +65,11 @@ const MesaEditor = ({
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", padding: "1rem", alignItems: "center", border: "1px solid #d4c0b3", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
+      style={{
+        display: "flex", flexDirection: "column",
+        padding: "1rem", alignItems: "center", border: "1px solid #d4c0b3",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+      }}
     >
       {view === "mesaEditor" && (
         <div style={{ width: "100%" }}>
@@ -84,7 +88,7 @@ const MesaEditor = ({
                 textTransform: "uppercase",
               }}
             >
-              {mesa.name}
+              MESA: {mesa.name}
             </h2>
           </div>
           <form>

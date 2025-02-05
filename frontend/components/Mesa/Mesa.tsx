@@ -51,7 +51,7 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
       <div style={{
         display: "flex",
         flexWrap: "wrap",
-        gap: "30px",
+        gap: "27px",
       }}>
         {mesasFiltradas.map((mesa) => (
           <MesaCard
