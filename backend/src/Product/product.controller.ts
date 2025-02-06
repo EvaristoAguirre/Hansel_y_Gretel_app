@@ -26,7 +26,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 @Controller('product')
 @UseGuards(RolesGuard)
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   @Get()
   // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)

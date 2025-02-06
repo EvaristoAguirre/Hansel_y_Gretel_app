@@ -1,9 +1,13 @@
+import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute';
 import Cafe from '../../../components/Cafe/Cafe';
 const ViewCafe = () => {
+
   return (
-    <div>
-      <Cafe></Cafe>
-    </div>
+    <ProtectedRoute>
+
+      <Cafe />
+
+    </ProtectedRoute>
   );
 }
 

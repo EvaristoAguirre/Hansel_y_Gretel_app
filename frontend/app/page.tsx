@@ -1,16 +1,9 @@
-import Cafe from "@/components/Cafe/Cafe";
-import CategoriasIngredientes from "@/components/Categorías/CategoríasIngredientes/CategoriasIngredientes";
-import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
-import Producto from "@/components/Producto/Producto";
-import Image from "next/image";
+
 
 export default function Home() {
   return (
-    <div>
-      <Cafe></Cafe>
-      <Producto></Producto>
-      {/* <CategoriasProductos></CategoriasProductos> */}
-      {/* <CategoriasIngredientes></CategoriasIngredientes> */}
+    <div className="bg-black min-h-screen flex items-center justify-center">
+      <img src="/logo.svg" alt="" className="w-1/2" />
     </div>
   );
 }

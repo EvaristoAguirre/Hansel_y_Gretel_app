@@ -5,6 +5,7 @@ import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { MesaForm } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Mesa/useTableStore";
+import { useOrderStore } from "../Pedido/useOrderStore";
 
 export const useMesa = (salaId: string) => {
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
@@ -27,6 +28,7 @@ export const useMesa = (salaId: string) => {
     connectWebSocket,
   } = useTableStore();
 
+  const { orders } = useOrderStore();
   const handleOpenModal = (type: "create" | "edit", mesa?: MesaInterface) => {
     setModalType(type);
     if (mesa) {
@@ -64,7 +66,7 @@ export const useMesa = (salaId: string) => {
 
     fetchTables();
     connectWebSocket();
-  }, [setTables, connectWebSocket]);
+  }, [setTables, connectWebSocket, orders]);
 
   const handleCreate = async () => {
     try {

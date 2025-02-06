@@ -14,7 +14,7 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
 }) => (
   <AppBar
     position="static"
-    sx={{ backgroundColor: "#f3d49ab8", color: "black", gap: 4, borderBottom: "2px solid #f9b32d", boxShadow: "none" }}
+    sx={{ backgroundColor: "#f3d49ab8", mt: 13, color: "black", gap: 4, borderBottom: "2px solid #f9b32d", boxShadow: "none" }}
   >
     <Tabs
       value={tabIndex}
@@ -23,7 +23,7 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
       sx={{
         "& .MuiTab-root": {
           fontWeight: "bold !important" as any,
-          width: "auto", 
+          width: "auto",
           flex: 1,
         },
         "& .MuiTab-root.Mui-selected": {

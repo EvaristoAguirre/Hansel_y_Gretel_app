@@ -1,9 +1,13 @@
-import Producto from "@/components/Producto/Producto";
+import ProductsPage from "@/components/Products/ProductsPage";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
+
 const ViewProducts = () => {
   return (
-    <div>
-      <Producto></Producto>
-    </div>
+    <ProtectedRoute>
+
+      <ProductsPage />
+
+    </ProtectedRoute>
   );
 };
 export default ViewProducts;

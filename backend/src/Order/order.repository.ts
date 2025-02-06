@@ -13,6 +13,7 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
+import { TableState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class OrderRepository {
@@ -27,7 +28,7 @@ export class OrderRepository {
     private readonly productRepository: Repository<Product>,
   ) {}
   //OpenOrder
-  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
@@ -48,6 +49,9 @@ export class OrderRepository {
       tableInUse.state = TableState.OPEN; //pasar por updateTable
       await this.tableRepository.save(tableInUse);
       //event emitter avisara que se actualizo la mesa
+
+      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      await this.tableRepository.save(tableInUse);
 
       const newOrder = this.orderRepository.create({
         date: new Date(),
