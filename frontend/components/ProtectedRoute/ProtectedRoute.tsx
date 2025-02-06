@@ -1,27 +1,28 @@
 'use client';
-import React, { useEffect } from "react";
+import React from "react";
 import { useAuth } from "@/app/context/authContext";
+import { useRouter } from "next/navigation";
 
-
-//Componente para proteger rutas
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { validateUserSession } = useAuth();
+  const router = useRouter();
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (!validateUserSession()) {
-        window.location.href = "/views/login";
-      }
+  React.useEffect(() => {
+    if (!validateUserSession()) {
+      router.push("/views/login");
     }
-  }, [validateUserSession])
+  }, [validateUserSession, router]);
 
+  if (!validateUserSession) {
+    // Podríamos mostrar un loader mientras redirige, o simplemente devolver null
+    return <div>Cargando...</div>;
+  }
 
-  // Si no está logueado, no renderizamos la vista, pero la redirección será inmediata
-  return <>{validateUserSession() ? children : null}</>;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

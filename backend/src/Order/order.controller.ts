@@ -13,7 +13,9 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
+import { instanceToPlain } from 'class-transformer';
 import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
+
 
 @Controller('order')
 export class OrderController {
@@ -24,17 +26,23 @@ export class OrderController {
     return this.orderService.openOrder(openOrder);
   }
 
-  @Post()
-  createOrder(@Body() order: CreateOrderDto): Promise<Order> {
-    return this.orderService.createOrder(order);
+  @Post('close/:id')
+  closeOrder(@Param('id') id: string): Promise<Order> {
+    return this.orderService.closeOrder(id);
+  }
+
+  @Post('pending/:id')
+  markOrderAsPendingPayment(@Param('id') id: string): Promise<Order> {
+    return this.orderService.markOrderAsPendingPayment(id);
   }
 
   @Patch(':id')
-  updateOrder(
+  async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
   ): Promise<Order> {
-    return this.orderService.updateOrder(id, updateData);
+    const order = await this.orderService.updateOrder(id, updateData);
+    return instanceToPlain(order) as Order;
   }
 
   @Delete(':id')

@@ -4,9 +4,10 @@ import useMesa from "../Hooks/useMesa";
 import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";
 import { TableCreated } from "./useTableStore";
+import { Button } from "@mui/material";
 
 const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
-  
+
   const {
     selectedMesa,
     modalOpen,
@@ -36,54 +37,52 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     <div
       style={{
         display: "flex",
-        flexWrap: "wrap",
-        gap: "10px",
-        padding: "20px",
+        flexDirection: "column"
       }}
     >
-      {mesasFiltradas.map((mesa) => (
-        <MesaCard
-          key={mesa.id}
-          mesa={mesa}
-          setSelectedMesa={(mesaSeleccionada) => {
-            setSelectedMesa(mesaSeleccionada); // Actualiza el estado interno
-            onSelectMesa(mesaSeleccionada); // Notifica al componente padre
-          }}
-          handleOpenModal={handleOpenModal}
-          handleDelete={handleDelete}
-        />
-      ))}
-      <div
-        style={{
-          width: "14rem",
-          height: "5rem",
-          backgroundColor: "#e0e0e0",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          cursor: "pointer",
-        }}
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{ marginRight: 2, width: '30%', height: '50px', my: 2 }}
         onClick={() => handleOpenModal("create")}
       >
-        <h3 style={{ fontSize: "1rem" }}>Agregar mesa</h3>
+        + Agregar mesa
+      </Button>
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "27px",
+      }}>
+        {mesasFiltradas.map((mesa) => (
+          <MesaCard
+            key={mesa.id}
+            mesa={mesa}
+            setSelectedMesa={(mesaSeleccionada) => {
+              setSelectedMesa(mesaSeleccionada); // Actualiza el estado interno
+              onSelectMesa(mesaSeleccionada); // Notifica al componente padre
+            }}
+            handleOpenModal={handleOpenModal}
+            handleDelete={handleDelete}
+          />
+        ))}
+        <MesaModal
+          open={modalOpen}
+          type={modalType}
+          form={form}
+          onClose={handleCloseModal}
+          onSave={
+            modalType === "create"
+              ? handleCreate
+              : () => handleEdit(selectedMesa?.id!)
+          }
+          onChange={(field, value) =>
+            setForm((prev) => ({
+              ...prev,
+              [field]: field === "number" ? Number(value) : value,
+            }))
+          }
+        />
       </div>
-      <MesaModal
-        open={modalOpen}
-        type={modalType}
-        form={form}
-        onClose={handleCloseModal}
-        onSave={
-          modalType === "create"
-            ? handleCreate
-            : () => handleEdit(selectedMesa?.id!)
-        }
-        onChange={(field, value) =>
-          setForm((prev) => ({
-            ...prev,
-            [field]: field === "number" ? Number(value) : value,
-          }))
-        }
-      />
     </div>
   );
 };
