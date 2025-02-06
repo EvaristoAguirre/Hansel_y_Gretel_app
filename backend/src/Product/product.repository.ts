@@ -126,6 +126,19 @@ export class ProductRepository {
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
     const { categories, ...productData } = productToCreate;
+    const existingProductByCode = await this.productRepository.findOne({
+      where: { code: productData.code },
+    });
+    if (existingProductByCode) {
+      throw new BadRequestException('Product code already exists');
+    }
+
+    const existingProductByName = await this.productRepository.findOne({
+      where: { name: productData.name },
+    });
+    if (existingProductByName) {
+      throw new BadRequestException('Product name already exists');
+    }
 
     try {
       let categoryEntities: Category[] = [];
