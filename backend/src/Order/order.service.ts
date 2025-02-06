@@ -5,7 +5,6 @@ import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDetails } from './order_details.entity';
-import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
 
 @Injectable()
 export class OrderService {
@@ -14,16 +13,12 @@ export class OrderService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async openOrder(openOrder: CreateOrderDto): Promise<OrderOpenDto> {
-    return await this.orderRepository.openOrder(openOrder);
-  }
-
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
-    const orderCreated = await this.orderRepository.createOrder(orderToCreate);
-    await this.eventEmitter.emit('order.created', {
-      order: orderCreated,
+  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+    const orderOpened = await this.orderRepository.openOrder(orderToCreate);
+    await this.eventEmitter.emit('order.opened', {
+      order: orderOpened,
     });
-    return orderCreated;
+    return orderOpened;
   }
 
   async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {

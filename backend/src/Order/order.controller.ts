@@ -14,15 +14,13 @@ import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { instanceToPlain } from 'class-transformer';
-import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
-
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('open')
-  openOrder(@Body() openOrder: CreateOrderDto): Promise<OrderOpenDto> {
+  openOrder(@Body() openOrder: CreateOrderDto): Promise<Order> {
     return this.orderService.openOrder(openOrder);
   }
 
