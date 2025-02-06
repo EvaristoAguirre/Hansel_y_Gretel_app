@@ -2,10 +2,9 @@ import React from "react";
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Mesa from "../Mesa/Mesa";
-import MesaEditor from "../Mesa/MesaEditor";
 import SalaModal from "./SalaModal";
 import useSala from "../Hooks/useSala";
-import { border, borderLeft } from "@mui/system";
+import { StepperTable } from "../Mesa/StepperTable";
 
 const Salas = () => {
   const {
@@ -45,7 +44,7 @@ const Salas = () => {
           backgroundColor: "#f3d49ab8",
           color: "black",
           gap: 4,
-          borderBottom: "2px solid #f9b32d",
+          borderBottom: "2px solid #856D5E",
           boxShadow: "none",
           display: "flex",
           flexDirection: "row",
@@ -77,9 +76,9 @@ const Salas = () => {
               backgroundColor: "#D9CCBC !important",
               borderTopLeftRadius: "20px",
               borderTopRightRadius: "20px",
-              borderLeft: "2px solid #f9b32d",
-              borderRight: "2px solid #f9b32d",
-              borderTop: "2px solid #f9b32d",
+              borderLeft: "2px solid #856D5E",
+              borderRight: "2px solid #856D5E",
+              borderTop: "2px solid #856D5E",
               height: "100%",
             },
             "& .MuiTabs-indicator": {
@@ -173,11 +172,41 @@ const Salas = () => {
         </Box>
         <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#D9CCBC" }}>
           {selectedMesa && (
-            <MesaEditor
-              mesa={selectedMesa}
-              onAbrirPedido={handleAbrirPedido}
-              view={view || ""}
-            />
+            // <MesaEditor
+            //   mesa={selectedMesa}
+            //   onAbrirPedido={handleAbrirPedido}
+            //   view={view || ""}
+            // />
+            <>
+              <div>
+                <h2
+                  style={{
+                    height: "3rem",
+                    backgroundColor: "#7e9d8a",
+                    fontSize: "1.2rem",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "#ffffff",
+                    margin: "1rem 0",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  MESA: {selectedMesa.name}
+                </h2>
+              </div>
+              {
+                selectedMesa ? (
+                  <StepperTable
+                    mesa={selectedMesa}
+                    view={view || ""}
+                    onAbrirPedido={handleAbrirPedido}
+                  />
+
+                ) : (null)
+              }
+            </>
           )}
         </Box>
       </Box>

@@ -1,31 +1,27 @@
+'use client'
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { ISala, MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
-import PedidoEditor from "../Pedido/PedidoEditor";
-import useMesa from "../Hooks/useMesa";
 import usePedido from "../Hooks/usePedido";
 import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
-import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
-import {
-  OrderDetailsCreated,
-  useOrderDetailsStore,
-} from "../Pedido/useOrderDetailsStore";
 import { TableCreated, useTableStore } from "./useTableStore";
-import useSala from "../Hooks/useSala";
 
 const MesaEditor = ({
   mesa,
   view,
   onAbrirPedido,
+  setOrdenAbierta,
+  handleNext
 }: {
   mesa: MesaInterface;
   view: string;
   onAbrirPedido: () => void;
+  setOrdenAbierta: (order: OrderCreated | undefined) => void;
+  handleNext: () => void
 }) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
   const [comentario, setComentario] = useState("");
-  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated>();
   const { handleCreateOrder } = usePedido();
   const { orders } = useOrderStore();
   const { tables } = useTableStore();
@@ -73,24 +69,6 @@ const MesaEditor = ({
     >
       {view === "mesaEditor" && (
         <div style={{ width: "100%" }}>
-          <div>
-            <h2
-              style={{
-                height: "3rem",
-                backgroundColor: "#7e9d8a",
-                fontSize: "1.2rem",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "#ffffff",
-                margin: "1rem 0",
-                fontWeight: "bold",
-                textTransform: "uppercase",
-              }}
-            >
-              MESA: {mesa.name}
-            </h2>
-          </div>
           <form>
             {/* Cantidad de personas y comentario */}
             <div style={{
@@ -163,6 +141,7 @@ const MesaEditor = ({
                 display: "flex",
                 justifyContent: "center",
                 flexDirection: "column",
+                marginTop: "30px",
               }}
             >
 
@@ -195,13 +174,17 @@ const MesaEditor = ({
                 disabled={mesa.state !== "open"}
                 type="button"
                 fullWidth
-                color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
+                sx={{
+                  backgroundColor: "#7e9d8a",
+                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                }}
                 onClick={() => {
                   // abrirPedido();
                   if (mesa.orderId !== null) {
-                    onAbrirPedido(); // Abre el pedido existente
+                    onAbrirPedido();
+                    handleNext();
                   } else {
                     Swal.fire(
                       "Error",
@@ -216,9 +199,6 @@ const MesaEditor = ({
             </div>
           </form>
         </div>
-      )}
-      {view === "pedidoEditor" && ordenAbierta && (
-        <PedidoEditor mesa={mesa} ordenAbierta={ordenAbierta}></PedidoEditor>
       )}
     </div>
   );
