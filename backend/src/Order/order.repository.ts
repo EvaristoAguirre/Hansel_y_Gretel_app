@@ -13,7 +13,6 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { TableState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class OrderRepository {
@@ -27,8 +26,7 @@ export class OrderRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
-  //OpenOrder
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
@@ -81,6 +79,12 @@ export class OrderRepository {
       throw new BadRequestException('Order ID must be provided.');
     }
 
+    if (updateData.state !== OrderState.OPEN) {
+      throw new BadRequestException(
+        'Only orders with state "open" can be modified.',
+      );
+    }
+
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -89,6 +93,18 @@ export class OrderRepository {
 
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state === OrderState.CLOSED) {
+        throw new BadRequestException(
+          'This order is closed. It cannot be modified.',
+        );
+      }
+
+      if (updateData.state && updateData.state !== OrderState.OPEN) {
+        throw new BadRequestException(
+          'Only orders with state "open" can be modified.',
+        );
       }
 
       if (updateData.state) {
@@ -138,7 +154,7 @@ export class OrderRepository {
           total += quantity * product.price;
         }
 
-        order.total += total;
+        order.total = (Number(order.total) || 0) + total;
 
         if (newProducts.length > 0) {
           console.log('emitiendo comanda para la tanda actual', {
@@ -158,7 +174,10 @@ export class OrderRepository {
     } catch (error) {
       console.error(`[UpdateOrder Error]: ${error.message}`, error);
 
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
