@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
@@ -47,7 +47,12 @@ export class TableRepository {
         ...tableData,
         room: roomSelected,
       });
-      return await this.tableRepository.save(tableCreate);
+      await this.tableRepository.save(tableCreate);
+      const tableFinded = await this.tableRepository.findOne({
+        where: { name: tableCreate.name },
+        relations: ['room'],
+      });
+      return tableFinded;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -66,12 +71,18 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { id, isActive: true },
+        relations: ['room'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);
       }
       Object.assign(table, updateData);
-      return await this.tableRepository.save(table);
+      await this.tableRepository.save(table);
+      const tableUpdated = await this.tableRepository.findOne({
+        where: { id: id },
+        relations: ['room'],
+      });
+      return tableUpdated;
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -157,6 +168,53 @@ export class TableRepository {
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);
+      }
+      return table;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching the table', error);
+    }
+  }
+
+  async getTableByName(name: string): Promise<Table> {
+    if (!name) {
+      throw new BadRequestException('Either name must be provided.');
+    }
+    try {
+      const table = await this.tableRepository.findOne({
+        where: { name: ILike(name), isActive: true },
+      });
+      if (!table) {
+        throw new NotFoundException(`Table with ID: ${name} not found`);
+      }
+      return table;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching the table', error);
+    }
+  }
+
+  async getTableByNumber(number: string): Promise<Table> {
+    const numberType = Number(number);
+    if (!number) {
+      throw new BadRequestException('Either number must be provided.');
+    }
+    try {
+      const table = await this.tableRepository.findOne({
+        where: { number: numberType, isActive: true },
+      });
+      if (!table) {
+        throw new NotFoundException(`Table with ID: ${number} not found`);
       }
       return table;
     } catch (error) {

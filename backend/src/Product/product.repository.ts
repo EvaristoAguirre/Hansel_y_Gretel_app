@@ -72,7 +72,6 @@ export class ProductRepository {
     }
   }
   async getProductByCode(code: number): Promise<Product> {
-    console.log(code);
     if (!code) {
       throw new BadRequestException('Either code must be provided.');
     }
