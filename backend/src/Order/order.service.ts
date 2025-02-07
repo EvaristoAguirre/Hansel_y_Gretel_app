@@ -5,6 +5,7 @@ import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDetails } from './order_details.entity';
+import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 
 @Injectable()
 export class OrderService {
@@ -28,7 +29,7 @@ export class OrderService {
     });
     return orderUpdated;
   }
-
+  
   async deleteOrder(id: string): Promise<string> {
     const orderDeleted = await this.orderRepository.deleteOrder(id);
     await this.eventEmitter.emit('order.deleted', {

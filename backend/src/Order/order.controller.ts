@@ -14,6 +14,7 @@ import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { instanceToPlain } from 'class-transformer';
+import { Product } from 'src/Product/product.entity';
 
 @Controller('order')
 export class OrderController {
@@ -39,6 +40,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
   ): Promise<Order> {
+    console.log(updateData);
     const order = await this.orderService.updateOrder(id, updateData);
     return instanceToPlain(order) as Order;
   }

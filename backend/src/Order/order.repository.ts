@@ -14,6 +14,7 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
+import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 
 @Injectable()
 export class OrderRepository {
@@ -237,7 +238,7 @@ export class OrderRepository {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails'],
+        relations: ['orderDetails', 'orderDetails.product', 'table'],
       });
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
