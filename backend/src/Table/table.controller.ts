@@ -47,4 +47,14 @@ export class TableController {
   getTableById(@Param('id') id: string): Promise<Table> {
     return this.tableService.getTableById(id);
   }
+
+  @Get('by-name/:name')
+  async getTableByName(@Param('name') name: string): Promise<Table> {
+    return this.tableService.getTableByName(name);
+  }
+
+  @Get('by-number/:number')
+  async getTableByNumber(@Param('number') number: string): Promise<Table> {
+    return this.tableService.getTableByNumber(number);
+  }
 }

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from './customer.entity';
@@ -39,11 +40,17 @@ export class CustomerService {
         where: { id, isActive: true },
       });
       if (!customer) {
-        throw new BadRequestException(`Customer with ID: ${id} not found`);
+        throw new NotFoundException(`Customer with ID: ${id} not found`);
       }
       Object.assign(customer, updateData);
       return await this.customerRepository.save(customer);
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error updating the customer.',
         error,
@@ -60,10 +67,16 @@ export class CustomerService {
         isActive: false,
       });
       if (result.affected === 0) {
-        throw new BadRequestException(`Customer with ID: ${id} not found`);
+        throw new NotFoundException(`Customer with ID: ${id} not found`);
       }
       return 'Customer successfully deleted';
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error deleting the customer.',
         error,
@@ -84,6 +97,9 @@ export class CustomerService {
         take: limit,
       });
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error fetching customers', error);
     }
   }
@@ -97,10 +113,16 @@ export class CustomerService {
         where: { id, isActive: true },
       });
       if (!customer) {
-        throw new BadRequestException(`Customer with ID: ${id} not found`);
+        throw new NotFoundException(`Customer with ID: ${id} not found`);
       }
       return customer;
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error fetching the customer',
         error,

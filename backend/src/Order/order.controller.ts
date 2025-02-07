@@ -34,7 +34,7 @@ export class OrderController {
     return this.orderService.markOrderAsPendingPayment(id);
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,

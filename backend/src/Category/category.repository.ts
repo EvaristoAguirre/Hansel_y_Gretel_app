@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   HttpException,
   Injectable,
@@ -30,6 +29,7 @@ export class CategoryRepository {
       }
       return await this.categoryRepository.save(category);
     } catch (error) {
+      if (error instanceof ConflictException) throw error;
       throw new InternalServerErrorException(
         'Failed to create category',
         error,
@@ -46,12 +46,16 @@ export class CategoryRepository {
         where: { id },
       });
       if (!existingCategory) {
-        throw new BadRequestException('Category not found');
+        throw new NotFoundException('Category not found');
       }
       Object.assign(existingCategory, category);
       return await this.categoryRepository.save(existingCategory);
     } catch (error) {
-      throw new NotFoundException(`Category with ID ${id} not found`, error);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(
+        'Failed to update category',
+        error,
+      );
     }
   }
 
@@ -64,6 +68,7 @@ export class CategoryRepository {
       await this.categoryRepository.update(id, { isActive: false });
       return 'Category successfully deleted';
     } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
         'Failed to deactivate category',
         error,
@@ -92,7 +97,7 @@ export class CategoryRepository {
         where: { id },
       });
       if (categoryFinded.isActive === false) {
-        throw new NotFoundException(`Category with ID ${id} is disabled`);
+        throw new ConflictException(`Category with ID ${id} is disabled`);
       }
       if (!categoryFinded) {
         throw new NotFoundException(`Category with ID ${id} not found`);
