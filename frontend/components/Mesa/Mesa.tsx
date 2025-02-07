@@ -33,6 +33,25 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     filtrarMesasPorSala(tables);
   }, [salaId, tables]);
 
+  useEffect(() => {
+    if (selectedMesa) {
+      setForm({ ...form, id: selectedMesa.id });
+    }
+    console.log("⭕️selectedMesa", selectedMesa);
+
+  }, [selectedMesa]);
+
+  useEffect(() => {
+    if (selectedMesa) {
+      setForm({
+        id: selectedMesa.id,
+        name: selectedMesa.name,
+        number: selectedMesa.number,
+        coment: selectedMesa.coment,
+      });
+    }
+  }, [selectedMesa]);
+
   return (
     <div
       style={{
@@ -64,17 +83,20 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             handleOpenModal={handleOpenModal}
             handleDelete={handleDelete}
           />
+
         ))}
         <MesaModal
           open={modalOpen}
           type={modalType}
           form={form}
           onClose={handleCloseModal}
-          onSave={
-            modalType === "create"
-              ? handleCreate
-              : () => handleEdit(selectedMesa?.id!)
-          }
+          onSave={(dataToSend) => {
+            if (modalType === "create") {
+              handleCreate(dataToSend);
+            } else if (modalType === "edit" && selectedMesa?.id) {
+              handleEdit(selectedMesa.id, dataToSend);
+            }
+          }}
           onChange={(field, value) =>
             setForm((prev) => ({
               ...prev,

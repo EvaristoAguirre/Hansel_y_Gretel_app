@@ -19,12 +19,13 @@ export interface MesaInterface {
   name: string;
   number: number;
   coment: string;
-  state: TableState; 
-  room: ISala; 
+  state: TableState;
+  room: ISala;
   orderId?: string[];
 }
 
 export interface MesaForm {
+  id?: string;
   name: string;
   number: number;
   coment: string;
@@ -43,7 +44,7 @@ export interface MesaModalProps {
   type: "create" | "edit";
   form: MesaForm;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (data: MesaForm) => void;
   onChange: (field: keyof MesaForm, value: any) => void;
 }
 

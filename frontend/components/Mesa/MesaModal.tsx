@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { MesaForm, MesaModalProps } from "../Interfaces/Cafe_interfaces";
 import { on } from "events";
+import { useEffect } from 'react';
 
 const MesaModal: React.FC<MesaModalProps> = ({
   open,
@@ -18,6 +19,22 @@ const MesaModal: React.FC<MesaModalProps> = ({
   onSave,
   onChange,
 }) => {
+
+  const handleSave = () => {
+    const dataToSend = {
+      ...form,
+      ...(type === "edit" ? { id: form.id } : {}),
+    };
+    onSave(dataToSend);
+    console.log(" info para editar mesa o crear", dataToSend);
+
+
+  };
+
+  useEffect(() => {
+    console.log("form", form);
+  }, [form]);
+
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>
@@ -32,6 +49,7 @@ const MesaModal: React.FC<MesaModalProps> = ({
               label={field}
               type={field === "number" ? "number" : "text"}
               onChange={(e) => onChange(field, e.target.value)}
+
               value={form[field] ?? ""}
               fullWidth
               variant="outlined"
@@ -43,7 +61,7 @@ const MesaModal: React.FC<MesaModalProps> = ({
         <Button onClick={onClose} color="primary">
           Cancelar
         </Button>
-        <Button onClick={onSave} color="primary">
+        <Button onClick={handleSave} color="primary">
           Guardar
         </Button>
       </DialogActions>

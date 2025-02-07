@@ -165,18 +165,12 @@ const Salas = () => {
       {/* Contenido de las mesas */}
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         <Box sx={{ flex: 1, backgroundColor: "#D9CCBC", p: 2 }}>
-          {/* Verifica que selectedSala tenga datos */}
           {selectedSala && (
             <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}
         </Box>
         <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#D9CCBC" }}>
           {selectedMesa && (
-            // <MesaEditor
-            //   mesa={selectedMesa}
-            //   onAbrirPedido={handleAbrirPedido}
-            //   view={view || ""}
-            // />
             <>
               <div>
                 <h2
