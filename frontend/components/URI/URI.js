@@ -13,7 +13,7 @@ export const URI_PRODUCT_BY_CATEGORY = "http://192.168.100.133:3000/product/by-c
 
 //ROOMS
 
-export const URI_ROOM = "http://192.168.100.133:3000/room"
+export const URI_ROOM = "http://localhost:3000/room"
 
 
 //TABLES
