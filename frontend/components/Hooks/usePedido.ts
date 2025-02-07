@@ -32,17 +32,18 @@ const usePedido = () => {
   const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
-  const [orderDetails, setOrderDetails] = useState<{
-    productId: string;
-    quantity: number;
-  } | null>(null);
+  // const [orderDetails, setOrderDetails] = useState<{
+  //   productId: string;
+  //   quantity: number;
+  // } | null>(null);
   const [productsDetails, setProductsDetails] = useState<
     { productId: string; quantity: number; price: number; name: string }[]
   >([]);
 
-  const [productsDetailsExistente, setProductsDetailsExistente] =
-    useState<{ productId: string; quantity: number }[]>();
-
+  const [productosActualizados, setProductosActualizados] = useState<any[]>([]);
+  const [productosConfirmados, setProductosConfirmados] = React.useState<
+    { productId: string; quantity: number; price: number; name: string }[]
+  >([]);
   const { products } = useProductStore();
 
   useEffect(() => {
@@ -59,10 +60,6 @@ const usePedido = () => {
         p.productId === producto.id ? { ...p, quantity: p.quantity + 1 } : p
       );
       setProductsDetails(updatedDetails);
-      setProductsDetailsExistente([{
-        productId: producto.id,
-        quantity: foundProduct.quantity + 1,
-      }]);
     } else {
       const newProduct = {
         productId: producto.id,
@@ -71,43 +68,14 @@ const usePedido = () => {
         name: producto.name,
       };
       setProductsDetails([...productsDetails, newProduct]);
-      setProductsDetailsExistente([{
-        productId: producto.id,
-        quantity: 1,
-      }]);
     }
 
     // También actualizamos el producto seleccionado individualmente
-    setOrderDetails({
-      productId: producto.id,
-      quantity: foundProduct ? foundProduct.quantity + 1 : 1,
-    });
+    // setOrderDetails({
+    //   productId: producto.id,
+    //   quantity: foundProduct ? foundProduct.quantity + 1 : 1,
+    // });
   };
-
-  // Agregar productos al pedido
-  // const handleAgregarProductosAlPedido = () => {
-  //   if (!selectedMesa) {
-  //     Swal.fire(
-  //       "Error",
-  //       "Por favor, selecciona una mesa antes de agregar productos al pedido.",
-  //       "error"
-  //     );
-  //     return;
-  //   }
-
-  //   const mesaActualizada = {
-  //     ...selectedMesa,
-  //     // pedido: [...(selectedMesa.pedido || []), ...productosSeleccionados],
-  //   };
-
-  //   Swal.fire(
-  //     "Pedido Actualizado",
-  //     `${productosSeleccionados.length} producto(s) añadido(s) al pedido.`,
-  //     "success"
-  //   );
-  //   setProductosSeleccionados([]);
-  //   setMostrarEditorPedido(false);
-  // };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -191,16 +159,32 @@ const usePedido = () => {
     }
   };
 
+  const acortarProductsDetails = (productsDetails: any) => {
+    const productsDetailsAcortado: any[] = productsDetails.map(
+      (product: any) => {
+        return {
+          productId: product.productId,
+          quantity: product.quantity,
+        };
+      }
+    );
+    return productsDetailsAcortado;
+  };
+
   const handleEditOrder = async (id: string) => {
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
     }
     try {
-      const response = await fetch(`${URI_ORDER}/${id}`, {
+      const productsDetailsAcortado = acortarProductsDetails(
+        productosActualizados
+      );
+      console.log("productsDetailsAcortado: ", productsDetailsAcortado);
+      const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([...productsDetails, ...(productsDetailsExistente || [])]),
+        body: JSON.stringify(productsDetailsAcortado || []),
       });
 
       if (!response.ok) {
@@ -248,6 +232,8 @@ const usePedido = () => {
     productosDisponibles,
     productsDetails,
     products,
+    productosActualizados,
+    productosConfirmados,
     setOrderId,
     handleCreateOrder,
     handleEditOrder,
@@ -258,6 +244,8 @@ const usePedido = () => {
     setMostrarEditorPedido,
     removeOrder,
     handleSeleccionarProducto,
+    setProductosActualizados,
+    setProductosConfirmados,
     // handleAgregarProductosAlPedido,
   };
 };

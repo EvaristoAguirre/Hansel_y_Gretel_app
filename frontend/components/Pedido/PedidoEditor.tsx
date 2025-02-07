@@ -11,11 +11,12 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { OrderCreated } from "./useOrderStore";
+import { OrderCreated, useOrderStore } from "./useOrderStore";
 import usePedido from "../Hooks/usePedido";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import "../../styles/pedidoEditor.css";
+import { Stages, TableState } from "../Enums/Enums";
 
 export interface Product {
   price: number;
@@ -28,7 +29,7 @@ const PedidoEditor = ({
   ordenAbierta,
   setProductosConfirmados,
   productosConfirmados,
-  handleNext
+  handleNext,
 }: {
   mesa: MesaInterface;
   ordenAbierta: OrderCreated;
@@ -36,40 +37,45 @@ const PedidoEditor = ({
   productosConfirmados: any;
   handleNext: any;
 }) => {
-
   const {
     productosDisponibles,
     productsDetails,
     products,
+    productosActualizados,
+    orderId,
     setProductsDetails,
     handleSeleccionarProducto,
     setProductosDisponibles,
-    handleEditOrder
+    handleEditOrder,
+    setProductosActualizados,
   } = usePedido();
 
-
-
-
+  const { orders } = useOrderStore();
 
   const [subtotal, setSubtotal] = useState(0);
+  const [stage, setStage] = useState<Stages>(Stages.INITIAL_ORDER);
 
   const confirmarPedido = () => {
-    // Crear un nuevo array combinando los productos confirmados con los nuevos detalles
-    const productosActualizados = [...productosConfirmados];
+    const tableState = mesa.state;
 
-    productsDetails.forEach((nuevoProducto) => {
-      const productoExistente = productosActualizados.find(
-        (p) => p.productId === nuevoProducto.productId
-      );
+    if (tableState === TableState.OPEN) {
+      // Crear un nuevo array combinando los productos confirmados con los nuevos detalles
+      setProductosActualizados([...productosConfirmados]);
 
-      if (productoExistente) {
-        // Si el producto ya existe, sumamos la cantidad
-        productoExistente.quantity += nuevoProducto.quantity;
-      } else {
-        // Si no existe, lo agregamos
-        productosActualizados.push(nuevoProducto);
-      }
-    });
+      productsDetails.forEach((nuevoProducto) => {
+        const productoExistente = productosActualizados.find(
+          (p) => p.productId === nuevoProducto.productId
+        );
+
+        if (productoExistente) {
+          // Si el producto ya existe, sumamos la cantidad
+          productoExistente.quantity += nuevoProducto.quantity;
+        } else {
+          // Si no existe, lo agregamos
+          productosActualizados.push(nuevoProducto);
+        }
+      });
+    } 
 
     setProductosConfirmados(productosActualizados);
     console.log("ordenAbierta.id", ordenAbierta.id);
@@ -77,7 +83,6 @@ const PedidoEditor = ({
     setProductsDetails([]);
     handleNext();
   };
-
 
   const eliminarProductoSeleccionado = (id: string) => {
     setProductsDetails(productsDetails.filter((p) => p.productId !== id));
@@ -127,24 +132,29 @@ const PedidoEditor = ({
     };
 
     calcularSubtotal();
-
   }, [productsDetails]);
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-
-      <div style={{
-        width: "100%", display: "flex",
-        flexDirection: "row", gap: "2rem",
-
-      }}>
-
-        <div style={{
-          width: "100%", display: "flex",
-          flexDirection: "column", border: "1px solid #d4c0b3",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
-          justifyContent: "space-between"
-        }}>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "row",
+          gap: "2rem",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            border: "1px solid #d4c0b3",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "1rem",
+            justifyContent: "space-between",
+          }}
+        >
           <div
             style={{
               height: "2rem",
@@ -153,14 +163,12 @@ const PedidoEditor = ({
               justifyContent: "center",
               alignItems: "center",
               color: "#ffffff",
-              marginBottom: "1rem"
+              marginBottom: "1rem",
             }}
           >
             <h2>Seleccionar productos</h2>
           </div>
-          <Box
-            sx={{ borderRadius: "5px" }}
-          >
+          <Box sx={{ borderRadius: "5px" }}>
             <Autocomplete
               options={productosDisponibles}
               getOptionLabel={(producto) =>
@@ -172,7 +180,10 @@ const PedidoEditor = ({
                   products.filter(
                     (producto) =>
                       producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code.toString().toLowerCase().includes(searchTerm)
+                      producto.code
+                        .toString()
+                        .toLowerCase()
+                        .includes(searchTerm)
                   )
                 );
               }}
@@ -182,11 +193,9 @@ const PedidoEditor = ({
                   handleSeleccionarProducto(selectedProducto);
                 }
               }}
-
               renderInput={(params) => (
                 <TextField
                   {...params}
-
                   label="Buscar productos por nombre, código o categoría"
                   variant="outlined"
                   fullWidth
@@ -223,7 +232,9 @@ const PedidoEditor = ({
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center" }}>
-                      <IconButton onClick={() => disminuirCantidad(item.productId)}>
+                      <IconButton
+                        onClick={() => disminuirCantidad(item.productId)}
+                      >
                         <Remove color="error" />
                       </IconButton>
                       <Typography
@@ -237,7 +248,9 @@ const PedidoEditor = ({
                       >
                         {item.quantity}
                       </Typography>
-                      <IconButton onClick={() => aumentarCantidad(item.productId)}>
+                      <IconButton
+                        onClick={() => aumentarCantidad(item.productId)}
+                      >
                         <Add color="success" />
                       </IconButton>
                     </div>
@@ -257,16 +270,25 @@ const PedidoEditor = ({
                     <Typography style={{ color: "black" }}>
                       ${item.price * item.quantity}
                     </Typography>
-                    <IconButton onClick={() => eliminarProductoSeleccionado(item.productId)}>
+                    <IconButton
+                      onClick={() =>
+                        eliminarProductoSeleccionado(item.productId)
+                      }
+                    >
                       <Delete />
                     </IconButton>
                   </ListItem>
                 ))}
-
-
               </List>
             ) : (
-              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
+              <Typography
+                style={{
+                  margin: "1rem 0",
+                  color: "gray",
+                  fontSize: "0.8rem",
+                  width: "100%",
+                }}
+              >
                 No hay productos pre-seleccionados.
               </Typography>
             )}
@@ -280,7 +302,6 @@ const PedidoEditor = ({
             >
               Subtotal: ${subtotal}
             </Typography>
-
           </Box>
           {/* Botones de confirmar y cancelar */}
           <div>
@@ -295,18 +316,20 @@ const PedidoEditor = ({
             >
               Confirmar Pedido
             </Button>
-            {
-              productosConfirmados.length > 0 &&
+            {productosConfirmados.length > 0 && (
               <Button
                 fullWidth
                 color="error"
                 variant="outlined"
-                style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
+                style={{
+                  marginTop: "1rem",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                }}
                 onClick={cancelarPedido}
               >
                 Cancelar Pedido
               </Button>
-            }
+            )}
           </div>
         </div>
       </div>

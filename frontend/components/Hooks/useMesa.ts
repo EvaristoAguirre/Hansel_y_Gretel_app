@@ -100,7 +100,7 @@ export const useMesa = (salaId: string) => {
     }
     try {
       const response = await fetch(`${URI_TABLE}/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });

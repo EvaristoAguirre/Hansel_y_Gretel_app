@@ -32,8 +32,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => ({
     return orders.find((order) => order.tableId === tableId) || null;
   },
   setOrders: (orders) => set({ orders }),
-  addOrder: (order) =>
-    set((state) => ({ orders: [...state.orders, order] })),
+  addOrder: (order) => set((state) => ({ orders: [...state.orders, order] })),
   removeOrder: (id) =>
     set((state) => ({
       orders: state.orders.filter((order) => order.id !== id),

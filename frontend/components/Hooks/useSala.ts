@@ -31,7 +31,7 @@ export const useSala = () => {
           // Editar sala existente
           try {
             const response = await fetch(`${URI_ROOM}/${sala.id}`, {
-              method: "PUT",
+              method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(sala),
             });

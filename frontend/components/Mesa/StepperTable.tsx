@@ -1,17 +1,18 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepButton from '@mui/material/StepButton';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import { OrderCreated } from '../Pedido/useOrderStore';
-import MesaEditor from './MesaEditor';
-import PedidoEditor, { Product } from '../Pedido/PedidoEditor';
-import Order from '../Pedido/Order';
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepButton from "@mui/material/StepButton";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { OrderCreated } from "../Pedido/useOrderStore";
+import MesaEditor from "./MesaEditor";
+import PedidoEditor, { Product } from "../Pedido/PedidoEditor";
+import Order from "../Pedido/Order";
+import usePedido from "../Hooks/usePedido";
 
-const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación'];
+const steps = ["Info Mesa", "Editar Pedido", "Confirmación"];
 
 interface Props {
   mesa: MesaInterface;
@@ -19,14 +20,20 @@ interface Props {
   onAbrirPedido: () => void;
 }
 
-export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => {
+export const StepperTable: React.FC<Props> = ({
+  mesa,
+  view,
+  onAbrirPedido,
+}) => {
   const [activeStep, setActiveStep] = React.useState(0);
-  const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
-  const [ordenAbierta, setOrdenAbierta] = React.useState<OrderCreated | undefined>();
+  const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>(
+    {}
+  );
+  const [ordenAbierta, setOrdenAbierta] = React.useState<
+    OrderCreated | undefined
+  >();
 
-  const [productosConfirmados, setProductosConfirmados] = React.useState<
-    { productId: string; quantity: number; price: number; name: string }[]
-  >([]);
+  const { productosConfirmados, setProductosConfirmados } = usePedido();
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -70,12 +77,15 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return <MesaEditor
-          mesa={mesa} view="mesaEditor"
-          onAbrirPedido={onAbrirPedido}
-          setOrdenAbierta={setOrdenAbierta}
-          handleNext={handleNext}
-        />;
+        return (
+          <MesaEditor
+            mesa={mesa}
+            view="mesaEditor"
+            onAbrirPedido={onAbrirPedido}
+            setOrdenAbierta={setOrdenAbierta}
+            handleNext={handleNext}
+          />
+        );
       case 1:
         return ordenAbierta ? (
           <PedidoEditor
@@ -85,22 +95,20 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
             productosConfirmados={productosConfirmados}
             handleNext={handleNext}
           />
-        ) : (
-          null
-        );
+        ) : null;
       case 2:
-        return (
-          productosConfirmados.length > 0 ? (
-            <Order
-              productosConfirmados={productosConfirmados}
-              eliminarProductoConfirmado={eliminarProductoConfirmado}
-              imprimirComanda={imprimirComanda}
-              handleDeleteOrder={handleReset}
-              ordenAbierta={ordenAbierta}
-            />
-          ) : (
-            <Typography>No hay productos confirmados, volver al paso 2</Typography>
-          )
+        return productosConfirmados.length > 0 ? (
+          <Order
+            productosConfirmados={productosConfirmados}
+            eliminarProductoConfirmado={eliminarProductoConfirmado}
+            imprimirComanda={imprimirComanda}
+            handleDeleteOrder={handleReset}
+            ordenAbierta={ordenAbierta}
+          />
+        ) : (
+          <Typography>
+            No hay productos confirmados, volver al paso 2
+          </Typography>
         );
       default:
         return <Typography>Paso desconocido</Typography>;
@@ -108,7 +116,7 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: "100%" }}>
       <Stepper nonLinear activeStep={activeStep}>
         {steps.map((label, index) => (
           <Step key={label} completed={completed[index]}>
@@ -121,17 +129,24 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
       <div>
         {allStepsCompleted() ? (
           <React.Fragment>
-            <Typography sx={{ mt: 2, mb: 1 }}>Todos los pasos completados</Typography>
+            <Typography sx={{ mt: 2, mb: 1 }}>
+              Todos los pasos completados
+            </Typography>
             <Button onClick={handleReset}>Reiniciar</Button>
           </React.Fragment>
         ) : (
           <React.Fragment>
             <Box sx={{ mt: 2, mb: 1 }}>{renderStepContent(activeStep)}</Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
-              <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
+            <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
+              <Button
+                color="inherit"
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                sx={{ mr: 1 }}
+              >
                 Atrás
               </Button>
-              <Box sx={{ flex: '1 1 auto' }} />
+              <Box sx={{ flex: "1 1 auto" }} />
               {/* <Button onClick={handleNext} sx={{ mr: 1 }}>
                 Siguiente
               </Button>
