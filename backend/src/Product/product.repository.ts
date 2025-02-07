@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -36,7 +37,7 @@ export class ProductRepository {
         relations: ['categories'],
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof BadRequestException) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -100,7 +101,9 @@ export class ProductRepository {
 
   async getProductsByCategories(categories: string[]): Promise<Product[]> {
     if (!categories || categories.length === 0) {
-      throw new Error('At least one category ID must be provided.');
+      throw new BadRequestException(
+        'At least one category ID must be provided.',
+      );
     }
     try {
       return await this.dataSource
@@ -116,7 +119,7 @@ export class ProductRepository {
         })
         .getMany();
     } catch (error) {
-      console.error('error in get...', error);
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         'An error occurred while fetching products. Please try again.',
         error.message,
@@ -130,14 +133,14 @@ export class ProductRepository {
       where: { code: productData.code },
     });
     if (existingProductByCode) {
-      throw new BadRequestException('Product code already exists');
+      throw new ConflictException('Product code already exists');
     }
 
     const existingProductByName = await this.productRepository.findOne({
       where: { name: productData.name },
     });
     if (existingProductByName) {
-      throw new BadRequestException('Product name already exists');
+      throw new ConflictException('Product name already exists');
     }
 
     try {
@@ -212,6 +215,7 @@ export class ProductRepository {
 
       return await this.productRepository.save(product);
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error updating the product.',
         error.message,

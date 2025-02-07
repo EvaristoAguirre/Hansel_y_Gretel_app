@@ -1,7 +1,9 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,12 +23,24 @@ export class TableRepository {
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
+    const existingTableByNumber = await this.tableRepository.findOne({
+      where: { number: tableData.number },
+    });
+    if (existingTableByNumber) {
+      throw new ConflictException('Table number already exists');
+    }
+    const existingTableByName = await this.tableRepository.findOne({
+      where: { name: tableData.name },
+    });
+    if (existingTableByName) {
+      throw new ConflictException('Table name already exists');
+    }
     try {
       const roomSelected = await this.roomRepository.findOne({
         where: { id: roomId, isActive: true },
       });
       if (!roomSelected) {
-        throw new BadRequestException(`Room with ID: ${roomId} not found`);
+        throw new NotFoundException(`Room with ID: ${roomId} not found`);
       }
 
       const tableCreate = await this.tableRepository.create({
@@ -35,6 +49,12 @@ export class TableRepository {
       });
       return await this.tableRepository.save(tableCreate);
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error creating the table', error);
     }
   }
@@ -48,11 +68,17 @@ export class TableRepository {
         where: { id, isActive: true },
       });
       if (!table) {
-        throw new BadRequestException(`Table with ID: ${id} not found`);
+        throw new NotFoundException(`Table with ID: ${id} not found`);
       }
       Object.assign(table, updateData);
       return await this.tableRepository.save(table);
     } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error updating the table',
         error.message,
@@ -71,6 +97,9 @@ export class TableRepository {
       }
       return 'Table successfully deleted';
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error deleting the table.',
         error,
@@ -88,14 +117,9 @@ export class TableRepository {
     try {
       const tables = await this.tableRepository
         .createQueryBuilder('table')
-        .leftJoinAndSelect('table.orders', 'order') // Incluye las órdenes asociadas
-        .leftJoinAndSelect('table.room', 'room') // Incluye la información de la sala asociada
-        .select([
-          'table',
-          'order.id', // Solo selecciona el ID de las órdenes
-          'room.id',
-          'room.name', // Selecciona los campos necesarios de la sala
-        ])
+        .leftJoinAndSelect('table.orders', 'order')
+        .leftJoinAndSelect('table.room', 'room')
+        .select(['table', 'order.id', 'room.id', 'room.name'])
         .where('table.isActive = :isActive', { isActive: true })
         .skip((page - 1) * limit)
         .take(limit)
@@ -112,12 +136,13 @@ export class TableRepository {
           id: table.room?.id,
           name: table.room?.name,
         },
-        orders: table.orders.map((order) => order.id), // Array de IDs de las órdenes
+        orders: table.orders.map((order) => order.id),
       }));
-
-      console.log(result);
       return result;
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error fetching tables', error);
     }
   }
@@ -131,10 +156,16 @@ export class TableRepository {
         where: { id, isActive: true },
       });
       if (!table) {
-        throw new BadRequestException(`Table with ID: ${id} not found`);
+        throw new NotFoundException(`Table with ID: ${id} not found`);
       }
       return table;
     } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException('Error fetching the table', error);
     }
   }
