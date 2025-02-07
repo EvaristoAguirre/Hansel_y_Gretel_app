@@ -42,4 +42,12 @@ export class TableService {
   async getTableById(id: string): Promise<Table> {
     return await this.tableRepository.getTableById(id);
   }
+
+  async getTableByName(name: string): Promise<Table> {
+    return this.tableRepository.getTableByName(name);
+  }
+
+  async getTableByNumber(number: string): Promise<Table> {
+    return this.tableRepository.getTableByNumber(number);
+  }
 }
