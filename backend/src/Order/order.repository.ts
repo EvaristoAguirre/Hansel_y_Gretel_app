@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -39,16 +40,10 @@ export class OrderRepository {
       }
 
       if (tableInUse.state !== TableState.AVAILABLE) {
-        throw new BadRequestException(
-          `Table with ID: ${tableId} not available`,
-        );
+        throw new ConflictException(`Table with ID: ${tableId} not available`);
       }
 
-      tableInUse.state = TableState.OPEN; //pasar por updateTable
-      await this.tableRepository.save(tableInUse);
-      //event emitter avisara que se actualizo la mesa
-
-      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      tableInUse.state = TableState.OPEN;
       await this.tableRepository.save(tableInUse);
 
       const newOrder = this.orderRepository.create({
@@ -64,7 +59,10 @@ export class OrderRepository {
     } catch (error) {
       console.error(`[CreateOrder Error]: ${error.message}`, error);
 
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
 
@@ -96,13 +94,13 @@ export class OrderRepository {
       }
 
       if (order.state === OrderState.CLOSED) {
-        throw new BadRequestException(
+        throw new ConflictException(
           'This order is closed. It cannot be modified.',
         );
       }
 
       if (updateData.state && updateData.state !== OrderState.OPEN) {
-        throw new BadRequestException(
+        throw new ConflictException(
           'Only orders with state "open" can be modified.',
         );
       }
@@ -172,11 +170,10 @@ export class OrderRepository {
 
       return await this.orderRepository.save(order);
     } catch (error) {
-      console.error(`[UpdateOrder Error]: ${error.message}`, error);
-
       if (
         error instanceof NotFoundException ||
-        error instanceof BadRequestException
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
       ) {
         throw error;
       }
@@ -198,6 +195,12 @@ export class OrderRepository {
       }
       return 'Order successfully deleted';
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error deleting the order.',
         error.message,
@@ -219,6 +222,7 @@ export class OrderRepository {
         relations: ['orderDetails', 'orderDetails.product', 'table'],
       });
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -240,6 +244,12 @@ export class OrderRepository {
       }
       return order;
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error fetching the order',
         error.message,
@@ -261,6 +271,7 @@ export class OrderRepository {
         relations: ['product', 'order'],
       });
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -310,21 +321,14 @@ export class OrderRepository {
       console.log('estoy emitiendo el ticket de la orden', {
         orderId: order.id,
       });
-      console.log(order);
       return order;
     } catch (error) {
-      console.error(
-        `[MarkOrderAsPendingPayment Error]: ${error.message}`,
-        error,
-      );
-
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException
       ) {
         throw error;
       }
-
       throw new InternalServerErrorException(
         'Error marking order as pending payment. Please try again later.',
       );
