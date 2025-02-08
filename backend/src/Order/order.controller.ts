@@ -39,6 +39,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
   ): Promise<Order> {
+    console.log(updateData.productsDetails);
     const order = await this.orderService.updateOrder(id, updateData);
     return instanceToPlain(order) as Order;
   }
