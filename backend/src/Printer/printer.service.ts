@@ -9,8 +9,8 @@ export class PrinterService {
     // Configurar la impresora
     this.printer = new ThermalPrinter({
       type: 'epson', // Tipo de impresora
-      interface: 'tcp://192.168.123.146', // Dirección IP de la impresora
-      characterSet: 'SLOVENIA', // Configuración de caracteres (ajusta según tu modelo)
+      interface: 'usb://192.168.123.146', // Dirección IP de la impresora
+      characterSet: 'Slovenia', // Configuración de caracteres (ajusta según tu modelo)
     });
     // Verificar conexión con la impresora
     this.printer
