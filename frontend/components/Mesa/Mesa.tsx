@@ -5,6 +5,7 @@ import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
+import { validateTableByNumber } from "@/helpers/tables";
 
 const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
@@ -25,6 +26,8 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
 
+
+
   const filtrarMesasPorSala = (tables: TableCreated[]) => {
     setMesasFiltradas(tables.filter((mesa) => mesa.room.id === salaId));
   };
@@ -32,6 +35,14 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
   useEffect(() => {
     filtrarMesasPorSala(tables);
   }, [salaId, tables]);
+
+  useEffect(() => {
+    if (selectedMesa) {
+      setForm({ ...form, id: selectedMesa.id });
+    }
+  }, [selectedMesa]);
+
+
 
   return (
     <div
@@ -64,17 +75,20 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             handleOpenModal={handleOpenModal}
             handleDelete={handleDelete}
           />
+
         ))}
         <MesaModal
           open={modalOpen}
           type={modalType}
           form={form}
           onClose={handleCloseModal}
-          onSave={
-            modalType === "create"
-              ? handleCreate
-              : () => handleEdit(selectedMesa?.id!)
-          }
+          onSave={(dataToSend) => {
+            if (modalType === "create") {
+              handleCreate(dataToSend);
+            } else if (modalType === "edit" && form.id) {
+              handleEdit(form.id, dataToSend);
+            }
+          }}
           onChange={(field, value) =>
             setForm((prev) => ({
               ...prev,
