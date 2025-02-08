@@ -30,7 +30,6 @@ const MesaCard: React.FC<MesaCardProps> = ({
         <ListItemText
           style={{
             color: "#fff",
-            textTransform: "uppercase",
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: 1,

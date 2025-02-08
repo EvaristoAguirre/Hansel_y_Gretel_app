@@ -27,7 +27,7 @@ export interface MesaInterface {
 export interface MesaForm {
   id?: string;
   name: string;
-  number: number;
+  number: null | number;
   coment: string;
   // state: TableState;
 }

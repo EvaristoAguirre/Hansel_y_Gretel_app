@@ -15,7 +15,7 @@ export const useMesa = (salaId: string) => {
   const [form, setForm] = useState<MesaForm>({
     id: "",
     name: "",
-    number: 0,
+    number: null,
     coment: "",
     // state: TableState.AVAILABLE,
   });
@@ -44,7 +44,7 @@ export const useMesa = (salaId: string) => {
       setForm({
         id: "",
         name: "",
-        number: 0,
+        number: null,
         coment: "",
       });
     }
@@ -54,7 +54,7 @@ export const useMesa = (salaId: string) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
-      number: 0,
+      number: null,
       coment: "",
       // state: TableState.AVAILABLE,
     });
@@ -78,6 +78,8 @@ export const useMesa = (salaId: string) => {
   }, [setTables, connectWebSocket, orders]);
 
   const handleCreate = async (mesaData: MesaForm) => {
+    console.log("🥳🥳🥳🥳🥳🥳entra en handleCreate");
+
     try {
       const response = await fetch(URI_TABLE, {
         method: "POST",
@@ -103,6 +105,9 @@ export const useMesa = (salaId: string) => {
   };
 
   const handleEdit = async (id: string, data: MesaForm) => {
+
+    console.log("🤩🤩🤩🤩🤩🤩🤩🤩🤩🤩🤩ENTRA EN HANDLE EDIT");
+
     console.log("🛠 handleEdit id:", id);  // Verifica si llega el id
     console.log("🛠 handleEdit data:", data);
     if (!id) {
