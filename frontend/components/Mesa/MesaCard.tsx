@@ -13,7 +13,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
   return (
     <div
       style={{
-        width: "100%",
+        width: "30%",
         height: "5rem",
         backgroundColor: mesa.state === "closed" ? "#f28b82" : "#7e9d8a",
         display: "flex",
