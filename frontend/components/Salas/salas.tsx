@@ -167,7 +167,7 @@ const Salas = () => {
       >
         {/* contenedor de Mesas */}
         <Box
-          className="w-full p-2 lg:w-1/4">
+          className="w-full p-2  lg:w-2/4">
           {selectedSala && (
             <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}

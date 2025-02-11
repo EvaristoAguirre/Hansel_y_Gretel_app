@@ -52,19 +52,20 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
       }}
     >
       <Button
-        variant="contained"
+        variant="outlined"
         color="primary"
-        className="mr-2 w-1/3 lg:w-full my-2 h-[3rem]"
-        // sx={{ marginRight: 2, width: '20%', height: '50px', my: 2 }}
+        className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
+
         onClick={() => handleOpenModal("create")}
       >
         + Agregar mesa
       </Button>
 
       <div
-        className="custom-scrollbar flex gap-4 overflow-x-auto lg:flex-wrap lg:overflow-y-auto pr-2"
+        className="custom-scrollbar flex gap-4 
+        overflow-x-auto lg:flex-wrap lg:overflow-y-auto pr-2 pt-2"
         style={{
-          maxHeight: "80vh",
+          maxHeight: "90vh",
         }}>
         {mesasFiltradas.map((mesa) => (
           <MesaCard
