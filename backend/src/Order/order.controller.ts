@@ -13,28 +13,34 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
-import { OrderOpenDto } from 'src/DTOs/create-orderOpen.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('open')
-  openOrder(@Body() openOrder: CreateOrderDto): Promise<OrderOpenDto> {
+  openOrder(@Body() openOrder: CreateOrderDto): Promise<Order> {
     return this.orderService.openOrder(openOrder);
   }
 
-  @Post()
-  createOrder(@Body() order: CreateOrderDto): Promise<Order> {
-    return this.orderService.createOrder(order);
+  @Post('close/:id')
+  closeOrder(@Param('id') id: string): Promise<Order> {
+    return this.orderService.closeOrder(id);
   }
 
-  @Patch(':id')
-  updateOrder(
+  @Post('pending/:id')
+  markOrderAsPendingPayment(@Param('id') id: string): Promise<Order> {
+    return this.orderService.markOrderAsPendingPayment(id);
+  }
+
+  @Patch('update/:id')
+  async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
   ): Promise<Order> {
-    return this.orderService.updateOrder(id, updateData);
+    const order = await this.orderService.updateOrder(id, updateData);
+    return instanceToPlain(order) as Order;
   }
 
   @Delete(':id')

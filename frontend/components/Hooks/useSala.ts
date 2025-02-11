@@ -14,105 +14,130 @@ export const useSala = () => {
   const [menuSala, setMenuSala] = useState<ISala | null>(null);
 
   useEffect(() => {
-      async function fetchSalas() {
-        try {
-          const response = await fetch(URI_ROOM, { method: "GET" });
-          const data = await response.json();
-          setSalas(data);
-        } catch (error) {
-          Swal.fire("Error", "No se pudieron cargar las salas.", "error");
-        }
+    async function fetchSalas() {
+      try {
+        const response = await fetch(URI_ROOM, { method: "GET" });
+        const data = await response.json();
+        setSalas(data);
+      } catch (error) {
+        Swal.fire("Error", "No se pudieron cargar las salas.", "error");
       }
-      fetchSalas();
-    }, []);
-  
-    const handleSaveSala = async (sala: { id?: string; name: string }) => {
-        if (sala.id) {
-          // Editar sala existente
-          try {
-            const response = await fetch(`${URI_ROOM}/${sala.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(sala),
-            });
-    
-            if (!response.ok) throw new Error("Error al editar la sala.");
-    
-            const updatedSala = await response.json();
-            setSalas((prev) =>
-              prev.map((s) => (s.id === updatedSala.id ? updatedSala : s))
-            );
-    
-            Swal.fire("Éxito", "Sala actualizada correctamente.", "success");
-          } catch (error) {
-            Swal.fire("Error", "No se pudo actualizar la sala.", "error");
+    }
+    fetchSalas();
+  }, []);
+
+  const handleSaveSala = async (sala: { id?: string; name: string }) => {
+    if (sala.id) {
+      // Editar sala existente
+      try {
+        const response = await fetch(`${URI_ROOM}/${sala.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sala),
+        });
+
+        if (!response.ok) throw new Error("Error al editar la sala.");
+
+        const updatedSala = await response.json();
+        setSalas((prev) =>
+          prev.map((s) => (s.id === updatedSala.id ? updatedSala : s))
+        );
+
+        Swal.fire("Éxito", "Sala actualizada correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo actualizar la sala.", "error");
+      }
+    } else {
+      // Crear nueva sala
+      try {
+        const response = await fetch(URI_ROOM, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sala),
+        });
+
+        if (!response.ok) throw new Error("Error al crear la sala.");
+
+        const newSala = await response.json();
+        setSalas((prev) => [...prev, newSala]);
+
+        Swal.fire("Éxito", "Sala creada correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo crear la sala.", "error");
+      }
+    }
+  };
+
+  const handleDeleteSala = async () => {
+    if (!menuSala) return;
+
+    //agrego una confirmacion antes de eliminar
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+
+      try {
+        const response = await fetch(`${URI_ROOM}/${menuSala.id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Error al eliminar la sala.");
+
+        setSalas((prev) => {
+          const nuevasSalas = prev.filter((s) => s.id !== menuSala.id);
+
+          // Agrego esto para evitar error cuando se elimina la sala seleccionada. 
+          //Si la sala eliminada es la seleccionada, actualizar `selectedSala`
+          if (selectedSala?.id === menuSala.id) {
+            setSelectedSala(nuevasSalas.length > 0 ? nuevasSalas[0] : null);
           }
-        } else {
-          // Crear nueva sala
-          try {
-            const response = await fetch(URI_ROOM, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(sala),
-            });
-    
-            if (!response.ok) throw new Error("Error al crear la sala.");
-    
-            const newSala = await response.json();
-            setSalas((prev) => [...prev, newSala]);
-    
-            Swal.fire("Éxito", "Sala creada correctamente.", "success");
-          } catch (error) {
-            Swal.fire("Error", "No se pudo crear la sala.", "error");
-          }
-        }
-      };
-    
-      const handleDeleteSala = async () => {
-        if (!menuSala) return;
-    
-        try {
-          const response = await fetch(`${URI_ROOM}/${menuSala.id}`, {
-            method: "DELETE",
-          });
-    
-          if (!response.ok) throw new Error("Error al eliminar la sala.");
-    
-          setSalas((prev) => prev.filter((s) => s.id !== menuSala.id));
-          Swal.fire("Éxito", "Sala eliminada correctamente.", "success");
-        } catch (error) {
-          Swal.fire("Error", "No se pudo eliminar la sala.", "error");
-        } finally {
-          handleMenuClose();
-        }
-      };
-    
-      const handleSelectMesa = (mesa: MesaInterface) => {
-        setSelectedMesa(mesa);
-        setView("mesaEditor");
-      };
-    
-      const handleAbrirPedido = () => {
-        setView("pedidoEditor");
-      };
-    
-      const handleVolverAMesaEditor = () => {
-        setView("mesaEditor");
-      };
-    
-      const handleMenuOpen = (
-        event: React.MouseEvent<SVGSVGElement>,
-        sala: ISala
-      ) => {
-        setMenuAnchorEl(event.currentTarget as unknown as HTMLElement);
-        setMenuSala(sala);
-      };
-    
-      const handleMenuClose = () => {
-        setMenuAnchorEl(null);
-        setMenuSala(null);
-      };
-    
+
+          return nuevasSalas;
+        });
+
+        Swal.fire("Éxito", "Sala eliminada correctamente.", "success");
+      } catch (error) {
+        Swal.fire("Error", "No se pudo eliminar la sala.", "error");
+      } finally {
+        handleMenuClose();
+      }
+    }
+  };
+
+
+  const handleSelectMesa = (mesa: MesaInterface) => {
+    setSelectedMesa(mesa);
+    setView("mesaEditor");
+  };
+
+  const handleAbrirPedido = () => {
+    setView("pedidoEditor");
+  };
+
+  const handleVolverAMesaEditor = () => {
+    setView("mesaEditor");
+  };
+
+  const handleMenuOpen = (
+    event: React.MouseEvent<SVGSVGElement>,
+    sala: ISala
+  ) => {
+    setMenuAnchorEl(event.currentTarget as unknown as HTMLElement);
+    setMenuSala(sala);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setMenuSala(null);
+  };
+
 
   return {
     salas,

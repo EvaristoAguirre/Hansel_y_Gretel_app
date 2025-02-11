@@ -1,37 +1,30 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import {
-  TextField,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  Autocomplete,
-} from "@mui/material";
-import Swal from "sweetalert2";
-import { useProductStore } from "../Hooks/useProductStore";
-import { URI_PRODUCT } from "../URI/URI";
-import Mesa from "../Mesa/Mesa";
-import Sala from "../Salas/Sala";
-import { MesaInterface, MozoInterface } from "../Interfaces/Cafe_interfaces";
+import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
+import Salas from "../Salas/salas";
 
 const Cafe = () => {
   const { fetchAndSetProducts } = useProductos();
+  const [navbarHeight, setNavbarHeight] = useState(0);
+
 
   useEffect(() => {
     fetchAndSetProducts();
+
+    const navbar = document.querySelector("nav");
+    if (navbar) {
+      setNavbarHeight(navbar.offsetHeight);
+    }
   }, []);
 
   return (
-    <div className="cafe" style={{ display: "flex", height: "100vh" }}>
-      {/* Lista de mesas */}
-      <div className="salas-y-mesas" style={{ width: "100%", padding: "20px" }}>
-        <Sala></Sala>
+    <div className="cafe" style={{
+      display: "flex",
+      backgroundColor: "#D9CCBC", paddingTop: `${navbarHeight}px`
+    }}>
+      <div style={{ width: "100%" }}>
+        <Salas></Salas>
       </div>
-
-      {/* <Mesa_menu></Mesa_menu> */}
     </div>
   );
 };

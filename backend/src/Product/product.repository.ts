@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -36,7 +37,7 @@ export class ProductRepository {
         relations: ['categories'],
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof BadRequestException) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -71,7 +72,6 @@ export class ProductRepository {
     }
   }
   async getProductByCode(code: number): Promise<Product> {
-    console.log(code);
     if (!code) {
       throw new BadRequestException('Either code must be provided.');
     }
@@ -100,7 +100,9 @@ export class ProductRepository {
 
   async getProductsByCategories(categories: string[]): Promise<Product[]> {
     if (!categories || categories.length === 0) {
-      throw new Error('At least one category ID must be provided.');
+      throw new BadRequestException(
+        'At least one category ID must be provided.',
+      );
     }
     try {
       return await this.dataSource
@@ -116,7 +118,7 @@ export class ProductRepository {
         })
         .getMany();
     } catch (error) {
-      console.error('error in get...', error);
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         'An error occurred while fetching products. Please try again.',
         error.message,
@@ -126,6 +128,19 @@ export class ProductRepository {
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
     const { categories, ...productData } = productToCreate;
+    const existingProductByCode = await this.productRepository.findOne({
+      where: { code: productData.code },
+    });
+    if (existingProductByCode) {
+      throw new ConflictException('Product code already exists');
+    }
+
+    const existingProductByName = await this.productRepository.findOne({
+      where: { name: productData.name },
+    });
+    if (existingProductByName) {
+      throw new ConflictException('Product name already exists');
+    }
 
     try {
       let categoryEntities: Category[] = [];
@@ -199,6 +214,7 @@ export class ProductRepository {
 
       return await this.productRepository.save(product);
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error updating the product.',
         error.message,
