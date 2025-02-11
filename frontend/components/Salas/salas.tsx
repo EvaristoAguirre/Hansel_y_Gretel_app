@@ -162,14 +162,18 @@ const Salas = () => {
         sala={editingSala}
       />
 
-      {/* Contenido de las mesas */}
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
-        <Box sx={{ flex: 1, backgroundColor: "#D9CCBC", p: 2 }}>
+      {/* Contenido de las mesas y editor pedido */}
+      <Box className="flex flex-col lg:flex-row min-h-screen"
+      >
+        {/* contenedor de Mesas */}
+        <Box
+          className="w-full p-2 lg:w-1/4">
           {selectedSala && (
             <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}
         </Box>
-        <Box sx={{ flex: 0.6, p: 2, backgroundColor: "#D9CCBC" }}>
+        {/* contenedor de Armar pedido */}
+        <Box className="w-full p-2 lg:w-3/4">
           {selectedMesa && (
             <>
               <div>
@@ -182,9 +186,10 @@ const Salas = () => {
                     justifyContent: "center",
                     alignItems: "center",
                     color: "#ffffff",
-                    margin: "1rem 0",
+                    margin: "0.5rem 0",
                     fontWeight: "bold",
                     textTransform: "uppercase",
+                    borderRadius: "0.2rem",
                   }}
                 >
                   MESA: {selectedMesa.name}

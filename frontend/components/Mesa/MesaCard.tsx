@@ -4,7 +4,7 @@ import { MesaCardProps } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Button, ListItemText, Tooltip } from "@mui/material";
+import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
 
 const MesaCard: React.FC<MesaCardProps> = ({
   mesa, handleOpenModal, handleDelete, setSelectedMesa
@@ -13,7 +13,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
   return (
     <div
       style={{
-        width: "27%",
+        width: "100%",
         height: "5rem",
         backgroundColor: mesa.state === "closed" ? "#f28b82" : "#7e9d8a",
         display: "flex",
@@ -35,8 +35,13 @@ const MesaCard: React.FC<MesaCardProps> = ({
             WebkitLineClamp: 1,
             overflow: "hidden",
             padding: "0.5rem",
+
           }}
-          primary={mesa.name}
+          primary={
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#fff" }}>
+              {mesa.name}
+            </Typography>
+          }
         />
       </Tooltip>
       <div style={{
@@ -48,9 +53,9 @@ const MesaCard: React.FC<MesaCardProps> = ({
           <Button
             sx={{
               minWidth: "2.5rem",
-              color: "#fff",
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+              color: "#bab6b6",
             }}
+            className="hover:text-white transition-colors duration-300 ease-in-out"
           >
             <VisibilityIcon />
           </Button>
@@ -61,9 +66,9 @@ const MesaCard: React.FC<MesaCardProps> = ({
           <Button
             sx={{
               minWidth: "2.5rem",
-              color: "#fff",
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+              color: "#bab6b6",
             }}
+            className="hover:text-white transition-colors duration-300 ease-in-out"
             onClick={(e) => {
               e.stopPropagation();
               handleOpenModal("edit", mesa);
@@ -78,9 +83,9 @@ const MesaCard: React.FC<MesaCardProps> = ({
           <Button
             sx={{
               minWidth: "2.5rem",
-              color: "#fff",
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.2)" },
+              color: "#bab6b6",
             }}
+            className="hover:text-white transition-colors duration-300 ease-in-out"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(mesa.id);
