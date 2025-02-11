@@ -4,9 +4,7 @@ const ViewCafe = () => {
 
   return (
     <ProtectedRoute>
-
       <Cafe />
-
     </ProtectedRoute>
   );
 }
