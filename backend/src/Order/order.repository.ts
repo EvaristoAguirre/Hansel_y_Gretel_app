@@ -57,8 +57,6 @@ export class OrderRepository {
 
       return await this.orderRepository.save(newOrder);
     } catch (error) {
-      console.error(`[CreateOrder Error]: ${error.message}`, error);
-
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException
