@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { IngredientService } from './ingredient.service';
 import { Ingredient } from './ingredient.entity';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
+import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 
 @Controller('ingredient')
 export class IngredientController {
@@ -20,9 +30,16 @@ export class IngredientController {
     return await this.ingredientService.createIngredient(createData);
   }
 
-  // @Patch(){
-  //   async updateIngredient(){
-  //     return await this.ingredient
-  //   }
-  // }
+  @Patch(':id')
+  async updateIngredient(
+    @Param('id') id: string,
+    @Body() updateData: UpdateIngredientDto,
+  ) {
+    return await this.ingredientService.updateIngredient(id, updateData);
+  }
+
+  @Delete(':id')
+  async deleteIngredient(@Param() id: string) {
+    return await this.ingredientService.deleteIngredient(id);
+  }
 }

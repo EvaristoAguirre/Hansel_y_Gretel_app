@@ -3,11 +3,13 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
 import { Repository } from 'typeorm';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
+import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 
 @Injectable()
 export class IngredientRepository {
@@ -60,6 +62,60 @@ export class IngredientRepository {
 
       throw new InternalServerErrorException(
         'An error occurred while creating the order. Please try again later.',
+      );
+    }
+  }
+
+  async updateIngredient(id: string, updateData: UpdateIngredientDto) {
+    if (!id) {
+      throw new BadRequestException('ID must be provided');
+    }
+    try {
+      const ingredient = await this.ingredientRepository.findOne({
+        where: { id: id, isActive: true },
+      });
+      if (!ingredient) {
+        throw new NotFoundException('Ingredient not found');
+      }
+      Object.assign(ingredient, updateData);
+      return await this.ingredientRepository.save(ingredient);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error updating the ingredient',
+        error.message,
+      );
+    }
+  }
+
+  async deleteIngredient(id: string) {
+    if (!id) {
+      throw new BadRequestException('ID must be provided');
+    }
+    try {
+      const ingredient = await this.ingredientRepository.findOne({
+        where: { id: id, isActive: true },
+      });
+      if (!ingredient) {
+        throw new NotFoundException('Ingredient not found');
+      }
+      ingredient.isActive = false;
+      return await this.ingredientRepository.save(ingredient);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error deleting the ingredient',
+        error.message,
       );
     }
   }

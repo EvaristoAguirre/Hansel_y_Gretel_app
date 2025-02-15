@@ -6,9 +6,10 @@ import {
   Min,
 } from 'class-validator';
 
-export class CreateIngredientDto {
+export class UpdateIngredientDto {
   @IsString()
   @IsNotEmpty()
+  @IsOptional()
   name: string;
 
   @IsString()

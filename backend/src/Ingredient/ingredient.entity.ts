@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProductIngredient } from './ingredientProduct.entity';
+import { IsNumber, Min } from 'class-validator';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {
@@ -18,6 +19,19 @@ export class Ingredient {
 
   @Column()
   isActive: boolean;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @IsNumber()
+  @Min(0)
+  price: number;
+
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @IsNumber()
+  @Min(0)
+  cost: number;
 
   // -------------- Relaciones -----------------//
   @OneToOne(() => Stock, (stock) => stock.ingredient)
