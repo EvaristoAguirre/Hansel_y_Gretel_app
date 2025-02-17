@@ -2,12 +2,15 @@ import { Stock } from 'src/Stock/stock.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, Min } from 'class-validator';
+import { UnitOfMeasure } from './unitOfMesure.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {
@@ -42,4 +45,8 @@ export class Ingredient {
     (productIngredient) => productIngredient.ingredient,
   )
   productIngredients: ProductIngredient[];
+
+  @ManyToOne(() => UnitOfMeasure, (unitOfMesure) => unitOfMesure.ingredients)
+  @JoinColumn({ name: 'unitOfMeasureId' })
+  unitOfMeasure: UnitOfMeasure;
 }
