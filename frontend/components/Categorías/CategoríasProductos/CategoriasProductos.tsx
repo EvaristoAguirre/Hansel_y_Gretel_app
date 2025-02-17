@@ -16,7 +16,7 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
-import { fetchCategories } from "@/helpers/categories";
+import { fetchCategories } from "@/api/categories";
 
 const CategoriasProductos: React.FC = () => {
   const {
@@ -39,7 +39,7 @@ const CategoriasProductos: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data  = await fetchCategories();
+        const data = await fetchCategories();
         setCategories(data);
         connectWebSocket();
       } catch (error) {

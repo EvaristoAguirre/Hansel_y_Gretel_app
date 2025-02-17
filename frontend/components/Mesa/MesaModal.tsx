@@ -8,7 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 import { MesaForm, MesaModalProps } from "../Interfaces/Cafe_interfaces";
-import { validateTableByName, validateTableByNumber } from "@/helpers/tables";
+import { validateTableByName, validateTableByNumber } from "@/api/tables";
 
 interface Errors {
   [clave: string]: string;

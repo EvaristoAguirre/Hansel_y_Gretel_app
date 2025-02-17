@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, Autocomplete, TextField } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
-import { getProductsByCategory, searchProducts } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/api/products";
 import { ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";

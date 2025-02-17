@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
-import { fetchCategories } from "@/helpers/categories";
+import { fetchCategories } from "@/api/categories";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
