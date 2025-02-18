@@ -35,7 +35,9 @@ export class Order {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
-  @ManyToOne(() => Table, (table) => table.orders)
+  @ManyToOne(() => Table, (table) => table.orders, {
+    onDelete: 'SET NULL',
+  })
   table: Table;
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {

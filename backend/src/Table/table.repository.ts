@@ -187,7 +187,9 @@ export class TableRepository {
     }
     try {
       const table = await this.tableRepository.findOne({
-        where: { name, isActive: true },
+
+        where: { name: ILike(name) },
+
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
@@ -211,7 +213,7 @@ export class TableRepository {
     }
     try {
       const table = await this.tableRepository.findOne({
-        where: { number: numberType, isActive: true },
+        where: { number: numberType },
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${number} not found`);
