@@ -19,7 +19,7 @@ export class TableRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-  ) {}
+  ) { }
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
@@ -187,7 +187,9 @@ export class TableRepository {
     }
     try {
       const table = await this.tableRepository.findOne({
+
         where: { name: ILike(name) },
+
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
