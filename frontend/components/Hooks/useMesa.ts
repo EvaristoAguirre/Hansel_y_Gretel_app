@@ -13,8 +13,9 @@ export const useMesa = (salaId: string) => {
   const [modalType, setModalType] = useState<"create" | "edit">("create");
 
   const [form, setForm] = useState<MesaForm>({
+    id: "",
     name: "",
-    number: 0,
+    number: null,
     coment: "",
     // state: TableState.AVAILABLE,
   });
@@ -31,12 +32,20 @@ export const useMesa = (salaId: string) => {
   const { orders } = useOrderStore();
   const handleOpenModal = (type: "create" | "edit", mesa?: MesaInterface) => {
     setModalType(type);
-    if (mesa) {
+    if (type === "edit" && mesa) {
       setForm({
+        id: mesa.id,
         name: mesa.name,
         number: mesa.number,
         coment: mesa.coment,
         // state: mesa.state,
+      });
+    } else {
+      setForm({
+        id: "",
+        name: "",
+        number: null,
+        coment: "",
       });
     }
     setModalOpen(true);
@@ -45,7 +54,7 @@ export const useMesa = (salaId: string) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
-      number: 0,
+      number: null,
       coment: "",
       // state: TableState.AVAILABLE,
     });
@@ -68,7 +77,8 @@ export const useMesa = (salaId: string) => {
     connectWebSocket();
   }, [setTables, connectWebSocket, orders]);
 
-  const handleCreate = async () => {
+  const handleCreate = async (mesaData: MesaForm) => {
+
     try {
       const response = await fetch(URI_TABLE, {
         method: "POST",
@@ -93,16 +103,16 @@ export const useMesa = (salaId: string) => {
     }
   };
 
-  const handleEdit = async (id: string) => {
+  const handleEdit = async (id: string, data: MesaForm) => {
     if (!id) {
       Swal.fire("Error", "ID de la mesa no válido.", "error");
       return;
     }
     try {
       const response = await fetch(`${URI_TABLE}/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...data }),
       });
 
       if (!response.ok) {

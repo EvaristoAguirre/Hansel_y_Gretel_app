@@ -1,0 +1,24 @@
+.custom-scrollbar {
+  scrollbar-width: thin;
+  /* Solo funciona en Firefox */
+  scrollbar-color: #9d8a7e #856d5e36;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  /* Ancho del scroll */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #856d5e36;
+  /* Color de fondo del track */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #9d8a7e;
+  /* Color del scroll */
+  border-radius: 10px;
+  /* Bordes redondeados */
+  border: 2px solid #856d5e36;
+  /* Opcional: añade un borde para separar el thumb */
+}

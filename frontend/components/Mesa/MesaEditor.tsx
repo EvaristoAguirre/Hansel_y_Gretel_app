@@ -1,31 +1,27 @@
+'use client'
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { ISala, MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
-import PedidoEditor from "../Pedido/PedidoEditor";
-import useMesa from "../Hooks/useMesa";
 import usePedido from "../Hooks/usePedido";
 import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
-import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
-import {
-  OrderDetailsCreated,
-  useOrderDetailsStore,
-} from "../Pedido/useOrderDetailsStore";
 import { TableCreated, useTableStore } from "./useTableStore";
-import useSala from "../Hooks/useSala";
 
 const MesaEditor = ({
   mesa,
   view,
   onAbrirPedido,
+  setOrdenAbierta,
+  handleNext
 }: {
   mesa: MesaInterface;
   view: string;
   onAbrirPedido: () => void;
+  setOrdenAbierta: (order: OrderCreated | undefined) => void;
+  handleNext: () => void
 }) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
   const [comentario, setComentario] = useState("");
-  const [ordenAbierta, setOrdenAbierta] = useState<OrderCreated>();
   const { handleCreateOrder } = usePedido();
   const { orders } = useOrderStore();
   const { tables } = useTableStore();
@@ -65,46 +61,41 @@ const MesaEditor = ({
 
   return (
     <div
-      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+      style={{
+        display: "flex", flexDirection: "column",
+        padding: "1rem", alignItems: "center", border: "1px solid #d4c0b3",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+      }}
     >
       {view === "mesaEditor" && (
-        <div style={{ width: "90%" }}>
-          <div>
-            <h2
-              style={{
-                height: "3rem",
-                backgroundColor: "#856D5E",
-                fontSize: "1.2rem",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "#ffffff",
-                margin: "1rem 0",
-                fontWeight: "bold",
-                textTransform: "uppercase",
-              }}
-            >
-              {mesa.name}
-            </h2>
-          </div>
+        <div style={{ width: "100%" }}>
           <form>
-            <div
-              style={{
-                margin: "10px 0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Cantidad de personas:</label>
-              <input
-                style={{ padding: "3px 10px" }}
-                type="number"
-                value={cantidadPersonas}
-                onChange={(e) => setCantidadPersonas(Number(e.target.value))}
-              />
-            </div>
-            {/* <div
+            {/* Cantidad de personas y comentario */}
+            <div style={{
+              border: "1px solid #7e9d8a",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              padding: "10px",
+            }}>
+              <div
+                style={{
+                  margin: "10px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+
+                }}
+              >
+                <label>Cantidad de personas:</label>
+                <input
+                  type="number"
+                  value={cantidadPersonas}
+                  onFocus={(e) => (e.target.style.outline = "none")}
+                  onChange={(e) => setCantidadPersonas(Number(e.target.value))}
+                  className="bg-transparent border-b-2 border-[#856D5E] w-1/2"
+                />
+              </div>
+
+              {/* <div
             style={{
               margin: "10px 0",
               display: "flex",
@@ -126,28 +117,34 @@ const MesaEditor = ({
               ))}
             </select>
           </div> */}
-            <div
-              style={{
-                margin: "10px 0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Comentario:</label>
-              <textarea
-                style={{ padding: "3px 10px" }}
-                value={comentario}
-                onChange={(e) => setComentario(e.target.value)}
-              />
+              <div
+                style={{
+                  margin: "10px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <label>Comentario:</label>
+                <textarea
+                  onFocus={(e) => (e.target.style.outline = "none")}
+                  value={comentario}
+                  onChange={(e) => setComentario(e.target.value)}
+                  className="bg-transparent border-b-2 border-[#856D5E] w-1/2 h-8"
+                />
+              </div>
             </div>
+
+            {/* Botones para guardar cambios y abrir pedido */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "center",
                 flexDirection: "column",
+                marginTop: "30px",
               }}
             >
+
               <Button
                 type="button"
                 fullWidth
@@ -177,13 +174,17 @@ const MesaEditor = ({
                 disabled={mesa.state !== "open"}
                 type="button"
                 fullWidth
-                color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
+                sx={{
+                  backgroundColor: "#7e9d8a",
+                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                }}
                 onClick={() => {
                   // abrirPedido();
                   if (mesa.orderId !== null) {
-                    onAbrirPedido(); // Abre el pedido existente
+                    onAbrirPedido();
+                    handleNext();
                   } else {
                     Swal.fire(
                       "Error",
@@ -198,9 +199,6 @@ const MesaEditor = ({
             </div>
           </form>
         </div>
-      )}
-      {view === "pedidoEditor" && ordenAbierta && (
-        <PedidoEditor mesa={mesa} ordenAbierta={ordenAbierta}></PedidoEditor>
       )}
     </div>
   );
