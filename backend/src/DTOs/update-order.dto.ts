@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -29,6 +30,14 @@ export class UpdateOrderDto {
   @IsOptional() //esto esta de mas
   @IsString()
   table?: string;
+
+  @IsOptional()
+  @IsNumber()
+  numberCustomers?: number;
+
+  @IsOptional()
+  @IsString()
+  comment?: string;
 
   @IsOptional()
   @IsArray()
