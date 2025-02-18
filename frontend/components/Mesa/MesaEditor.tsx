@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
@@ -7,28 +7,51 @@ import usePedido from "../Hooks/usePedido";
 import { OrderCreated, useOrderStore } from "../Pedido/useOrderStore";
 import { TableCreated, useTableStore } from "./useTableStore";
 
-const MesaEditor = ({
-  mesa,
-  view,
-  onAbrirPedido,
-  setOrdenAbierta,
-  handleNext
-}: {
-  mesa: MesaInterface;
+interface Props {
+  selectedMesa: MesaInterface;
   view: string;
   onAbrirPedido: () => void;
   setOrdenAbierta: (order: OrderCreated | undefined) => void;
   handleNext: () => void
-}) => {
+}
+
+const MesaEditor = ({
+  selectedMesa,
+  view,
+  onAbrirPedido,
+  setOrdenAbierta,
+  handleNext
+}: Props) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
-  const [comentario, setComentario] = useState("");
-  const { handleCreateOrder } = usePedido();
+  const [comentario, setComentario] = useState('');
+  const { handleCreateOrder, handleEditOrder } = usePedido();
   const { orders } = useOrderStore();
   const { tables } = useTableStore();
 
+  const setTableFields = useCallback(() => {
+    // Comentarios
+    if (selectedMesa.coment) {
+      setComentario(selectedMesa.coment);
+    } else {
+      setComentario('');
+    }
+
+    // Número de comensales
+    const tableOrder = orders.find((order) => order.table.id === selectedMesa.id);
+    if (tableOrder) {
+      setCantidadPersonas(tableOrder.numberCustomers);
+    } else {
+      setCantidadPersonas(0);
+    };
+  }, [selectedMesa]);
+
+  useEffect(() => {
+    setTableFields();
+  }, [setTableFields])
+
   useEffect(() => {
     const mesaTableCreated: TableCreated | undefined = tables.find(
-      (table) => table.id === mesa.id
+      (table) => table.id === selectedMesa.id
     );
 
     if (!mesaTableCreated) {
@@ -44,7 +67,7 @@ const MesaEditor = ({
         "La mesa no tiene órdenes asociadas o el formato no es válido."
       );
       return;
-    }
+    };
 
     // Buscar la orden correspondiente
     const order = orders.find((order) =>
@@ -56,7 +79,7 @@ const MesaEditor = ({
     } else {
       setOrdenAbierta(order);
     }
-  }, [orders, mesa.id, tables, view]);
+  }, [orders, selectedMesa, tables, view]);
 
 
   return (
@@ -159,19 +182,19 @@ const MesaEditor = ({
                       "error"
                     );
                     return;
-                  } else if (mesa.state !== "open") {
-                    handleCreateOrder(mesa, cantidadPersonas, comentario);
+                  } else if (selectedMesa?.state === "available") {
+                    handleCreateOrder(selectedMesa, cantidadPersonas, comentario);
                     onAbrirPedido();
                   } else {
-                    // handleEditOrder(order.id);
+                    handleEditOrder(orders[0].id);
                   }
                 }}
               >
-                {mesa.state === "open" ? "Guardar Cambios" : "Abrir Mesa"}
+                {selectedMesa?.state === "open" ? "Guardar Cambios" : "Abrir Mesa"}
               </Button>
 
               <Button
-                disabled={mesa.state !== "open"}
+                disabled={selectedMesa?.state !== "open"}
                 type="button"
                 fullWidth
                 variant="contained"
@@ -182,8 +205,8 @@ const MesaEditor = ({
                 }}
                 onClick={() => {
                   // abrirPedido();
-                  if (mesa.orderId !== null) {
-                    onAbrirPedido();
+                  if (selectedMesa?.orderId !== null) {
+                    onAbrirPedido(); // Cambia "view" en useSala a "pedidoEditor"
                     handleNext();
                   } else {
                     Swal.fire(

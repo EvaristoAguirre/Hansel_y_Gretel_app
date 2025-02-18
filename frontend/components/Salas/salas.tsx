@@ -1,10 +1,12 @@
 import React from "react";
+import { useEffect, useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Mesa from "../Mesa/Mesa";
 import SalaModal from "./SalaModal";
 import useSala from "../Hooks/useSala";
 import { StepperTable } from "../Mesa/StepperTable";
+import { useTableStore } from "../Mesa/useTableStore";
 
 const Salas = () => {
   const {
@@ -13,6 +15,8 @@ const Salas = () => {
     setSelectedSala,
     selectedMesa,
     setSelectedMesa,
+    selectedMesaId,
+    setSelectedMesaId,
     view,
     setView,
     modalOpen,
@@ -31,6 +35,18 @@ const Salas = () => {
     handleMenuOpen,
     handleMenuClose,
   } = useSala();
+  const { tables } = useTableStore();
+
+  const [activeStep, setActiveStep] = useState<number>(0);
+
+
+  useEffect(() => {
+    const tablesFiltered = tables.find(table => table.id === selectedMesaId);
+    if (tablesFiltered) {
+      setSelectedMesa(tablesFiltered);
+    }
+
+  }, [tables, selectedMesaId]);
 
   return (
     <>
@@ -174,7 +190,7 @@ const Salas = () => {
         </Box>
         {/* contenedor de Armar pedido */}
         <Box className="w-full p-2 lg:w-3/4">
-          {selectedMesa && (
+          {selectedMesaId && (
             <>
               <div>
                 <h2
@@ -192,15 +208,17 @@ const Salas = () => {
                     borderRadius: "0.2rem",
                   }}
                 >
-                  MESA: {selectedMesa.name}
+                  MESA: {selectedMesa?.name}
                 </h2>
               </div>
               {
                 selectedMesa ? (
                   <StepperTable
-                    mesa={selectedMesa}
+                    selectedMesa={selectedMesa}
                     view={view || ""}
                     onAbrirPedido={handleAbrirPedido}
+                    activeStep={activeStep}
+                    setActiveStep={(step) => setActiveStep(step)}
                   />
 
                 ) : (null)

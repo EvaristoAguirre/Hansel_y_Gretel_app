@@ -177,11 +177,12 @@ const usePedido = () => {
 
       const newOrder = await response.json();
 
-      const mesaActualizada = tables.find((table) => table.id === mesa.id);
-      if (mesaActualizada) {
-        mesaActualizada.orders.push(newOrder);
-        updateTable(mesaActualizada);
-      }
+      // const mesaActualizada = tables.find((table) => table.id === mesa.id);
+      // if (mesaActualizada) {
+      //   mesaActualizada.orders.push(newOrder);
+      //   console.log({ mesaActualizada });
+      //   updateTable(mesaActualizada);
+      // }
 
       addOrder(newOrder);
 

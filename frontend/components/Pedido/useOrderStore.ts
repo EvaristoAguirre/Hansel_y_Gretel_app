@@ -4,15 +4,16 @@ import { OrderDetailsCreated } from "./useOrderDetailsStore";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 
 export interface OrderCreated {
-  id: string;
+  commandNumber: string;
+  comment: string;
   date: Date;
-  state: OrderState;
+  id: string;
   isActive: boolean;
   numberCustomers: number;
-  comment: string;
-  tableId: string;
+  // orderDetails: OrderDetailsCreated[]; // No viene en el endpoint
+  state: OrderState;
   table: MesaInterface;
-  orderDetails: OrderDetailsCreated[];
+  total: string;
 }
 
 interface OrderStateZustand {
@@ -29,7 +30,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => ({
   orders: [],
   findOrderByTableId: (tableId: string) => {
     const orders = get().orders;
-    return orders.find((order) => order.tableId === tableId) || null;
+    return orders.find((order) => order.table.id === tableId) || null;
   },
   setOrders: (orders) => set({ orders }),
   addOrder: (order) =>

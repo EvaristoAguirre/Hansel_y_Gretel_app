@@ -7,6 +7,7 @@ export const useSala = () => {
   const [salas, setSalas] = useState<ISala[]>([]);
   const [selectedSala, setSelectedSala] = useState<ISala | null>(null);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [selectedMesaId, setSelectedMesaId] = useState<string | null>(null);
   const [view, setView] = useState<"mesaEditor" | "pedidoEditor" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSala, setEditingSala] = useState<ISala | null>(null);
@@ -112,8 +113,8 @@ export const useSala = () => {
   };
 
 
-  const handleSelectMesa = (mesa: MesaInterface) => {
-    setSelectedMesa(mesa);
+  const handleSelectMesa = (mesaId: string) => {
+    setSelectedMesaId(mesaId);
     setView("mesaEditor");
   };
 
@@ -146,6 +147,8 @@ export const useSala = () => {
     setSelectedSala,
     selectedMesa,
     setSelectedMesa,
+    selectedMesaId,
+    setSelectedMesaId,
     view,
     setView,
     modalOpen,

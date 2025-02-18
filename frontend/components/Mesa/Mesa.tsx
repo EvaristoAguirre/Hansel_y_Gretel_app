@@ -26,6 +26,10 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
 
+  useEffect(() => {
+    const mesasFiltradas = tables.filter((mesa) => mesa.room.id === salaId);
+    setMesasFiltradas(mesasFiltradas);
+  }, [salaId, tables]);
 
 
   const filtrarMesasPorSala = (tables: TableCreated[]) => {
@@ -73,7 +77,7 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             mesa={mesa}
             setSelectedMesa={(mesaSeleccionada) => {
               setSelectedMesa(mesaSeleccionada); // Actualiza el estado interno
-              onSelectMesa(mesaSeleccionada); // Notifica al componente padre
+              onSelectMesa(mesaSeleccionada.id); // Notifica al componente padre
             }}
             handleOpenModal={handleOpenModal}
             handleDelete={handleDelete}

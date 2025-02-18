@@ -48,9 +48,13 @@ export interface MesaModalProps {
   onChange: (field: keyof MesaForm, value: any) => void;
 }
 
+// export interface MesaProps {
+//   salaId: string;
+//   onSelectMesa: (mesa: MesaInterface) => void;
+// }
 export interface MesaProps {
   salaId: string;
-  onSelectMesa: (mesa: MesaInterface) => void;
+  onSelectMesa: (mesaId: string) => void;
 }
 
 export interface ISala {

@@ -14,13 +14,15 @@ import Order from '../Pedido/Order';
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación'];
 
 interface Props {
-  mesa: MesaInterface;
+  selectedMesa: MesaInterface;
   view: string;
   onAbrirPedido: () => void;
+  activeStep: number;
+  setActiveStep: (step: number) => void;
 }
 
-export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => {
-  const [activeStep, setActiveStep] = React.useState(0);
+export const StepperTable: React.FC<Props> = ({ selectedMesa, view, onAbrirPedido, activeStep, setActiveStep }) => {
+  // const [activeStep, setActiveStep] = React.useState(0);
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
   const [ordenAbierta, setOrdenAbierta] = React.useState<OrderCreated | undefined>();
 
@@ -33,12 +35,17 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
   const isLastStep = () => activeStep === totalSteps() - 1;
   const allStepsCompleted = () => completedSteps() === totalSteps();
 
+  // const handleNext = () => {
+  //   setActiveStep((prev: number) => (isLastStep() ? prev : prev + 1));
+  // };
   const handleNext = () => {
-    setActiveStep((prev) => (isLastStep() ? prev : prev + 1));
+    setActiveStep(isLastStep() ? activeStep : activeStep + 1);
   };
-
+  // const handleBack = () => {
+  //   setActiveStep((prev: number) => (prev > 0 ? prev - 1 : prev));
+  // };
   const handleBack = () => {
-    setActiveStep((prev) => (prev > 0 ? prev - 1 : prev));
+    setActiveStep(activeStep > 0 ? activeStep - 1 : activeStep);
   };
 
   const handleStep = (step: number) => () => {
@@ -71,7 +78,7 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
     switch (step) {
       case 0:
         return <MesaEditor
-          mesa={mesa} view="mesaEditor"
+          selectedMesa={selectedMesa} view="mesaEditor"
           onAbrirPedido={onAbrirPedido}
           setOrdenAbierta={setOrdenAbierta}
           handleNext={handleNext}
@@ -79,7 +86,7 @@ export const StepperTable: React.FC<Props> = ({ mesa, view, onAbrirPedido }) => 
       case 1:
         return ordenAbierta ? (
           <PedidoEditor
-            mesa={mesa}
+            // selectedMesa={selectedMesa}
             ordenAbierta={ordenAbierta}
             setProductosConfirmados={setProductosConfirmados}
             productosConfirmados={productosConfirmados}

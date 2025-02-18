@@ -22,20 +22,22 @@ export interface Product {
   quantity: number;
   productId: string;
   name: string;
-}
-const PedidoEditor = ({
-  mesa,
-  ordenAbierta,
-  setProductosConfirmados,
-  productosConfirmados,
-  handleNext
-}: {
-  mesa: MesaInterface;
+};
+
+interface Props {
+  // selectedMesa: MesaInterface;
   ordenAbierta: OrderCreated;
   setProductosConfirmados: any;
   productosConfirmados: any;
   handleNext: any;
-}) => {
+}
+const PedidoEditor = ({
+  // selectedMesa,
+  ordenAbierta,
+  setProductosConfirmados,
+  productosConfirmados,
+  handleNext
+}: Props) => {
 
   const {
     productosDisponibles,
@@ -46,10 +48,6 @@ const PedidoEditor = ({
     setProductosDisponibles,
     handleEditOrder
   } = usePedido();
-
-
-
-
 
   const [subtotal, setSubtotal] = useState(0);
 
