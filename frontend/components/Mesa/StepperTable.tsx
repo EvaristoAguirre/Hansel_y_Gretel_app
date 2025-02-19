@@ -6,10 +6,11 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import { OrderCreated } from '../Pedido/useOrderStore';
+import { OrderCreated, useOrderStore } from '../Pedido/useOrderStore';
 import MesaEditor from './MesaEditor';
 import PedidoEditor, { Product } from '../Pedido/PedidoEditor';
 import Order from '../Pedido/Order';
+import { useOrderContext } from '../../app/context/order.context';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación'];
 
@@ -21,29 +22,28 @@ interface Props {
   setActiveStep: (step: number) => void;
 }
 
-export const StepperTable: React.FC<Props> = ({ selectedMesa, view, onAbrirPedido, activeStep, setActiveStep }) => {
-  // const [activeStep, setActiveStep] = React.useState(0);
+export const StepperTable: React.FC<Props> = (
+  { selectedMesa, view, onAbrirPedido, activeStep, setActiveStep }
+) => {
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
-  const [ordenAbierta, setOrdenAbierta] = React.useState<OrderCreated | undefined>();
 
-  const [productosConfirmados, setProductosConfirmados] = React.useState<
-    { productId: string; quantity: number; price: number; name: string }[]
-  >([]);
+  const {
+    confirmedProducts,
+    handleResetSelectedOrder
+  } = useOrderContext();
+
+  const { selectedOrderByTable } = useOrderContext();
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
   const isLastStep = () => activeStep === totalSteps() - 1;
   const allStepsCompleted = () => completedSteps() === totalSteps();
 
-  // const handleNext = () => {
-  //   setActiveStep((prev: number) => (isLastStep() ? prev : prev + 1));
-  // };
-  const handleNext = () => {
+
+  const handleNextStep = () => {
     setActiveStep(isLastStep() ? activeStep : activeStep + 1);
   };
-  // const handleBack = () => {
-  //   setActiveStep((prev: number) => (prev > 0 ? prev - 1 : prev));
-  // };
+
   const handleBack = () => {
     setActiveStep(activeStep > 0 ? activeStep - 1 : activeStep);
   };
@@ -54,23 +54,17 @@ export const StepperTable: React.FC<Props> = ({ selectedMesa, view, onAbrirPedid
 
   const handleComplete = () => {
     setCompleted({ ...completed, [activeStep]: true });
-    handleNext();
+    handleNextStep();
   };
 
   const handleReset = () => {
     setActiveStep(0);
     setCompleted({});
-    setOrdenAbierta(undefined);
-  };
-
-  const eliminarProductoConfirmado = (id: string) => {
-    setProductosConfirmados(
-      productosConfirmados.filter((p: Product) => p.productId !== id)
-    );
+    handleResetSelectedOrder();
   };
 
   const imprimirComanda = () => {
-    console.log("Imprimiendo comanda:", productosConfirmados);
+    console.log("Imprimiendo comanda:", confirmedProducts);
     // función de impresión
   };
 
@@ -80,33 +74,28 @@ export const StepperTable: React.FC<Props> = ({ selectedMesa, view, onAbrirPedid
         return <MesaEditor
           selectedMesa={selectedMesa} view="mesaEditor"
           onAbrirPedido={onAbrirPedido}
-          setOrdenAbierta={setOrdenAbierta}
-          handleNext={handleNext}
+          handleNextStep={handleNextStep}
         />;
       case 1:
-        return ordenAbierta ? (
-          <PedidoEditor
-            // selectedMesa={selectedMesa}
-            ordenAbierta={ordenAbierta}
-            setProductosConfirmados={setProductosConfirmados}
-            productosConfirmados={productosConfirmados}
-            handleNext={handleNext}
-          />
-        ) : (
-          null
-        );
+        return selectedMesa.state === 'open' ? (
+          selectedOrderByTable && (
+            <PedidoEditor
+              handleNextStep={handleNextStep}
+            />
+          )
+        ) : <div className='flex justify-center text-red-500 font-bold my-16'>
+          Completar paso 1
+        </div>;
       case 2:
         return (
-          productosConfirmados.length > 0 ? (
+          confirmedProducts.length > 0 ? (
             <Order
-              productosConfirmados={productosConfirmados}
-              eliminarProductoConfirmado={eliminarProductoConfirmado}
               imprimirComanda={imprimirComanda}
               handleDeleteOrder={handleReset}
-              ordenAbierta={ordenAbierta}
+              selectedMesa={selectedMesa}
             />
           ) : (
-            <Typography>No hay productos confirmados, volver al paso 2</Typography>
+            <div className='flex justify-center text-red-500 font-bold my-16'>No hay productos confirmados, volver al paso 2</div>
           )
         );
       default:

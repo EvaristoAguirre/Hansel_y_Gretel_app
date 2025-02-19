@@ -10,7 +10,7 @@ export interface OrderCreated {
   id: string;
   isActive: boolean;
   numberCustomers: number;
-  // orderDetails: OrderDetailsCreated[]; // No viene en el endpoint
+  orderDetails: OrderDetailsCreated[];
   state: OrderState;
   table: MesaInterface;
   total: string;

@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { MesaInterface, MesaProps } from "../Interfaces/Cafe_interfaces";
+import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
 import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
-import { validateTableByNumber } from "@/api/tables";
+import { useRoomContext } from '../../app/context/room.context';
 
 const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const {
-    selectedMesa,
+    // selectedMesa,
     modalOpen,
     modalType,
     form,
@@ -21,8 +21,11 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     handleEdit,
     handleDelete,
     setForm,
-    setSelectedMesa,
+    // setSelectedMesa,
   } = useMesa(salaId);
+
+  // TODO: Ahora se debe usar del contexto Room.
+  const { selectedMesa } = useRoomContext();
 
   const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
 
@@ -76,8 +79,8 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             key={mesa.id}
             mesa={mesa}
             setSelectedMesa={(mesaSeleccionada) => {
-              setSelectedMesa(mesaSeleccionada); // Actualiza el estado interno
-              onSelectMesa(mesaSeleccionada.id); // Notifica al componente padre
+              // onSelectMesa(mesaSeleccionada.id); // Notifica al componente padre
+              onSelectMesa(mesaSeleccionada); // Notifica al componente padre
             }}
             handleOpenModal={handleOpenModal}
             handleDelete={handleDelete}

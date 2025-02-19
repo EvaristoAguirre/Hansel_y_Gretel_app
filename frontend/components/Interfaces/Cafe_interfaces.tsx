@@ -21,7 +21,8 @@ export interface MesaInterface {
   coment: string;
   state: TableState;
   room: ISala;
-  orderId?: string[];
+  // orderId?: string[];
+  orders: string[];
 }
 
 export interface MesaForm {
@@ -54,7 +55,8 @@ export interface MesaModalProps {
 // }
 export interface MesaProps {
   salaId: string;
-  onSelectMesa: (mesaId: string) => void;
+  // onSelectMesa: (mesaId: string) => void;
+  onSelectMesa: (mesa: MesaInterface) => void;
 }
 
 export interface ISala {

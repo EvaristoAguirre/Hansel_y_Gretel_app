@@ -25,24 +25,24 @@ export interface ProductTableProps {
 
 export interface ProductCreated {
   [key: string]: string | number | boolean | null | string[];
-  code: number;
-  name: string;
-  description: string;
-  price: number;
-  cost: number;
   categories: string[];
+  code: number;
+  cost: number;
+  description: string;
   isActive: boolean;
+  name: string;
+  price: number;
 };
 
 export interface ProductResponse {
-  id: string;
-  code: number;
-  name: string;
-  description: string;
-  price: number;
-  cost: number;
   categories: ICategory[];
+  code: number;
+  cost: number;
+  description: string;
+  id: string;
   isActive: boolean;
+  name: string;
+  price: number;
 }
 
 export interface ProductState {
@@ -58,3 +58,10 @@ export interface ProductsProps {
   selectedCategoryId: string | null;
   onClearSelectedCategory: () => void;
 }
+
+export interface SelectedProductsI {
+  productId: string;
+  quantity: number;
+  price: number;
+  name: string
+};

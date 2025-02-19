@@ -1,52 +1,34 @@
 import React from "react";
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Mesa from "../Mesa/Mesa";
 import SalaModal from "./SalaModal";
-import useSala from "../Hooks/useSala";
 import { StepperTable } from "../Mesa/StepperTable";
-import { useTableStore } from "../Mesa/useTableStore";
+import { useRoomContext } from '../../app/context/room.context';
 
 const Salas = () => {
   const {
     salas,
     selectedSala,
-    setSelectedSala,
+    handleSelectSala,
     selectedMesa,
-    setSelectedMesa,
-    selectedMesaId,
-    setSelectedMesaId,
     view,
-    setView,
     modalOpen,
     setModalOpen,
     editingSala,
     setEditingSala,
     menuAnchorEl,
-    setMenuAnchorEl,
     menuSala,
-    setMenuSala,
     handleSaveSala,
     handleDeleteSala,
     handleSelectMesa,
     handleAbrirPedido,
-    handleVolverAMesaEditor,
     handleMenuOpen,
     handleMenuClose,
-  } = useSala();
-  const { tables } = useTableStore();
+  } = useRoomContext();
 
   const [activeStep, setActiveStep] = useState<number>(0);
-
-
-  useEffect(() => {
-    const tablesFiltered = tables.find(table => table.id === selectedMesaId);
-    if (tablesFiltered) {
-      setSelectedMesa(tablesFiltered);
-    }
-
-  }, [tables, selectedMesaId]);
 
   return (
     <>
@@ -74,7 +56,8 @@ const Salas = () => {
           value={selectedSala?.id || false}
           onChange={(_, newValue) => {
             const salaSeleccionada = salas.find((sala) => sala.id === newValue);
-            setSelectedSala(salaSeleccionada || null);
+
+            handleSelectSala(salaSeleccionada || null);
           }}
           textColor="inherit"
           sx={{
@@ -190,7 +173,7 @@ const Salas = () => {
         </Box>
         {/* contenedor de Armar pedido */}
         <Box className="w-full p-2 lg:w-3/4">
-          {selectedMesaId && (
+          {selectedMesa && (
             <>
               <div>
                 <h2
@@ -220,7 +203,6 @@ const Salas = () => {
                     activeStep={activeStep}
                     setActiveStep={(step) => setActiveStep(step)}
                   />
-
                 ) : (null)
               }
             </>

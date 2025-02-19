@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
-import Salas from "../Salas/salas";
+import Salas from "../Salas/Rooms";
+import OrderProvider from '../../app/context/order.context';
+import RoomProvider from "@/app/context/room.context";
 
 const Cafe = () => {
   const { fetchAndSetProducts } = useProductos();
@@ -23,7 +25,11 @@ const Cafe = () => {
       backgroundColor: "#D9CCBC", paddingTop: `${navbarHeight}px`
     }}>
       <div style={{ width: "100%" }}>
-        <Salas></Salas>
+        <RoomProvider>
+          <OrderProvider>
+            <Salas />
+          </OrderProvider>
+        </RoomProvider>
       </div>
     </div>
   );
