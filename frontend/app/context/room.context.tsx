@@ -1,9 +1,7 @@
 import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
-import { OrderCreated } from '@/components/Pedido/useOrderStore';
-import { URI_ORDER, URI_ROOM } from '@/components/URI/URI';
+import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { useOrderContext } from './order.context';
 type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
@@ -13,8 +11,6 @@ type RoomContextType = {
   editingSala: ISala | null;
   menuAnchorEl: null | HTMLElement;
   menuSala: ISala | null;
-  // selectedOrderByTable: OrderCreated | null;
-  // setSelectedOrderByTable: (order: OrderCreated | null) => void;
   setModalOpen: (open: boolean) => void;
   setEditingSala: (sala: ISala | null) => void;
   handleSelectSala: (sala: ISala | null) => void;
@@ -36,8 +32,6 @@ const RoomContext = createContext<RoomContextType>({
   editingSala: null,
   menuAnchorEl: null,
   menuSala: null,
-  // selectedOrderByTable: null,
-  // setSelectedOrderByTable: () => { },
   setModalOpen: () => { },
   setEditingSala: () => { },
   handleSelectSala: () => { },
@@ -64,18 +58,6 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [editingSala, setEditingSala] = useState<ISala | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuSala, setMenuSala] = useState<ISala | null>(null);
-
-  // const [selectedOrderByTable, setSelectedOrderByTable] = useState<OrderCreated | null>(null);
-
-  const { handleResetSelectedOrder, handleSetProductsByOrder } = useOrderContext();
-
-  // /**
-  //  * Al cambiar la Mesa o la Sala seleccionada se limpia
-  //  *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
-  //  */
-  // useEffect(() => {
-  //   handleResetSelectedOrder();
-  // }, [selectedMesa, selectedSala]);
 
   useEffect(() => {
     async function fetchSalas() {
@@ -180,27 +162,6 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     }
   };
 
-  // /**
-  //  * @param orderId - ID de la orden o pedido.
-  //  * Se obtiene la orden correspondiente a la mesa seleccionada.
-  //  * Se setea la información de la orden en `selectedOrderByTable`.
-  //  * Se setean los productos confirmados de la orden en `confirmedProducts` y en `selectedProducts`.
-  //  */
-  // const fetchOrderBySelectedTable = async (orderId: string) => {
-  //   try {
-  //     console.log('🚀 Fetch ORDER para Mesa seleccionada: ', { orderId })
-  //     const response = await fetch(`${URI_ORDER}/${orderId}`, {
-  //       method: "GET",
-  //     });
-  //     const data = await response.json();
-  //     console.log('✅ Se setea ORDEN en Mesa Seleccionada; ', data);
-  //     setSelectedOrderByTable(data);
-  //     handleSetProductsByOrder(data.orderDetails);
-  //   } catch (error) {
-  //     console.error("Error al obtener el pedido:", error);
-  //   }
-  // };
-
   /**
    * @param mesa - Es la Mesa que se selecciona.
    * Se setea la mesa seleccionada en `selectedMesa`.
@@ -243,8 +204,6 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       editingSala,
       menuAnchorEl,
       menuSala,
-      // selectedOrderByTable,
-      // setSelectedOrderByTable,
       setModalOpen,
       setEditingSala,
       handleSelectSala,

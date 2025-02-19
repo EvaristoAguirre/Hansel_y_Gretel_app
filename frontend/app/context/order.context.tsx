@@ -13,7 +13,6 @@ type OrderContextType = {
   selectedOrderByTable: OrderCreated | null;
   setSelectedOrderByTable: (order: OrderCreated | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
-  handleSetProductsByOrder: (confirmedProducts: SelectedProductsI[]) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
   decreaseProductNumber: (productId: string) => void;
@@ -32,7 +31,6 @@ const OrderContext = createContext<OrderContextType>({
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
   handleSelectedProducts: () => { },
-  handleSetProductsByOrder: () => { },
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
@@ -83,7 +81,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
           });
           const data = await response.json();
           setSelectedOrderByTable(data);
-          handleSetProductsByOrder(data.orderDetails);
+          console.group("FETCH ORDER BY SELECTED TABLE");
+          console.log("Data response de order", data);
+          handleSetProductsByOrder(data.orderDetails); // TODO: ESPERANDO CAMBIOS DE EVA
+          console.groupEnd();
         } else {
           setSelectedOrderByTable(null);
         }
@@ -121,6 +122,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
     setConfirmedProducts(confirmedProducts);
     setSelectedProducts(confirmedProducts);
+
+    console.group("HANDLE SET PRODUCTS BY ORDER");
+    console.log("Productos confirmados:", confirmedProducts);
+    console.log("Productos seleccionados:", selectedProducts);
+    console.groupEnd();
+
   };
 
   const handleDeleteSelectedProduct = (id: string) => {
@@ -273,7 +280,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         selectedOrderByTable,
         setSelectedOrderByTable,
         handleSelectedProducts,
-        handleSetProductsByOrder,
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,
