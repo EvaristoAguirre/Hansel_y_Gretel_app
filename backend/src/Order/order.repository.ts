@@ -78,12 +78,6 @@ export class OrderRepository {
       throw new BadRequestException('Order ID must be provided.');
     }
 
-    // if (updateData.state !== OrderState.OPEN) {
-    //   throw new BadRequestException(
-    //     'Only orders with state "open" can be modified.',
-    //   );
-    // }
-
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -108,6 +102,14 @@ export class OrderRepository {
 
       if (updateData.state) {
         order.state = updateData.state;
+      }
+
+      if (updateData.numberCustomers) {
+        order.numberCustomers = updateData.numberCustomers;
+      }
+
+      if (updateData.comment) {
+        order.comment = updateData.comment;
       }
 
       if (updateData.tableId) {
