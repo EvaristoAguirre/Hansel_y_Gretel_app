@@ -2,6 +2,7 @@ import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
 import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
+import { useOrderContext } from './order.context';
 type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
@@ -58,6 +59,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [editingSala, setEditingSala] = useState<ISala | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuSala, setMenuSala] = useState<ISala | null>(null);
+
 
   useEffect(() => {
     async function fetchSalas() {

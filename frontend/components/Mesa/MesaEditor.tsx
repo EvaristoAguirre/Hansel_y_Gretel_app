@@ -6,6 +6,7 @@ import { Button } from "@mui/material";
 import { useOrderStore } from "../Pedido/useOrderStore";
 import { useTableStore } from "./useTableStore";
 import { useOrderContext } from '../../app/context/order.context';
+import { log } from 'console';
 
 interface Props {
   selectedMesa: MesaInterface;
@@ -22,23 +23,26 @@ const MesaEditor = ({
 }: Props) => {
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
   const [comentario, setComentario] = useState('');
-  const { handleCreateOrder, handleEditOrder } = useOrderContext();
-  const { orders } = useOrderStore();
-  const { tables } = useTableStore();
+  const { handleCreateOrder, handleEditOrder, selectedProducts, selectedOrderByTable } = useOrderContext();
+
+
 
   const setTableFields = useCallback(() => {
-    if (selectedMesa.coment) {
-      setComentario(selectedMesa.coment);
+    if (selectedOrderByTable && selectedOrderByTable.comment) {
+      setComentario(selectedOrderByTable.comment);
     } else {
       setComentario('');
     }
     // Número de comensales
-    const tableOrder = orders.find((order) => order.table.id === selectedMesa.id);
-    if (tableOrder) {
-      setCantidadPersonas(tableOrder.numberCustomers);
+    if (selectedOrderByTable && selectedOrderByTable.numberCustomers) {
+      setCantidadPersonas(selectedOrderByTable.numberCustomers);
     } else {
       setCantidadPersonas(0);
-    };
+    }
+    console.log("🦋Selected Order By Table", selectedOrderByTable);
+    console.log("🌝Selected Mesa", selectedMesa);
+
+
   }, [selectedMesa]);
 
   useEffect(() => {
@@ -127,7 +131,7 @@ const MesaEditor = ({
                     onAbrirPedido();
                     handleNextStep();
                   } else {
-                    handleEditOrder(orders[0].id);
+                    handleEditOrder(selectedMesa.orders[0], selectedProducts, cantidadPersonas, comentario);
                   }
                 }}
               >

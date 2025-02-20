@@ -79,7 +79,6 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             key={mesa.id}
             mesa={mesa}
             setSelectedMesa={(mesaSeleccionada) => {
-              // onSelectMesa(mesaSeleccionada.id); // Notifica al componente padre
               onSelectMesa(mesaSeleccionada); // Notifica al componente padre
             }}
             handleOpenModal={handleOpenModal}

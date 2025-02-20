@@ -19,7 +19,7 @@ type OrderContextType = {
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (mesa: MesaInterface, cantidadPersonas: number, comentario: string) => Promise<void>;
-  handleEditOrder: (orderId: string) => Promise<void>;
+  handleEditOrder: (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => Promise<void>
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
 
@@ -40,6 +40,7 @@ const OrderContext = createContext<OrderContextType>({
   handleEditOrder: async () => { },
   handleDeleteOrder: async () => { },
   handleResetSelectedOrder: () => { },
+
 });
 
 export const useOrderContext = () => {
@@ -80,11 +81,16 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
             method: "GET",
           });
           const data = await response.json();
+
           setSelectedOrderByTable(data);
+
           console.group("FETCH ORDER BY SELECTED TABLE");
-          console.log("Data response de order", data);
+          console.log("🦋Selected order by table:", setSelectedOrderByTable);
+
           handleSetProductsByOrder(data.orderDetails); // TODO: ESPERANDO CAMBIOS DE EVA
+
           console.groupEnd();
+
         } else {
           setSelectedOrderByTable(null);
         }
@@ -208,16 +214,21 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     }
   };
 
-  const handleEditOrder = async (id: string) => {
+  const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
     }
+
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productsDetails: [...selectedProducts] }),
+        body: JSON.stringify({
+          productsDetails: [...selectedProducts],
+          numberCustomers: numberCustomers,
+          comment: comment
+        }),
       });
 
       if (!response.ok) {
