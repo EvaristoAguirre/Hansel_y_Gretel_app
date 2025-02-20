@@ -80,7 +80,12 @@ export class OrderRepository {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
 
       if (!order) {
@@ -239,7 +244,7 @@ export class OrderRepository {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails'],
+        relations: ['orderDetails.product'],
       });
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
