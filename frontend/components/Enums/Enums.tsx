@@ -7,6 +7,8 @@ export enum TableState {
 
 
 export enum OrderState {
-  PENDING = 'pending',
+  AVAILABLE = 'available',
+  OPEN = 'open',
+  PENDING_PAYMENT = 'pending_payment',
   CLOSED = 'closed',
 }

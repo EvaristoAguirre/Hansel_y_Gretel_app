@@ -7,7 +7,7 @@ import SalaModal from "./SalaModal";
 import { StepperTable } from "../Mesa/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
 
-const Salas = () => {
+const Rooms = () => {
   const {
     salas,
     selectedSala,
@@ -214,4 +214,4 @@ const Salas = () => {
   );
 };
 
-export default Salas;
+export default Rooms;

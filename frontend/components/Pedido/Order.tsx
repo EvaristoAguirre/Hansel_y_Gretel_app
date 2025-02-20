@@ -4,19 +4,22 @@ import { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Product } from "./PedidoEditor";
 import { useOrderContext } from '../../app/context/order.context';
+import { orderToPending } from "@/api/order";
 
 export interface OrderProps {
   imprimirComanda: any
   handleDeleteOrder: any
   selectedMesa: MesaInterface;
+  handleNextStep: () => void
 }
 
 const Order: React.FC<OrderProps> = ({
-  imprimirComanda,
   selectedMesa,
+  handleNextStep
 }) => {
   const {
     selectedOrderByTable,
+    setSelectedOrderByTable,
     confirmedProducts,
     handleDeleteOrder
   } = useOrderContext();
@@ -34,7 +37,18 @@ const Order: React.FC<OrderProps> = ({
       }
     };
     calcularTotal();
+
   }, [confirmedProducts]);
+
+  const handlePayOrder = async () => {
+
+    if (selectedOrderByTable) {
+      const ordenPendingPay = await orderToPending(selectedOrderByTable.id);
+
+      setSelectedOrderByTable(ordenPendingPay);
+    }
+    handleNextStep();
+  };
 
   return (
     <>
@@ -160,9 +174,11 @@ const Order: React.FC<OrderProps> = ({
                   backgroundColor: "#7e9d8a",
                   "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
-                onClick={imprimirComanda}
+                onClick={() => {
+                  handlePayOrder();
+                }}
               >
-                <Print style={{ marginRight: "5px" }} /> Imprimir Comanda
+                <Print style={{ marginRight: "5px" }} /> Imprimir ticket
               </Button>
               {
                 confirmedProducts.length > 0 &&

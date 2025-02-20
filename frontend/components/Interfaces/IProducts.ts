@@ -65,3 +65,20 @@ export interface SelectedProductsI {
   price: number;
   name: string
 };
+
+export interface IConfirmedProducts {
+  id: string;
+  isActive: boolean;
+  orderId: string;
+  product: {
+    id: string;
+    code: number;
+    name: string;
+    description: string;
+    price: string;
+  };
+  quantity: number;
+  subtotal: number;
+  unitaryPrice: string;
+  batchId: string;
+};

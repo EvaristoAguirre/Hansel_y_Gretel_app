@@ -15,7 +15,6 @@ import { Add, Remove, Delete } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from '../../app/context/order.context';
 import "../../styles/pedidoEditor.css";
-import { log } from 'console';
 
 export interface Product {
   price: number;
@@ -39,6 +38,7 @@ const PedidoEditor = ({
 
   const {
     selectedProducts,
+    setSelectedProducts,
     confirmedProducts,
     selectedOrderByTable,
     handleSelectedProducts,
@@ -53,7 +53,8 @@ const PedidoEditor = ({
 
   const confirmarPedido = () => {
     if (selectedOrderByTable) {
-      handleEditOrder(selectedOrderByTable.id);
+      handleEditOrder(selectedOrderByTable.id, selectedProducts, selectedOrderByTable.numberCustomers, selectedOrderByTable.comment);
+      setSelectedProducts([]);
       handleNextStep();
     }
   };
@@ -68,9 +69,6 @@ const PedidoEditor = ({
       );
     };
     calcularSubtotal();
-
-    console.log("🚀selectedProducts:", selectedProducts);
-    console.log("✅confirmedProducts:", confirmedProducts);
 
   }, [selectedProducts]);
 
@@ -140,7 +138,94 @@ const PedidoEditor = ({
               )}
             />
 
+            {/* PRODUCTOS SELECCIONADOS */}
+            <div>PRODUCTOS CONFIRMADOS</div>
+            {confirmedProducts.length > 0 ? (
+              <List
+                className="custom-scrollbar"
+                style={{
+                  maxHeight: "12rem",
+                  overflowY: "auto",
+                  border: "2px solid #856D5E",
+                  borderRadius: "5px",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {confirmedProducts.map((item, index) => (
+                  <ListItem
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      height: "2.3rem",
+                      margin: "0.3rem 0",
+                      color: "#ffffff",
+                      borderBottom: "1px solid #856D5E",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <IconButton onClick={() => decreaseProductNumber(item.productId)}>
+                        <Remove color="error" />
+                      </IconButton>
+                      <Typography
+                        sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
+                        style={{
+                          color: "black",
+                          width: "2rem",
+                          textAlign: "center",
+                          borderRadius: "5px",
+                        }}
+                      >
+                        {item.quantity}
+                      </Typography>
+                      <IconButton onClick={() => increaseProductNumber(item.productId)}>
+                        <Add color="success" />
+                      </IconButton>
+                    </div>
+                    <Tooltip title={item.name} arrow>
+                      <ListItemText
+                        style={{
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 1,
+                          overflow: "hidden",
+                          maxWidth: "5rem",
+                        }}
+                        primary={item.name}
+                      />
+                    </Tooltip>
+                    <Typography style={{ color: "black" }}>
+                      ${item.price * item.quantity}
+                    </Typography>
+                    <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
+                      <Delete />
+                    </IconButton>
+                  </ListItem>
+                ))}
+
+
+              </List>
+            ) : (
+              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
+                No hay productos confirmados.
+              </Typography>
+            )}
+            <Typography
+              style={{
+                width: "50%",
+                margin: "1rem 0",
+                color: "black",
+                fontWeight: "bold",
+              }}
+            >
+              Subtotal: ${subtotal}
+            </Typography>
+
             {/* PRODUCTOS PRE-SELECCIONADOS */}
+            <div>PRODUCTOS PRE-SELECCIONADOS</div>
             {selectedProducts.length > 0 ? (
               <List
                 className="custom-scrollbar"
@@ -237,7 +322,7 @@ const PedidoEditor = ({
               }}
               onClick={confirmarPedido}
             >
-              Confirmar Productos
+              Imprimir Comanda
             </Button>
             {
               selectedProducts.length > 0 &&

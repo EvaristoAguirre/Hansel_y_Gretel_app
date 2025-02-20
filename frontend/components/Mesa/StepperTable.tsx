@@ -6,13 +6,13 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import { OrderCreated, useOrderStore } from '../Pedido/useOrderStore';
 import MesaEditor from './MesaEditor';
 import PedidoEditor, { Product } from '../Pedido/PedidoEditor';
 import Order from '../Pedido/Order';
 import { useOrderContext } from '../../app/context/order.context';
+import PayOrder from '../Pedido/Pay';
 
-const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación'];
+const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
 
 interface Props {
   selectedMesa: MesaInterface;
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const StepperTable: React.FC<Props> = (
-  { selectedMesa, view, onAbrirPedido, activeStep, setActiveStep }
+  { selectedMesa, onAbrirPedido, activeStep, setActiveStep }
 ) => {
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>({});
 
@@ -93,13 +93,16 @@ export const StepperTable: React.FC<Props> = (
               imprimirComanda={imprimirComanda}
               handleDeleteOrder={handleReset}
               selectedMesa={selectedMesa}
+              handleNextStep={handleNextStep}
             />
           ) : (
             <div className='flex justify-center text-red-500 font-bold my-16'>No hay productos confirmados, volver al paso 2</div>
           )
         );
-      default:
-        return <Typography>Paso desconocido</Typography>;
+      case 3:
+        return (
+          <PayOrder handleNextStep={handleNextStep} />
+        );
     }
   };
 

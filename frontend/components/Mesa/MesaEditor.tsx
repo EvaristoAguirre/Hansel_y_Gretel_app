@@ -39,11 +39,7 @@ const MesaEditor = ({
     } else {
       setCantidadPersonas(0);
     }
-    console.log("🦋Selected Order By Table", selectedOrderByTable);
-    console.log("🌝Selected Mesa", selectedMesa);
-
-
-  }, [selectedMesa]);
+  }, [selectedMesa, selectedOrderByTable]);
 
   useEffect(() => {
     setTableFields();
@@ -132,6 +128,12 @@ const MesaEditor = ({
                     handleNextStep();
                   } else {
                     handleEditOrder(selectedMesa.orders[0], selectedProducts, cantidadPersonas, comentario);
+                    Swal.fire(
+                      "Cambios Guardados",
+                      "Los cambios se han guardado correctamente.",
+                      "success"
+                    )
+                    handleNextStep();
                   }
                 }}
               >

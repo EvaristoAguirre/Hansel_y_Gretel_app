@@ -6,9 +6,11 @@ import Swal from "sweetalert2";
 import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/IProducts';
 import { OrderCreated, useOrderStore } from '../../components/Pedido/useOrderStore';
 import { useRoomContext } from './room.context';
+import { OrderDetails } from '../../../backend/src/Order/order_details.entity';
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
+  setSelectedProducts: (products: SelectedProductsI[]) => void;
   confirmedProducts: SelectedProductsI[];
   selectedOrderByTable: OrderCreated | null;
   setSelectedOrderByTable: (order: OrderCreated | null) => void;
@@ -27,6 +29,7 @@ type OrderContextType = {
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
+  setSelectedProducts: () => { },
   confirmedProducts: [],
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
@@ -84,10 +87,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
           setSelectedOrderByTable(data);
 
-          console.group("FETCH ORDER BY SELECTED TABLE");
-          console.log("🦋Selected order by table:", setSelectedOrderByTable);
+          const productsByOrder = data.orderDetails.map((item: OrderDetails) => ({
+            ...item.product,
+            quantity: item.quantity,
+          }));
 
-          handleSetProductsByOrder(data.orderDetails); // TODO: ESPERANDO CAMBIOS DE EVA
+          handleSetProductsByOrder(productsByOrder);
 
           console.groupEnd();
 
@@ -127,13 +132,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
   const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
     setConfirmedProducts(confirmedProducts);
-    setSelectedProducts(confirmedProducts);
-
-    console.group("HANDLE SET PRODUCTS BY ORDER");
-    console.log("Productos confirmados:", confirmedProducts);
-    console.log("Productos seleccionados:", selectedProducts);
-    console.groupEnd();
-
   };
 
   const handleDeleteSelectedProduct = (id: string) => {
@@ -215,6 +213,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
+
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
@@ -239,15 +238,16 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
       const updatedOrder = await response.json();
 
-      const formattedProducts = updatedOrder.orderDetails.map((item: any) => ({
-        productId: item.product.id,
+      const productsByOrder = updatedOrder.orderDetails.map((item: OrderDetails) => ({
+        ...item.product,
         quantity: item.quantity,
-        price: parseFloat(item.unitaryPrice),
-        name: item.product.name,
       }));
 
-      setConfirmedProducts(formattedProducts);
+      setConfirmedProducts(productsByOrder);
+
       updateOrder(updatedOrder);
+
+      setSelectedOrderByTable(updatedOrder);
 
     } catch (error) {
       console.error(error);
@@ -287,6 +287,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     <OrderContext.Provider
       value={{
         selectedProducts,
+        setSelectedProducts,
         confirmedProducts,
         selectedOrderByTable,
         setSelectedOrderByTable,
