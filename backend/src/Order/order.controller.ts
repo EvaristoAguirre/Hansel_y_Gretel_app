@@ -13,7 +13,7 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
-import { instanceToPlain } from 'class-transformer';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 
 @Controller('order')
 export class OrderController {
@@ -38,9 +38,9 @@ export class OrderController {
   async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
-  ): Promise<Order> {
+  ): Promise<OrderSummaryResponseDto> {
     const order = await this.orderService.updateOrder(id, updateData);
-    return instanceToPlain(order) as Order;
+    return order;
   }
 
   @Delete(':id')
