@@ -4,6 +4,7 @@ import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Table } from './table.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DeleteResult } from 'typeorm';
 
 @Injectable()
 export class TableService {
@@ -27,7 +28,7 @@ export class TableService {
     return tableUpdated;
   }
 
-  async deleteTable(id: string): Promise<string> {
+  async deleteTable(id: string): Promise<DeleteResult> {
     const tableDelete = await this.tableRepository.deleteTable(id);
     await this.eventEmitter.emit('table.deleted', {
       table: tableDelete,
