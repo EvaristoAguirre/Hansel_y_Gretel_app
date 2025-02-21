@@ -24,7 +24,7 @@ export class UpdateTableDto {
   coment?: string;
 
   @IsOptional()
-  @IsEnum({ enum: TableState })
+  @IsEnum(TableState)
   state?: TableState;
 
   @IsOptional()

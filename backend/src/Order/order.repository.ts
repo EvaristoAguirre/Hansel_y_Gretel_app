@@ -14,6 +14,8 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { ProductSummary } from 'src/DTOs/productSummary.dto';
 
 @Injectable()
 export class OrderRepository {
@@ -73,7 +75,10 @@ export class OrderRepository {
     }
   }
 
-  async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+  async updateOrder(
+    id: string,
+    updateData: UpdateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');
     }
@@ -176,7 +181,49 @@ export class OrderRepository {
         }
       }
 
-      return await this.orderRepository.save(order);
+      // Guardar la orden actualizada
+      const updatedOrder = await this.orderRepository.save(order);
+
+      // Crear un resumen de los productos en la orden
+      const productSummary: Record<string, ProductSummary> =
+        updatedOrder.orderDetails.reduce(
+          (acc, detail) => {
+            const productId = detail.product.id;
+            const unitaryPrice = Number(detail.unitaryPrice);
+            const subtotal = Number(detail.subtotal);
+            if (!acc[productId]) {
+              acc[productId] = {
+                productId: detail.product.id,
+                productName: detail.product.name,
+                quantity: 0,
+                unitaryPrice: unitaryPrice,
+                subtotal: 0,
+              };
+            }
+            acc[productId].quantity += detail.quantity;
+            acc[productId].subtotal += subtotal;
+            return acc;
+          },
+          {} as Record<string, ProductSummary>,
+        );
+
+      const productSummaryArray: ProductSummary[] =
+        Object.values(productSummary);
+
+      // Crear la respuesta
+      const response = new OrderSummaryResponseDto();
+      response.id = updatedOrder.id;
+      response.state = updatedOrder.state;
+      response.numberCustomers = updatedOrder.numberCustomers;
+      response.comment = updatedOrder.comment;
+      response.table = {
+        id: updatedOrder.table.id,
+        name: updatedOrder.table.name,
+      };
+      response.total = updatedOrder.total;
+      response.products = productSummaryArray;
+
+      return response;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -382,6 +429,36 @@ export class OrderRepository {
 
       throw new InternalServerErrorException(
         'Error closing the order. Please try again later.',
+      );
+    }
+  }
+
+  async cancelOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+      if (updateData.state && order.state !== OrderState.CLOSED) {
+        order.state = updateData.state;
+      }
+      return await this.orderRepository.save(order);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error canceling the order. Please try again later.',
       );
     }
   }
