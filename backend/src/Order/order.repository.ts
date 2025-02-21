@@ -431,4 +431,34 @@ export class OrderRepository {
       );
     }
   }
+
+  async cancelOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+      if (updateData.state && order.state !== OrderState.CLOSED) {
+        order.state = updateData.state;
+      }
+      return await this.orderRepository.save(order);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error canceling the order. Please try again later.',
+      );
+    }
+  }
 }

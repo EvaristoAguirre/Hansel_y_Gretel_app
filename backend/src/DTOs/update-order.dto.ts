@@ -24,10 +24,10 @@ export class UpdateOrderDto {
   isActive?: boolean;
 
   @IsOptional()
-  @IsEnum({ enum: OrderState })
+  @IsEnum(OrderState)
   state?: OrderState;
 
-  @IsOptional() //esto esta de mas
+  @IsOptional()
   @IsString()
   table?: string;
 

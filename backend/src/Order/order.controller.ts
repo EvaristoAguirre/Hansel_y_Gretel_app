@@ -42,6 +42,13 @@ export class OrderController {
     const order = await this.orderService.updateOrder(id, updateData);
     return order;
   }
+  @Patch('cancel/:id')
+  async cancelOrder(
+    @Param('id') id: string,
+    @Body() updateData: UpdateOrderDto,
+  ): Promise<Order> {
+    return await this.orderService.cancelOrder(id, updateData);
+  }
 
   @Delete(':id')
   deleteOrder(@Param('id') id: string): Promise<string> {
