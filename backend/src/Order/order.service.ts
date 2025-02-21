@@ -63,4 +63,8 @@ export class OrderService {
   async closeOrder(id: string): Promise<Order> {
     return await this.orderRepository.closeOrder(id);
   }
+
+  async cancelOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+    return await this.orderRepository.cancelOrder(id, updateData);
+  }
 }
