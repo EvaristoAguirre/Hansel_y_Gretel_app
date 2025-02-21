@@ -1,7 +1,8 @@
 import { orderToClosed } from "@/api/order";
-import { Payment } from "@mui/icons-material";
+import { Payment, TableBar } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { useOrderContext } from '../../app/context/order.context';
 
 export interface PayOrderProps {
@@ -29,14 +30,37 @@ const PayOrder: React.FC<PayOrderProps> = (
 
 
 
-  const handleCloseOrder = async () => {
-
+  const handlePayOrder = async () => {
     if (selectedOrderByTable) {
       const ordenPendingPay = await orderToClosed(selectedOrderByTable.id);
-
-      setSelectedOrderByTable(ordenPendingPay);
+      if (ordenPendingPay) {
+        setSelectedOrderByTable(null);
+      } else {
+        Swal.fire("Error", "No se pudo pagar la orden.", "error");
+      }
+      //TODO: cuando pasa a pagada, la orden se cierra? y la mesa tmb. 
     }
     handleNextStep();
+  };
+
+  const handleCloseOrderAndTable = async () => {
+    //TODO: Cerrar orden y la mesa, o pasarla a disponible.
+    //TODO: el handleNextStep pasaría al paso 1 o se completa, revisar eso.
+
+    handleNextStep();
+  }
+
+  const orderStates = {
+    "pending_payment": "PENDIENTE DE PAGO",
+    "open": "ORDEN ABIERTA",
+    "cancelled": "ORDEN CANCELADA",
+    "paid": "ORDEN PAGADA",
+  };
+  const orderStyles = {
+    "pending_payment": "text-red-500",
+    "open": "text-orange-500",
+    "cancelled": "text-gray-500",
+    "paid": "text-green-500"
   };
 
   return (
@@ -76,35 +100,52 @@ const PayOrder: React.FC<PayOrderProps> = (
           }}
         >
           Pago:
-          <p className={"text-red-500"}>
-            {selectedOrderByTable?.state}
-          </p>
+          {
+            selectedOrderByTable ?
+              <p className={orderStyles[selectedOrderByTable?.state as keyof typeof orderStates]}>
+                {orderStates[selectedOrderByTable?.state as keyof typeof orderStates] || "MESA SIN ORDEN"}
+              </p>
+              :
+              <p>MESA SIN ORDEN</p>
+          }
         </div>
       </div>
 
       <div>
         {
-          // selectedOrderByTable
-          //   ? (
-          //     <Box display="flex" justifyContent="center" alignItems="center">
-          //       <CircularProgress />
-          //       <Typography sx={{ marginLeft: "1rem" }}>Procesando pago...</Typography>
-          //     </Box>
-          //   )
-          //   : (
-          <Button
-            fullWidth
-            variant="contained"
-            sx={{
-              backgroundColor: "#7e9d8a", "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-            }}
+          <>
+            {
+              selectedOrderByTable &&
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  mt: 2, backgroundColor: "#7e9d8a", "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                }}
 
-            disabled={confirmedProducts.length === 0}
-            onClick={() => handleCloseOrder()}
-          >
-            <Payment style={{ marginRight: "5px" }} /> Cambiar a Orden Pagada
-          </Button>
-          // )
+                disabled={confirmedProducts.length === 0}
+                onClick={() => handlePayOrder()}
+              >
+                <Payment style={{ marginRight: "5px" }} /> Cambiar a Orden Pagada
+              </Button>
+            }
+            {
+              !selectedOrderByTable &&
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  mt: 2, backgroundColor: "#7e9d8a", color: "black", "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                }}
+
+                disabled={confirmedProducts.length === 0}
+                onClick={() => handleCloseOrderAndTable()}
+              >
+                <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:  Disponible
+              </Button>
+            }
+          </>
+
         }
       </div>
     </div>
