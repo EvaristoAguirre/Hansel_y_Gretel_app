@@ -6,6 +6,8 @@ import MesaModal from "./TableModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
+import TablesStatus from "./TablesStatus";
+import TableCard from "./TableCard";
 
 const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
@@ -58,15 +60,19 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
         flexDirection: "column",
       }}
     >
-      <Button
-        variant="outlined"
-        color="primary"
-        className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
+      <div className="flex flex-wrap justify-between">
+        <Button
+          variant="outlined"
+          color="primary"
+          className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
 
-        onClick={() => handleOpenModal("create")}
-      >
-        + Agregar mesa
-      </Button>
+          onClick={() => handleOpenModal("create")}
+        >
+          + Agregar mesa
+        </Button>
+        <TablesStatus />
+      </div>
+
 
       <div
         className="custom-scrollbar flex gap-4 
@@ -75,7 +81,7 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
           maxHeight: "90vh",
         }}>
         {mesasFiltradas.map((mesa) => (
-          <MesaCard
+          <TableCard
             key={mesa.id}
             mesa={mesa}
             setSelectedMesa={(mesaSeleccionada) => {

@@ -15,7 +15,13 @@ const TableCard: React.FC<MesaCardProps> = ({
       style={{
         width: "30%",
         height: "5rem",
-        backgroundColor: mesa.state === "closed" ? "#f28b82" : "#7e9d8a",
+        backgroundColor: "black",
+        borderColor:
+          mesa.state === "open" ? "#d94d22" :
+            mesa.state === "available" ? "#21b421" :
+              mesa.state === "pending_payment" ? "#ff0000" : "#21b492",
+        borderWidth: 2,
+        borderStyle: "solid",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",

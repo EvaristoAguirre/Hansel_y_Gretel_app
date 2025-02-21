@@ -2,10 +2,11 @@ import React from "react";
 import { useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Mesa from "../Table/Table";
 import SalaModal from "./RoomModal";
 import { StepperTable } from "../Table/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
+import Table from "../Table/Table";
+import TablesStatus from "../Table/TablesStatus";
 
 const Rooms = () => {
   const {
@@ -166,9 +167,9 @@ const Rooms = () => {
       >
         {/* contenedor de Mesas */}
         <Box
-          className="w-full p-2  lg:w-2/4">
+          className="w-full p-2 ">
           {selectedSala && (
-            <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
+            <Table salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}
         </Box>
         {/* contenedor de Armar pedido */}
