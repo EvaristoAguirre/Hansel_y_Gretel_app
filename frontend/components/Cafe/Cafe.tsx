@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
-import Salas from "../Salas/Rooms";
+import Salas from "../Rooms/Rooms";
 import OrderProvider from '../../app/context/order.context';
 import RoomProvider from "@/app/context/room.context";
 

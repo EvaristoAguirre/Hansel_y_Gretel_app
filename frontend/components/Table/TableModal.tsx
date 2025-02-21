@@ -14,7 +14,7 @@ interface Errors {
   [clave: string]: string;
 }
 
-const MesaModal: React.FC<MesaModalProps> = ({
+const TableModal: React.FC<MesaModalProps> = ({
   open,
   type,
   form,
@@ -182,4 +182,4 @@ const MesaModal: React.FC<MesaModalProps> = ({
   );
 };
 
-export default MesaModal;
+export default TableModal;

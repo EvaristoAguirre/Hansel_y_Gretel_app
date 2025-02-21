@@ -2,7 +2,7 @@ import { Print } from "@mui/icons-material";
 import { Button, List, ListItem, ListItemText, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-import { Product } from "./PedidoEditor";
+import { Product } from "./OrderEditor";
 import { useOrderContext } from '../../app/context/order.context';
 import { orderToPending } from "@/api/order";
 

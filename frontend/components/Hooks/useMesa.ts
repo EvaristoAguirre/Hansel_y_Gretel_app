@@ -4,8 +4,8 @@ import { TableState } from "../Enums/Enums";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { MesaForm } from "../Interfaces/Cafe_interfaces";
-import { useTableStore } from "../Mesa/useTableStore";
-import { useOrderStore } from "../Pedido/useOrderStore";
+import { useTableStore } from "../Table/useTableStore";
+import { useOrderStore } from "../Order/useOrderStore";
 
 export const useMesa = (salaId: string) => {
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);

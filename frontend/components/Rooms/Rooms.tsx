@@ -2,9 +2,9 @@ import React from "react";
 import { useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Mesa from "../Mesa/Mesa";
-import SalaModal from "./SalaModal";
-import { StepperTable } from "../Mesa/StepperTable";
+import Mesa from "../Table/Table";
+import SalaModal from "./RoomModal";
+import { StepperTable } from "../Table/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
 
 const Rooms = () => {

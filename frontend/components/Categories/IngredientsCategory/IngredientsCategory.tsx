@@ -15,7 +15,7 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 
-const CategoriasIngredientes = () => {
+const IngredientsCategory = () => {
   const [nombre, setNombre] = React.useState("");
   const categorias = [
     {
@@ -58,7 +58,7 @@ const CategoriasIngredientes = () => {
   };
 
   const CrearCategoria = (nombre: string) => {
-    categorias.push({nombre: nombre, productos: [], id: "4"})
+    categorias.push({ nombre: nombre, productos: [], id: "4" })
   }
 
   //Configuración DataGrid
@@ -264,4 +264,4 @@ const CategoriasIngredientes = () => {
   );
 };
 
-export default CategoriasIngredientes;
+export default IngredientsCategory;

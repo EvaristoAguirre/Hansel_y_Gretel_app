@@ -6,11 +6,11 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import MesaEditor from './MesaEditor';
-import PedidoEditor, { Product } from '../Pedido/PedidoEditor';
-import Order from '../Pedido/Order';
+import MesaEditor from './TableEditor';
+import PedidoEditor, { Product } from '../Order/OrderEditor';
+import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
-import PayOrder from '../Pedido/Pay';
+import PayOrder from '../Order/Pay';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
 

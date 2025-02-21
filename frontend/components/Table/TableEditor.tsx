@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
-import { useOrderStore } from "../Pedido/useOrderStore";
+import { useOrderStore } from "../Order/useOrderStore";
 import { useTableStore } from "./useTableStore";
 import { useOrderContext } from '../../app/context/order.context';
 import { log } from 'console';
@@ -15,7 +15,7 @@ interface Props {
   handleNextStep: () => void
 }
 
-const MesaEditor = ({
+const TableEditor = ({
   selectedMesa,
   view,
   onAbrirPedido,
@@ -147,4 +147,4 @@ const MesaEditor = ({
   );
 };
 
-export default MesaEditor;
+export default TableEditor;

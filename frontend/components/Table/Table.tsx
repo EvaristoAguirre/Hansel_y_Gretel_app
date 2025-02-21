@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
-import MesaCard from "./MesaCard";
-import MesaModal from "./MesaModal";
+import MesaCard from "./TableCard";
+import MesaModal from "./TableModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 
-const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
+const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const {
     // selectedMesa,
@@ -110,4 +110,4 @@ const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
   );
 };
 
-export default Mesa;
+export default Table;

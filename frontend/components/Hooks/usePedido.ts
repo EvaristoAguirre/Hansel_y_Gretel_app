@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { URI_ORDER, URI_ORDER_OPEN } from "../URI/URI";
-import { useOrderStore } from "../Pedido/useOrderStore";
+import { useOrderStore } from "../Order/useOrderStore";
 import Swal from "sweetalert2";
 import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useProductStore } from "./useProductStore";
-import { useTableStore } from "../Mesa/useTableStore";
+import { useTableStore } from "../Table/useTableStore";
 import { IOrderDetails } from "../Interfaces/IOrderDetails";
 import { SelectedProductsI } from '../Interfaces/IProducts';
 import { useOrderContext } from '../../app/context/order.context';

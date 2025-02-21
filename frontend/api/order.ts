@@ -27,3 +27,23 @@ export const orderToClosed = async (id: string) => {
   }
   return await response.json();
 };
+
+export const deleteOrder = async (id: string) => {
+  const response = await fetch(`${URI_ORDER}/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (response.status !== 200) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+
+  const responseText = await response.text();
+  if (responseText === "Order successfully deleted") {
+    return true;
+  } else {
+    throw new Error(`Error: ${responseText}`);
+  }
+};

@@ -18,7 +18,7 @@ import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 import { fetchCategories } from "@/api/categories";
 
-const CategoriasProductos: React.FC = () => {
+const ProductsCategory: React.FC = () => {
   const {
     categories,
     setCategories,
@@ -222,4 +222,4 @@ const CategoriasProductos: React.FC = () => {
   );
 };
 
-export default CategoriasProductos;
+export default ProductsCategory;

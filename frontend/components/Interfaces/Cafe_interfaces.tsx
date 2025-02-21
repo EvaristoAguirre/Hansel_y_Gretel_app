@@ -1,6 +1,6 @@
 import { OrderState, TableState } from "../Enums/Enums";
-import { TableCreated } from "../Mesa/useTableStore";
-import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
+import { TableCreated } from "../Table/useTableStore";
+import { OrderDetailsCreated } from "../Order/useOrderDetailsStore";
 
 export interface PedidoInterface {
   id: string;

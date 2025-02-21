@@ -6,7 +6,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
 
-const MesaCard: React.FC<MesaCardProps> = ({
+const TableCard: React.FC<MesaCardProps> = ({
   mesa, handleOpenModal, handleDelete, setSelectedMesa
 }) => {
 
@@ -99,4 +99,4 @@ const MesaCard: React.FC<MesaCardProps> = ({
   );
 };
 
-export default MesaCard;
+export default TableCard;

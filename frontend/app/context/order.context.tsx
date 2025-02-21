@@ -4,7 +4,7 @@ import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import Swal from "sweetalert2";
 import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/IProducts';
-import { OrderCreated, useOrderStore } from '../../components/Pedido/useOrderStore';
+import { OrderCreated, useOrderStore } from '../../components/Order/useOrderStore';
 import { useRoomContext } from './room.context';
 import { OrderDetails } from '../../../backend/src/Order/order_details.entity';
 
@@ -12,6 +12,7 @@ type OrderContextType = {
   selectedProducts: SelectedProductsI[];
   setSelectedProducts: (products: SelectedProductsI[]) => void;
   confirmedProducts: SelectedProductsI[];
+  setConfirmedProducts: (products: SelectedProductsI[]) => void;
   selectedOrderByTable: OrderCreated | null;
   setSelectedOrderByTable: (order: OrderCreated | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
@@ -31,6 +32,7 @@ const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
   setSelectedProducts: () => { },
   confirmedProducts: [],
+  setConfirmedProducts: () => { },
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
   handleSelectedProducts: () => { },
@@ -289,6 +291,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         selectedProducts,
         setSelectedProducts,
         confirmedProducts,
+        setConfirmedProducts,
         selectedOrderByTable,
         setSelectedOrderByTable,
         handleSelectedProducts,

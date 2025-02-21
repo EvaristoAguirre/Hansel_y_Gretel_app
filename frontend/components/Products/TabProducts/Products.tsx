@@ -1,5 +1,5 @@
 "use client";
-import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";

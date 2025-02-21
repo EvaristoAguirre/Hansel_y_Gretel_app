@@ -5,7 +5,7 @@ import { SalaModalProps } from "../Interfaces/Cafe_interfaces";
 
 
 
-const SalaModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
+const RoomModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -61,4 +61,4 @@ const SalaModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
   );
 };
 
-export default SalaModal;
+export default RoomModal;

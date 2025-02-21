@@ -15,6 +15,9 @@ import { Add, Remove, Delete } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from '../../app/context/order.context';
 import "../../styles/pedidoEditor.css";
+import { deleteOrder } from "@/api/order";
+import Swal from "sweetalert2";
+import { log } from 'console';
 
 export interface Product {
   price: number;
@@ -26,7 +29,7 @@ export interface Product {
 interface Props {
   handleNextStep: () => void;
 }
-const PedidoEditor = ({
+const useOrderDetailsStore = ({
   handleNextStep,
 }: Props) => {
 
@@ -40,16 +43,20 @@ const PedidoEditor = ({
     selectedProducts,
     setSelectedProducts,
     confirmedProducts,
+    setConfirmedProducts,
     selectedOrderByTable,
+    setSelectedOrderByTable,
     handleSelectedProducts,
     handleDeleteSelectedProduct,
     increaseProductNumber,
     decreaseProductNumber,
-    clearSelectedProducts,
     handleEditOrder
   } = useOrderContext();
 
+
+
   const [subtotal, setSubtotal] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
     if (selectedOrderByTable) {
@@ -70,10 +77,34 @@ const PedidoEditor = ({
     };
     calcularSubtotal();
 
-  }, [selectedProducts]);
+    const calculateTotal = () => {
+      setTotal(
+        confirmedProducts.reduce((acc, item) => {
+          return acc + item.price * item.quantity;
+        }, 0)
+      );
+    };
+    calculateTotal();
 
-  const handleDeleteOrderProduct = (productId: string) => {
+  }, [selectedProducts, confirmedProducts]);
 
+  const handleDeleteOrder = async (orderId: string) => {
+    console.log("ENTRA A DELETE ORDER");
+
+    const deletedOrder = await deleteOrder(orderId);
+    console.log("RESPONDE DELETE ORDER", deletedOrder);
+
+    if (deletedOrder) {
+      setSelectedOrderByTable(null);
+    }
+
+    setConfirmedProducts([]);
+
+    Swal.fire({
+      icon: "success",
+      title: "Pedido Eliminado",
+      text: "El pedido ha sido eliminado con éxito.",
+    });
   };
 
   return (
@@ -107,10 +138,11 @@ const PedidoEditor = ({
           >
             <Autocomplete
               options={productosDisponibles}
+
               getOptionLabel={(producto) =>
                 `${producto.name} - $${producto.price} (Código: ${producto.code})`
               }
-              onInputChange={(event, value) => {
+              onInputChange={(event, value, reason) => {
                 const searchTerm = value.toLowerCase();
                 setProductosDisponibles(
                   products.filter(
@@ -138,94 +170,7 @@ const PedidoEditor = ({
               )}
             />
 
-            {/* PRODUCTOS SELECCIONADOS */}
-            <div>PRODUCTOS CONFIRMADOS</div>
-            {confirmedProducts.length > 0 ? (
-              <List
-                className="custom-scrollbar"
-                style={{
-                  maxHeight: "12rem",
-                  overflowY: "auto",
-                  border: "2px solid #856D5E",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
-                }}
-              >
-                {confirmedProducts.map((item, index) => (
-                  <ListItem
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      height: "2.3rem",
-                      margin: "0.3rem 0",
-                      color: "#ffffff",
-                      borderBottom: "1px solid #856D5E",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <IconButton onClick={() => decreaseProductNumber(item.productId)}>
-                        <Remove color="error" />
-                      </IconButton>
-                      <Typography
-                        sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                        style={{
-                          color: "black",
-                          width: "2rem",
-                          textAlign: "center",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        {item.quantity}
-                      </Typography>
-                      <IconButton onClick={() => increaseProductNumber(item.productId)}>
-                        <Add color="success" />
-                      </IconButton>
-                    </div>
-                    <Tooltip title={item.name} arrow>
-                      <ListItemText
-                        style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 1,
-                          overflow: "hidden",
-                          maxWidth: "5rem",
-                        }}
-                        primary={item.name}
-                      />
-                    </Tooltip>
-                    <Typography style={{ color: "black" }}>
-                      ${item.price * item.quantity}
-                    </Typography>
-                    <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
-                      <Delete />
-                    </IconButton>
-                  </ListItem>
-                ))}
-
-
-              </List>
-            ) : (
-              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
-                No hay productos confirmados.
-              </Typography>
-            )}
-            <Typography
-              style={{
-                width: "50%",
-                margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
-              }}
-            >
-              Subtotal: ${subtotal}
-            </Typography>
-
             {/* PRODUCTOS PRE-SELECCIONADOS */}
-            <div>PRODUCTOS PRE-SELECCIONADOS</div>
             {selectedProducts.length > 0 ? (
               <List
                 className="custom-scrollbar"
@@ -235,8 +180,15 @@ const PedidoEditor = ({
                   border: "2px solid #856D5E",
                   borderRadius: "5px",
                   marginTop: "0.5rem",
+                  fontSize: "0.8rem",
                 }}
               >
+                <div
+                  className="w-2/4flex items-center 
+                  justify-start m-2 text-[#856D5E]"
+                >
+                  <h5>Productos sin confirmar:</h5>
+                </div>
                 {selectedProducts.map((item, index) => (
                   <ListItem
                     key={index}
@@ -310,10 +262,98 @@ const PedidoEditor = ({
               Subtotal: ${subtotal}
             </Typography>
 
+            <div>
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{
+                  backgroundColor: "#f9b32d",
+                  filter: "brightness(90%)",
+                  color: "black",
+                  "&:hover": { filter: "none", color: "black" },
+                }}
+                onClick={confirmarPedido}
+              >
+                CONFIRMAR PRODUCTOS A COMANDA
+              </Button>
+            </div>
+
+            {/* PRODUCTOS confirmados */}
+
+            {confirmedProducts.length > 0 ? (
+              <List
+                className="custom-scrollbar"
+                style={{
+                  maxHeight: "12rem",
+                  overflowY: "auto",
+                  border: "2px solid #856D5E",
+                  borderRadius: "5px",
+                  marginTop: "0.5rem",
+                }}
+              >
+                <div
+                  className="w-2/4flex items-center 
+                  justify-start m-2 text-[#856D5E]"
+                >
+                  <h5>Productos confirmados:</h5>
+                </div>
+                {confirmedProducts.map((item, index) => (
+                  <ListItem
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      height: "2.3rem",
+                      margin: "0.3rem 0",
+                      color: "#ffffff",
+                      borderBottom: "1px solid #856D5E",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Tooltip title={item.name} arrow>
+                      <ListItemText
+                        style={{
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 1,
+                          overflow: "hidden",
+                          maxWidth: "5rem",
+                        }}
+                        primary={item.name}
+                      />
+                    </Tooltip>
+                    <Typography style={{ color: "black" }}>
+                      ${item.price * item.quantity}
+                    </Typography>
+                    <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
+                      <Delete />
+                    </IconButton>
+                  </ListItem>
+                ))}
+
+
+              </List>
+            ) : (
+              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
+                No hay productos confirmados.
+              </Typography>
+            )}
+            <Typography
+              style={{
+                width: "50%",
+                margin: "1rem 0",
+                color: "black",
+                fontWeight: "bold",
+              }}
+            >
+              Total: ${total}
+            </Typography>
           </Box>
           {/* Botones de confirmar y cancelar */}
           <div>
-            <Button
+            {/* <Button
               fullWidth
               variant="contained"
               sx={{
@@ -322,16 +362,19 @@ const PedidoEditor = ({
               }}
               onClick={confirmarPedido}
             >
-              Imprimir Comanda
-            </Button>
+              CONFIRMAR PRODUCTOS A COMANDA
+            </Button> */}
             {
-              selectedProducts.length > 0 &&
+              confirmedProducts.length > 0 && selectedOrderByTable &&
               <Button
                 fullWidth
                 color="error"
                 variant="outlined"
                 style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                onClick={clearSelectedProducts}
+                onClick={
+                  () => handleDeleteOrder(selectedOrderByTable.id)
+
+                }
               >
                 Cancelar Pedido
               </Button>
@@ -343,4 +386,8 @@ const PedidoEditor = ({
   );
 };
 
-export default PedidoEditor;
+export default useOrderDetailsStore;
+function setInputValue(arg0: string) {
+  throw new Error("Function not implemented.");
+}
+
