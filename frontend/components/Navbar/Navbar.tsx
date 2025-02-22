@@ -76,7 +76,7 @@ const Navbar = () => {
 
         {/* Botón de menú para pantallas pequeñas */}
         <button
-          className="lg:hidden text-white focus:outline-none"
+          className="lg:hidden text-white focus:outline-none text-3xl hover:scale-105 transition-transform"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           ☰
