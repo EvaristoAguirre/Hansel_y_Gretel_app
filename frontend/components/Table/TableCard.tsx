@@ -25,6 +25,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         height: "5rem",
         backgroundColor: "#fff3de",
         // border: `2px solid ${borderColor}`,
+        boxShadow: `0px 4px 10px rgba(0, 0, 0, 0.10`,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",

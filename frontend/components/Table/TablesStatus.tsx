@@ -12,35 +12,35 @@ const TablesStatus: React.FC<TablesStatusProps> = ({ currentFilter, onFilterChan
   return (
     <Stack direction="row" spacing={1}>
       <Chip
-        className='bg-[#21b421] text-bold mt-2'
-        icon={<TableBar />}
-        label="Disponibles"
-        onClick={() => onFilterChange('available')}
-        variant={currentFilter === 'available' ? "filled" : "outlined"}
-      />
-      <Chip
-        className='bg-[#d94d22] text-bold mt-2'
-        label="Ocupadas"
-        onClick={() => onFilterChange('open')}
-        variant={currentFilter === 'open' ? "filled" : "outlined"}
-      />
-      <Chip
-        className='bg-[#f9b32d] text-bold mt-2'
-        label="Pendientes de pago"
-        onClick={() => onFilterChange('pending_payment')}
-        variant={currentFilter === 'pending_payment' ? "filled" : "outlined"}
-      />
-      <Chip
-        className='bg-[#21b492] text-bold mt-2'
-        label="Cerradas"
-        onClick={() => onFilterChange('closed')}
-        variant={currentFilter === 'closed' ? "filled" : "outlined"}
-      />
-      <Chip
+        sx={{ border: "2px solid #856D5E" }}
+        className='bg-[#fff3de] hover:bg-[#856D5E] text-bold mt-2 hover:text-white'
         label="Todas"
         color="default"
         onClick={() => onFilterChange(null)}
-        variant={currentFilter === null ? "filled" : "outlined"}
+      />
+      <Chip
+        sx={{ border: "2px solid #21b421" }}
+        className='bg-[#fff3de] text-bold mt-2 hover:bg-[#21b421] '
+        label="Disponibles"
+        onClick={() => onFilterChange('available')}
+      />
+      <Chip
+        sx={{ border: "2px solid #d94d22" }}
+        className='bg-[#fff3de] hover:bg-[#d94d22] text-bold mt-2 hover:text-white'
+        label="Ocupadas"
+        onClick={() => onFilterChange('open')}
+      />
+      <Chip
+        sx={{ border: "2px solid #f9b32d" }}
+        className='bg-[#fff3de] hover:bg-[#f9b32d] text-bold mt-2'
+        label="Pendientes de pago"
+        onClick={() => onFilterChange('pending_payment')}
+      />
+      <Chip
+        sx={{ border: "2px solid #21b492" }}
+        className='bg-[#fff3de] hover:bg-[#21b492] text-bold mt-2'
+        label="Cerradas"
+        onClick={() => onFilterChange('closed')}
       />
     </Stack>
   );
