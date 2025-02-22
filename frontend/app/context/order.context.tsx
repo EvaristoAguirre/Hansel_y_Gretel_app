@@ -92,14 +92,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
           setSelectedOrderByTable(data);
 
-          const productsByOrder = data.orderDetails.map((item: OrderDetails) => ({
-            ...item.product,
-            quantity: item.quantity,
-          }));
+          const productsByOrder = data.products;
 
           handleSetProductsByOrder(productsByOrder);
-
-          console.groupEnd();
 
         } else {
           setSelectedOrderByTable(null);

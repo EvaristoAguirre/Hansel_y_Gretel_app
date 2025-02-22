@@ -5,9 +5,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
+import { useOrderContext } from '../../app/context/order.context';
+import { useRoomContext } from '@/app/context/room.context';
 
 const TableCard: React.FC<MesaCardProps> = ({
-  mesa, handleOpenModal, handleDelete, setSelectedMesa
+  mesa, handleOpenModal, handleDelete
 }) => {
   const mesaColors = {
     available: "#21b421",
@@ -15,7 +17,7 @@ const TableCard: React.FC<MesaCardProps> = ({
     pending_payment: "#f9b32d",
     closed: "#21b492",
   };
-
+  const { selectedSala, setSelectedMesa } = useRoomContext();
   const borderColor = mesaColors[mesa.state] || mesaColors.closed;
 
   return (
@@ -33,7 +35,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         borderRadius: "0.5rem",
         cursor: "pointer",
         transition: "background-color 0.3s ease",
-        position: "relative", // Para posicionar el indicador
+        position: "relative",
       }}
       onClick={() => setSelectedMesa(mesa)}
     >

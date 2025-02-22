@@ -62,17 +62,23 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
         className="custom-scrollbar flex gap-4 overflow-x-auto lg:flex-wrap lg:overflow-y-auto pr-2 pt-2"
         style={{ maxHeight: "90vh" }}
       >
-        {mesasFiltradas.map((mesa) => (
-          <TableCard
-            key={mesa.id}
-            mesa={mesa}
-            setSelectedMesa={(mesaSeleccionada) => {
-              onSelectMesa(mesaSeleccionada);
-            }}
-            handleOpenModal={handleOpenModal}
-            handleDelete={handleDelete}
-          />
-        ))}
+        {mesasFiltradas.length > 0 ? (
+          mesasFiltradas.map((mesa) => (
+            <TableCard
+              key={mesa.id}
+              mesa={mesa}
+              setSelectedMesa={(mesaSeleccionada) => {
+                onSelectMesa(mesaSeleccionada);
+              }}
+              handleOpenModal={handleOpenModal}
+              handleDelete={handleDelete}
+            />
+          ))
+        ) : (
+          <p style={{ textAlign: "start", width: "100%", marginTop: "1rem", color: "red" }}>
+            No hay mesas en este estado
+          </p>
+        )}
         <MesaModal
           open={modalOpen}
           type={modalType}

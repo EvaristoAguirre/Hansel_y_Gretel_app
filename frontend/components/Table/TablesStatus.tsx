@@ -1,49 +1,47 @@
-import { TableBar } from '@mui/icons-material';
-import { Chip, Stack } from '@mui/material';
 import React from 'react';
+import Chip from '@mui/material/Chip';
 
-interface TablesStatusProps {
+interface Filter {
+  label: string;
+  value: string | null;
+  color: string;
+}
+
+const filters: Filter[] = [
+  { label: 'Todas', value: null, color: '#856D5E' },
+  { label: 'Disponibles', value: 'available', color: '#21b421' },
+  { label: 'Ocupadas', value: 'open', color: '#d94d22' },
+  { label: 'Pendientes de pago', value: 'pending_payment', color: '#f9b32d' },
+  { label: 'Cerradas', value: 'closed', color: '#21b492' },
+];
+
+interface FilterChipProps {
   currentFilter: string | null;
   onFilterChange: (filter: string | null) => void;
 }
 
-const TablesStatus: React.FC<TablesStatusProps> = ({ currentFilter, onFilterChange }) => {
-
+const FilterChip: React.FC<FilterChipProps> = ({ currentFilter, onFilterChange }) => {
   return (
-    <Stack direction="row" spacing={1}>
-      <Chip
-        sx={{ border: "2px solid #856D5E" }}
-        className='bg-[#fff3de] hover:bg-[#856D5E] text-bold mt-2 hover:text-white'
-        label="Todas"
-        color="default"
-        onClick={() => onFilterChange(null)}
-      />
-      <Chip
-        sx={{ border: "2px solid #21b421" }}
-        className='bg-[#fff3de] text-bold mt-2 hover:bg-[#21b421] '
-        label="Disponibles"
-        onClick={() => onFilterChange('available')}
-      />
-      <Chip
-        sx={{ border: "2px solid #d94d22" }}
-        className='bg-[#fff3de] hover:bg-[#d94d22] text-bold mt-2 hover:text-white'
-        label="Ocupadas"
-        onClick={() => onFilterChange('open')}
-      />
-      <Chip
-        sx={{ border: "2px solid #f9b32d" }}
-        className='bg-[#fff3de] hover:bg-[#f9b32d] text-bold mt-2'
-        label="Pendientes de pago"
-        onClick={() => onFilterChange('pending_payment')}
-      />
-      <Chip
-        sx={{ border: "2px solid #21b492" }}
-        className='bg-[#fff3de] hover:bg-[#21b492] text-bold mt-2'
-        label="Cerradas"
-        onClick={() => onFilterChange('closed')}
-      />
-    </Stack>
+    <div className="flex gap-2">
+      {filters.map((filter) => (
+        <Chip
+          key={filter.value}
+          label={filter.label}
+          onClick={() => onFilterChange(filter.value)}
+          sx={{
+            border: `2px solid ${filter.color}`,
+            backgroundColor: currentFilter === filter.value ? filter.color : '#fff3de',
+            color: currentFilter === filter.value ? 'white' : 'inherit',
+            mt: 2,
+            '&:hover': {
+              backgroundColor: filter.color,
+              color: 'white',
+            },
+          }}
+        />
+      ))}
+    </div>
   );
 };
 
-export default TablesStatus;
+export default FilterChip;
