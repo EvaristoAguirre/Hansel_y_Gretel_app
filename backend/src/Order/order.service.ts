@@ -45,7 +45,8 @@ export class OrderService {
     return await this.orderRepository.getAllOrders(page, limit);
   }
 
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
+    console.log('service', id);
     return await this.orderRepository.getOrderById(id);
   }
 
@@ -64,7 +65,7 @@ export class OrderService {
     return await this.orderRepository.closeOrder(id);
   }
 
-  async cancelOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
-    return await this.orderRepository.cancelOrder(id, updateData);
+  async cancelOrder(id: string): Promise<Order> {
+    return await this.orderRepository.cancelOrder(id);
   }
 }
