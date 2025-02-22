@@ -1,42 +1,47 @@
 import { TableBar } from '@mui/icons-material';
 import { Chip, Stack } from '@mui/material';
-import { useState } from 'react';
+import React from 'react';
 
-const TablesStatus = () => {
-  const initialMesas = [
-    { id: 1, color: 'primary' },
-    { id: 2, color: 'success' },
-    { id: 3, color: 'primary' },
-    { id: 4, color: 'success' },
-  ];
+interface TablesStatusProps {
+  currentFilter: string | null;
+  onFilterChange: (filter: string | null) => void;
+}
 
-  const [colorSeleccionado, setColorSeleccionado] = useState<string | null>(null);
-
-  const mesasFiltradas = colorSeleccionado
-    ? initialMesas.filter((mesa) => mesa.color === colorSeleccionado)
-    : initialMesas;
+const TablesStatus: React.FC<TablesStatusProps> = ({ currentFilter, onFilterChange }) => {
 
   return (
     <Stack direction="row" spacing={1}>
       <Chip
+        className='bg-[#21b421] text-bold mt-2'
         icon={<TableBar />}
-        label="primary"
-        color="primary"
-        onClick={() => setColorSeleccionado('primary')}
+        label="Disponibles"
+        onClick={() => onFilterChange('available')}
+        variant={currentFilter === 'available' ? "filled" : "outlined"}
       />
       <Chip
-        label="success"
-        color="success"
-        onClick={() => setColorSeleccionado('success')}
+        className='bg-[#d94d22] text-bold mt-2'
+        label="Ocupadas"
+        onClick={() => onFilterChange('open')}
+        variant={currentFilter === 'open' ? "filled" : "outlined"}
       />
       <Chip
-        label="todas"
+        className='bg-[#f9b32d] text-bold mt-2'
+        label="Pendientes de pago"
+        onClick={() => onFilterChange('pending_payment')}
+        variant={currentFilter === 'pending_payment' ? "filled" : "outlined"}
+      />
+      <Chip
+        className='bg-[#21b492] text-bold mt-2'
+        label="Cerradas"
+        onClick={() => onFilterChange('closed')}
+        variant={currentFilter === 'closed' ? "filled" : "outlined"}
+      />
+      <Chip
+        label="Todas"
         color="default"
-        onClick={() => setColorSeleccionado(null)}
+        onClick={() => onFilterChange(null)}
+        variant={currentFilter === null ? "filled" : "outlined"}
       />
-      {mesasFiltradas.map((mesa) => (
-        <div key={mesa.id}>{mesa.color}</div>
-      ))}
     </Stack>
   );
 };

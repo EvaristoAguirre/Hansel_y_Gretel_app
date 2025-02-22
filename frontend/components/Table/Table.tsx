@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
-import MesaCard from "./TableCard";
 import MesaModal from "./TableModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
@@ -12,7 +11,6 @@ import TableCard from "./TableCard";
 const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const {
-    // selectedMesa,
     modalOpen,
     modalType,
     form,
@@ -23,27 +21,19 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     handleEdit,
     handleDelete,
     setForm,
-    // setSelectedMesa,
   } = useMesa(salaId);
 
-  // TODO: Ahora se debe usar del contexto Room.
   const { selectedMesa } = useRoomContext();
-
-  const [mesasFiltradas, setMesasFiltradas] = useState<TableCreated[]>([]);
-
-  useEffect(() => {
-    const mesasFiltradas = tables.filter((mesa) => mesa.room.id === salaId);
-    setMesasFiltradas(mesasFiltradas);
-  }, [salaId, tables]);
-
-
-  const filtrarMesasPorSala = (tables: TableCreated[]) => {
-    setMesasFiltradas(tables.filter((mesa) => mesa.room.id === salaId));
-  };
-
-  useEffect(() => {
-    filtrarMesasPorSala(tables);
-  }, [salaId, tables]);
+  const [filterState, setFilterState] = useState<string | null>(null);
+  /**
+   * Filtrar mesas por sala y estado
+   * @returns mesas filtradas
+   * Esto es para renderizar solo las mesas de la sala seleccionada y
+   * mostrar solo las mesas con el estado seleccionado del componente TablesStatus
+   */
+  const mesasFiltradas = tables.filter((mesa: TableCreated) =>
+    mesa.room.id === salaId && (filterState ? mesa.state === filterState : true)
+  );
 
   useEffect(() => {
     if (selectedMesa) {
@@ -51,46 +41,37 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     }
   }, [selectedMesa]);
 
-
-
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <div className="flex flex-wrap justify-between">
         <Button
           variant="outlined"
           color="primary"
           className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
-
           onClick={() => handleOpenModal("create")}
         >
           + Agregar mesa
         </Button>
-        <TablesStatus />
+        <TablesStatus
+          currentFilter={filterState}
+          onFilterChange={(newFilter) => setFilterState(newFilter)}
+        />
       </div>
 
-
       <div
-        className="custom-scrollbar flex gap-4 
-        overflow-x-auto lg:flex-wrap lg:overflow-y-auto pr-2 pt-2"
-        style={{
-          maxHeight: "90vh",
-        }}>
+        className="custom-scrollbar flex gap-4 overflow-x-auto lg:flex-wrap lg:overflow-y-auto pr-2 pt-2"
+        style={{ maxHeight: "90vh" }}
+      >
         {mesasFiltradas.map((mesa) => (
           <TableCard
             key={mesa.id}
             mesa={mesa}
             setSelectedMesa={(mesaSeleccionada) => {
-              onSelectMesa(mesaSeleccionada); // Notifica al componente padre
+              onSelectMesa(mesaSeleccionada);
             }}
             handleOpenModal={handleOpenModal}
             handleDelete={handleDelete}
           />
-
         ))}
         <MesaModal
           open={modalOpen}
