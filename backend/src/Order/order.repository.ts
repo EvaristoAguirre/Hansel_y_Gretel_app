@@ -181,10 +181,9 @@ export class OrderRepository {
         }
       }
 
-      // Guardar la orden actualizada
       const updatedOrder = await this.orderRepository.save(order);
 
-      // Crear un resumen de los productos en la orden
+      //------------Adecuacion de la response para el front -----------//
       const productSummary: Record<string, ProductSummary> =
         updatedOrder.orderDetails.reduce(
           (acc, detail) => {
@@ -210,7 +209,6 @@ export class OrderRepository {
       const productSummaryArray: ProductSummary[] =
         Object.values(productSummary);
 
-      // Crear la respuesta
       const response = new OrderSummaryResponseDto();
       response.id = updatedOrder.id;
       response.state = updatedOrder.state;
@@ -285,19 +283,64 @@ export class OrderRepository {
     }
   }
 
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
+    console.log('repoitory', id);
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
-      return order;
+
+      //------------Adecuacion de la response para el front -----------//
+      const productSummary: Record<string, ProductSummary> =
+        order.orderDetails.reduce(
+          (acc, detail) => {
+            const productId = detail.product.id;
+            const unitaryPrice = Number(detail.unitaryPrice);
+            const subtotal = Number(detail.subtotal);
+            if (!acc[productId]) {
+              acc[productId] = {
+                productId: detail.product.id,
+                productName: detail.product.name,
+                quantity: 0,
+                unitaryPrice: unitaryPrice,
+                subtotal: 0,
+              };
+            }
+            acc[productId].quantity += detail.quantity;
+            acc[productId].subtotal += subtotal;
+            return acc;
+          },
+          {} as Record<string, ProductSummary>,
+        );
+
+      const productSummaryArray: ProductSummary[] =
+        Object.values(productSummary);
+
+      const response = new OrderSummaryResponseDto();
+      response.id = order.id;
+      response.state = order.state;
+      response.numberCustomers = order.numberCustomers;
+      response.comment = order.comment;
+      response.table = {
+        id: order.table.id,
+        name: order.table.name,
+      };
+      response.total = order.total;
+      response.products = productSummaryArray;
+
+      return response;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -433,7 +476,7 @@ export class OrderRepository {
     }
   }
 
-  async cancelOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+  async cancelOrder(id: string): Promise<Order> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
@@ -446,14 +489,21 @@ export class OrderRepository {
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
-      if (updateData.state && order.state !== OrderState.CLOSED) {
-        order.state = updateData.state;
+      if (order.state !== OrderState.CLOSED) {
+        order.state = OrderState.CANCELLED;
       }
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException(
+          'This order is closed. It cannot be cancelled.',
+        );
+      }
+
       return await this.orderRepository.save(order);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
       ) {
         throw error;
       }

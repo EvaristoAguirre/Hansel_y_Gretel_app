@@ -43,11 +43,8 @@ export class OrderController {
     return order;
   }
   @Patch('cancel/:id')
-  async cancelOrder(
-    @Param('id') id: string,
-    @Body() updateData: UpdateOrderDto,
-  ): Promise<Order> {
-    return await this.orderService.cancelOrder(id, updateData);
+  async cancelOrder(@Param('id') id: string): Promise<Order> {
+    return await this.orderService.cancelOrder(id);
   }
 
   @Delete(':id')
@@ -75,7 +72,8 @@ export class OrderController {
   }
 
   @Get(':id')
-  getOrderById(@Param('id') id: string): Promise<Order> {
+  getOrderById(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+    console.log(id);
     return this.orderService.getOrderById(id);
   }
 }
