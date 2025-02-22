@@ -7,6 +7,9 @@ import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/
 import { OrderCreated, useOrderStore } from '../../components/Order/useOrderStore';
 import { useRoomContext } from './room.context';
 import { OrderDetails } from '../../../backend/src/Order/order_details.entity';
+import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
+import { log } from 'console';
+import { TableState } from "@/components/Enums/Enums";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -76,12 +79,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    if (selectedMesa?.state === 'available') {
+    if (selectedMesa?.state === TableState.AVAILABLE) {
       return setSelectedOrderByTable(null);
     }
-    if (selectedMesa?.state === 'open' && selectedMesa.orders) {
+    if (selectedMesa && selectedMesa.orders) {
       try {
-        if (selectedMesa?.orders && selectedMesa?.orders.length > 0) {
+        if (selectedMesa?.orders.length > 0) {
           const response = await fetch(`${URI_ORDER}/${selectedMesa.orders[0]}`, {
             method: "GET",
           });
@@ -105,8 +108,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         console.error("Error al obtener el pedido:", error);
       }
     }
-  }, [selectedMesa]);
 
+  }, [selectedMesa]);
+  useEffect(() => {
+    console.log("Cambió mesa selecionada👀👀👀👀👀", selectedMesa);
+
+  }, [selectedMesa])
   useEffect(() => {
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable])
@@ -125,8 +132,8 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
       const newProduct = {
         productId: product.id,
         quantity: 1,
-        price: product.price,
-        name: product.name,
+        unitaryPrice: product.price,
+        productName: product.name,
       };
       setSelectedProducts([...selectedProducts, newProduct]);
     }
@@ -240,12 +247,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
       const updatedOrder = await response.json();
 
-      const productsByOrder = updatedOrder.orderDetails.map((item: OrderDetails) => ({
-        ...item.product,
-        quantity: item.quantity,
-      }));
+      const productsByOrder = updatedOrder.products
 
       setConfirmedProducts(productsByOrder);
+      console.log("✅✅✅✅CONFIRMED PRODUCTS", confirmedProducts);
 
       updateOrder(updatedOrder);
 

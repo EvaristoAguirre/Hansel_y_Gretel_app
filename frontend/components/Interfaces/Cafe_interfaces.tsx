@@ -17,7 +17,7 @@ export interface MozoInterface {
 export interface MesaInterface {
   id: string;
   name: string;
-  number: number;
+  number: number | null;
   coment: string;
   state: TableState;
   room: ISala;
@@ -30,7 +30,7 @@ export interface MesaForm {
   name: string;
   number: null | number;
   coment: string;
-  // state: TableState;
+  state: TableState;
 }
 
 export interface MesaCardProps {

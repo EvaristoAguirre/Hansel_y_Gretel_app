@@ -1,3 +1,4 @@
+import { MesaForm, MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_TABLE } from "@/components/URI/URI";
 
 export const validateTableByNumber = async (number: number) => {
@@ -48,3 +49,33 @@ export const validateTableByName = async (name: string) => {
     return { ok: false, status: 500, message: "Error al conectar con el servidor" };
   }
 };
+
+export const tableToOpen = async (id: string) => {
+  const response = await fetch(`${URI_TABLE}/close/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+};
+
+
+export const editTable = async (id: string, data: MesaForm) => {
+  const response = await fetch(`${URI_TABLE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...data }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+}

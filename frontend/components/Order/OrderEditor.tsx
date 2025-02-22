@@ -17,7 +17,6 @@ import { useOrderContext } from '../../app/context/order.context';
 import "../../styles/pedidoEditor.css";
 import { deleteOrder } from "@/api/order";
 import Swal from "sweetalert2";
-import { log } from 'console';
 
 export interface Product {
   price: number;
@@ -71,7 +70,7 @@ const useOrderDetailsStore = ({
     const calcularSubtotal = () => {
       setSubtotal(
         selectedProducts.reduce((acc, item) => {
-          return acc + item.price * item.quantity;
+          return acc + item.unitaryPrice * item.quantity;
         }, 0)
       );
     };
@@ -80,7 +79,7 @@ const useOrderDetailsStore = ({
     const calculateTotal = () => {
       setTotal(
         confirmedProducts.reduce((acc, item) => {
-          return acc + item.price * item.quantity;
+          return acc + item.unitaryPrice * item.quantity;
         }, 0)
       );
     };
@@ -222,7 +221,7 @@ const useOrderDetailsStore = ({
                         <Add color="success" />
                       </IconButton>
                     </div>
-                    <Tooltip title={item.name} arrow>
+                    <Tooltip title={item.productName} arrow>
                       <ListItemText
                         style={{
                           color: "black",
@@ -232,11 +231,11 @@ const useOrderDetailsStore = ({
                           overflow: "hidden",
                           maxWidth: "5rem",
                         }}
-                        primary={item.name}
+                        primary={item.productName}
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.price * item.quantity}
+                      ${item.unitaryPrice * item.quantity}
                     </Typography>
                     <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
                       <Delete />
@@ -311,7 +310,7 @@ const useOrderDetailsStore = ({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Tooltip title={item.name} arrow>
+                    <Tooltip title={item.productName} arrow>
                       <ListItemText
                         style={{
                           color: "black",
@@ -321,11 +320,11 @@ const useOrderDetailsStore = ({
                           overflow: "hidden",
                           maxWidth: "5rem",
                         }}
-                        primary={item.name}
+                        primary={item.productName}
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.price * item.quantity}
+                      ${item.unitaryPrice * item.quantity}
                     </Typography>
                     <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
                       <Delete />

@@ -5,6 +5,10 @@ import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Product } from "./OrderEditor";
 import { useOrderContext } from '../../app/context/order.context';
 import { orderToPending } from "@/api/order";
+import { SelectedProductsI } from '../Interfaces/IProducts';
+import { useRoomContext } from "@/app/context/room.context";
+import { editTable } from "@/api/tables";
+import { TableState } from "../Enums/Enums";
 
 export interface OrderProps {
   imprimirComanda: any
@@ -14,7 +18,6 @@ export interface OrderProps {
 }
 
 const Order: React.FC<OrderProps> = ({
-  selectedMesa,
   handleNextStep
 }) => {
   const {
@@ -23,6 +26,8 @@ const Order: React.FC<OrderProps> = ({
     confirmedProducts,
     handleDeleteOrder
   } = useOrderContext();
+  const { selectedMesa, setSelectedMesa } = useRoomContext();
+
 
   const [total, setTotal] = useState(0);
 
@@ -30,174 +35,177 @@ const Order: React.FC<OrderProps> = ({
     const calcularTotal = () => {
       if (confirmedProducts.length > 0) {
         setTotal(
-          confirmedProducts.reduce((acc: number, item: Product) => {
-            return acc + item.price * item.quantity;
+          confirmedProducts.reduce((acc: number, item: SelectedProductsI) => {
+            return acc + item.unitaryPrice * item.quantity;
           }, 0)
         );
       }
     };
     calcularTotal();
+    console.log("CONFIRMED PRODUCTS: ORDER🦋", confirmedProducts);
 
   }, [confirmedProducts]);
 
-  const handlePayOrder = async () => {
+  const handlePayOrder = async (selectedMesa: MesaInterface) => {
 
     if (selectedOrderByTable) {
       const ordenPendingPay = await orderToPending(selectedOrderByTable.id);
 
       setSelectedOrderByTable(ordenPendingPay);
     }
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT });
+    setSelectedMesa(tableEdited);
     handleNextStep();
   };
 
   return (
     <>
-      {
+      {selectedMesa &&
         selectedMesa.state === 'open' ?
-          <div style={{
-            width: "100%", display: "flex",
-            flexDirection: "column", border: "1px solid #d4c0b3",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
-            justifyContent: "space-between"
-          }}>
+        <div style={{
+          width: "100%", display: "flex",
+          flexDirection: "column", border: "1px solid #d4c0b3",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
+          justifyContent: "space-between"
+        }}>
 
-            <div>
-              <div
-                style={{
-                  height: "2rem",
-                  backgroundColor: "#7e9d8a",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  color: "black",
-                  margin: "1rem 0",
-                  width: "100%",
-                }}
-              >
-                <h2>PEDIDO</h2>
-              </div>
-              <List
-                className="custom-scrollbar"
-                style={{
-                  maxHeight: "14rem",
-                  overflowY: "auto",
-                  padding: "0.5rem",
-                  border: "2px solid #7e9d8a",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
-                }}
-              >
-                {confirmedProducts.map((item: any, index: number) => (
-                  <ListItem
-                    key={index}
+          <div>
+            <div
+              style={{
+                height: "2rem",
+                backgroundColor: "#7e9d8a",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "black",
+                margin: "1rem 0",
+                width: "100%",
+              }}
+            >
+              <h2>PEDIDO</h2>
+            </div>
+            <List
+              className="custom-scrollbar"
+              style={{
+                maxHeight: "14rem",
+                overflowY: "auto",
+                padding: "0.5rem",
+                border: "2px solid #7e9d8a",
+                borderRadius: "5px",
+                marginTop: "0.5rem",
+              }}
+            >
+              {confirmedProducts.map((item: any, index: number) => (
+                <ListItem
+                  key={index}
+                  style={{
+                    backgroundColor: "#eceae8",
+                    margin: "0.3rem 0",
+                    display: "flex",
+                    alignItems: "center",
+                    borderRadius: "5px",
+                    height: "3rem",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography
+                    sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
                     style={{
-                      backgroundColor: "#eceae8",
-                      margin: "0.3rem 0",
-                      display: "flex",
-                      alignItems: "center",
+                      color: "black",
+                      width: "2rem",
+                      textAlign: "center",
                       borderRadius: "5px",
-                      height: "3rem",
-                      justifyContent: "space-between",
                     }}
                   >
-                    <Typography
-                      sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                      style={{
-                        color: "black",
-                        width: "2rem",
-                        textAlign: "center",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      {item.quantity}
-                    </Typography>
-                    <Tooltip title={item.name} arrow>
-                      <ListItemText
-                        style={{
-                          margin: "0 1rem 0 0.5rem",
-                          fontSize: "1rem",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 1,
-                          overflow: "hidden",
-                          minWidth: "5rem",
-                          maxWidth: "5rem",
-
-                        }}
-                        primary={item.name}
-                      />
-                    </Tooltip>
-                    <Typography
+                    {item.quantity}
+                  </Typography>
+                  <Tooltip title={item.productName} arrow>
+                    <ListItemText
                       style={{
                         margin: "0 1rem 0 0.5rem",
                         fontSize: "1rem",
-                        whiteSpace: "nowrap",
+                        display: "-webkit-box",
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 1,
                         overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        minWidth: "5rem",
+                        maxWidth: "5rem",
+
                       }}
-                    >
-                      {`$ ${item.price * item.quantity}`}
-                    </Typography>
-                    {/* <IconButton onClick={() => deleteConfirmProduct(item.productId)}>
+                      primary={item.productName}
+                    />
+                  </Tooltip>
+                  <Typography
+                    style={{
+                      margin: "0 1rem 0 0.5rem",
+                      fontSize: "1rem",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {`$ ${item.unitaryPrice * item.quantity}`}
+                  </Typography>
+                  {/* <IconButton onClick={() => deleteConfirmProduct(item.productId)}>
                       <Delete />
                     </IconButton> */}
-                  </ListItem>
+                </ListItem>
 
-                ))}
-              </List>
-              <Typography
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  textAlign: "left",
-                  fontWeight: "bold",
-                }}
-              >
-                Total: ${total}
-              </Typography>
-              <Typography
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  textAlign: "left",
-                  fontWeight: "bold",
-                }}
-              >
-                Cantidad de productos: {confirmedProducts.length}
-              </Typography>
-            </div>
-            <div>
+              ))}
+            </List>
+            <Typography
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                textAlign: "left",
+                fontWeight: "bold",
+              }}
+            >
+              Total: ${total}
+            </Typography>
+            <Typography
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                textAlign: "left",
+                fontWeight: "bold",
+              }}
+            >
+              Cantidad de productos: {confirmedProducts.length}
+            </Typography>
+          </div>
+          <div>
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{
+                backgroundColor: "#7e9d8a",
+                "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+              }}
+              onClick={() => {
+                handlePayOrder(selectedMesa);
+              }}
+            >
+              <Print style={{ marginRight: "5px" }} /> Imprimir ticket
+            </Button>
+            {
+              confirmedProducts.length > 0 &&
               <Button
                 fullWidth
-                variant="contained"
-                sx={{
-                  backgroundColor: "#7e9d8a",
-                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-                }}
-                onClick={() => {
-                  handlePayOrder();
-                }}
+                color="error"
+                variant="outlined"
+                style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
+                onClick={() => handleDeleteOrder(selectedOrderByTable?.id || null)}
               >
-                <Print style={{ marginRight: "5px" }} /> Imprimir ticket
+                Anular Pedido
               </Button>
-              {
-                confirmedProducts.length > 0 &&
-                <Button
-                  fullWidth
-                  color="error"
-                  variant="outlined"
-                  style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                  onClick={() => handleDeleteOrder(selectedOrderByTable?.id || null)}
-                >
-                  Anular Pedido
-                </Button>
-              }
-            </div>
+            }
+          </div>
 
-          </div>
-          : <div className="flex justify-center text-red-500 font-bold my-16">
-            COMPLETAR PASO 1
-          </div>
+        </div>
+        : <div className="flex justify-center text-red-500 font-bold my-16">
+          COMPLETAR PASO 1
+        </div>
       }
     </>
   )

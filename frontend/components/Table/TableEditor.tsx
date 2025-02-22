@@ -3,20 +3,18 @@ import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
-import { useOrderStore } from "../Order/useOrderStore";
-import { useTableStore } from "./useTableStore";
 import { useOrderContext } from '../../app/context/order.context';
-import { log } from 'console';
+import { editTable } from "@/api/tables";
+import { TableState } from "../Enums/Enums";
+import { useRoomContext } from '../../app/context/room.context';
 
 interface Props {
-  selectedMesa: MesaInterface;
   view: string;
   onAbrirPedido: () => void;
   handleNextStep: () => void
 }
 
 const TableEditor = ({
-  selectedMesa,
   view,
   onAbrirPedido,
   handleNextStep
@@ -24,6 +22,7 @@ const TableEditor = ({
   const [cantidadPersonas, setCantidadPersonas] = useState(0);
   const [comentario, setComentario] = useState('');
   const { handleCreateOrder, handleEditOrder, selectedProducts, selectedOrderByTable } = useOrderContext();
+  const { selectedMesa, setSelectedMesa } = useRoomContext();
 
 
 
@@ -44,6 +43,17 @@ const TableEditor = ({
   useEffect(() => {
     setTableFields();
   }, [setTableFields])
+
+  /**
+   * @param selectedMesa - Es la Mesa que se selecciona.
+   * se llama al endopoint para abrir la mesa
+   * este cambia estado de la mesa a 'OPEN'
+   */
+  const handleOpenTable = async (selectedMesa: MesaInterface) => {
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.OPEN });
+    setSelectedMesa(tableEdited);
+    handleNextStep();
+  };
 
   return (
     <div
@@ -125,15 +135,19 @@ const TableEditor = ({
                   } else if (selectedMesa?.state === "available") {
                     handleCreateOrder(selectedMesa, cantidadPersonas, comentario);
                     onAbrirPedido();
+                    handleOpenTable(selectedMesa);
                     handleNextStep();
                   } else {
-                    handleEditOrder(selectedMesa.orders[0], selectedProducts, cantidadPersonas, comentario);
-                    Swal.fire(
-                      "Cambios Guardados",
-                      "Los cambios se han guardado correctamente.",
-                      "success"
-                    )
-                    handleNextStep();
+                    if (selectedMesa?.orders.length === 0) {
+                      handleEditOrder(selectedMesa.orders[0], selectedProducts, cantidadPersonas, comentario);
+
+                      Swal.fire(
+                        "Cambios Guardados",
+                        "Los cambios se han guardado correctamente.",
+                        "success"
+                      )
+                      handleNextStep();
+                    }
                   }
                 }}
               >

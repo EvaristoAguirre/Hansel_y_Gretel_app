@@ -6,7 +6,6 @@ import SalaModal from "./RoomModal";
 import { StepperTable } from "../Table/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
 import Table from "../Table/Table";
-import TablesStatus from "../Table/TablesStatus";
 
 const Rooms = () => {
   const {
@@ -14,6 +13,7 @@ const Rooms = () => {
     selectedSala,
     handleSelectSala,
     selectedMesa,
+    setSelectedMesa,
     view,
     modalOpen,
     setModalOpen,

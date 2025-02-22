@@ -7,6 +7,7 @@ type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
   selectedMesa: MesaInterface | null;
+  setSelectedMesa: (mesa: MesaInterface | null) => void;
   view: "mesaEditor" | "pedidoEditor" | null;
   modalOpen: boolean;
   editingSala: ISala | null;
@@ -28,6 +29,7 @@ const RoomContext = createContext<RoomContextType>({
   salas: [],
   selectedSala: null,
   selectedMesa: null,
+  setSelectedMesa: () => { },
   view: null,
   modalOpen: false,
   editingSala: null,
@@ -201,6 +203,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       salas,
       selectedSala,
       selectedMesa,
+      setSelectedMesa,
       view,
       modalOpen,
       editingSala,

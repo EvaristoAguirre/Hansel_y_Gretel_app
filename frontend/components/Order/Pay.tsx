@@ -1,9 +1,13 @@
 import { orderToClosed } from "@/api/order";
+import { editTable } from "@/api/tables";
+import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from '../../app/context/order.context';
+import { TableState } from "../Enums/Enums";
+import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 
 export interface PayOrderProps {
   handleNextStep: () => void
@@ -14,6 +18,7 @@ const PayOrder: React.FC<PayOrderProps> = (
 ) => {
   const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } = useOrderContext();
   const [total, setTotal] = useState(0);
+  const { selectedMesa, setSelectedMesa } = useRoomContext();
 
   useEffect(() => {
     const calcularTotal = () => {
@@ -38,15 +43,14 @@ const PayOrder: React.FC<PayOrderProps> = (
       } else {
         Swal.fire("Error", "No se pudo pagar la orden.", "error");
       }
-      //TODO: cuando pasa a pagada, la orden se cierra? y la mesa tmb. 
     }
+
     handleNextStep();
   };
 
-  const handleCloseOrderAndTable = async () => {
-    //TODO: Cerrar orden y la mesa, o pasarla a disponible.
-    //TODO: el handleNextStep pasaría al paso 1 o se completa, revisar eso.
-
+  const handleCloseTable = async (selectedMesa: MesaInterface) => {
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.AVAILABLE });
+    setSelectedMesa(tableEdited);
     handleNextStep();
   }
 
@@ -130,7 +134,7 @@ const PayOrder: React.FC<PayOrderProps> = (
               </Button>
             }
             {
-              !selectedOrderByTable &&
+              !selectedOrderByTable && selectedMesa &&
               <Button
                 fullWidth
                 variant="contained"
@@ -139,7 +143,7 @@ const PayOrder: React.FC<PayOrderProps> = (
                 }}
 
                 disabled={confirmedProducts.length === 0}
-                onClick={() => handleCloseOrderAndTable()}
+                onClick={() => handleCloseTable(selectedMesa)}
               >
                 <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:  Disponible
               </Button>

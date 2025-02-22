@@ -61,9 +61,9 @@ export interface ProductsProps {
 
 export interface SelectedProductsI {
   productId: string;
+  productName: string;
   quantity: number;
-  price: number;
-  name: string
+  unitaryPrice: number;
 };
 
 export interface IConfirmedProducts {
