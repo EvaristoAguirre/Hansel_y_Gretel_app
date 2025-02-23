@@ -13,5 +13,9 @@ export class UpdateStockDto {
 
   @IsOptional()
   @IsString()
-  productId: string;
+  productId?: string;
+
+  @IsOptional()
+  @IsString()
+  ingredientId?: string;
 }
