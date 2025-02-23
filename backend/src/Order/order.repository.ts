@@ -29,7 +29,9 @@ export class OrderRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) { }
-  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(
+    orderToCreate: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
@@ -58,7 +60,9 @@ export class OrderRepository {
         isActive: true,
       });
 
-      return await this.orderRepository.save(newOrder);
+      await this.orderRepository.save(newOrder);
+      const responseAdapted = await this.adaptResponse(newOrder);
+      return responseAdapted;
     } catch (error) {
       console.error(`[CreateOrder Error]: ${error.message}`, error);
 
@@ -183,45 +187,8 @@ export class OrderRepository {
 
       const updatedOrder = await this.orderRepository.save(order);
 
-      //------------Adecuacion de la response para el front -----------//
-      const productSummary: Record<string, ProductSummary> =
-        updatedOrder.orderDetails.reduce(
-          (acc, detail) => {
-            const productId = detail.product.id;
-            const unitaryPrice = Number(detail.unitaryPrice);
-            const subtotal = Number(detail.subtotal);
-            if (!acc[productId]) {
-              acc[productId] = {
-                productId: detail.product.id,
-                productName: detail.product.name,
-                quantity: 0,
-                unitaryPrice: unitaryPrice,
-                subtotal: 0,
-              };
-            }
-            acc[productId].quantity += detail.quantity;
-            acc[productId].subtotal += subtotal;
-            return acc;
-          },
-          {} as Record<string, ProductSummary>,
-        );
-
-      const productSummaryArray: ProductSummary[] =
-        Object.values(productSummary);
-
-      const response = new OrderSummaryResponseDto();
-      response.id = updatedOrder.id;
-      response.state = updatedOrder.state;
-      response.numberCustomers = updatedOrder.numberCustomers;
-      response.comment = updatedOrder.comment;
-      response.table = {
-        id: updatedOrder.table.id,
-        name: updatedOrder.table.name,
-      };
-      response.total = updatedOrder.total;
-      response.products = productSummaryArray;
-
-      return response;
+      const responseAdapted = await this.adaptResponse(updatedOrder);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -302,45 +269,8 @@ export class OrderRepository {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
 
-      //------------Adecuacion de la response para el front -----------//
-      const productSummary: Record<string, ProductSummary> =
-        order.orderDetails.reduce(
-          (acc, detail) => {
-            const productId = detail.product.id;
-            const unitaryPrice = Number(detail.unitaryPrice);
-            const subtotal = Number(detail.subtotal);
-            if (!acc[productId]) {
-              acc[productId] = {
-                productId: detail.product.id,
-                productName: detail.product.name,
-                quantity: 0,
-                unitaryPrice: unitaryPrice,
-                subtotal: 0,
-              };
-            }
-            acc[productId].quantity += detail.quantity;
-            acc[productId].subtotal += subtotal;
-            return acc;
-          },
-          {} as Record<string, ProductSummary>,
-        );
-
-      const productSummaryArray: ProductSummary[] =
-        Object.values(productSummary);
-
-      const response = new OrderSummaryResponseDto();
-      response.id = order.id;
-      response.state = order.state;
-      response.numberCustomers = order.numberCustomers;
-      response.comment = order.comment;
-      response.table = {
-        id: order.table.id,
-        name: order.table.name,
-      };
-      response.total = order.total;
-      response.products = productSummaryArray;
-
-      return response;
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -394,7 +324,9 @@ export class OrderRepository {
     }
   }
 
-  async markOrderAsPendingPayment(id: string): Promise<Order> {
+  async markOrderAsPendingPayment(
+    id: string,
+  ): Promise<OrderSummaryResponseDto> {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -412,6 +344,8 @@ export class OrderRepository {
       }
 
       order.state = OrderState.PENDING_PAYMENT;
+      order.table.state = TableState.PENDING_PAYMENT;
+      await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
 
       // Emitir evento para generar el ticket
@@ -419,7 +353,9 @@ export class OrderRepository {
       console.log('estoy emitiendo el ticket de la orden', {
         orderId: order.id,
       });
-      return order;
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -433,7 +369,7 @@ export class OrderRepository {
     }
   }
 
-  async closeOrder(id: string): Promise<Order> {
+  async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -457,9 +393,8 @@ export class OrderRepository {
 
       // Emitir evento para notificar que la orden ha sido cerrada
       // this.eventEmitter.emit('order.closed', { orderId: order.id });
-      console.log('cambiando estado a orden cerrada', { orderId: order.id });
-      console.log(order);
-      return order;
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       console.error(`[CloseOrder Error]: ${error.message}`, error);
 
@@ -476,7 +411,7 @@ export class OrderRepository {
     }
   }
 
-  async cancelOrder(id: string): Promise<Order> {
+  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
@@ -498,7 +433,9 @@ export class OrderRepository {
         );
       }
 
-      return await this.orderRepository.save(order);
+      await this.orderRepository.save(order);
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -511,5 +448,46 @@ export class OrderRepository {
         'Error canceling the order. Please try again later.',
       );
     }
+  }
+
+  async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
+    const productSummary: Record<string, ProductSummary> =
+      order.orderDetails.reduce(
+        (acc, detail) => {
+          const productId = detail.product.id;
+          const unitaryPrice = Number(detail.unitaryPrice);
+          const subtotal = Number(detail.subtotal);
+          if (!acc[productId]) {
+            acc[productId] = {
+              productId: detail.product.id,
+              productName: detail.product.name,
+              quantity: 0,
+              unitaryPrice: unitaryPrice,
+              subtotal: 0,
+            };
+          }
+          acc[productId].quantity += detail.quantity;
+          acc[productId].subtotal += subtotal;
+          return acc;
+        },
+        {} as Record<string, ProductSummary>,
+      );
+
+    const productSummaryArray: ProductSummary[] = Object.values(productSummary);
+
+    const response = new OrderSummaryResponseDto();
+    response.id = order.id;
+    response.state = order.state;
+    response.numberCustomers = order.numberCustomers;
+    response.comment = order.comment;
+    response.table = {
+      id: order.table.id,
+      name: order.table.name,
+      state: order.table.state,
+    };
+    response.total = order.total;
+    response.products = productSummaryArray;
+
+    return response;
   }
 }

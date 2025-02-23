@@ -1,4 +1,4 @@
-import { OrderState } from 'src/Enums/states.enum';
+import { OrderState, TableState } from 'src/Enums/states.enum';
 import { ProductSummary } from './productSummary.dto';
 
 export class OrderSummaryResponseDto {
@@ -9,6 +9,7 @@ export class OrderSummaryResponseDto {
   table?: {
     id: string;
     name: string;
+    state: TableState;
   };
   total: number;
   products: ProductSummary[];

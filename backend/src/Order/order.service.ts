@@ -14,7 +14,9 @@ export class OrderService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(
+    orderToCreate: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     const orderOpened = await this.orderRepository.openOrder(orderToCreate);
     await this.eventEmitter.emit('order.opened', {
       order: orderOpened,
@@ -57,15 +59,17 @@ export class OrderService {
     return await this.orderRepository.getOrdersForOpenOrPendingTables();
   }
 
-  async markOrderAsPendingPayment(id: string): Promise<Order> {
+  async markOrderAsPendingPayment(
+    id: string,
+  ): Promise<OrderSummaryResponseDto> {
     return await this.orderRepository.markOrderAsPendingPayment(id);
   }
 
-  async closeOrder(id: string): Promise<Order> {
+  async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
     return await this.orderRepository.closeOrder(id);
   }
 
-  async cancelOrder(id: string): Promise<Order> {
+  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
     return await this.orderRepository.cancelOrder(id);
   }
 }
