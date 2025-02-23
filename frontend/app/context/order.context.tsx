@@ -6,9 +6,6 @@ import Swal from "sweetalert2";
 import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/IProducts';
 import { OrderCreated, useOrderStore } from '../../components/Order/useOrderStore';
 import { useRoomContext } from './room.context';
-import { OrderDetails } from '../../../backend/src/Order/order_details.entity';
-import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
-import { log } from 'console';
 import { TableState } from "@/components/Enums/Enums";
 
 type OrderContextType = {
@@ -105,10 +102,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     }
 
   }, [selectedMesa]);
-  useEffect(() => {
-    console.log("Cambió mesa selecionada👀👀👀👀👀", selectedMesa);
 
-  }, [selectedMesa])
   useEffect(() => {
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable])

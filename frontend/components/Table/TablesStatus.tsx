@@ -1,5 +1,6 @@
 import React from 'react';
 import Chip from '@mui/material/Chip';
+import { TableState } from '../Enums/Enums';
 
 interface Filter {
   label: string;
@@ -9,10 +10,10 @@ interface Filter {
 
 const filters: Filter[] = [
   { label: 'Todas', value: null, color: '#856D5E' },
-  { label: 'Disponibles', value: 'available', color: '#21b421' },
-  { label: 'Ocupadas', value: 'open', color: '#d94d22' },
-  { label: 'Pendientes de pago', value: 'pending_payment', color: '#f9b32d' },
-  { label: 'Cerradas', value: 'closed', color: '#21b492' },
+  { label: 'Disponibles', value: TableState.AVAILABLE, color: '#21b421' },
+  { label: 'Ocupadas', value: TableState.OPEN, color: '#d94d22' },
+  { label: 'Pendientes de pago', value: TableState.PENDING_PAYMENT, color: '#f9b32d' },
+  { label: 'Cerradas', value: TableState.CLOSED, color: '#21b492' },
 ];
 
 interface FilterChipProps {

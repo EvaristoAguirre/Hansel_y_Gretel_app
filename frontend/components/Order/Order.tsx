@@ -2,13 +2,13 @@ import { Print } from "@mui/icons-material";
 import { Button, List, ListItem, ListItemText, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-import { Product } from "./OrderEditor";
 import { useOrderContext } from '../../app/context/order.context';
 import { orderToPending } from "@/api/order";
 import { SelectedProductsI } from '../Interfaces/IProducts';
 import { useRoomContext } from "@/app/context/room.context";
 import { editTable } from "@/api/tables";
 import { TableState } from "../Enums/Enums";
+import { useOrderStore } from "./useOrderStore";
 
 export interface OrderProps {
   imprimirComanda: any
@@ -27,8 +27,7 @@ const Order: React.FC<OrderProps> = ({
     handleDeleteOrder
   } = useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
-
-
+  const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
@@ -42,7 +41,6 @@ const Order: React.FC<OrderProps> = ({
       }
     };
     calcularTotal();
-    console.log("CONFIRMED PRODUCTS: ORDER🦋", confirmedProducts);
 
   }, [confirmedProducts]);
 
@@ -52,9 +50,13 @@ const Order: React.FC<OrderProps> = ({
       const ordenPendingPay = await orderToPending(selectedOrderByTable.id);
 
       setSelectedOrderByTable(ordenPendingPay);
+      addOrder(ordenPendingPay);
+
     }
     const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT });
-    setSelectedMesa(tableEdited);
+    if (tableEdited) {
+      setSelectedMesa(tableEdited);
+    }
     handleNextStep();
   };
 

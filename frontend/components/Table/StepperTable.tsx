@@ -11,6 +11,7 @@ import PedidoEditor, { Product } from '../Order/OrderEditor';
 import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
+import TableEditor from './TableEditor';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
 
@@ -71,8 +72,8 @@ export const StepperTable: React.FC<Props> = (
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return <MesaEditor
-          selectedMesa={selectedMesa} view="mesaEditor"
+        return <TableEditor
+          view="mesaEditor"
           onAbrirPedido={onAbrirPedido}
           handleNextStep={handleNextStep}
         />;

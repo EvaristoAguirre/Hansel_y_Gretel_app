@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import { useOrderContext } from '../../app/context/order.context';
 import { TableState } from "../Enums/Enums";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
+import { useTableStore } from "../Table/useTableStore";
 
 export interface PayOrderProps {
   handleNextStep: () => void
@@ -19,7 +20,7 @@ const PayOrder: React.FC<PayOrderProps> = (
   const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } = useOrderContext();
   const [total, setTotal] = useState(0);
   const { selectedMesa, setSelectedMesa } = useRoomContext();
-
+  const { updateTable } = useTableStore();
   useEffect(() => {
     const calcularTotal = () => {
       if (confirmedProducts.length > 0) {
@@ -36,11 +37,15 @@ const PayOrder: React.FC<PayOrderProps> = (
 
 
   const handlePayOrder = async () => {
-    if (selectedOrderByTable) {
-      const ordenPendingPay = await orderToClosed(selectedOrderByTable.id);
-      if (ordenPendingPay) {
+    if (selectedOrderByTable && selectedMesa) {
+      const paidOrder = await orderToClosed(selectedOrderByTable.id);
+      const closedTable = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.CLOSED });
+      if (paidOrder) {
         setSelectedOrderByTable(null);
-      } else {
+      } else if (closedTable) {
+        setSelectedMesa(closedTable);
+      }
+      else {
         Swal.fire("Error", "No se pudo pagar la orden.", "error");
       }
     }
@@ -48,9 +53,12 @@ const PayOrder: React.FC<PayOrderProps> = (
     handleNextStep();
   };
 
-  const handleCloseTable = async (selectedMesa: MesaInterface) => {
+  const handleTableAvailable = async (selectedMesa: MesaInterface) => {
     const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.AVAILABLE });
-    setSelectedMesa(tableEdited);
+    if (tableEdited) {
+      setSelectedMesa(tableEdited);
+      updateTable(tableEdited);
+    }
     handleNextStep();
   }
 
@@ -143,7 +151,7 @@ const PayOrder: React.FC<PayOrderProps> = (
                 }}
 
                 disabled={confirmedProducts.length === 0}
-                onClick={() => handleCloseTable(selectedMesa)}
+                onClick={() => handleTableAvailable(selectedMesa)}
               >
                 <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:  Disponible
               </Button>
