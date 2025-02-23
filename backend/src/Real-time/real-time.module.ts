@@ -18,6 +18,7 @@ import { StockWSListener } from './listeners/stock-events.listener';
     OrderWSListener,
     TableWSListener,
     OrderDetailsWSListener,
+    StockWSListener,
   ],
   exports: [
     BroadcastService,

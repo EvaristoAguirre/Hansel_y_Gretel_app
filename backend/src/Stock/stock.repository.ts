@@ -10,13 +10,17 @@ import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
 import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 // import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 
 @Injectable()
 export class StockRepository {
   constructor(
+    @InjectRepository(Stock)
     private readonly stockRepository: Repository<Stock>,
+    @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
   ) {}
 
@@ -134,7 +138,7 @@ export class StockRepository {
         });
         if (!product) {
           throw new NotFoundException(
-            `Producto con ID ${productId} no encontrado.`,
+            `Product with ID ${productId} not found.`,
           );
         }
       } else if (ingredientId) {
@@ -143,7 +147,7 @@ export class StockRepository {
         });
         if (!ingredient) {
           throw new NotFoundException(
-            `Ingrediente con ID ${ingredientId} no encontrado.`,
+            `Ingredient with ID ${ingredientId} not found.`,
           );
         }
       }
@@ -167,7 +171,7 @@ export class StockRepository {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error updating the product.',
+        'Error creating the product.',
         error.message,
       );
     }
@@ -187,12 +191,12 @@ export class StockRepository {
     try {
       const stock = await this.stockRepository.findOne({ where: { id } });
       if (!stock) {
-        throw new NotFoundException(`Stock con ID ${id} no encontrado.`);
+        throw new NotFoundException(`Stock with ID ${id} not found.`);
       }
 
       if (productId && ingredientId) {
         throw new BadRequestException(
-          'No se puede asignar un stock a un producto y un ingrediente al mismo tiempo.',
+          'You cannot assign a stock to a product and an ingredient at the same time',
         );
       }
 
@@ -202,7 +206,7 @@ export class StockRepository {
         });
         if (!product) {
           throw new NotFoundException(
-            `Producto con ID ${productId} no encontrado.`,
+            `Product with ID ${productId} not found.`,
           );
         }
         stock.product = product;
@@ -213,7 +217,7 @@ export class StockRepository {
         });
         if (!ingredient) {
           throw new NotFoundException(
-            `Ingrediente con ID ${ingredientId} no encontrado.`,
+            `Ingredient with ID ${ingredientId} not found.`,
           );
         }
         stock.ingredient = ingredient;

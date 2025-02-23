@@ -18,7 +18,8 @@ export class IngredientRepository {
   constructor(
     @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
-    private readonly unitOfMeasureRepostory: Repository<UnitOfMeasure>,
+    @InjectRepository(UnitOfMeasure)
+    private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
   ) {}
 
   async getAllIngredients(page: number, limit: number): Promise<Ingredient[]> {
@@ -157,14 +158,14 @@ export class IngredientRepository {
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
-    const existingUnitOfMesure = await this.unitOfMeasureRepostory.findOne({
+    const existingUnitOfMesure = await this.unitOfMeasureRepository.findOne({
       where: { name: name },
     });
     if (existingUnitOfMesure) {
       throw new ConflictException('Unit of mesure name already exist');
     }
     if (abbreviation) {
-      const existingUnitOfMesure = await this.unitOfMeasureRepostory.findOne({
+      const existingUnitOfMesure = await this.unitOfMeasureRepository.findOne({
         where: { abbreviation: abbreviation },
       });
       if (existingUnitOfMesure) {
@@ -174,7 +175,7 @@ export class IngredientRepository {
       }
     }
     try {
-      return await this.unitOfMeasureRepostory.save(createData);
+      return await this.unitOfMeasureRepository.save(createData);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -199,7 +200,7 @@ export class IngredientRepository {
       );
     }
     try {
-      return await this.unitOfMeasureRepostory.find({
+      return await this.unitOfMeasureRepository.find({
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
@@ -218,7 +219,7 @@ export class IngredientRepository {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
-      const unitOfMeasure = await this.unitOfMeasureRepostory.findOne({
+      const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
         where: { id, isActive: true },
       });
       if (!unitOfMeasure) {
