@@ -6,6 +6,7 @@ import { CategoryWSListener } from './listeners/category-events.listener';
 import { OrderWSListener } from './listeners/order-events.listener';
 import { TableWSListener } from './listeners/table-events.listener';
 import { OrderDetailsWSListener } from './listeners/orderDetails-events.listener';
+import { StockWSListener } from './listeners/stock-events.listener';
 
 @Module({
   imports: [],
@@ -25,6 +26,7 @@ import { OrderDetailsWSListener } from './listeners/orderDetails-events.listener
     OrderWSListener,
     TableWSListener,
     OrderDetailsWSListener,
+    StockWSListener,
   ],
 })
 export class RealTimeModule {

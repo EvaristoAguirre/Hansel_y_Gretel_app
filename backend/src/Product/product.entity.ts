@@ -1,7 +1,9 @@
 import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
+import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { OrderDetails } from 'src/Order/order_details.entity';
 import { Provider } from 'src/Provider/provider.entity';
+import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,6 +12,7 @@ import {
   JoinTable,
   ManyToOne,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 
 @Entity({ name: 'products' })
@@ -58,4 +61,13 @@ export class Product {
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.product)
   orderDetails: OrderDetails[];
+
+  @OneToOne(() => Stock, (stock) => stock.product)
+  stock: Stock;
+
+  @OneToMany(
+    () => ProductIngredient,
+    (productIngredient) => productIngredient.product,
+  )
+  productIngredients: ProductIngredient[];
 }
