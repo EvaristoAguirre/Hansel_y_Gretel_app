@@ -20,17 +20,21 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('open')
-  openOrder(@Body() openOrder: CreateOrderDto): Promise<Order> {
+  openOrder(
+    @Body() openOrder: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     return this.orderService.openOrder(openOrder);
   }
 
   @Post('close/:id')
-  closeOrder(@Param('id') id: string): Promise<Order> {
+  closeOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
     return this.orderService.closeOrder(id);
   }
 
   @Post('pending/:id')
-  markOrderAsPendingPayment(@Param('id') id: string): Promise<Order> {
+  markOrderAsPendingPayment(
+    @Param('id') id: string,
+  ): Promise<OrderSummaryResponseDto> {
     return this.orderService.markOrderAsPendingPayment(id);
   }
 
@@ -43,7 +47,7 @@ export class OrderController {
     return order;
   }
   @Patch('cancel/:id')
-  async cancelOrder(@Param('id') id: string): Promise<Order> {
+  async cancelOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
     return await this.orderService.cancelOrder(id);
   }
 
