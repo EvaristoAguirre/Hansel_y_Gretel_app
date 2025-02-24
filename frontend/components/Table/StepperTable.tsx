@@ -6,8 +6,7 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import MesaEditor from './TableEditor';
-import PedidoEditor, { Product } from '../Order/OrderEditor';
+import PedidoEditor from '../Order/OrderEditor';
 import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
@@ -56,7 +55,9 @@ export const StepperTable: React.FC<Props> = (
 
   const handleComplete = () => {
     setCompleted({ ...completed, [activeStep]: true });
-    handleNextStep();
+
+    handleReset();
+
   };
 
   const handleReset = () => {
@@ -117,7 +118,9 @@ export const StepperTable: React.FC<Props> = (
         );
       case 3:
         return (
-          <PayOrder handleNextStep={handleNextStep} />
+          <PayOrder
+            handleComplete={handleComplete}
+          />
         );
     }
   };
@@ -147,12 +150,12 @@ export const StepperTable: React.FC<Props> = (
                 Atrás
               </Button>
               <Box sx={{ flex: '1 1 auto' }} />
-              {/* <Button onClick={handleNext} sx={{ mr: 1 }}>
-                Siguiente
-              </Button>
-              {activeStep !== steps.length - 1 && (
+              {/* {activeStep !== steps.length - 1 && (
                 <Button onClick={handleComplete}>Completar paso</Button>
               )} */}
+              <Button onClick={handleNextStep} sx={{}}>
+                Siguiente
+              </Button>
             </Box>
           </React.Fragment>
         )}

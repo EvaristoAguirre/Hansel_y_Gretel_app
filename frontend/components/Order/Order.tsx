@@ -68,7 +68,8 @@ const Order: React.FC<OrderProps> = ({
   return (
     <>
       {selectedMesa &&
-        [TableState.OPEN, TableState.PENDING_PAYMENT].includes(selectedMesa.state) ?
+        (selectedMesa.state === TableState.OPEN ||
+          selectedMesa.state === TableState.PENDING_PAYMENT) ?
         <div style={{
           width: "100%", display: "flex",
           flexDirection: "column", border: "1px solid #d4c0b3",

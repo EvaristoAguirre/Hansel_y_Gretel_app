@@ -19,7 +19,7 @@ export interface MesaInterface {
   name: string;
   number: number | null;
   coment: string;
-  state: TableState;
+  state?: TableState;
   room: ISala;
   // orderId?: string[];
   orders: string[];
@@ -30,7 +30,7 @@ export interface MesaForm {
   name: string;
   number: null | number;
   coment: string;
-  state: TableState;
+  state?: TableState;
 }
 
 export interface MesaCardProps {

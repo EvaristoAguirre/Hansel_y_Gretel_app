@@ -34,7 +34,7 @@ const TableModal: React.FC<MesaModalProps> = ({
   const [isFormValid, setIsFormValid] = useState(false);
 
   // Etiquetas de los campos en español.
-  const fieldLabels: Record<keyof MesaForm, string> = {
+  const fieldLabels: Partial<Record<keyof MesaForm, string>> = {
     name: "Nombre",
     number: "Número",
     coment: "Comentarios",

@@ -3,7 +3,7 @@ import { editTable } from "@/api/tables";
 import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from '../../app/context/order.context';
 import { TableState } from "../Enums/Enums";
@@ -12,11 +12,12 @@ import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 
 export interface PayOrderProps {
-  handleNextStep: () => void
+  handleComplete: () => void
+
 }
 
 const PayOrder: React.FC<PayOrderProps> = (
-  { handleNextStep }
+  { handleComplete }
 ) => {
   const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } = useOrderContext();
   const [total, setTotal] = useState(0);
@@ -42,8 +43,6 @@ const PayOrder: React.FC<PayOrderProps> = (
       updateTable(closedTable);
 
     }
-
-    handleNextStep();
   };
 
   const handleTableAvailable = async (selectedMesa: MesaInterface) => {
@@ -52,7 +51,7 @@ const PayOrder: React.FC<PayOrderProps> = (
       setSelectedMesa(tableEdited);
       updateTable(tableEdited);
     }
-    handleNextStep();
+    handleComplete();
   }
 
   const orderStates = {
