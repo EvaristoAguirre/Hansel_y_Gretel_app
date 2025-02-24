@@ -7,8 +7,9 @@ import { orderToPending } from "@/api/order";
 import { SelectedProductsI } from '../Interfaces/IProducts';
 import { useRoomContext } from "@/app/context/room.context";
 import { editTable } from "@/api/tables";
-import { TableState } from "../Enums/Enums";
+import { OrderState, TableState } from "../Enums/Enums";
 import { useOrderStore } from "./useOrderStore";
+import { useTableStore } from "../Table/useTableStore";
 
 export interface OrderProps {
   imprimirComanda: any
@@ -24,11 +25,14 @@ const Order: React.FC<OrderProps> = ({
     selectedOrderByTable,
     setSelectedOrderByTable,
     confirmedProducts,
+    setConfirmedProducts,
     handleDeleteOrder
   } = useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
+  const { tables, updateTable } = useTableStore();
+
 
   useEffect(() => {
     const calcularTotal = () => {
@@ -51,11 +55,12 @@ const Order: React.FC<OrderProps> = ({
 
       setSelectedOrderByTable(ordenPendingPay);
       addOrder(ordenPendingPay);
-
     }
+
     const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT });
     if (tableEdited) {
-      setSelectedMesa(tableEdited);
+      // setSelectedMesa(tableEdited);
+      updateTable(tableEdited);
     }
     handleNextStep();
   };
@@ -63,7 +68,7 @@ const Order: React.FC<OrderProps> = ({
   return (
     <>
       {selectedMesa &&
-        selectedMesa.state === 'open' ?
+        [TableState.OPEN, TableState.PENDING_PAYMENT].includes(selectedMesa.state) ?
         <div style={{
           width: "100%", display: "flex",
           flexDirection: "column", border: "1px solid #d4c0b3",
@@ -177,19 +182,25 @@ const Order: React.FC<OrderProps> = ({
             </Typography>
           </div>
           <div>
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{
-                backgroundColor: "#7e9d8a",
-                "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-              }}
-              onClick={() => {
-                handlePayOrder(selectedMesa);
-              }}
-            >
-              <Print style={{ marginRight: "5px" }} /> Imprimir ticket
-            </Button>
+            {
+              selectedOrderByTable?.state === OrderState.PENDING_PAYMENT ? (
+                null
+              ) :
+                <Button
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#7e9d8a",
+                    "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                  }}
+                  onClick={() => {
+                    handlePayOrder(selectedMesa);
+                  }}
+                >
+                  <Print style={{ marginRight: "5px" }} /> Imprimir ticket
+                </Button>
+            }
+
             {
               confirmedProducts.length > 0 &&
               <Button

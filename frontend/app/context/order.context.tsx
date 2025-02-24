@@ -4,17 +4,18 @@ import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import Swal from "sweetalert2";
 import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/IProducts';
-import { OrderCreated, useOrderStore } from '../../components/Order/useOrderStore';
+import { useOrderStore } from '../../components/Order/useOrderStore';
 import { useRoomContext } from './room.context';
 import { TableState } from "@/components/Enums/Enums";
+import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
   setSelectedProducts: (products: SelectedProductsI[]) => void;
   confirmedProducts: SelectedProductsI[];
   setConfirmedProducts: (products: SelectedProductsI[]) => void;
-  selectedOrderByTable: OrderCreated | null;
-  setSelectedOrderByTable: (order: OrderCreated | null) => void;
+  selectedOrderByTable: IOrderDetails | null;
+  setSelectedOrderByTable: (order: IOrderDetails | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
@@ -59,7 +60,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
   const [confirmedProducts, setConfirmedProducts] = useState<SelectedProductsI[]>([]);
 
-  const [selectedOrderByTable, setSelectedOrderByTable] = useState<OrderCreated | null>(null);
+  const [selectedOrderByTable, setSelectedOrderByTable] = useState<IOrderDetails | null>(null);
 
   /**
    * Al cambiar la Mesa o la Sala seleccionada se limpia
@@ -93,9 +94,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
           handleSetProductsByOrder(productsByOrder);
 
-        } else {
-          setSelectedOrderByTable(null);
         }
+        // else {
+        //   setSelectedOrderByTable(null);
+        // }
       } catch (error) {
         console.error("Error al obtener el pedido:", error);
       }
@@ -211,7 +213,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
-
+    console.group("📝📝📝📝EDIT ORDER");
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
@@ -238,12 +240,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
       const productsByOrder = updatedOrder.products
 
-      setConfirmedProducts(productsByOrder);
-      console.log("✅✅✅✅CONFIRMED PRODUCTS", confirmedProducts);
+      handleSetProductsByOrder(productsByOrder);
 
       updateOrder(updatedOrder);
-
-      setSelectedOrderByTable(updatedOrder);
 
     } catch (error) {
       console.error(error);

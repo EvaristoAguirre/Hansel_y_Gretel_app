@@ -88,11 +88,7 @@ const useOrderDetailsStore = ({
   }, [selectedProducts, confirmedProducts]);
 
   const handleDeleteOrder = async (orderId: string) => {
-    console.log("ENTRA A DELETE ORDER");
-
     const deletedOrder = await deleteOrder(orderId);
-    console.log("RESPONDE DELETE ORDER", deletedOrder);
-
     if (deletedOrder) {
       setSelectedOrderByTable(null);
     }

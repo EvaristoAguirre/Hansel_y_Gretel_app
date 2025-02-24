@@ -12,6 +12,7 @@ import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
+import { TableState } from '../Enums/Enums';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
 
@@ -78,15 +79,27 @@ export const StepperTable: React.FC<Props> = (
           handleNextStep={handleNextStep}
         />;
       case 1:
-        return selectedMesa.state === 'open' ? (
+        return selectedMesa.state === TableState.OPEN ? (
           selectedOrderByTable && (
             <PedidoEditor
               handleNextStep={handleNextStep}
             />
           )
-        ) : <div className='flex justify-center text-red-500 font-bold my-16'>
-          Completar paso 1
-        </div>;
+        ) :
+          selectedMesa.state === TableState.PENDING_PAYMENT ? (
+            <div className='flex justify-center text-red-500 font-bold my-16'>
+              Orden pendiente de pago, cobrar y luego iniciar una nueva orden.
+            </div>
+          ) :
+
+            selectedMesa.state === TableState.CLOSED ? (
+              <div className='flex justify-center text-red-500 font-bold my-16'>
+                La orden ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo pedido.
+              </div>
+            ) :
+              <div className='flex justify-center text-red-500 font-bold my-16'>
+                Completar paso 1
+              </div>;
       case 2:
         return (
           confirmedProducts.length > 0 ? (
@@ -97,7 +110,9 @@ export const StepperTable: React.FC<Props> = (
               handleNextStep={handleNextStep}
             />
           ) : (
-            <div className='flex justify-center text-red-500 font-bold my-16'>No hay productos confirmados, volver al paso 2</div>
+            <div className='flex justify-center text-red-500 font-bold my-16'>
+              No hay productos confirmados, volver al paso 2
+            </div>
           )
         );
       case 3:

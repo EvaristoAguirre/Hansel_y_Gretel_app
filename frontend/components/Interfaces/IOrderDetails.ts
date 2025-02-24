@@ -40,14 +40,5 @@ export interface IConfirmedProducts {
   productName: string;
   unitaryPrice: number;
   subtotal: number;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    category: {
-      id: string;
-      name: string;
-    };
-  }
   quantity: number;
 }

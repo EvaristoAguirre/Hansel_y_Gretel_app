@@ -100,7 +100,6 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   //Edición de Producto
   const handleEditProduct = (product: any) => {
-    console.log("Editar producto:", product);
   };
 
   const productColumns = [
