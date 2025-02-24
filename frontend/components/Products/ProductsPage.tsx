@@ -9,16 +9,17 @@ import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
+import { Tab } from "../Enums/view-products";
 
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
   const [tabs, setTabs] = useState([
-    "Productos",
-    "Ingredientes",
-    "Categoría productos",
-    "Categoría ingredientes",
-    "Control de Stock",
+    Tab.PRODUCTOS,
+    Tab.INGREDIENTES,
+    Tab.CATEGORIA_PRODUCTOS,
+    Tab.CATEGORIA_INGREDIENTES,
+    Tab.CONTROL_DE_STOCK,
   ]);
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -73,13 +74,13 @@ const ProductsPage: React.FC = () => {
           onCategorySelected={handleCategorySelected}
           selectedCategoryId={selectedCategoryId}
         />
-        {selectedTab === "Productos" &&
+        {selectedTab === Tab.PRODUCTOS &&
           <Products
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
           />}
-        {selectedTab === "Categoría productos" && <CategoriasProductos />}
-        {selectedTab === "Control de Stock" && (
+        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriasProductos />}
+        {selectedTab === Tab.CONTROL_DE_STOCK && (
           <Box flex={1} overflow="auto">
             <StockControl
               selectedCategoryId={selectedCategoryId}
