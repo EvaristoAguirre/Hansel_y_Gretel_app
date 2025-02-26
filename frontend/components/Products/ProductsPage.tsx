@@ -10,6 +10,8 @@ import CategoriasProductos from "@/components/Categorías/CategoríasProductos/C
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
 import { Tab } from "../Enums/view-products";
+import CategoriasIngredientes from "../Categorías/CategoríasIngredientes/CategoriasIngredientes";
+import Ingredients from "./TabIngredients/Ingredients";
 
 
 const ProductsPage: React.FC = () => {
@@ -88,6 +90,8 @@ const ProductsPage: React.FC = () => {
             />
           </Box>
         )}
+        {selectedTab === Tab.CATEGORIA_INGREDIENTES && <CategoriasIngredientes />}
+        {selectedTab === Tab.INGREDIENTES && <Ingredients />}
       </Box>
     </Box>
   );

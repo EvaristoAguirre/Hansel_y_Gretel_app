@@ -58,7 +58,7 @@ const CategoriasIngredientes = () => {
   };
 
   const CrearCategoria = (nombre: string) => {
-    categorias.push({nombre: nombre, productos: [], id: "4"})
+    categorias.push({ nombre: nombre, productos: [], id: "4" })
   }
 
   //Configuración DataGrid
@@ -120,7 +120,7 @@ const CategoriasIngredientes = () => {
 
   return (
     <div>
-      <div
+      {/* <div
         style={{
           height: "50px",
           backgroundColor: "#515050",
@@ -194,7 +194,7 @@ const CategoriasIngredientes = () => {
         >
           <h3 style={{ color: "#2b2b2b" }}>Nueva categoría</h3>
         </div>
-      </div>
+      </div> */}
 
       <div style={{ height: 300, width: "60%", margin: "1.5rem" }}>
         <DataGrid

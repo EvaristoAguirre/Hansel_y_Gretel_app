@@ -41,6 +41,7 @@ export const useProductos = () => {
   useEffect(() => {
     fetchAndSetProducts();
   }, [connectWebSocket]);
+
   const handleCreate = async () => {
 
     try {
@@ -50,7 +51,7 @@ export const useProductos = () => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),
       };
-      
+
       const newProduct = await createProduct(preparedForm);
 
       addProduct(newProduct);

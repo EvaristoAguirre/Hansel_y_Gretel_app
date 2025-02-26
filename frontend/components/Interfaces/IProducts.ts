@@ -34,6 +34,8 @@ export interface ProductCreated {
   isActive: boolean;
 };
 
+
+
 export interface ProductResponse {
   id: string;
   code: number;
@@ -58,3 +60,4 @@ export interface ProductsProps {
   selectedCategoryId: string | null;
   onClearSelectedCategory: () => void;
 }
+
