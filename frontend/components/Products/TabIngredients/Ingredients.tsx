@@ -6,9 +6,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@mui/material";
 import { Box } from "@mui/system";
 import { GridCellParams } from "@mui/x-data-grid";
+import { FormIngredient } from "./FormIngredient";
 
 const Ingredients = () => {
-  const { formIngredients, setFormIngredients, setFormType, setFormOpen, handleDelete } = useIngredientsContext();
+  const {
+    formType,
+    formOpen,
+    formIngredients,
+    setFormIngredients,
+    setFormType,
+    setFormOpen,
+    handleDeleteIngredient,
+    handleCreateIngredient,
+    handleEditIngredient
+  } = useIngredientsContext();
   const ingredients = [
     {
       id: 1,
@@ -43,6 +54,7 @@ const Ingredients = () => {
                 name: params.row.name,
                 description: params.row.description,
                 price: params.row.price,
+                cost: params.row.cost
               });
               setFormType(FormType.EDIT);
               setFormOpen(true);
@@ -54,7 +66,7 @@ const Ingredients = () => {
             className="bg-[--color-primary] text-bold mt-2 p-1"
             variant="contained"
             size="small"
-            onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDeleteIngredient(params.row.id)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
@@ -62,6 +74,10 @@ const Ingredients = () => {
       ),
     },
   ];
+  const handleOpenCreateModal = () => {
+    setFormType(FormType.CREATE);
+    setFormOpen(true);
+  }
   return (
     <Box sx={{ m: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -70,12 +86,24 @@ const Ingredients = () => {
           variant="contained"
           color="primary"
           sx={{ marginRight: 2, width: '25%', height: '56px' }}
+          onClick={() => {
+            handleOpenCreateModal();
+          }}
         >
           + Nuevo
         </Button>
       </Box>
       {/* Tabla de productos */}
       <DataGridComponent rows={ingredients} columns={columns} />
+
+      {/* Form para crear/editar Ingrediente */}
+      {formOpen && (
+        <FormIngredient
+          formType={formType}
+          onSave={formType === FormType.CREATE ? handleCreateIngredient : handleEditIngredient}
+        />
+      )}
+
     </Box>
   )
 }

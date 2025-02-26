@@ -6,199 +6,91 @@ import {
   TextField,
   DialogActions,
   Button,
-  FormControl,
-  Chip,
 } from "@mui/material";
-import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
-import { ICategory } from "../../Interfaces/ICategories";
-import { Autocomplete } from "@mui/material";
-import { getProductByCode } from "@/helpers/products";
-
-interface ProductDialogProps {
-  open: boolean;
-  modalType: "create" | "edit";
-  form: ProductForm;
-  products: ProductCreated[];
-  categories: ICategory[];
-  onChange: (field: keyof ProductForm, value: string | number | null | string[]) => void;
-  onClose: () => void;
-  onSave: () => void;
-}
+import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import { FormType } from "@/components/Enums/Ingredients";
+import { Iingredient } from "@/components/Interfaces/Ingredients"; // Usar solo una importación de `Iingredient`
 
 interface Errors {
-  [clave: string]: string;
+  [key: string]: string;
 }
 
-export const ProductDialog: React.FC<ProductDialogProps> = ({
-  open,
-  modalType,
-  form,
-  categories,
-  onChange,
-  onClose,
+export const FormIngredient = ({
+  formType,
   onSave,
+}: {
+  formType: FormType;
+  onSave: () => void;
 }) => {
-  const [errors, setErrors] = useState<Errors>({
-    code: "",
-    name: "",
-    price: "",
-    cost: "",
-    categories: "",
-  });
-  const [isFormValid, setIsFormValid] = useState(false);
-  const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const {
+    formIngredients,
+    setFormIngredients,
+    formOpen,
+    handleCloseForm,
+  } = useIngredientsContext();
 
-  const validateField = async (field: string, value: any) => {
+  const [errors, setErrors] = useState<Errors>({});
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const validateField = (field: string, value: any) => {
     let error = "";
 
-    if (field === "categories" && Array.isArray(value) && value.length === 0) {
-      error = "Debe seleccionar al menos una categoría";
-    }
-    if (["code", "name", "price", "cost"].includes(field)) {
-      if (!value) {
-        error = "Este campo es obligatorio";
-      } else if (field === "code") {
-        // Validación del código
-        setIsCheckingCode(true);
-        try {
-          const result = await getProductByCode(value);
-
-          if (result.ok) {
-            error = "El código ya está en uso";
-          } else if (result.status === 404) {
-            error = "";
-          } else {
-            error = result.error || "Error al validar el código";
-          }
-        } catch (err) {
-          console.error("Error al validar el código:", err);
-          error = "Error al conectar con el servidor";
-        } finally {
-          setIsCheckingCode(false);
-        }
-
-      } else if ((field === "price" || field === "cost") && value <= 0) {
-        error = "Debe ser un número positivo";
-      }
+    if (!value) {
+      error = "Este campo es obligatorio";
+    } else if ((field === "price" || field === "cost") && value <= 0) {
+      error = "Debe ser un número positivo";
     }
 
     setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
   };
 
-
-  const validateForm = () => {
-    const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields =
-      ["code", "name", "price", "cost"].some((field) => !form[field as keyof ProductForm]) ||
-      !Array.isArray(form.categories) ||
-      form.categories.length === 0;
-
-    setIsFormValid(!hasErrors && !hasEmptyFields);
-  };
-
   useEffect(() => {
-    validateForm();
-  }, [errors, form]);
+    const hasErrors = Object.values(errors).some((error) => error);
+    const hasEmptyFields = ["name", "price", "cost"].some(
+      (field) => !formIngredients[field as keyof Iingredient]
+    );
+    setIsFormValid(!hasErrors && !hasEmptyFields);
+  }, [errors, formIngredients]);
 
-  const fieldLabels: Record<keyof ProductForm, string> = {
-    code: "Código",
+  const fieldLabels: Record<keyof Iingredient, string> = {
+    id: "ID",
     name: "Nombre",
     description: "Descripción",
     price: "Precio",
     cost: "Costo",
-    categories: "Categoría",
-    isActive: "Inactivo",
-    id: "ID",
-  };
-
-  const handleDelete = (id: string) => {
-    const updatedCategories = form.categories.filter((category) => category !== id);
-    onChange("categories", updatedCategories);
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={formOpen} onClose={handleCloseForm}>
       <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
-        {modalType === "create" ? "Crear Producto" : "Editar Producto"}
+        {formType === FormType.CREATE ? "Crear Producto" : "Editar Producto"}
       </DialogTitle>
       <DialogContent>
-        {["code", "name", "description", "price", "cost"].map((field) => (
+        {["name", "description", "price", "cost"].map((field) => (
           <TextField
             key={field}
             margin="dense"
-            label={fieldLabels[field]}
-            type={["code", "price", "cost"].includes(field) ? "number" : "text"}
+            label={fieldLabels[field as keyof Iingredient]}
+            type={["price", "cost"].includes(field) ? "number" : "text"}
             inputProps={["price", "cost"].includes(field) ? { step: "0.50" } : undefined}
-            value={form[field] ?? ""}
+            value={formIngredients[field as keyof Iingredient] ?? ""}
             onChange={(e) => {
-              const value = ["price", "cost"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseFloat(e.target.value)
-                : ["code"].includes(field)
-                  ? e.target.value === ""
-                    ? null
-                    : parseInt(e.target.value, 10)
-                  : e.target.value;
-              onChange(field as keyof ProductForm, value);
-              if (field !== "code") {
-                validateField(field, value);
-              }
+              const value = e.target.value;
+              setFormIngredients((prev) => ({
+                ...prev,
+                [field]: value,
+              }));
+              validateField(field, value);
             }}
-            onBlur={(e) => {
-              if (field === "code") {
-                validateField(field, e.target.value);
-              }
-            }}
-            error={!!errors[field as keyof ProductForm]}
-            helperText={
-              isCheckingCode && field === "code"
-                ? "Verificando código..."
-                : errors[field as keyof ProductForm]
-            }
+            error={!!errors[field]}
+            helperText={errors[field]}
             fullWidth
             variant="outlined"
           />
         ))}
-
-        {/* CATEGORIAS */}
-        <FormControl fullWidth margin="dense" error={!!errors.categories} variant="outlined">
-          <Autocomplete
-            multiple
-            options={categories}
-            getOptionLabel={(option) => option.name}
-            value={categories.filter((category) => form.categories.includes(category.id))}
-            onChange={(_, newValue) => {
-              const selectedIds = newValue.map((category) => category.id);
-              onChange("categories", selectedIds);
-              validateField("categories", selectedIds);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                variant="outlined"
-                label={fieldLabels.categories}
-                placeholder="Selecciona categorías"
-                error={!!errors.categories}
-                helperText={errors.categories}
-              />
-            )}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.id}
-                  label={option.name}
-                  sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }}
-                />
-              ))
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-          />
-        </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={handleCloseForm} color="primary">
           Cancelar
         </Button>
         <Button onClick={onSave} color="primary" disabled={!isFormValid}>

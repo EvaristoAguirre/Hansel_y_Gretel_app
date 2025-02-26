@@ -12,7 +12,10 @@ type IngredientsContextType = {
   setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
   formType: FormType;
   setFormType: React.Dispatch<React.SetStateAction<FormType>>;
-  handleDelete: (id: string) => Promise<void>;
+  handleDeleteIngredient: (id: string) => Promise<void>;
+  handleCreateIngredient: () => Promise<void>;
+  handleEditIngredient: () => Promise<void>;
+  handleCloseForm: () => void;
 }
 
 const IngredientsContext = createContext<IngredientsContextType>({
@@ -21,13 +24,17 @@ const IngredientsContext = createContext<IngredientsContextType>({
     name: "",
     description: "",
     price: null,
+    cost: null
   },
   setFormIngredients: () => { },
   formOpen: false,
   setFormOpen: () => { },
   formType: FormType.CREATE,
   setFormType: () => { },
-  handleDelete: async () => { },
+  handleDeleteIngredient: async () => { },
+  handleCreateIngredient: async () => { },
+  handleEditIngredient: async () => { },
+  handleCloseForm: () => { }
 
 });
 
@@ -42,11 +49,56 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     name: "",
     description: "",
     price: null,
+    cost: null
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
 
-  const handleDelete = async (id: string) => {
+  const handleCreateIngredient = async () => {
+    try {
+      const preparedForm = {
+        ...formIngredients,
+        price: parseFloat(formIngredients.price as any),
+        cost: parseFloat(formIngredients.cost as any),
+      };
+      //TODO cambiar el fetch por el de INGREDIENTES
+      // const newProduct = await createProduct(preparedForm);
+      // addProduct(newProduct);
+
+      handleCloseForm();
+
+      Swal.fire("Éxito", "Ingrediente creado correctamente.", "success");
+
+    } catch (error) {
+      Swal.fire("Error", "No se pudo crear el ingrediente.", "error");
+      console.error(error);
+    }
+  };
+
+  const handleEditIngredient = async () => {
+    try {
+      const preparedForm = {
+        ...formIngredients,
+        price: parseFloat(formIngredients.price as any),
+        cost: parseFloat(formIngredients.cost as any),
+        id: formIngredients.id,
+      };
+      //TODO cambiar el fetch por el de INGREDIENTES
+      // const updatedProduct = await editProduct(preparedForm);
+
+      // updateProduct(updatedProduct);
+
+      Swal.fire("Éxito", "Ingrediente editado correctamente.", "success");
+
+      handleCloseForm();
+
+    } catch (error) {
+      Swal.fire("Error", "No se pudo editar el ingrediente.", "error");
+      console.error(error);
+    }
+  };
+
+  const handleDeleteIngredient = async (id: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -68,6 +120,16 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       }
     }
   };
+  const handleCloseForm = () => {
+    setFormOpen(false);
+    setFormIngredients({
+      id: "",
+      name: "",
+      description: "",
+      price: null,
+      cost: null,
+    });
+  };
 
   return (
     <IngredientsContext.Provider
@@ -78,7 +140,11 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         setFormOpen,
         formType,
         setFormType,
-        handleDelete
+        handleDeleteIngredient,
+        handleCreateIngredient,
+        handleEditIngredient,
+        handleCloseForm,
+
 
       }}
     >

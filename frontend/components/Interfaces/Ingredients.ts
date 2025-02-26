@@ -3,4 +3,5 @@ export interface Iingredient {
   name: string,
   description: string,
   price: number | null,
+  cost: number | null
 }
