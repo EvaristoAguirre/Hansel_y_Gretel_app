@@ -72,10 +72,14 @@ const ProductsPage: React.FC = () => {
     <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
       <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
-        <Sidebar
-          onCategorySelected={handleCategorySelected}
-          selectedCategoryId={selectedCategoryId}
-        />
+        {
+          (selectedTab === Tab.PRODUCTOS ||
+            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+          <Sidebar
+            onCategorySelected={handleCategorySelected}
+            selectedCategoryId={selectedCategoryId}
+          />
+        }
         {selectedTab === Tab.PRODUCTOS &&
           <Products
             selectedCategoryId={selectedCategoryId}
