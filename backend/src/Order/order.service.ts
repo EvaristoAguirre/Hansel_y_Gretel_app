@@ -5,7 +5,7 @@ import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDetails } from './order_details.entity';
-import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 
 @Injectable()
 export class OrderService {
@@ -14,7 +14,9 @@ export class OrderService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(
+    orderToCreate: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     const orderOpened = await this.orderRepository.openOrder(orderToCreate);
     await this.eventEmitter.emit('order.opened', {
       order: orderOpened,
@@ -22,7 +24,10 @@ export class OrderService {
     return orderOpened;
   }
 
-  async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+  async updateOrder(
+    id: string,
+    updateData: UpdateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     const orderUpdated = await this.orderRepository.updateOrder(id, updateData);
     await this.eventEmitter.emit('order.updated', {
       order: orderUpdated,
@@ -42,7 +47,8 @@ export class OrderService {
     return await this.orderRepository.getAllOrders(page, limit);
   }
 
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
+    console.log('service', id);
     return await this.orderRepository.getOrderById(id);
   }
 
@@ -53,11 +59,17 @@ export class OrderService {
     return await this.orderRepository.getOrdersForOpenOrPendingTables();
   }
 
-  async markOrderAsPendingPayment(id: string): Promise<Order> {
+  async markOrderAsPendingPayment(
+    id: string,
+  ): Promise<OrderSummaryResponseDto> {
     return await this.orderRepository.markOrderAsPendingPayment(id);
   }
 
-  async closeOrder(id: string): Promise<Order> {
+  async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
     return await this.orderRepository.closeOrder(id);
+  }
+
+  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
+    return await this.orderRepository.cancelOrder(id);
   }
 }

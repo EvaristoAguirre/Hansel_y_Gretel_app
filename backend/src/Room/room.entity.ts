@@ -12,6 +12,6 @@ export class Room {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => Table, (table) => table.room)
+  @OneToMany(() => Table, (table) => table.room, { onDelete: 'SET NULL' })
   tables: Table[];
 }

@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { DeleteResult, ILike, Repository } from 'typeorm';
 import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
@@ -97,16 +97,12 @@ export class TableRepository {
     }
   }
 
-  async deleteTable(id: string): Promise<string> {
+  async deleteTable(id: string): Promise<DeleteResult> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
-      const result = await this.tableRepository.update(id, { isActive: false });
-      if (result.affected === 0) {
-        throw new BadRequestException(`Table with ID: ${id} not found`);
-      }
-      return 'Table successfully deleted';
+      return await this.tableRepository.delete(id);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -187,7 +183,7 @@ export class TableRepository {
     }
     try {
       const table = await this.tableRepository.findOne({
-        where: { name: ILike(name), isActive: true },
+        where: { name: ILike(name) },
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
@@ -211,7 +207,7 @@ export class TableRepository {
     }
     try {
       const table = await this.tableRepository.findOne({
-        where: { number: numberType, isActive: true },
+        where: { number: numberType },
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${number} not found`);

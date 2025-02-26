@@ -45,6 +45,11 @@ const usePedido = () => {
     { productId: string; quantity: number; price: number; name: string }[]
   >([]);
   const { products } = useProductStore();
+  const productsDetailsAcortado: {
+    productsDetails: { productId: string; quantity: number }[];
+  } = {
+    productsDetails: [],
+  };
 
   useEffect(() => {
     setProductosDisponibles(products); // Sincronizar productos disponibles
@@ -160,14 +165,14 @@ const usePedido = () => {
   };
 
   const acortarProductsDetails = (productsDetails: any) => {
-    const productsDetailsAcortado: any[] = productsDetails.map(
-      (product: any) => {
+    const productsDetailsElemento: { productId: string; quantity: number }[] =
+      productsDetails.map((product: any) => {
         return {
           productId: product.productId,
           quantity: product.quantity,
         };
-      }
-    );
+      });
+    productsDetailsAcortado.productsDetails = productsDetailsElemento;
     return productsDetailsAcortado;
   };
 
@@ -177,14 +182,12 @@ const usePedido = () => {
       return;
     }
     try {
-      const productsDetailsAcortado = acortarProductsDetails(
-        productosActualizados
-      );
-      console.log("productsDetailsAcortado: ", productsDetailsAcortado);
+      const productsDetails = acortarProductsDetails(productosActualizados);
+      console.log("productsDetailsAcortado: ", productsDetails);
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(productsDetailsAcortado || []),
+        body: JSON.stringify(productsDetails || []),
       });
 
       if (!response.ok) {

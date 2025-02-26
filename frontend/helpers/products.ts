@@ -101,7 +101,7 @@ export const searchProducts = async (searchTerm: string, selectedCategoryId: str
     }
 
     const data = await response.json();
-    console.log("✅ Productos encontrados:", data);
+
     return data.data;
   } catch (error) {
     console.error("❌ Error fetching searched products:", error);

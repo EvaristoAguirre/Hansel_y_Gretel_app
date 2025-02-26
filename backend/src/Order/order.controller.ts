@@ -13,25 +13,28 @@ import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
-import { instanceToPlain } from 'class-transformer';
-import { Product } from 'src/Product/product.entity';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('open')
-  openOrder(@Body() openOrder: CreateOrderDto): Promise<Order> {
+  openOrder(
+    @Body() openOrder: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     return this.orderService.openOrder(openOrder);
   }
 
   @Post('close/:id')
-  closeOrder(@Param('id') id: string): Promise<Order> {
+  closeOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
     return this.orderService.closeOrder(id);
   }
 
   @Post('pending/:id')
-  markOrderAsPendingPayment(@Param('id') id: string): Promise<Order> {
+  markOrderAsPendingPayment(
+    @Param('id') id: string,
+  ): Promise<OrderSummaryResponseDto> {
     return this.orderService.markOrderAsPendingPayment(id);
   }
 
@@ -39,10 +42,13 @@ export class OrderController {
   async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
-  ): Promise<Order> {
-    console.log(updateData);
+  ): Promise<OrderSummaryResponseDto> {
     const order = await this.orderService.updateOrder(id, updateData);
-    return instanceToPlain(order) as Order;
+    return order;
+  }
+  @Patch('cancel/:id')
+  async cancelOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+    return await this.orderService.cancelOrder(id);
   }
 
   @Delete(':id')
@@ -70,7 +76,8 @@ export class OrderController {
   }
 
   @Get(':id')
-  getOrderById(@Param('id') id: string): Promise<Order> {
+  getOrderById(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+    console.log(id);
     return this.orderService.getOrderById(id);
   }
 }

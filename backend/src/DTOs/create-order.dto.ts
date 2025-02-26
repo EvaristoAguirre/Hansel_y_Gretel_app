@@ -10,10 +10,6 @@ export class CreateOrderDto {
   @IsNumber()
   numberCustomers: number;
 
-  // @IsNotEmpty()
-  // @IsArray()
-  // productsDetails?: OrderDetailsDto[];
-
   @IsOptional()
   @IsString()
   comment?: string;

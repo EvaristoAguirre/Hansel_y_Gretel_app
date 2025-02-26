@@ -14,7 +14,8 @@ import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { ProductSummary } from 'src/DTOs/productSummary.dto';
 
 @Injectable()
 export class OrderRepository {
@@ -28,7 +29,9 @@ export class OrderRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
-  async openOrder(orderToCreate: CreateOrderDto): Promise<Order> {
+  async openOrder(
+    orderToCreate: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
@@ -56,10 +59,10 @@ export class OrderRepository {
         orderDetails: [],
       });
 
-      return await this.orderRepository.save(newOrder);
+      await this.orderRepository.save(newOrder);
+      const responseAdapted = await this.adaptResponse(newOrder);
+      return responseAdapted;
     } catch (error) {
-      console.error(`[CreateOrder Error]: ${error.message}`, error);
-
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException
@@ -73,21 +76,23 @@ export class OrderRepository {
     }
   }
 
-  async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
+  async updateOrder(
+    id: string,
+    updateData: UpdateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');
     }
 
-    // if (updateData.state !== OrderState.OPEN) {
-    //   throw new BadRequestException(
-    //     'Only orders with state "open" can be modified.',
-    //   );
-    // }
-
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
 
       if (!order) {
@@ -108,6 +113,14 @@ export class OrderRepository {
 
       if (updateData.state) {
         order.state = updateData.state;
+      }
+
+      if (updateData.numberCustomers) {
+        order.numberCustomers = updateData.numberCustomers;
+      }
+
+      if (updateData.comment) {
+        order.comment = updateData.comment;
       }
 
       if (updateData.tableId) {
@@ -169,7 +182,10 @@ export class OrderRepository {
         }
       }
 
-      return await this.orderRepository.save(order);
+      const updatedOrder = await this.orderRepository.save(order);
+
+      const responseAdapted = await this.adaptResponse(updatedOrder);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -231,19 +247,27 @@ export class OrderRepository {
     }
   }
 
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
+    console.log('repoitory', id);
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails', 'orderDetails.product', 'table'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
-      return order;
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -297,7 +321,9 @@ export class OrderRepository {
     }
   }
 
-  async markOrderAsPendingPayment(id: string): Promise<Order> {
+  async markOrderAsPendingPayment(
+    id: string,
+  ): Promise<OrderSummaryResponseDto> {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -315,6 +341,8 @@ export class OrderRepository {
       }
 
       order.state = OrderState.PENDING_PAYMENT;
+      order.table.state = TableState.PENDING_PAYMENT;
+      await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
 
       // Emitir evento para generar el ticket
@@ -322,7 +350,9 @@ export class OrderRepository {
       console.log('estoy emitiendo el ticket de la orden', {
         orderId: order.id,
       });
-      return order;
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -336,7 +366,7 @@ export class OrderRepository {
     }
   }
 
-  async closeOrder(id: string): Promise<Order> {
+  async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -360,9 +390,8 @@ export class OrderRepository {
 
       // Emitir evento para notificar que la orden ha sido cerrada
       // this.eventEmitter.emit('order.closed', { orderId: order.id });
-      console.log('cambiando estado a orden cerrada', { orderId: order.id });
-      console.log(order);
-      return order;
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
       console.error(`[CloseOrder Error]: ${error.message}`, error);
 
@@ -377,5 +406,85 @@ export class OrderRepository {
         'Error closing the order. Please try again later.',
       );
     }
+  }
+
+  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+      if (order.state !== OrderState.CLOSED) {
+        order.state = OrderState.CANCELLED;
+      }
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException(
+          'This order is closed. It cannot be cancelled.',
+        );
+      }
+
+      await this.orderRepository.save(order);
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error canceling the order. Please try again later.',
+      );
+    }
+  }
+
+  async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
+    const productSummary: Record<string, ProductSummary> =
+      order.orderDetails.reduce(
+        (acc, detail) => {
+          const productId = detail.product.id;
+          const unitaryPrice = Number(detail.unitaryPrice);
+          const subtotal = Number(detail.subtotal);
+          if (!acc[productId]) {
+            acc[productId] = {
+              productId: detail.product.id,
+              productName: detail.product.name,
+              quantity: 0,
+              unitaryPrice: unitaryPrice,
+              subtotal: 0,
+            };
+          }
+          acc[productId].quantity += detail.quantity;
+          acc[productId].subtotal += subtotal;
+          return acc;
+        },
+        {} as Record<string, ProductSummary>,
+      );
+
+    const productSummaryArray: ProductSummary[] = Object.values(productSummary);
+
+    const response = new OrderSummaryResponseDto();
+    response.id = order.id;
+    response.state = order.state;
+    response.numberCustomers = order.numberCustomers;
+    response.comment = order.comment;
+    response.table = {
+      id: order.table.id,
+      name: order.table.name,
+      state: order.table.state,
+    };
+    response.total = order.total;
+    response.products = productSummaryArray;
+
+    return response;
   }
 }

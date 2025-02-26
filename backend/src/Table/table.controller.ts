@@ -12,6 +12,7 @@ import { TableService } from './table.service';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { Table } from './table.entity';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
+import { DeleteResult } from 'typeorm';
 
 @Controller('tables')
 export class TableController {
@@ -31,7 +32,7 @@ export class TableController {
   }
 
   @Delete(':id')
-  deleteTable(@Param('id') id: string): Promise<string> {
+  deleteTable(@Param('id') id: string): Promise<DeleteResult> {
     return this.tableService.deleteTable(id);
   }
 
