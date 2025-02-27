@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateUnitOfMeasureDto {
   @IsString()
@@ -7,5 +7,13 @@ export class CreateUnitOfMeasureDto {
 
   @IsString()
   @IsOptional()
-  abbreviation: string;
+  abbreviation?: string;
+
+  @IsNumber()
+  @IsOptional()
+  equivalenceToBaseUnit?: number;
+
+  @IsString()
+  @IsOptional()
+  baseUnitId?: string;
 }

@@ -38,10 +38,13 @@ export class IngredientService {
   }
 
   async getAllUnitOfMeasure(
-    page: number,
-    limit: number,
+    pageNumber: number,
+    limitNumber: number,
   ): Promise<UnitOfMeasure[]> {
-    return await this.ingredientRepository.getAllUnitOfMeasure(page, limit);
+    return await this.ingredientRepository.getAllUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
   }
 
   async getUnitOfMeasureById(id: string): Promise<UnitOfMeasure> {

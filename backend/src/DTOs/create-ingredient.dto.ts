@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -24,4 +25,8 @@ export class CreateIngredientDto {
   @Min(0)
   @IsOptional()
   cost?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
