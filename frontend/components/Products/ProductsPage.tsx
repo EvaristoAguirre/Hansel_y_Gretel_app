@@ -10,8 +10,8 @@ import CategoriasProductos from "@/components/Categorías/CategoríasProductos/C
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
 import { Tab } from "../Enums/view-products";
-import CategoriasIngredientes from "../Categorías/CategoríasIngredientes/CategoriasIngredientes";
 import Ingredients from "./TabIngredients/Ingredients";
+import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 
 
 const ProductsPage: React.FC = () => {
@@ -20,7 +20,7 @@ const ProductsPage: React.FC = () => {
     Tab.PRODUCTOS,
     Tab.INGREDIENTES,
     Tab.CATEGORIA_PRODUCTOS,
-    Tab.CATEGORIA_INGREDIENTES,
+    Tab.UNIDADES_MEDIDA,
     Tab.CONTROL_DE_STOCK,
   ]);
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -94,7 +94,7 @@ const ProductsPage: React.FC = () => {
             />
           </Box>
         )}
-        {selectedTab === Tab.CATEGORIA_INGREDIENTES && <CategoriasIngredientes />}
+        {selectedTab === Tab.UNIDADES_MEDIDA && <UnitOfMeasure />}
         {selectedTab === Tab.INGREDIENTES && <Ingredients />}
       </Box>
     </Box>

@@ -11,7 +11,7 @@ interface ProductTableProps {
 }
 const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, height = 450 }) => {
   return (
-    <Box sx={{ height, mt: 2 }}>
+    <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
       <DataGrid
         rows={rows}
         columns={columns}

@@ -2,7 +2,7 @@ export enum Tab {
   PRODUCTOS = 'Productos',
   INGREDIENTES = 'Ingredientes',
   CATEGORIA_PRODUCTOS = 'Categoría productos',
-  CATEGORIA_INGREDIENTES = 'Categoría ingredientes',
+  UNIDADES_MEDIDA = 'Unidades de medida',
   CONTROL_DE_STOCK = 'Control de Stock',
 }
 export enum Categoria {
