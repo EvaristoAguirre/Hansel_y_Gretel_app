@@ -20,7 +20,7 @@ export class Ingredient {
   @Column({ unique: true })
   name: string;
 
-  @Column()
+  @Column({ default: true })
   isActive: boolean;
 
   @Column({ nullable: true })

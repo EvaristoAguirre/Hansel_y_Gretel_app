@@ -8,7 +8,10 @@ import {
   IsUUID,
   IsNumber,
   IsNotEmpty,
+  ValidateNested,
 } from 'class-validator';
+import { ProductIngredientDto } from './productIngredient.dto';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsOptional()
@@ -43,4 +46,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   providerId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductIngredientDto)
+  ingredients?: ProductIngredientDto[];
 }

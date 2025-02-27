@@ -28,7 +28,7 @@ export class IngredientController {
   }
 
   @Get(':id')
-  async getIngredientById(@Param() id: string): Promise<Ingredient> {
+  async getIngredientById(@Param('id') id: string): Promise<Ingredient> {
     return await this.ingredientService.getIngredientById(id);
   }
 
@@ -36,6 +36,7 @@ export class IngredientController {
   async createIngredient(
     @Body() createData: CreateIngredientDto,
   ): Promise<Ingredient> {
+    console.log('entro la peticion');
     return await this.ingredientService.createIngredient(createData);
   }
 
@@ -48,7 +49,7 @@ export class IngredientController {
   }
 
   @Delete(':id')
-  async deleteIngredient(@Param() id: string) {
+  async deleteIngredient(@Param('id') id: string) {
     return await this.ingredientService.deleteIngredient(id);
   }
 
@@ -61,15 +62,20 @@ export class IngredientController {
     return await this.ingredientService.createUnitOfMeasure(createData);
   }
 
-  @Get('unitofmeasure')
+  @Get('unitofmeasure/all')
   async getAllUnitOfMeasure(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
   ): Promise<UnitOfMeasure[]> {
-    return await this.ingredientService.getAllUnitOfMeasure(page, limit);
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    return await this.ingredientService.getAllUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
   }
   @Get('unitofmeasure/:id')
-  async getUnitOfMeasureById(@Param() id: string): Promise<UnitOfMeasure> {
+  async getUnitOfMeasureById(@Param('id') id: string): Promise<UnitOfMeasure> {
     return await this.ingredientService.getUnitOfMeasureById(id);
   }
 }
