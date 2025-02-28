@@ -13,6 +13,7 @@ import { Tab } from "../Enums/view-products";
 import Ingredients from "./TabIngredients/Ingredients";
 import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 import IngredientsProvider from "@/app/context/ingredientsContext";
+import UnitProvider from "@/app/context/unitOfMeasureContext";
 
 
 const ProductsPage: React.FC = () => {
@@ -96,8 +97,10 @@ const ProductsPage: React.FC = () => {
           </Box>
         )}
         {selectedTab === Tab.UNIDADES_MEDIDA &&
-          <UnitOfMeasure
-          />}
+          <UnitProvider>
+            <UnitOfMeasure />
+          </UnitProvider>
+        }
         {selectedTab === Tab.INGREDIENTES &&
           <IngredientsProvider>
             <Ingredients />

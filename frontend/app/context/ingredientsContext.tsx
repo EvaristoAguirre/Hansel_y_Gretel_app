@@ -91,8 +91,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         price: parseFloat(formIngredients.price as any),
         cost: parseFloat(formIngredients.cost as any),
       };
-      console.log("Form para crear ingrediente", preparedForm);
-
       const newIngredient = await createIngredient(preparedForm);
       addIngredient(newIngredient);
 

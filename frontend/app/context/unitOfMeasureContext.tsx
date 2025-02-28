@@ -1,11 +1,14 @@
 'use client';
 import { FormType } from '@/components/Enums/Ingredients';
 import { IUnitOfMeasure } from '@/components/Interfaces/IUnitOfMeasure';
-import { createContext, useContext, useState } from 'react';
+import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
+import { createUnit, editUnit, deleteUnit, fetchUnits } from '../../api/unitOfMeasure';
+import UnitOfMeasure from '../../components/Products/TabUnitOfMeasure/UnitOfMeasure';
 
 
 type UnitContextType = {
+  units: IUnitOfMeasure[];
   formUnit: IUnitOfMeasure;
   setFormUnit: React.Dispatch<React.SetStateAction<IUnitOfMeasure>>;
   formOpenUnit: boolean;
@@ -20,12 +23,12 @@ type UnitContextType = {
 }
 
 const UnitContext = createContext<UnitContextType>({
+  units: [],
   formUnit: {
-    quantity: null,
     name: "",
     abbreviation: "",
-    equivalent_quantity: null,
-    equivalent_unit: "",
+    equivalenceToBaseUnit: null,
+    baseUnitId: "",
   },
   setFormUnit: () => { },
   formOpenUnit: false,
@@ -43,27 +46,49 @@ export const useUnitContext = () => {
   return context;
 };
 
+
+
 const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [formUnit, setFormUnit] = useState<IUnitOfMeasure>({
     name: "",
-    quantity: null,
     abbreviation: "",
-    equivalent_quantity: null,
-    equivalent_unit: "",
+    equivalenceToBaseUnit: null,
+    baseUnitId: "",
   });
   const [formOpenUnit, setFormOpenUnit] = useState(false);
   const [formTypeUnit, setFormTypeUnit] = useState<FormType>(FormType.CREATE);
+  const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
 
+  useEffect(() => {
+    fetchUnits().then(dataUnit => {
+      if (dataUnit) setUnits(dataUnit);
+    });
+  }, []);
+  const addUnit = (unit: IUnitOfMeasure) => {
+    setUnits([...units, unit]);
+  }
+
+  const updateUnit = (unit: IUnitOfMeasure) => {
+    const updatedUnits = units.map((u) => {
+      if (u.id === unit.id) {
+        return unit;
+      }
+      return u;
+    });
+    setUnits(updatedUnits);
+  }
+
+  const removeUnit = (id: string) => {
+    setUnits(units.filter((unit) => unit.id !== id));
+  }
   const handleCreateUnit = async () => {
     try {
-      // const preparedForm = {
-      //   ...formUnit,
-      //   price: parseFloat(formUnit.price as any),
-      //   cost: parseFloat(formUnit.cost as any),
-      // };
-      //TODO cambiar el fetch por el de INGREDIENTES
-      // const newProduct = await createProduct(preparedForm);
-      // addProduct(newProduct);
+      const preparedForm = {
+        ...formUnit,
+        equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
+      };
+      const newUnit = await createUnit(preparedForm);
+      addUnit(newUnit);
 
       handleCloseFormUnit();
 
@@ -77,23 +102,21 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
   const handleEditUnit = async () => {
     try {
-      // const preparedForm = {
-      //   ...formUnit,
-      //   price: parseFloat(formUnits.price as any),
-      //   cost: parseFloat(formUnit.cost as any),
-      //   id: formUnit.id,
-      // };
-      //TODO cambiar el fetch por el de INGREDIENTES
-      // const updatedProduct = await editProduct(preparedForm);
+      const preparedForm = {
+        ...formUnit,
+        equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
+        id: formUnit.id,
+      };
+      const updatedUnit = await editUnit(preparedForm);
 
-      // updateProduct(updatedProduct);
+      updateUnit(updatedUnit);
 
-      Swal.fire("Éxito", "Ingrediente editado correctamente.", "success");
+      Swal.fire("Éxito", "Unidad de medida editada correctamente.", "success");
 
       handleCloseFormUnit();
 
     } catch (error) {
-      Swal.fire("Error", "No se pudo editar el ingrediente.", "error");
+      Swal.fire("Error", "No se pudo editar la unidad de medida.", "error");
       console.error(error);
     }
   };
@@ -110,9 +133,10 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
     if (confirm.isConfirmed) {
       try {
-        //TOdo cambiar el fetch por el de INGREDIENTES
-        // await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
-        // removeProduct(id);
+        const deletedIngredient = await deleteUnit(id);
+        if (deletedIngredient) {
+          removeUnit(id);
+        }
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo eliminar el producto.", "error");
@@ -124,16 +148,16 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     setFormOpenUnit(false);
     setFormUnit({
       name: "",
-      quantity: null,
       abbreviation: "",
-      equivalent_quantity: null,
-      equivalent_unit: "",
+      equivalenceToBaseUnit: null,
+      baseUnitId: "",
     });
   };
 
   return (
     <UnitContext.Provider
       value={{
+        units,
         formUnit,
         setFormUnit,
         formOpenUnit,

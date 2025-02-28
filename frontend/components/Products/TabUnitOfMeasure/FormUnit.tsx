@@ -6,8 +6,8 @@ import {
   TextField,
   DialogActions,
   Button,
-  Box,
   Stack,
+  Autocomplete,
 } from "@mui/material";
 import { FormType } from "@/components/Enums/Ingredients";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
@@ -25,11 +25,13 @@ export const FormUnit = ({
   onSave: () => void;
 }) => {
   const {
+    units,
     formUnit,
     setFormUnit,
     formOpenUnit,
     handleCloseFormUnit,
   } = useUnitContext();
+
 
   const [errors, setErrors] = useState<Errors>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -39,7 +41,7 @@ export const FormUnit = ({
 
     if (!value.trim()) {
       error = "Este campo es obligatorio";
-    } else if (["quantity", "equivalent_quantity"].includes(field) && Number(value) <= 0) {
+    } else if (["equivalenceToBaseUnit"].includes(field) && Number(value) <= 0) {
       error = "Debe ser un número positivo";
     }
 
@@ -48,7 +50,7 @@ export const FormUnit = ({
 
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields = ["quantity", "name", "abbreviation", "equivalent_quantity", "equivalent_unit"].some(
+    const hasEmptyFields = ["quantity", "name", "abbreviation", "equivalenceToBaseUnit", "baseUnitId"].some(
       (field) => !formUnit[field as keyof IUnitOfMeasure]
     );
     setIsFormValid(!hasErrors && !hasEmptyFields);
@@ -56,41 +58,24 @@ export const FormUnit = ({
 
   return (
     <Dialog open={formOpenUnit} onClose={handleCloseFormUnit} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ color: "primary.main", fontWeight: "bold" }}>
+      <DialogTitle sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}>
         {formType === FormType.CREATE ? "Crear Unidad de Medida" : "Editar Unidad de Medida"}
       </DialogTitle>
       <DialogContent>
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Cantidad"
-              type="number"
-              inputProps={{ step: "0.50", min: "0" }}
-              value={formUnit.quantity ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormUnit((prev) => ({ ...prev, quantity: Number(value) }));
-                validateField("quantity", value);
-              }}
-              error={!!errors.quantity}
-              helperText={errors.quantity}
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              label="Nombre"
-              value={formUnit.name ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormUnit((prev) => ({ ...prev, name: value }));
-                validateField("name", value);
-              }}
-              error={!!errors.name}
-              helperText={errors.name}
-              fullWidth
-              variant="outlined"
-            />
-          </Stack>
+        <Stack direction="row" spacing={2} sx={{ my: 1 }}>
+          <TextField
+            label="Nombre de la nueva unidad"
+            value={formUnit.name ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormUnit((prev) => ({ ...prev, name: value }));
+              validateField("name", value);
+            }}
+            error={!!errors.name}
+            helperText={errors.name}
+            sx={{ width: "50%" }}
+            variant="outlined"
+          />
           <TextField
             label="Abreviatura"
             value={formUnit.abbreviation ?? ""}
@@ -101,46 +86,60 @@ export const FormUnit = ({
             }}
             error={!!errors.abbreviation}
             helperText={errors.abbreviation}
-            fullWidth
+            sx={{ width: "50%" }}
             variant="outlined"
           />
-          <Stack direction="row" spacing={1}>
-            <TextField
-              label="Equivalencia Numérica"
-              type="number"
-              inputProps={{ step: "0.50", min: "0" }}
-              value={formUnit.equivalent_quantity ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormUnit((prev) => ({ ...prev, equivalent_quantity: Number(value) }));
-                validateField("equivalent_quantity", value);
-              }}
-              error={!!errors.equivalent_quantity}
-              helperText={errors.equivalent_quantity}
-              fullWidth
-              variant="outlined"
-            />
-            <TextField
-              label="Unidad de Equivalencia"
-              value={formUnit.equivalent_unit ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormUnit((prev) => ({ ...prev, equivalent_unit: value }));
-                validateField("equivalent_unit", value);
-              }}
-              error={!!errors.equivalent_unit}
-              helperText={errors.equivalent_unit}
-              fullWidth
-              variant="outlined"
-            />
-          </Stack>
+        </Stack>
+
+        <Stack direction="row" spacing={2}>
+          <TextField
+            label="Equivale a la cantidad de: "
+            type="number"
+            inputProps={{ step: "0.50", min: "0" }}
+            value={formUnit.equivalenceToBaseUnit ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormUnit((prev) => ({ ...prev, equivalenceToBaseUnit: Number(value) }));
+              validateField("equivalenceToBaseUnit", value);
+            }}
+            error={!!errors.equivalenceToBaseUnit}
+            helperText={errors.equivalenceToBaseUnit}
+            sx={{ width: "50%" }}
+            variant="outlined"
+          />
+          <Autocomplete
+            options={units}
+            getOptionLabel={(option) => option.abbreviation}
+            value={units.find((unit) => unit.id === formUnit.baseUnitId) || null}
+            onChange={(event, newValue) => {
+              setFormUnit((prev) => ({
+                ...prev,
+                baseUnitId: newValue?.id || "",
+              }));
+              if (newValue) {
+                validateField("baseUnitId", newValue.id || "");
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Unidad de Equivalencia"
+                variant="outlined"
+                error={!!errors.baseUnitId}
+                helperText={errors.baseUnitId}
+              />
+            )}
+            sx={{ width: "50%" }}
+          />
+
+
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseFormUnit} color="secondary">
           Cancelar
         </Button>
-        <Button onClick={onSave} color="primary" disabled={!isFormValid}>
+        <Button onClick={onSave} color="primary">
           Guardar
         </Button>
       </DialogActions>

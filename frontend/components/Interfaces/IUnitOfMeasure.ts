@@ -1,9 +1,11 @@
+
+
 export interface IUnitOfMeasure {
+  id?: string;
   name: string;
   abbreviation: string;
-  quantity: number | null;
-  equivalent_quantity: number | null;
-  equivalent_unit: string;
+  equivalenceToBaseUnit: number | null;
+  baseUnitId: string;
 }
 
 export interface IUnitOfMeasureStandard {

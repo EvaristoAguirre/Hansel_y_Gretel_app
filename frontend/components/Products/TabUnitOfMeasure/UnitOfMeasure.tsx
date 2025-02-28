@@ -12,6 +12,7 @@ import { FormUnit } from "./FormUnit";
 
 const UnitOfMeasure = () => {
   const {
+    units,
     formUnit,
     setFormUnit,
     formTypeUnit,
@@ -25,34 +26,34 @@ const UnitOfMeasure = () => {
 
   } = useUnitContext();
 
-  const unit: IUnitOfMeasureStandard[] = [
-    {
-      id: "1",
-      name: "Gramos",
-      abbreviation: "g",
-    },
-    {
-      id: "2",
-      name: "Kilogramos",
-      abbreviation: "kg",
-    },
-    {
-      id: "3",
-      name: "Litros",
-      abbreviation: "l",
-    },
-    {
-      id: "4",
-      name: "Mililitros",
-      abbreviation: "ml",
-    },
-    {
-      id: "5",
-      name: "Unidad",
-      abbreviation: "u",
-    },
+  // const unit: IUnitOfMeasureStandard[] = [
+  //   {
+  //     id: "1",
+  //     name: "Gramos",
+  //     abbreviation: "g",
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Kilogramos",
+  //     abbreviation: "kg",
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "Litros",
+  //     abbreviation: "l",
+  //   },
+  //   {
+  //     id: "4",
+  //     name: "Mililitros",
+  //     abbreviation: "ml",
+  //   },
+  //   {
+  //     id: "5",
+  //     name: "Unidad",
+  //     abbreviation: "u",
+  //   },
 
-  ]
+  // ]
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "abbreviation", headerName: "Abreviatura", width: 100 },
@@ -72,8 +73,8 @@ const UnitOfMeasure = () => {
                 name: params.row.name,
                 quantity: params.row.quantity,
                 abbreviation: params.row.abbreviation,
-                equivalent_quantity: params.row.equivalency_number,
-                equivalent_unit: params.row.equivalency_unit,
+                equivalenceToBaseUnit: params.row.equivalenceToBaseUnit,
+                baseUnitId: params.row.baseUnitId,
 
               });
               setFormTypeUnit(FormType.EDIT);
@@ -114,7 +115,7 @@ const UnitOfMeasure = () => {
         </Button>
       </Box>
       {/* Tabla de productos */}
-      <DataGridComponent rows={unit} columns={columns} />
+      <DataGridComponent rows={units} columns={columns} />
 
       {/* Form para crear/editar Ingrediente */}
       {formOpenUnit && (
