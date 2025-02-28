@@ -11,6 +11,7 @@ import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Room } from 'src/Room/room.entity';
+import { OrderState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class TableRepository {
@@ -158,13 +159,23 @@ export class TableRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+
     try {
       const table = await this.tableRepository.findOne({
         where: { id, isActive: true },
+        relations: ['orders'],
       });
+
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);
       }
+
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
+
       return table;
     } catch (error) {
       if (
@@ -184,10 +195,16 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { name: ILike(name) },
+        relations: ['orders'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
       }
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
       return table;
     } catch (error) {
       if (
@@ -208,10 +225,16 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { number: numberType },
+        relations: ['orders'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${number} not found`);
       }
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
       return table;
     } catch (error) {
       if (
