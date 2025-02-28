@@ -3,14 +3,17 @@ import { FormType } from '@/components/Enums/Ingredients';
 import { Iingredient } from '@/components/Interfaces/Ingredients';
 import { createContext, useContext, useState } from 'react';
 import Swal from 'sweetalert2';
+import { createIngredient, deleteIngredient, editIngredient, fetchIngredients } from '../../api/ingredients';
+import { useEffect } from 'react';
 
 
 type IngredientsContextType = {
   formIngredients: Iingredient;
-  setFormIngredients: React.Dispatch<React.SetStateAction<Iingredient>>;
   formOpen: boolean;
-  setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
   formType: FormType;
+  ingredients: Iingredient[];
+  setFormIngredients: React.Dispatch<React.SetStateAction<Iingredient>>;
+  setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setFormType: React.Dispatch<React.SetStateAction<FormType>>;
   handleDeleteIngredient: (id: string) => Promise<void>;
   handleCreateIngredient: () => Promise<void>;
@@ -34,9 +37,12 @@ const IngredientsContext = createContext<IngredientsContextType>({
   handleDeleteIngredient: async () => { },
   handleCreateIngredient: async () => { },
   handleEditIngredient: async () => { },
-  handleCloseForm: () => { }
+  handleCloseForm: () => { },
+  ingredients: []
 
 });
+
+
 
 export const useIngredientsContext = () => {
   const context = useContext(IngredientsContext);
@@ -53,6 +59,31 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
+  const [ingredients, setIngredients] = useState<Iingredient[]>([]);
+
+  useEffect(() => {
+    fetchIngredients().then(dataIngredients => {
+      if (dataIngredients) setIngredients(dataIngredients);
+    });
+  }, []);
+
+  const addIngredient = (ingredient: Iingredient) => {
+    setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
+  };
+
+  const updateIngredient = (ingredient: Iingredient) => {
+    setIngredients((prevIngredients) =>
+      prevIngredients.map((prevIngredient) =>
+        prevIngredient.id === ingredient.id ? ingredient : prevIngredient
+      )
+    );
+  };
+
+  const removeIngredient = (id: string) => {
+    setIngredients((prevIngredients) =>
+      prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
+    );
+  };
 
   const handleCreateIngredient = async () => {
     try {
@@ -61,9 +92,8 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         price: parseFloat(formIngredients.price as any),
         cost: parseFloat(formIngredients.cost as any),
       };
-      //TODO cambiar el fetch por el de INGREDIENTES
-      // const newProduct = await createProduct(preparedForm);
-      // addProduct(newProduct);
+      const newIngredient = await createIngredient(preparedForm);
+      addIngredient(newIngredient);
 
       handleCloseForm();
 
@@ -83,10 +113,9 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         cost: parseFloat(formIngredients.cost as any),
         id: formIngredients.id,
       };
-      //TODO cambiar el fetch por el de INGREDIENTES
-      // const updatedProduct = await editProduct(preparedForm);
+      const updatedIngredient = await editIngredient(preparedForm);
 
-      // updateProduct(updatedProduct);
+      updateIngredient(updatedIngredient);
 
       Swal.fire("Éxito", "Ingrediente editado correctamente.", "success");
 
@@ -110,9 +139,10 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
 
     if (confirm.isConfirmed) {
       try {
-        //TOdo cambiar el fetch por el de INGREDIENTES
-        // await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
-        // removeProduct(id);
+        const deletedIngredient = await deleteIngredient(id);
+        if (deletedIngredient) {
+          removeIngredient(id);
+        }
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo eliminar el producto.", "error");
@@ -135,16 +165,16 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     <IngredientsContext.Provider
       value={{
         formIngredients,
-        setFormIngredients,
         formOpen,
-        setFormOpen,
         formType,
+        ingredients,
+        setFormIngredients,
+        setFormOpen,
         setFormType,
         handleDeleteIngredient,
         handleCreateIngredient,
         handleEditIngredient,
         handleCloseForm,
-
 
       }}
     >

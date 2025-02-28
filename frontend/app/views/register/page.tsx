@@ -5,7 +5,7 @@ import { Card, CardContent, Typography, TextField, Button, Box, MenuItem } from 
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
-import { registerUser } from '@/helpers/login-register';
+import { registerUser } from '@/api/login-register';
 import { RegisterRequest } from '@/components/Interfaces/IUsers';
 import Swal from 'sweetalert2';
 import { UserRole } from '@/components/Enums/user';

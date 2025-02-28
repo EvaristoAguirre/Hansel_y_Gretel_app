@@ -12,7 +12,7 @@ import {
 import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
 import { ICategory } from "../../Interfaces/ICategories";
 import { Autocomplete } from "@mui/material";
-import { getProductByCode } from "@/helpers/products";
+import { getProductByCode } from "@/api/products";
 
 interface ProductDialogProps {
   open: boolean;

@@ -7,7 +7,7 @@ import { ProductsProps } from "@/components/Interfaces/IProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { getProductsByCategory, searchProducts } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/api/products";
 
 const ingredientes = [
   { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },

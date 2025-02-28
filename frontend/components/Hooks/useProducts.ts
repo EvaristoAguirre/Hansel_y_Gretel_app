@@ -1,9 +1,9 @@
-import { createProduct, fetchProducts } from "@/helpers/products";
+import { createProduct, fetchProducts } from "@/api/products";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
-import { editProduct } from '../../helpers/products';
+import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
 
 export const useProductos = () => {

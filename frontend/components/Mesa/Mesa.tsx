@@ -5,7 +5,7 @@ import MesaCard from "./MesaCard";
 import MesaModal from "./MesaModal";
 import { TableCreated } from "./useTableStore";
 import { Button } from "@mui/material";
-import { validateTableByNumber } from "@/helpers/tables";
+import { validateTableByNumber } from "@/api/tables";
 
 const Mesa: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 

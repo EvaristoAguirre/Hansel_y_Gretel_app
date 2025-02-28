@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button, Box } from "@mui/material";
-import { getProductsByCategory, searchProducts } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/api/products";
 import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";

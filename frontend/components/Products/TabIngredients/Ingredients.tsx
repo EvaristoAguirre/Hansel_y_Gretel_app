@@ -12,7 +12,7 @@ const Ingredients = () => {
   const {
     formType,
     formOpen,
-    formIngredients,
+    ingredients,
     setFormIngredients,
     setFormType,
     setFormOpen,
@@ -20,24 +20,25 @@ const Ingredients = () => {
     handleCreateIngredient,
     handleEditIngredient
   } = useIngredientsContext();
-  const ingredients = [
-    {
-      id: 1,
-      name: "Ingredient 1",
-      description: "Description 1",
-      price: 10.99,
-    },
-    {
-      id: 2,
-      name: "Ingredient 2",
-      description: "Description 2",
-      price: 19.99,
-    }
-  ]
+  // const ingredients = [
+  //   {
+  //     id: 1,
+  //     name: "Ingredient 1",
+  //     description: "Description 1",
+  //     price: 10.99,
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Ingredient 2",
+  //     description: "Description 2",
+  //     price: 19.99,
+  //   }
+  // ]
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
     { field: "price", headerName: "Precio", width: 100 },
+    { field: "cost", headerName: "Costo", width: 100 },
     {
       field: "actions",
       headerName: "Acciones",
