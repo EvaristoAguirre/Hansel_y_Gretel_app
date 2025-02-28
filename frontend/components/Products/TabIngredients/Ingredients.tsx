@@ -20,20 +20,7 @@ const Ingredients = () => {
     handleCreateIngredient,
     handleEditIngredient
   } = useIngredientsContext();
-  // const ingredients = [
-  //   {
-  //     id: 1,
-  //     name: "Ingredient 1",
-  //     description: "Description 1",
-  //     price: 10.99,
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "Ingredient 2",
-  //     description: "Description 2",
-  //     price: 19.99,
-  //   }
-  // ]
+
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
@@ -44,10 +31,10 @@ const Ingredients = () => {
       headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
-        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+        <div>
           <Button
             variant="contained"
-            className="bg-[--color-primary] text-bold mt-2"
+            className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
             onClick={() => {
               setFormIngredients({

@@ -54,10 +54,10 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
       headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
-        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+        <div>
           <Button
             variant="contained"
-            className="bg-[--color-primary] text-bold mt-2"
+            className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
             onClick={() => {
               setForm({

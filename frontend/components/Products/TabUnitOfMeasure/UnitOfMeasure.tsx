@@ -26,34 +26,6 @@ const UnitOfMeasure = () => {
 
   } = useUnitContext();
 
-  // const unit: IUnitOfMeasureStandard[] = [
-  //   {
-  //     id: "1",
-  //     name: "Gramos",
-  //     abbreviation: "g",
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Kilogramos",
-  //     abbreviation: "kg",
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Litros",
-  //     abbreviation: "l",
-  //   },
-  //   {
-  //     id: "4",
-  //     name: "Mililitros",
-  //     abbreviation: "ml",
-  //   },
-  //   {
-  //     id: "5",
-  //     name: "Unidad",
-  //     abbreviation: "u",
-  //   },
-
-  // ]
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "abbreviation", headerName: "Abreviatura", width: 100 },
@@ -62,16 +34,14 @@ const UnitOfMeasure = () => {
       headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
-        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+        <div>
           <Button
             variant="contained"
-            className="bg-[--color-primary] text-bold mt-2"
+            className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
             onClick={() => {
               setFormUnit({
-                // id: params.row.id,
                 name: params.row.name,
-                quantity: params.row.quantity,
                 abbreviation: params.row.abbreviation,
                 equivalenceToBaseUnit: params.row.equivalenceToBaseUnit,
                 baseUnitId: params.row.baseUnitId,
@@ -127,7 +97,5 @@ const UnitOfMeasure = () => {
     </Box>
   )
 }
-//TODO--- Cambiar en 'UnitContextType' la funcionalidad de la funcion 'handleCreateUnit'
-//TODO--- y 'handleEditUnit' para que reciban los datos del formulario
 
 export default UnitOfMeasure;
