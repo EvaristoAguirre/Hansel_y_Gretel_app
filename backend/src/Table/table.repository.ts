@@ -125,9 +125,14 @@ export class TableRepository {
     try {
       const tables = await this.tableRepository
         .createQueryBuilder('table')
-        .leftJoinAndSelect('table.orders', 'order')
+        .leftJoinAndSelect(
+          'table.orders',
+          'order',
+          'order.state IN (:...states)',
+          { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
+        )
         .leftJoinAndSelect('table.room', 'room')
-        .select(['table', 'order.id', 'room.id', 'room.name'])
+        .select(['table', 'order.id', 'order.state', 'room.id', 'room.name'])
         .where('table.isActive = :isActive', { isActive: true })
         .skip((page - 1) * limit)
         .take(limit)
@@ -144,8 +149,12 @@ export class TableRepository {
           id: table.room?.id,
           name: table.room?.name,
         },
-        orders: table.orders.map((order) => order.id),
+        orders: table.orders.map((order) => ({
+          id: order.id,
+          state: order.state,
+        })),
       }));
+
       return result;
     } catch (error) {
       if (error instanceof BadRequestException) {
