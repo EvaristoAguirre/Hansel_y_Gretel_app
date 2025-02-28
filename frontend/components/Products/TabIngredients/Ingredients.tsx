@@ -91,7 +91,7 @@ const Ingredients = () => {
             handleOpenCreateModal();
           }}
         >
-          + Nuevo
+          + Nuevo Ingrediente
         </Button>
       </Box>
       {/* Tabla de productos */}

@@ -6,11 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 const ViewProducts = () => {
   return (
     <ProtectedRoute>
-      <IngredientsProvider>
-        <UnitProvider>
-          <ProductsPage />
-        </UnitProvider>
-      </IngredientsProvider>
+      <ProductsPage />
     </ProtectedRoute>
   );
 };

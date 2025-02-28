@@ -54,6 +54,7 @@ export const FormIngredient = ({
 
   const fieldLabels: Record<keyof Iingredient, string> = {
     id: "ID",
+    isActive: "Activo",
     name: "Nombre",
     description: "Descripción",
     price: "Precio",

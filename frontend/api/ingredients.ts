@@ -9,7 +9,7 @@ export const fetchIngredients = async () => {
 };
 
 export const createIngredient = async (form: Iingredient) => {
-  const response = await fetch(URI_PRODUCT, {
+  const response = await fetch(URI_INGREDIENT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(form),
