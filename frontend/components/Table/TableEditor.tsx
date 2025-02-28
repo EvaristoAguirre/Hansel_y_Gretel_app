@@ -12,14 +12,16 @@ interface Props {
   view: string;
   onAbrirPedido: () => void;
   handleNextStep: () => void
+  handleCompleteStep: () => void
 }
 
 const TableEditor = ({
   view,
   onAbrirPedido,
-  handleNextStep
+  handleNextStep,
+  handleCompleteStep
 }: Props) => {
-  const [cantidadPersonas, setCantidadPersonas] = useState(0);
+  const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null)
   const [comentario, setComentario] = useState('');
   const { handleCreateOrder, handleEditOrder, selectedProducts, selectedOrderByTable } = useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
@@ -33,10 +35,10 @@ const TableEditor = ({
       setComentario('');
     }
     // Número de comensales
-    if (selectedOrderByTable && selectedOrderByTable.numberCustomers) {
+    if (selectedOrderByTable && selectedOrderByTable.numberCustomers != null) {
       setCantidadPersonas(selectedOrderByTable.numberCustomers);
     } else {
-      setCantidadPersonas(0);
+      setCantidadPersonas(null);
     }
   }, [selectedMesa, selectedOrderByTable]);
 
@@ -84,7 +86,7 @@ const TableEditor = ({
                 <label>Cantidad de personas:</label>
                 <input
                   type="number"
-                  value={cantidadPersonas}
+                  value={cantidadPersonas ?? ''}
                   onFocus={(e) => (e.target.style.outline = "none")}
                   onChange={(e) => setCantidadPersonas(Number(e.target.value))}
                   className="bg-transparent border-b-2 border-[#856D5E] w-1/2"
@@ -125,7 +127,7 @@ const TableEditor = ({
                 variant="contained"
                 style={{ marginTop: "10px" }}
                 onClick={() => {
-                  if (cantidadPersonas <= 0) {
+                  if (cantidadPersonas === null || cantidadPersonas <= 0) {
                     Swal.fire(
                       "Error",
                       "La cantidad de personas debe ser mayor a 0.",
@@ -136,6 +138,7 @@ const TableEditor = ({
                     handleCreateOrder(selectedMesa, cantidadPersonas, comentario);
                     onAbrirPedido();
                     handleOpenTable(selectedMesa);
+                    handleCompleteStep();
                     handleNextStep();
                   } else {
                     if (selectedMesa?.orders.length === 0) {

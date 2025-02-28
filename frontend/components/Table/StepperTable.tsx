@@ -53,11 +53,12 @@ export const StepperTable: React.FC<Props> = (
     setActiveStep(step);
   };
 
+  const handleCompleteStep = () => {
+    setCompleted({ ...completed, [activeStep]: true });
+  };
   const handleComplete = () => {
     setCompleted({ ...completed, [activeStep]: true });
-
     handleReset();
-
   };
 
   const handleReset = () => {
@@ -78,12 +79,15 @@ export const StepperTable: React.FC<Props> = (
           view="mesaEditor"
           onAbrirPedido={onAbrirPedido}
           handleNextStep={handleNextStep}
+          handleCompleteStep={handleCompleteStep}
         />;
       case 1:
         return selectedMesa.state === TableState.OPEN ? (
           selectedOrderByTable && (
             <PedidoEditor
               handleNextStep={handleNextStep}
+              handleCompleteStep={handleCompleteStep}
+
             />
           )
         ) :
@@ -109,6 +113,8 @@ export const StepperTable: React.FC<Props> = (
               handleDeleteOrder={handleReset}
               selectedMesa={selectedMesa}
               handleNextStep={handleNextStep}
+              handleCompleteStep={handleCompleteStep}
+
             />
           ) : (
             <div className='flex justify-center text-red-500 font-bold my-16'>
@@ -150,9 +156,6 @@ export const StepperTable: React.FC<Props> = (
                 Atrás
               </Button>
               <Box sx={{ flex: '1 1 auto' }} />
-              {/* {activeStep !== steps.length - 1 && (
-                <Button onClick={handleComplete}>Completar paso</Button>
-              )} */}
               <Button onClick={handleNextStep} sx={{}}>
                 Siguiente
               </Button>

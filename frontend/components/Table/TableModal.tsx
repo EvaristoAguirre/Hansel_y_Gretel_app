@@ -143,7 +143,7 @@ const TableModal: React.FC<MesaModalProps> = ({
         {type === "create" ? "Crear Mesa" : "Editar Mesa"}
       </DialogTitle>
       <DialogContent>
-        {(["number", "name", "coment"] as Array<keyof MesaForm>).map(
+        {(["name", "number", "coment"] as Array<keyof MesaForm>).map(
           (field) => (
             <TextField
               key={field}

@@ -15,11 +15,13 @@ export interface OrderProps {
   imprimirComanda: any
   handleDeleteOrder: any
   selectedMesa: MesaInterface;
-  handleNextStep: () => void
+  handleNextStep: () => void;
+  handleCompleteStep: () => void
 }
 
 const Order: React.FC<OrderProps> = ({
-  handleNextStep
+  handleNextStep,
+  handleCompleteStep
 }) => {
   const {
     selectedOrderByTable,
@@ -62,6 +64,7 @@ const Order: React.FC<OrderProps> = ({
       // setSelectedMesa(tableEdited);
       updateTable(tableEdited);
     }
+    handleCompleteStep();
     handleNextStep();
   };
 

@@ -27,9 +27,12 @@ export interface Product {
 
 interface Props {
   handleNextStep: () => void;
+  handleCompleteStep: () => void;
+
 }
 const useOrderDetailsStore = ({
   handleNextStep,
+  handleCompleteStep
 }: Props) => {
 
   const {
@@ -61,6 +64,7 @@ const useOrderDetailsStore = ({
     if (selectedOrderByTable) {
       handleEditOrder(selectedOrderByTable.id, selectedProducts, selectedOrderByTable.numberCustomers, selectedOrderByTable.comment);
       setSelectedProducts([]);
+      handleCompleteStep();
       handleNextStep();
     }
   };
