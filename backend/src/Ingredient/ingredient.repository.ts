@@ -154,28 +154,45 @@ export class IngredientRepository {
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,
   ): Promise<UnitOfMeasure> {
-    const { name, abbreviation } = createData;
+    const { name, abbreviation, equivalenceToBaseUnit, baseUnitId } =
+      createData;
+
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
-    const existingUnitOfMesure = await this.unitOfMeasureRepository.findOne({
+
+    const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
       where: { name: name },
     });
-    if (existingUnitOfMesure) {
-      throw new ConflictException('Unit of mesure name already exist');
+
+    if (existingUnitOfMeasure) {
+      throw new ConflictException('Unit of measure name already exists');
     }
+
     if (abbreviation) {
-      const existingUnitOfMesure = await this.unitOfMeasureRepository.findOne({
+      const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
         where: { abbreviation: abbreviation },
       });
-      if (existingUnitOfMesure) {
+      if (existingUnitOfMeasure) {
         throw new ConflictException(
-          'Unit of mesure abbreviation already exist',
+          'Unit of measure abbreviation already exists',
         );
       }
     }
+
+    if (equivalenceToBaseUnit && baseUnitId) {
+      const baseUnit = await this.unitOfMeasureRepository.findOne({
+        where: { id: baseUnitId },
+      });
+
+      if (!baseUnit) {
+        throw new BadRequestException('Base unit does not exist');
+      }
+    }
+
     try {
-      return await this.unitOfMeasureRepository.save(createData);
+      const unitOfMeasure = this.unitOfMeasureRepository.create(createData);
+      return await this.unitOfMeasureRepository.save(unitOfMeasure);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -184,17 +201,17 @@ export class IngredientRepository {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error creating the unit of mesure',
+        'Error creating the unit of measure',
         error.message,
       );
     }
   }
 
   async getAllUnitOfMeasure(
-    page: number,
-    limit: number,
+    pageNumber: number,
+    limitNumber: number,
   ): Promise<UnitOfMeasure[]> {
-    if (page <= 0 || limit <= 0) {
+    if (pageNumber <= 0 || limitNumber <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
@@ -202,11 +219,13 @@ export class IngredientRepository {
     try {
       return await this.unitOfMeasureRepository.find({
         where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
+        relations: ['baseUnit'],
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
+      console.error('Error fetching units of measure:', error);
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -220,7 +239,8 @@ export class IngredientRepository {
     }
     try {
       const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
-        where: { id, isActive: true },
+        where: { id: id, isActive: true },
+        relations: ['baseUnit'],
       });
       if (!unitOfMeasure) {
         throw new NotFoundException(`Unit of mesure with ID: ${id} not found`);

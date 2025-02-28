@@ -12,6 +12,9 @@ import { DataSource, ILike, In, Raw, Repository } from 'typeorm';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Category } from 'src/Category/category.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
+import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 
 @Injectable()
 export class ProductRepository {
@@ -20,6 +23,8 @@ export class ProductRepository {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(UnitOfMeasure)
+    private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -127,44 +132,102 @@ export class ProductRepository {
   }
 
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
-    const { categories, ...productData } = productToCreate;
-    const existingProductByCode = await this.productRepository.findOne({
-      where: { code: productData.code },
-    });
-    if (existingProductByCode) {
-      throw new ConflictException('Product code already exists');
-    }
+    const queryRunner = this.dataSource.createQueryRunner();
 
-    const existingProductByName = await this.productRepository.findOne({
-      where: { name: productData.name },
-    });
-    if (existingProductByName) {
-      throw new ConflictException('Product name already exists');
-    }
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
+      const { categories, ingredients, ...productData } = productToCreate;
+
+      const existingProductByCode = await queryRunner.manager.findOne(Product, {
+        where: { code: productData.code },
+      });
+      if (existingProductByCode) {
+        throw new ConflictException('Product code already exists');
+      }
+
+      const existingProductByName = await queryRunner.manager.findOne(Product, {
+        where: { name: productData.name },
+      });
+      if (existingProductByName) {
+        throw new ConflictException('Product name already exists');
+      }
+
       let categoryEntities: Category[] = [];
       if (categories && categories.length > 0) {
-        categoryEntities = await this.categoryRepository.find({
+        categoryEntities = await queryRunner.manager.find(Category, {
           where: { id: In(categories), isActive: true },
         });
         if (categoryEntities.length !== categories.length) {
           throw new BadRequestException('Some categories do not exist');
         }
       }
-      const product = this.productRepository.create({
+
+      const product = queryRunner.manager.create(Product, {
         ...productData,
         categories: categoryEntities,
       });
-      return await this.productRepository.save(product);
+
+      const savedProduct = await queryRunner.manager.save(product);
+
+      //---------      Manejar los ingredientes si existen
+      if (ingredients && ingredients.length > 0) {
+        const productIngredients = ingredients.map(async (ingredientDto) => {
+          const ingredient = await queryRunner.manager.findOne(Ingredient, {
+            where: { id: ingredientDto.ingredientId },
+          });
+          if (!ingredient) {
+            throw new BadRequestException(
+              `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
+            );
+          }
+
+          const unitOfMeasure = await queryRunner.manager.findOne(
+            UnitOfMeasure,
+            {
+              where: { id: ingredientDto.unitOfMeasureId },
+            },
+          );
+          if (!unitOfMeasure) {
+            throw new BadRequestException(
+              `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+            );
+          }
+
+          const productIngredient = queryRunner.manager.create(
+            ProductIngredient,
+            {
+              product: savedProduct,
+              ingredient,
+              quantityOfIngredient: ingredientDto.quantityOfIngredient,
+              unitOfMeasure,
+            },
+          );
+
+          return queryRunner.manager.save(productIngredient);
+        });
+
+        await Promise.all(productIngredients);
+      }
+
+      await queryRunner.commitTransaction();
+
+      return savedProduct;
     } catch (error) {
+      // ------------------  Rollback en caso de error
+      await queryRunner.rollbackTransaction();
+
       if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error fetching the product',
+        'Error creating the product',
         error.message,
       );
+    } finally {
+      // ------------------  Liberar el QueryRunner
+      await queryRunner.release();
     }
   }
 

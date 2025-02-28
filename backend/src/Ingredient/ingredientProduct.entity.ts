@@ -1,6 +1,13 @@
 import { Product } from 'src/Product/product.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Ingredient } from './ingredient.entity';
+import { UnitOfMeasure } from './unitOfMesure.entity';
 
 @Entity({ name: 'product_ingredients' })
 export class ProductIngredient {
@@ -10,10 +17,13 @@ export class ProductIngredient {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   quantityOfIngredient: number;
 
-  @Column({ nullable: false })
-  unit: string;
-
-  // -----------------  Relaciones  --------------//
+  // ------------------------  Relaciones --------------
+  @ManyToOne(
+    () => UnitOfMeasure,
+    (unitOfMeasure) => unitOfMeasure.productIngredients,
+  )
+  @JoinColumn({ name: 'unitOfMeasureId' })
+  unitOfMeasure: UnitOfMeasure;
 
   @ManyToOne(() => Product, (product) => product.productIngredients)
   product: Product;
