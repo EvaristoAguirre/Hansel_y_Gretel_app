@@ -23,6 +23,8 @@ export class ProductRepository {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(UnitOfMeasure)
+    private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -184,7 +186,7 @@ export class ProductRepository {
           const unitOfMeasure = await queryRunner.manager.findOne(
             UnitOfMeasure,
             {
-              where: { name: ingredientDto.unitOfMeasureId },
+              where: { id: ingredientDto.unitOfMeasureId },
             },
           );
           if (!unitOfMeasure) {
