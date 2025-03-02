@@ -18,6 +18,7 @@ export const useProductos = () => {
     price: null,
     cost: null,
     categories: [],
+    ingredients: [],
     isActive: true,
   });
 
@@ -122,6 +123,7 @@ export const useProductos = () => {
       price: null,
       cost: null,
       categories: [],
+      ingredients: [],
       isActive: true,
     });
   };

@@ -86,7 +86,8 @@ const ProductsPage: React.FC = () => {
           <Products
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
-          />}
+          />
+        }
         {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriasProductos />}
         {selectedTab === Tab.CONTROL_DE_STOCK && (
           <Box flex={1} overflow="auto">

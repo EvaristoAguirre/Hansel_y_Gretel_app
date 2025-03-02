@@ -7,3 +7,10 @@ export interface Iingredient {
   price: number | null,
   cost: number | null
 }
+
+export interface IingredientForm {
+  name: string,
+  ingredientId: string,
+  quantityOfIngredient: number | null,
+  unitOfMeasureId: string
+}
