@@ -7,7 +7,7 @@ import { ProductsProps } from "@/components/Interfaces/IProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { getProductsByCategory, searchProducts } from "@/helpers/products";
+import { getProductsByCategory, searchProducts } from "@/api/products";
 
 const ingredientes = [
   { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
@@ -116,7 +116,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   ];
 
   return (
-    <Box width="100%" sx={{ p: 2, height: "100%" }}>
+    <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
       {/* Sección de Costos */}
       <Box display="flex" justifyContent="space-between" gap={2}  >
         {costos.map((text, index) => (

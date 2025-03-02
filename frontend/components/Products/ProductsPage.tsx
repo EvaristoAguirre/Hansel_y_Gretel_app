@@ -3,22 +3,27 @@ import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
-import { fetchCategories } from "@/helpers/categories";
+import { fetchCategories } from "@/api/categories";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
 import CategoriasProductos from "@/components/Categorías/CategoríasProductos/CategoriasProductos";
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
+import { Tab } from "../Enums/view-products";
+import Ingredients from "./TabIngredients/Ingredients";
+import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
+import IngredientsProvider from "@/app/context/ingredientsContext";
+import UnitProvider from "@/app/context/unitOfMeasureContext";
 
 
 const ProductsPage: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
   const [tabs, setTabs] = useState([
-    "Productos",
-    "Ingredientes",
-    "Categoría productos",
-    "Categoría ingredientes",
-    "Control de Stock",
+    Tab.PRODUCTOS,
+    Tab.INGREDIENTES,
+    Tab.CATEGORIA_PRODUCTOS,
+    Tab.UNIDADES_MEDIDA,
+    Tab.CONTROL_DE_STOCK,
   ]);
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -69,17 +74,22 @@ const ProductsPage: React.FC = () => {
     <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
       <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
       <Box display="flex" flex={1} overflow="hidden">
-        <Sidebar
-          onCategorySelected={handleCategorySelected}
-          selectedCategoryId={selectedCategoryId}
-        />
-        {selectedTab === "Productos" &&
+        {
+          (selectedTab === Tab.PRODUCTOS ||
+            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+          <Sidebar
+            onCategorySelected={handleCategorySelected}
+            selectedCategoryId={selectedCategoryId}
+          />
+        }
+        {selectedTab === Tab.PRODUCTOS &&
           <Products
             selectedCategoryId={selectedCategoryId}
             onClearSelectedCategory={clearSelectedCategory}
-          />}
-        {selectedTab === "Categoría productos" && <CategoriasProductos />}
-        {selectedTab === "Control de Stock" && (
+          />
+        }
+        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriasProductos />}
+        {selectedTab === Tab.CONTROL_DE_STOCK && (
           <Box flex={1} overflow="auto">
             <StockControl
               selectedCategoryId={selectedCategoryId}
@@ -87,6 +97,16 @@ const ProductsPage: React.FC = () => {
             />
           </Box>
         )}
+        {selectedTab === Tab.UNIDADES_MEDIDA &&
+          <UnitProvider>
+            <UnitOfMeasure />
+          </UnitProvider>
+        }
+        {selectedTab === Tab.INGREDIENTES &&
+          <IngredientsProvider>
+            <Ingredients />
+          </IngredientsProvider>
+        }
       </Box>
     </Box>
   );
