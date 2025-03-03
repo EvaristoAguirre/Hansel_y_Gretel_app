@@ -75,12 +75,20 @@ export const StepperTable: React.FC<Props> = (
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return <TableEditor
-          view="mesaEditor"
-          onAbrirPedido={onAbrirPedido}
-          handleNextStep={handleNextStep}
-          handleCompleteStep={handleCompleteStep}
-        />;
+        return (selectedMesa.state === TableState.AVAILABLE) || (selectedMesa.state === TableState.OPEN) ?
+          (<TableEditor
+            view="mesaEditor"
+            onAbrirPedido={onAbrirPedido}
+            handleNextStep={handleNextStep}
+            handleCompleteStep={handleCompleteStep}
+          />)
+          : selectedMesa.state === TableState.PENDING_PAYMENT ?
+            (<div className='flex justify-center text-red-500 font-bold my-16'>
+              Orden pendiente de pago, cobrar y luego iniciar una nueva orden.
+            </div>)
+            : <div className='flex justify-center text-red-500 font-bold my-16'>
+              La mesa ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo pedido.
+            </div>;
       case 1:
         return selectedMesa.state === TableState.OPEN ? (
           selectedOrderByTable && (

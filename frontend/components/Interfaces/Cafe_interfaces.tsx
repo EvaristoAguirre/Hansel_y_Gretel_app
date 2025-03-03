@@ -14,6 +14,11 @@ export interface MozoInterface {
   nombre: string;
 }
 
+export interface IOrder {
+  id: string;
+  state: OrderState;
+}
+
 export interface MesaInterface {
   id: string;
   name: string;
@@ -21,9 +26,9 @@ export interface MesaInterface {
   coment: string;
   state?: TableState;
   room: ISala;
-  // orderId?: string[];
-  orders: string[];
+  orders: IOrder[];
 }
+
 
 export interface MesaForm {
   id?: string;

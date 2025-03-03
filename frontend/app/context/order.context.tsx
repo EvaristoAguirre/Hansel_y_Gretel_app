@@ -67,8 +67,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
    *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
   useEffect(() => {
+    console.log("💘MESA SELECCIONADA", selectedMesa);
     handleResetSelectedOrder();
-  }, [selectedMesa, selectedSala]);
+
+  }, [selectedMesa]);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -213,7 +215,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
-    console.group("📝📝📝📝EDIT ORDER");
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;

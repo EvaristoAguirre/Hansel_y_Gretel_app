@@ -3,7 +3,7 @@ import { editTable } from "@/api/tables";
 import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from '../../app/context/order.context';
 import { TableState } from "../Enums/Enums";
@@ -25,6 +25,10 @@ const PayOrder: React.FC<PayOrderProps> = (
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
 
+  useEffect(() => {
+    console.log("PRODUCTO CONFIRMADOS", confirmedProducts);
+
+  }, [confirmedProducts]);
 
   const handlePayOrder = async () => {
     if (selectedOrderByTable && selectedMesa) {
@@ -35,7 +39,7 @@ const PayOrder: React.FC<PayOrderProps> = (
         updateOrder(paidOrder);
 
       } else if (closedTable) {
-        // setSelectedMesa(closedTable);
+        setSelectedMesa(closedTable);
       }
       else {
         Swal.fire("Error", "No se pudo pagar la orden.", "error");
@@ -110,6 +114,7 @@ const PayOrder: React.FC<PayOrderProps> = (
                 {orderStates[selectedOrderByTable?.state as keyof typeof orderStates] || "MESA SIN ORDEN"}
               </p>
               :
+              selectedMesa && selectedMesa.state === TableState.CLOSED &&
               <p className="text-red-500">MESA SIN ORDEN ABIERTA</p>
           }
         </div>
@@ -133,22 +138,25 @@ const PayOrder: React.FC<PayOrderProps> = (
                 <Payment style={{ marginRight: "5px" }} /> Cambiar a Orden Pagada
               </Button>
             }
-            {
-              selectedOrderByTable && selectedMesa && selectedOrderByTable.state === "closed" &&
+            {(selectedMesa && selectedMesa.state === TableState.CLOSED) ||
+              (selectedMesa &&
+                orderStates[selectedOrderByTable?.state as keyof typeof orderStates] === "ORDEN PAGADA") ? (
               <Button
                 fullWidth
                 variant="outlined"
                 sx={{
-                  mt: 2, borderColor: "#7e9d8a", color: "black", "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                  mt: 2,
+                  borderColor: "#7e9d8a",
+                  color: "black",
+                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
-
-                disabled={confirmedProducts.length === 0}
                 onClick={() => handleTableAvailable(selectedMesa)}
               >
                 <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:
                 <span style={{ color: "green", marginLeft: "5px" }}> Disponible </span>
               </Button>
-            }
+            ) : null}
+
           </>
 
         }
