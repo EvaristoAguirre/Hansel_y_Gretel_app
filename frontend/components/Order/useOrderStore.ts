@@ -1,27 +1,13 @@
 import { create } from "zustand";
-import { OrderState } from "../Enums/Enums";
-import { OrderDetailsCreated } from "./useOrderDetailsStore";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-
-export interface OrderCreated {
-  id: string;
-  date: Date;
-  state: OrderState;
-  isActive: boolean;
-  numberCustomers: number;
-  comment: string;
-  tableId: string;
-  table: MesaInterface;
-  orderDetails: OrderDetailsCreated[];
-}
+import { IOrderDetails } from "../Interfaces/IOrderDetails";
 
 interface OrderStateZustand {
-  orders: OrderCreated[];
-  findOrderByTableId: (tableId: string) => OrderCreated | null;
-  setOrders: (orders: OrderCreated[]) => void;
-  addOrder: (order: OrderCreated) => void;
+  orders: IOrderDetails[];
+  findOrderByTableId: (tableId: string) => IOrderDetails | null;
+  setOrders: (orders: IOrderDetails[]) => void;
+  addOrder: (order: IOrderDetails) => void;
   removeOrder: (id: string) => void;
-  updateOrder: (updatedOrder: OrderCreated) => void;
+  updateOrder: (updatedOrder: IOrderDetails) => void;
   connectWebSocket: () => void;
 }
 
@@ -29,7 +15,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => ({
   orders: [],
   findOrderByTableId: (tableId: string) => {
     const orders = get().orders;
-    return orders.find((order) => order.tableId === tableId) || null;
+    return orders.find((order) => order.table.id === tableId) || null;
   },
   setOrders: (orders) => set({ orders }),
   addOrder: (order) =>

@@ -1,9 +1,58 @@
-import React, { useEffect, useState } from "react";
-import { ISala, MesaInterface } from "../Interfaces/Cafe_interfaces";
-import Swal from "sweetalert2";
-import { URI_ROOM } from "../URI/URI";
+import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
+import { URI_ROOM } from '@/components/URI/URI';
+import { createContext, useContext, useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import { useOrderContext } from './order.context';
+type RoomContextType = {
+  salas: ISala[];
+  selectedSala: ISala | null;
+  selectedMesa: MesaInterface | null;
+  setSelectedMesa: (mesa: MesaInterface | null) => void;
+  view: "mesaEditor" | "pedidoEditor" | null;
+  modalOpen: boolean;
+  editingSala: ISala | null;
+  menuAnchorEl: null | HTMLElement;
+  menuSala: ISala | null;
+  setModalOpen: (open: boolean) => void;
+  setEditingSala: (sala: ISala | null) => void;
+  handleSelectSala: (sala: ISala | null) => void;
+  handleSaveSala: (sala: { id?: string; name: string }) => void;
+  handleDeleteSala: () => void;
+  handleSelectMesa: (mesa: MesaInterface) => void;
+  handleAbrirPedido: () => void;
+  handleVolverAMesaEditor: () => void;
+  handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, sala: ISala) => void;
+  handleMenuClose: () => void;
+};
 
-export const useSala = () => {
+const RoomContext = createContext<RoomContextType>({
+  salas: [],
+  selectedSala: null,
+  selectedMesa: null,
+  setSelectedMesa: () => { },
+  view: null,
+  modalOpen: false,
+  editingSala: null,
+  menuAnchorEl: null,
+  menuSala: null,
+  setModalOpen: () => { },
+  setEditingSala: () => { },
+  handleSelectSala: () => { },
+  handleSaveSala: () => { },
+  handleDeleteSala: () => { },
+  handleSelectMesa: () => { },
+  handleAbrirPedido: () => { },
+  handleVolverAMesaEditor: () => { },
+  handleMenuOpen: () => { },
+  handleMenuClose: () => { },
+});
+
+export const useRoomContext = () => {
+  const context = useContext(RoomContext);
+  return context;
+};
+
+const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const [salas, setSalas] = useState<ISala[]>([]);
   const [selectedSala, setSelectedSala] = useState<ISala | null>(null);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
@@ -12,6 +61,7 @@ export const useSala = () => {
   const [editingSala, setEditingSala] = useState<ISala | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuSala, setMenuSala] = useState<ISala | null>(null);
+
 
   useEffect(() => {
     async function fetchSalas() {
@@ -25,6 +75,11 @@ export const useSala = () => {
     }
     fetchSalas();
   }, []);
+
+  const handleSelectSala = (sala: ISala | null) => {
+    setSelectedMesa(null);
+    setSelectedSala(sala);
+  }
 
   const handleSaveSala = async (sala: { id?: string; name: string }) => {
     if (sala.id) {
@@ -111,14 +166,19 @@ export const useSala = () => {
     }
   };
 
-
-  const handleSelectMesa = (mesa: MesaInterface) => {
+  /**
+   * @param mesa - Es la Mesa que se selecciona.
+   * Se setea la mesa seleccionada en `selectedMesa`.
+   * Se setea la orden de la mesa en `selectedOrderByTable`.
+   * Se limpia la información de la mesa saliente mediante `handleResetSelectedOrder`.
+   */
+  const handleSelectMesa = async (mesa: MesaInterface) => {
     setSelectedMesa(mesa);
-    setView("mesaEditor");
   };
 
   const handleAbrirPedido = () => {
     setView("pedidoEditor");
+
   };
 
   const handleVolverAMesaEditor = () => {
@@ -138,32 +198,31 @@ export const useSala = () => {
     setMenuSala(null);
   };
 
-
-  return {
-    salas,
-    setSalas,
-    selectedSala,
-    setSelectedSala,
-    selectedMesa,
-    setSelectedMesa,
-    view,
-    setView,
-    modalOpen,
-    setModalOpen,
-    editingSala,
-    setEditingSala,
-    menuAnchorEl,
-    setMenuAnchorEl,
-    menuSala,
-    setMenuSala,
-    handleSaveSala,
-    handleDeleteSala,
-    handleSelectMesa,
-    handleAbrirPedido,
-    handleVolverAMesaEditor,
-    handleMenuOpen,
-    handleMenuClose
-  };
+  return (
+    <RoomContext.Provider value={{
+      salas,
+      selectedSala,
+      selectedMesa,
+      setSelectedMesa,
+      view,
+      modalOpen,
+      editingSala,
+      menuAnchorEl,
+      menuSala,
+      setModalOpen,
+      setEditingSala,
+      handleSelectSala,
+      handleSaveSala,
+      handleDeleteSala,
+      handleSelectMesa,
+      handleAbrirPedido,
+      handleVolverAMesaEditor,
+      handleMenuOpen,
+      handleMenuClose
+    }}>
+      {children}
+    </RoomContext.Provider>
+  );
 };
 
-export default useSala;
+export default RoomProvider;

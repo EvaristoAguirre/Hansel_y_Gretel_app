@@ -28,7 +28,7 @@ export class OrderRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-  ) {}
+  ) { }
   async openOrder(
     orderToCreate: CreateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
@@ -57,6 +57,7 @@ export class OrderRepository {
         table: tableInUse,
         comment: comment,
         orderDetails: [],
+        isActive: true,
       });
 
       await this.orderRepository.save(newOrder);

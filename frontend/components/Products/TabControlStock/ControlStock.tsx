@@ -4,7 +4,7 @@ import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
 import { useProductos } from "../../Hooks/useProducts";
 import { ProductsProps } from "@/components/Interfaces/IProducts";
-import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { getProductsByCategory, searchProducts } from "@/api/products";
@@ -100,7 +100,6 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   //Edición de Producto
   const handleEditProduct = (product: any) => {
-    console.log("Editar producto:", product);
   };
 
   const productColumns = [

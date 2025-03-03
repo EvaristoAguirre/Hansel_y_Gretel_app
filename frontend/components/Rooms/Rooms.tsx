@@ -1,36 +1,35 @@
 import React from "react";
+import { useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Mesa from "../Mesa/Mesa";
-import SalaModal from "./SalaModal";
-import useSala from "../Hooks/useSala";
-import { StepperTable } from "../Mesa/StepperTable";
+import SalaModal from "./RoomModal";
+import { StepperTable } from "../Table/StepperTable";
+import { useRoomContext } from '../../app/context/room.context';
+import Table from "../Table/Table";
 
-const Salas = () => {
+const Rooms = () => {
   const {
     salas,
     selectedSala,
-    setSelectedSala,
+    handleSelectSala,
     selectedMesa,
     setSelectedMesa,
     view,
-    setView,
     modalOpen,
     setModalOpen,
     editingSala,
     setEditingSala,
     menuAnchorEl,
-    setMenuAnchorEl,
     menuSala,
-    setMenuSala,
     handleSaveSala,
     handleDeleteSala,
     handleSelectMesa,
     handleAbrirPedido,
-    handleVolverAMesaEditor,
     handleMenuOpen,
     handleMenuClose,
-  } = useSala();
+  } = useRoomContext();
+
+  const [activeStep, setActiveStep] = useState<number>(0);
 
   return (
     <>
@@ -58,7 +57,8 @@ const Salas = () => {
           value={selectedSala?.id || false}
           onChange={(_, newValue) => {
             const salaSeleccionada = salas.find((sala) => sala.id === newValue);
-            setSelectedSala(salaSeleccionada || null);
+
+            handleSelectSala(salaSeleccionada || null);
           }}
           textColor="inherit"
           sx={{
@@ -167,9 +167,9 @@ const Salas = () => {
       >
         {/* contenedor de Mesas */}
         <Box
-          className="w-full p-2  lg:w-2/4">
+          className="w-full p-2 ">
           {selectedSala && (
-            <Mesa salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
+            <Table salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
           )}
         </Box>
         {/* contenedor de Armar pedido */}
@@ -192,17 +192,18 @@ const Salas = () => {
                     borderRadius: "0.2rem",
                   }}
                 >
-                  MESA: {selectedMesa.name}
+                  MESA: {selectedMesa?.name}
                 </h2>
               </div>
               {
                 selectedMesa ? (
                   <StepperTable
-                    mesa={selectedMesa}
+                    selectedMesa={selectedMesa}
                     view={view || ""}
                     onAbrirPedido={handleAbrirPedido}
+                    activeStep={activeStep}
+                    setActiveStep={(step) => setActiveStep(step)}
                   />
-
                 ) : (null)
               }
             </>
@@ -214,4 +215,4 @@ const Salas = () => {
   );
 };
 
-export default Salas;
+export default Rooms;

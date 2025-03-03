@@ -1,5 +1,5 @@
 "use client";
-import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
