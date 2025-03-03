@@ -1,8 +1,9 @@
 import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { ICategory } from './ICategories';
+import { IingredientForm } from "./Ingredients";
 
 export interface ProductForm {
-  [key: string]: string | number | boolean | null | string[];
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[];
   id: string;
   code: null | number;
   name: string;
@@ -10,6 +11,7 @@ export interface ProductForm {
   price: null | number;
   cost: null | number;
   categories: string[];
+  ingredients: IingredientForm[];
   isActive: boolean;
 }
 
@@ -24,15 +26,17 @@ export interface ProductTableProps {
 }
 
 export interface ProductCreated {
-  [key: string]: string | number | boolean | null | string[];
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[];
   categories: string[];
   code: number;
-  cost: number;
   description: string;
+  ingredients: IingredientForm[];
   isActive: boolean;
   name: string;
   price: number;
 };
+
+
 
 export interface ProductResponse {
   categories: ICategory[];
@@ -82,3 +86,4 @@ export interface IConfirmedProducts {
   unitaryPrice: string;
   batchId: string;
 };
+

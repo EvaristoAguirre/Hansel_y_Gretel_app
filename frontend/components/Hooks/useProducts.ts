@@ -18,6 +18,7 @@ export const useProductos = () => {
     price: null,
     cost: null,
     categories: [],
+    ingredients: [],
     isActive: true,
   });
 
@@ -41,6 +42,7 @@ export const useProductos = () => {
   useEffect(() => {
     fetchAndSetProducts();
   }, [connectWebSocket]);
+
   const handleCreate = async () => {
 
     try {
@@ -121,6 +123,7 @@ export const useProductos = () => {
       price: null,
       cost: null,
       categories: [],
+      ingredients: [],
       isActive: true,
     });
   };

@@ -115,7 +115,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   ];
 
   return (
-    <Box width="100%" sx={{ p: 2, height: "100%" }}>
+    <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
       {/* Sección de Costos */}
       <Box display="flex" justifyContent="space-between" gap={2}  >
         {costos.map((text, index) => (

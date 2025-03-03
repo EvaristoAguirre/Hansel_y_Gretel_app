@@ -4,8 +4,10 @@ import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { ICategory } from "@/components/Interfaces/ICategories";
 export const Sidebar: React.FC<{
   onCategorySelected: (categoryId: string) => void;
-  selectedCategoryId: string | null; // Nueva prop
+  selectedCategoryId: string | null;
+
 }> = ({ onCategorySelected, selectedCategoryId }) => {
+
   const { categories } = useCategoryStore();
 
   const handleCategoryClick = (category: ICategory) => {
@@ -22,7 +24,7 @@ export const Sidebar: React.FC<{
           width: "100%",
           backgroundColor: "var(--color-primary)",
           boxSizing: "border-box",
-          position: "relative",
+          position: "static",
           minHeight: "100vh",
           top: 0,
         },

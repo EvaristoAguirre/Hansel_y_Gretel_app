@@ -11,6 +11,7 @@ import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Room } from 'src/Room/room.entity';
+import { OrderState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class TableRepository {
@@ -124,9 +125,14 @@ export class TableRepository {
     try {
       const tables = await this.tableRepository
         .createQueryBuilder('table')
-        .leftJoinAndSelect('table.orders', 'order')
+        .leftJoinAndSelect(
+          'table.orders',
+          'order',
+          'order.state IN (:...states)',
+          { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
+        )
         .leftJoinAndSelect('table.room', 'room')
-        .select(['table', 'order.id', 'room.id', 'room.name'])
+        .select(['table', 'order.id', 'order.state', 'room.id', 'room.name'])
         .where('table.isActive = :isActive', { isActive: true })
         .skip((page - 1) * limit)
         .take(limit)
@@ -143,8 +149,12 @@ export class TableRepository {
           id: table.room?.id,
           name: table.room?.name,
         },
-        orders: table.orders.map((order) => order.id),
+        orders: table.orders.map((order) => ({
+          id: order.id,
+          state: order.state,
+        })),
       }));
+
       return result;
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -158,13 +168,23 @@ export class TableRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+
     try {
       const table = await this.tableRepository.findOne({
         where: { id, isActive: true },
+        relations: ['orders'],
       });
+
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);
       }
+
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
+
       return table;
     } catch (error) {
       if (
@@ -184,10 +204,16 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { name: ILike(name) },
+        relations: ['orders'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
       }
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
       return table;
     } catch (error) {
       if (
@@ -208,10 +234,16 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { number: numberType },
+        relations: ['orders'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${number} not found`);
       }
+      table.orders = table.orders.filter(
+        (order) =>
+          order.state === OrderState.OPEN ||
+          order.state === OrderState.PENDING_PAYMENT,
+      );
       return table;
     } catch (error) {
       if (

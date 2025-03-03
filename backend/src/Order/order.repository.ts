@@ -64,8 +64,6 @@ export class OrderRepository {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
-      console.error(`[CreateOrder Error]: ${error.message}`, error);
-
       if (
         error instanceof NotFoundException ||
         error instanceof ConflictException

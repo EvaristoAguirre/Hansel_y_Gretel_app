@@ -17,6 +17,7 @@ import { RoomRepository } from 'src/Room/room.repository';
 import { Room } from 'src/Room/room.entity';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
+import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { Category } from 'src/Category/category.entity';
       ArchivedOrderDetails,
       Room,
       Category,
+      UnitOfMeasure,
     ]),
   ],
   controllers: [OrderController],
