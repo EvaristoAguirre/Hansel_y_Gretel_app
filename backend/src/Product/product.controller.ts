@@ -29,7 +29,7 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getAllProducts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -38,7 +38,7 @@ export class ProductController {
   }
 
   @Post('search')
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async searchProducts(
     @Query('name') name?: string,
     @Query('code') code?: string,
@@ -47,11 +47,6 @@ export class ProductController {
     @Query('limit') limit: number = 10,
     @Body('categories') categories?: string[],
   ): Promise<{ data: Product[]; total: number }> {
-    console.log('Name:', name);
-    console.log('Code:', code);
-    console.log('Categories:', categories);
-    console.log('Page:', page);
-    console.log('Limit:', limit);
     return this.productService.searchProducts(
       name,
       code,
@@ -63,18 +58,18 @@ export class ProductController {
   }
 
   @Get(':id')
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductById(@Param('id') id: UUID): Promise<Product> {
     return this.productService.getProductById(id);
   }
   @Get('by-code/:code')
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductByCode(@Param('code') code: string): Promise<Product> {
     return this.productService.getProductByCode(+code);
   }
 
   @Post('by-categories')
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductsByCategories(
     @Body(ValidationPipe) body: GetProductsByCategoriesDto,
   ): Promise<Product[]> {
@@ -88,13 +83,13 @@ export class ProductController {
   }
 
   @Post()
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createProduct(@Body() productToCreate: CreateProductDto) {
     return await this.productService.createProduct(productToCreate);
   }
 
   @Put(':id')
-  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateProduct(
     @Body() updateData: UpdateProductDto,
     @Param('id') id: string,

@@ -5,6 +5,7 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 import { UnitOfMeasure } from './unitOfMesure.entity';
+import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 
 @Injectable()
 export class IngredientService {
@@ -49,5 +50,22 @@ export class IngredientService {
 
   async getUnitOfMeasureById(id: string): Promise<UnitOfMeasure> {
     return await this.ingredientRepository.getUnitOfMeasureById(id);
+  }
+
+  async updateUnitOfMeasure(
+    id: string,
+    updateData: UpdateUnitOfMeasureDto,
+  ): Promise<UnitOfMeasure> {
+    return await this.ingredientRepository.updateUnitOfMeasure(id, updateData);
+  }
+
+  async getConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasure[]> {
+    return await this.ingredientRepository.getConventionalUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
   }
 }
