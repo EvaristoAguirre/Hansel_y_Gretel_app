@@ -11,9 +11,16 @@ export const URI_PRODUCT_BY_CATEGORY = "http://localhost:3000/product/by-categor
 
 //INGREDIENTS
 
+export const URI_INGREDIENT = "http://localhost:3000/ingredient";
+
+// UNITS OF MEASURE
+
+export const URI_UNIT_OF_MEASURE = "http://localhost:3000/ingredient/unitofmeasure";
+
 //ROOMS
 
 export const URI_ROOM = "http://localhost:3000/room"
+
 
 //TABLES
 

@@ -14,7 +14,10 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
 }) => (
   <AppBar
     position="static"
-    sx={{ backgroundColor: "#f3d49ab8", mt: 13, color: "black", gap: 4, borderBottom: "2px solid #f9b32d", boxShadow: "none" }}
+    sx={{
+      backgroundColor: "#f3d49ab8", mt: 11, pt: 2, color: "black",
+      gap: 4, borderBottom: "2px solid #f9b32d", boxShadow: "none"
+    }}
   >
     <Tabs
       value={tabIndex}

@@ -1,6 +1,6 @@
 import { OrderState, TableState } from "../Enums/Enums";
-import { TableCreated } from "../Mesa/useTableStore";
-import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
+import { TableCreated } from "../Table/useTableStore";
+import { OrderDetailsCreated } from "../Order/useOrderDetailsStore";
 
 export interface PedidoInterface {
   id: string;
@@ -14,22 +14,28 @@ export interface MozoInterface {
   nombre: string;
 }
 
+export interface IOrder {
+  id: string;
+  state: OrderState;
+}
+
 export interface MesaInterface {
   id: string;
   name: string;
-  number: number;
+  number: number | null;
   coment: string;
-  state: TableState;
+  state?: TableState;
   room: ISala;
-  orderId?: string[];
+  orders: IOrder[];
 }
+
 
 export interface MesaForm {
   id?: string;
   name: string;
   number: null | number;
   coment: string;
-  // state: TableState;
+  state?: TableState;
 }
 
 export interface MesaCardProps {
@@ -48,8 +54,13 @@ export interface MesaModalProps {
   onChange: (field: keyof MesaForm, value: any) => void;
 }
 
+// export interface MesaProps {
+//   salaId: string;
+//   onSelectMesa: (mesa: MesaInterface) => void;
+// }
 export interface MesaProps {
   salaId: string;
+  // onSelectMesa: (mesaId: string) => void;
   onSelectMesa: (mesa: MesaInterface) => void;
 }
 

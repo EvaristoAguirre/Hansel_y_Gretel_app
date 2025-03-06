@@ -1,6 +1,7 @@
 "use client";
-import { useCategoryStore } from "@/components/Categorías/useCategoryStore";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +13,6 @@ import { ProductTable } from "./ProductTable";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
-
 
   const {
     loading,
@@ -40,7 +40,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | null | string[]
+    value: string | number | null | string[] | IingredientForm[]
   ) => setForm({ ...form, [field]: value });
 
   const columns = [
@@ -54,10 +54,10 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
       headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
-        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+        <div>
           <Button
             variant="contained"
-            className="bg-[--color-primary] text-bold mt-2"
+            className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
             onClick={() => {
               setForm({
@@ -68,6 +68,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
+                ingredients: params.row.ingredients,
                 isActive: true,
               });
               setModalType("edit");

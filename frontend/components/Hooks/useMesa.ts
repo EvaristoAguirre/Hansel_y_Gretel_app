@@ -4,8 +4,9 @@ import { TableState } from "../Enums/Enums";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { MesaForm } from "../Interfaces/Cafe_interfaces";
-import { useTableStore } from "../Mesa/useTableStore";
-import { useOrderStore } from "../Pedido/useOrderStore";
+import { useTableStore } from "../Table/useTableStore";
+import { useOrderStore } from "../Order/useOrderStore";
+import { editTable } from "@/api/tables";
 
 export const useMesa = (salaId: string) => {
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
@@ -17,7 +18,7 @@ export const useMesa = (salaId: string) => {
     name: "",
     number: null,
     coment: "",
-    // state: TableState.AVAILABLE,
+    state: TableState.AVAILABLE,
   });
 
   const {
@@ -38,7 +39,7 @@ export const useMesa = (salaId: string) => {
         name: mesa.name,
         number: mesa.number,
         coment: mesa.coment,
-        // state: mesa.state,
+        state: mesa.state,
       });
     } else {
       setForm({
@@ -46,6 +47,7 @@ export const useMesa = (salaId: string) => {
         name: "",
         number: null,
         coment: "",
+        state: TableState.AVAILABLE,
       });
     }
     setModalOpen(true);
@@ -56,7 +58,7 @@ export const useMesa = (salaId: string) => {
       name: "",
       number: null,
       coment: "",
-      // state: TableState.AVAILABLE,
+      state: TableState.AVAILABLE,
     });
     setModalOpen(false);
   };
@@ -109,18 +111,7 @@ export const useMesa = (salaId: string) => {
       return;
     }
     try {
-      const response = await fetch(`${URI_TABLE}/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error:", errorData);
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-
+      const response = await editTable(id, data);
       const updatedTable = await response.json();
       updateTable(updatedTable);
       Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");

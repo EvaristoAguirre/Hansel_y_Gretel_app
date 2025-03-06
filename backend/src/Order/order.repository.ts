@@ -30,6 +30,7 @@ export class OrderRepository {
     private readonly productRepository: Repository<Product>,
     private readonly dataSource: DataSource,
   ) {}
+
   async openOrder(
     orderToCreate: CreateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
@@ -58,6 +59,7 @@ export class OrderRepository {
         table: tableInUse,
         comment: comment,
         orderDetails: [],
+        isActive: true,
       });
 
       await this.orderRepository.save(newOrder);
