@@ -173,10 +173,8 @@ export class ProductRepository {
         ...productData,
         categories: categoryEntities,
       });
-
       const savedProduct = await queryRunner.manager.save(product);
 
-      //---------      Manejar los ingredientes si existen
       if (ingredients && ingredients.length > 0) {
         const productIngredients = ingredients.map(async (ingredientDto) => {
           const ingredient = await queryRunner.manager.findOne(Ingredient, {
@@ -216,25 +214,29 @@ export class ProductRepository {
         await Promise.all(productIngredients);
       }
 
-      await queryRunner.commitTransaction();
+      const relationsToLoad = ['categories'];
 
-      const productWithRelations = await queryRunner.manager.findOne(Product, {
-        where: { id: savedProduct.id },
-        relations: [
-          'categories',
+      if (ingredients && ingredients.length > 0) {
+        relationsToLoad.push(
           'ingredients',
           'ingredients.ingredient',
           'ingredients.unitOfMeasure',
-        ],
+        );
+      }
+
+      const productWithRelations = await queryRunner.manager.findOne(Product, {
+        where: { id: savedProduct.id },
+        relations: relationsToLoad,
       });
 
       if (!productWithRelations) {
         throw new NotFoundException('Product not found after creation');
       }
 
+      await queryRunner.commitTransaction();
+
       return productWithRelations;
     } catch (error) {
-      // ------------------  Rollback en caso de error
       await queryRunner.rollbackTransaction();
 
       if (error instanceof HttpException) {
@@ -245,7 +247,6 @@ export class ProductRepository {
         error.message,
       );
     } finally {
-      // ------------------  Liberar el QueryRunner
       await queryRunner.release();
     }
   }
