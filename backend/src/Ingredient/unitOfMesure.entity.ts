@@ -29,6 +29,9 @@ export class UnitOfMeasure {
   @Column({ nullable: true })
   baseUnitId: string;
 
+  @Column({ nullable: false, default: false })
+  isConventional: boolean;
+
   // ------------------- Relaciones ---------------------
   @ManyToOne(() => UnitOfMeasure, { nullable: true })
   @JoinColumn({ name: 'baseUnitId' })

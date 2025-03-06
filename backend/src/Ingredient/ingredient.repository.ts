@@ -12,6 +12,7 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 
 @Injectable()
 export class IngredientRepository {
@@ -233,6 +234,32 @@ export class IngredientRepository {
     }
   }
 
+  async getConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasure[]> {
+    if (pageNumber <= 0 || limitNumber <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    try {
+      return await this.unitOfMeasureRepository.find({
+        where: { isConventional: true, isActive: true },
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
+        relations: ['baseUnit'],
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      console.error('Error fetching units of measure:', error);
+      throw new InternalServerErrorException(
+        'Error fetching orders',
+        error.message,
+      );
+    }
+  }
+
   async getUnitOfMeasureById(id: string): Promise<UnitOfMeasure> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -255,6 +282,74 @@ export class IngredientRepository {
       }
       throw new InternalServerErrorException(
         'Error fetching the unit of mesure',
+        error.message,
+      );
+    }
+  }
+
+  async updateUnitOfMeasure(
+    id: string,
+    updateData: UpdateUnitOfMeasureDto,
+  ): Promise<UnitOfMeasure> {
+    const { name, abbreviation, baseUnitId } = updateData;
+
+    const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
+      where: { id: id },
+    });
+
+    if (!existingUnitOfMeasure) {
+      throw new NotFoundException('Unit of measure not found');
+    }
+
+    if (name && name !== existingUnitOfMeasure.name) {
+      const unitWithSameName = await this.unitOfMeasureRepository.findOne({
+        where: { name: name },
+      });
+
+      if (unitWithSameName) {
+        throw new ConflictException('Unit of measure name already exists');
+      }
+    }
+
+    if (abbreviation && abbreviation !== existingUnitOfMeasure.abbreviation) {
+      const unitWithSameAbbreviation =
+        await this.unitOfMeasureRepository.findOne({
+          where: { abbreviation: abbreviation },
+        });
+
+      if (unitWithSameAbbreviation) {
+        throw new ConflictException(
+          'Unit of measure abbreviation already exists',
+        );
+      }
+    }
+
+    if (baseUnitId) {
+      const baseUnit = await this.unitOfMeasureRepository.findOne({
+        where: { id: baseUnitId },
+      });
+
+      if (!baseUnit) {
+        throw new BadRequestException('Base unit does not exist');
+      }
+    }
+
+    try {
+      const updatedUnitOfMeasure = this.unitOfMeasureRepository.merge(
+        existingUnitOfMeasure,
+        updateData,
+      );
+      return await this.unitOfMeasureRepository.save(updatedUnitOfMeasure);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error updating the unit of measure',
         error.message,
       );
     }

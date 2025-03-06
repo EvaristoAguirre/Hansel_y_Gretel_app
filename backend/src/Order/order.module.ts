@@ -18,6 +18,7 @@ import { Room } from 'src/Room/room.entity';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UserModule } from 'src/User/user.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
       Category,
       UnitOfMeasure,
     ]),
+    UserModule,
   ],
   controllers: [OrderController],
   providers: [
