@@ -233,24 +233,19 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         <Button onClick={onClose} color="error">
           Cancelar
         </Button>
-        <Button onClick={handleSaveProduct} color="primary" disabled={!isFormValid}>
-          Guardar
-        </Button>
         <Button onClick={handleOpenIngredientDialog} color="secondary">
           Asociar Ingredientes
         </Button>
+        <Button onClick={handleSaveProduct} color="primary" disabled={!isFormValid}>
+          Guardar
+        </Button>
+
       </DialogActions>
       <IngredientDialog
         open={isIngredientDialogOpen}
         onClose={() => setIngredientDialogOpen(false)}
         onSave={handleSaveIngredients}
-        PaperProps={{
-          sx: {
-            position: "absolute",
-            left: "calc(100% + 16px)", // Ajusta según la posición deseada
-            top: 0,
-          },
-        }}
+
       />
     </Dialog>
   );
