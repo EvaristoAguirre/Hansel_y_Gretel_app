@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './order.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
@@ -28,6 +28,7 @@ export class OrderRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly dataSource: DataSource,
   ) {}
   async openOrder(
     orderToCreate: CreateOrderDto,
@@ -84,8 +85,12 @@ export class OrderRepository {
       throw new BadRequestException('Order ID must be provided.');
     }
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const order = await this.orderRepository.findOne({
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
           'orderDetails',
@@ -124,7 +129,7 @@ export class OrderRepository {
       }
 
       if (updateData.tableId) {
-        const table = await this.tableRepository.findOne({
+        const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
         });
         if (!table) {
@@ -141,7 +146,7 @@ export class OrderRepository {
         let total = 0;
 
         for (const { productId, quantity } of updateData.productsDetails) {
-          const product = await this.productRepository.findOne({
+          const product = await queryRunner.manager.findOne(Product, {
             where: { id: productId, isActive: true },
           });
 
@@ -151,7 +156,7 @@ export class OrderRepository {
             );
           }
 
-          const newDetail = this.orderDetailsRepository.create({
+          const newDetail = queryRunner.manager.create(OrderDetails, {
             quantity,
             unitaryPrice: product.price,
             subtotal: quantity * product.price,
@@ -182,11 +187,15 @@ export class OrderRepository {
         }
       }
 
-      const updatedOrder = await this.orderRepository.save(order);
+      const updatedOrder = await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
 
       const responseAdapted = await this.adaptResponse(updatedOrder);
       return responseAdapted;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+
       if (
         error instanceof NotFoundException ||
         error instanceof BadRequestException ||
@@ -198,6 +207,8 @@ export class OrderRepository {
       throw new InternalServerErrorException(
         'Error updating the order. Please try again later.',
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
