@@ -7,8 +7,10 @@ import { MesaForm } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "../Order/useOrderStore";
 import { editTable } from "@/api/tables";
+import { useAuth } from "@/app/context/authContext";
 
 export const useMesa = (salaId: string) => {
+  const { getAccessToken } = useAuth();
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
@@ -106,12 +108,14 @@ export const useMesa = (salaId: string) => {
   };
 
   const handleEdit = async (id: string, data: MesaForm) => {
+    const token = getAccessToken();
+    if (!token) return;
     if (!id) {
       Swal.fire("Error", "ID de la mesa no válido.", "error");
       return;
     }
     try {
-      const response = await editTable(id, data);
+      const response = await editTable(id, data, token);
       const updatedTable = await response.json();
       updateTable(updatedTable);
       Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");

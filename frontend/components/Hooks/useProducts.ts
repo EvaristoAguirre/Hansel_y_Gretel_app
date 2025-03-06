@@ -5,8 +5,11 @@ import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
+import { useAuth } from "@/app/context/authContext";
 
 export const useProductos = () => {
+  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
+  const { getAccessToken } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
   const [loading, setLoading] = useState<boolean>(true);
@@ -21,14 +24,17 @@ export const useProductos = () => {
     ingredients: [],
     isActive: true,
   });
+  const [token, setToken] = useState<string | null>(null);
 
-  // Estado global desde el store
-  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
-
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+  })
   const fetchAndSetProducts = async () => {
     setLoading(true);
     try {
-      const fetchedProducts = await fetchProducts("1", "50");
+      const fetchedProducts = await fetchProducts("1", "50", token as string);
 
       setProducts(fetchedProducts);
     } catch (error) {
@@ -53,7 +59,7 @@ export const useProductos = () => {
         cost: parseFloat(form.cost as any),
       };
 
-      const newProduct = await createProduct(preparedForm);
+      const newProduct = await createProduct(preparedForm, token as string);
 
       addProduct(newProduct);
       handleCloseModal();
@@ -76,7 +82,7 @@ export const useProductos = () => {
         id: form.id,
       };
 
-      const updatedProduct = await editProduct(preparedForm);
+      const updatedProduct = await editProduct(preparedForm, token as string);
 
       updateProduct(updatedProduct);
 

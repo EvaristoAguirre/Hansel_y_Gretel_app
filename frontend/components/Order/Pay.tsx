@@ -1,5 +1,6 @@
 import { orderToClosed } from "@/api/order";
 import { editTable } from "@/api/tables";
+import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
@@ -20,20 +21,26 @@ const PayOrder: React.FC<PayOrderProps> = (
   { handleComplete }
 ) => {
   const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } = useOrderContext();
-  const [total, setTotal] = useState(0);
   const { selectedMesa, setSelectedMesa } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
+  const { getAccessToken } = useAuth();
+  const [total, setTotal] = useState(0);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("PRODUCTO CONFIRMADOS", confirmedProducts);
-
-  }, [confirmedProducts]);
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+  }, []);
 
   const handlePayOrder = async () => {
+    const token = getAccessToken();
+    if (!token) return;
+
     if (selectedOrderByTable && selectedMesa) {
-      const paidOrder = await orderToClosed(selectedOrderByTable.id);
-      const closedTable = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.CLOSED });
+      const paidOrder = await orderToClosed(selectedOrderByTable.id, token);
+      const closedTable = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.CLOSED }, token);
       if (paidOrder) {
         setSelectedOrderByTable(paidOrder);
         updateOrder(paidOrder);
@@ -49,8 +56,8 @@ const PayOrder: React.FC<PayOrderProps> = (
     }
   };
 
-  const handleTableAvailable = async (selectedMesa: MesaInterface) => {
-    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.AVAILABLE });
+  const handleTableAvailable = async (selectedMesa: MesaInterface, token: string) => {
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.AVAILABLE }, token);
     if (tableEdited) {
       setSelectedMesa(tableEdited);
       updateTable(tableEdited);
@@ -150,7 +157,7 @@ const PayOrder: React.FC<PayOrderProps> = (
                   color: "black",
                   "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
-                onClick={() => handleTableAvailable(selectedMesa)}
+                onClick={() => handleTableAvailable(selectedMesa, token!)}
               >
                 <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:
                 <span style={{ color: "green", marginLeft: "5px" }}> Disponible </span>

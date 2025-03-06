@@ -27,6 +27,7 @@ import { fetchUnits } from "@/api/unitOfMeasure";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
 import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
+import { useAuth } from "@/app/context/authContext";
 
 interface IngredientDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ interface IngredientDialogProps {
 }
 
 const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, }) => {
+  const { getAccessToken } = useAuth();
   const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<IingredientForm[]>([]);
@@ -50,8 +52,10 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   const [editIngredient, setEditIngredient] = useState<IingredientForm | null>(null);
 
   useEffect(() => {
-    fetchUnits().then(units => setUnit(units));
-    fetchIngredients().then(ings => setIngredients(ings));
+    const token = getAccessToken();
+    if (!token) return;
+    fetchUnits(token).then(units => setUnit(units));
+    fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
 
   const handleAddIngredient = () => {

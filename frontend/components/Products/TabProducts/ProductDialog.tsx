@@ -15,6 +15,7 @@ import { Autocomplete } from "@mui/material";
 import { getProductByCode } from "@/api/products";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./AssociateIngredients";
+import { useAuth } from "@/app/context/authContext";
 
 interface ProductDialogProps {
   open: boolean;
@@ -40,6 +41,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const { getAccessToken } = useAuth();
   const [errors, setErrors] = useState<Errors>({
     code: "",
     name: "",
@@ -54,6 +56,9 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   const [modalPosition, setModalPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
 
   const validateField = async (field: string, value: any) => {
+    const token = getAccessToken();
+    if (!token) return;
+
     let error = "";
 
     if (field === "categories" && Array.isArray(value) && value.length === 0) {
@@ -66,7 +71,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         // Validación del código
         setIsCheckingCode(true);
         try {
-          const result = await getProductByCode(value);
+          const result = await getProductByCode(value, token);
 
           if (result.ok) {
             error = "El código ya está en uso";

@@ -17,6 +17,7 @@ import { useOrderContext } from '../../app/context/order.context';
 import "../../styles/pedidoEditor.css";
 import { deleteOrder } from "@/api/order";
 import Swal from "sweetalert2";
+import { useAuth } from "@/app/context/authContext";
 
 export interface Product {
   price: number;
@@ -55,6 +56,8 @@ const useOrderDetailsStore = ({
     handleEditOrder
   } = useOrderContext();
 
+  const { getAccessToken } = useAuth();
+
 
 
   const [subtotal, setSubtotal] = useState(0);
@@ -92,7 +95,9 @@ const useOrderDetailsStore = ({
   }, [selectedProducts, confirmedProducts]);
 
   const handleDeleteOrder = async (orderId: string) => {
-    const deletedOrder = await deleteOrder(orderId);
+    const token = getAccessToken();
+    if (!token) return;
+    const deletedOrder = await deleteOrder(orderId, token);
     if (deletedOrder) {
       setSelectedOrderByTable(null);
     }

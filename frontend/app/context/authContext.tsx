@@ -17,6 +17,7 @@ interface AuthContextProps {
   userRoleFromToken: () => string | null;
   handleSignOut: () => void;
   usernameFromToken: () => string;
+  getAccessToken: () => string | null;
 }
 
 interface CustomJwtPayload extends JwtPayload {
@@ -31,20 +32,37 @@ const AuthContext = createContext<AuthContextProps>({
   userRoleFromToken: () => null,
   handleSignOut: () => { },
   usernameFromToken: () => "",
+  getAccessToken: () => null
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Cargar el usuario almacenado en localStorage una sola vez (en el cliente)
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setAccessToken(parsedUser.accessToken || null);
       }
     }
   }, []);
+
+  const getAccessToken = (): string | null => {
+    if (typeof window === "undefined") return null;
+    const userSession = localStorage.getItem("user");
+    if (!userSession) return null;
+
+    try {
+      return JSON.parse(userSession).accessToken || null;
+    } catch (error) {
+      console.error("Failed to retrieve token", error);
+      return null;
+    }
+  };
 
   const handleSignOut = async () => {
     Swal.fire({
@@ -57,7 +75,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.removeItem("user");
-        // Opcional: actualizar el estado si lo usas en otras partes de tu app
         setUser(null);
         window.location.href = "/views/login";
       }
@@ -122,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        getAccessToken,
         setUser,
         validateUserSession,
         userRoleFromToken,

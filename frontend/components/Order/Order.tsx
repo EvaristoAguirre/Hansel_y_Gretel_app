@@ -10,6 +10,7 @@ import { editTable } from "@/api/tables";
 import { OrderState, TableState } from "../Enums/Enums";
 import { useOrderStore } from "./useOrderStore";
 import { useTableStore } from "../Table/useTableStore";
+import { useAuth } from "@/app/context/authContext";
 
 export interface OrderProps {
   imprimirComanda: any
@@ -34,6 +35,7 @@ const Order: React.FC<OrderProps> = ({
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
+  const { getAccessToken } = useAuth();
 
 
   useEffect(() => {
@@ -51,15 +53,17 @@ const Order: React.FC<OrderProps> = ({
   }, [confirmedProducts]);
 
   const handlePayOrder = async (selectedMesa: MesaInterface) => {
+    const token = getAccessToken();
+    if (!token) return;
 
     if (selectedOrderByTable) {
-      const ordenPendingPay = await orderToPending(selectedOrderByTable.id);
+      const ordenPendingPay = await orderToPending(selectedOrderByTable.id, token);
 
       setSelectedOrderByTable(ordenPendingPay);
       addOrder(ordenPendingPay);
     }
 
-    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT });
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT }, token);
     if (tableEdited) {
       // setSelectedMesa(tableEdited);
       updateTable(tableEdited);

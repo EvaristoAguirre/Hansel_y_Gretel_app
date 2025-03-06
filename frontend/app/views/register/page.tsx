@@ -21,7 +21,8 @@ export default function RegisterForm() {
     admin: false,
   });
 
-  const { validateUserSession, userRoleFromToken } = useAuth();
+  const { validateUserSession, userRoleFromToken, getAccessToken } = useAuth();
+
 
   useEffect(() => {
     const validateSession = async () => {
@@ -74,9 +75,11 @@ export default function RegisterForm() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    const token = getAccessToken();
+    if (!token) return;
     e.preventDefault();
     try {
-      const result = await registerUser(formData);
+      const result = await registerUser(formData, token);
       Swal.fire({
         icon: 'success',
         title: 'Registro exitoso',

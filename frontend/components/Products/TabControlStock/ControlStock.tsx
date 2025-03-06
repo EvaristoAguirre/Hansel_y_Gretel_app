@@ -8,6 +8,7 @@ import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { getProductsByCategory, searchProducts } from "@/api/products";
+import { useAuth } from "@/app/context/authContext";
 
 const ingredientes = [
   { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
@@ -18,11 +19,13 @@ const costos = ["Costo total productos", "Costo total ingredientes", "Costo tota
 
 const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
   const { products, setProducts, connectWebSocket } = useProductStore();
+  const { getAccessToken } = useAuth();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
   const { categories } = useCategoryStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchTerm, setSearchTerm] = useState("");
+  const [token, setToken] = useState<string | null>(null);
 
 
 
@@ -44,9 +47,12 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
 
   useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
     if (selectedCategoryId) {
       const fetchProductsByCategory = async () => {
-        const response = await getProductsByCategory(selectedCategoryId);
+        const response = await getProductsByCategory(selectedCategoryId, token);
 
         if (!response.ok) {
           console.warn("No se encontraron productos o hubo un error:", response.message);
@@ -73,8 +79,10 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     const searchTerm = value.trim();
     if (searchTerm.length > 0 && searchTerm !== searchTerm) {
       setSearchTerm(searchTerm);
-      const results = await searchProducts(searchTerm, selectedCategoryId);
-      setSearchResults(results);
+      if (token) {
+        const results = await searchProducts(searchTerm, selectedCategoryId, token);
+        setSearchResults(results);
+      }
     } else if (searchTerm.length === 0) {
       setSearchResults(products);
     }

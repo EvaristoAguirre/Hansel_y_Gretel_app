@@ -2,12 +2,12 @@ import { LoginRequest, LoginResponse, RecoverRequest, RecoverResponse, RegisterR
 import { URI_USER } from '@/components/URI/URI';
 
 
-
-const postRequest = async <T, R>(endpoint: string, body: T): Promise<R> => {
+const postRequest = async <T, R>(endpoint: string, body: T, token?: string): Promise<R> => {
   const response = await fetch(`${URI_USER}/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });
@@ -20,12 +20,12 @@ const postRequest = async <T, R>(endpoint: string, body: T): Promise<R> => {
   return response.json();
 };
 
-export const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> => {
-  return await postRequest<RegisterRequest, RegisterResponse>('register', data);
+export const registerUser = async (data: RegisterRequest, token?: string): Promise<RegisterResponse> => {
+  return await postRequest<RegisterRequest, RegisterResponse>('register', data, token);
 };
 
-export const loginUser = async (data: LoginRequest): Promise<LoginResponse> => {
-  return await postRequest<LoginRequest, LoginResponse>('login', data);
+export const loginUser = async (data: LoginRequest, token?: string): Promise<LoginResponse> => {
+  return await postRequest<LoginRequest, LoginResponse>('login', data, token);
 };
 
 // export const recoverPassword = async (data: RecoverRequest): Promise<RecoverResponse> => {

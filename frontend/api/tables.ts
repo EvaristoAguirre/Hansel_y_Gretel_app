@@ -1,11 +1,15 @@
 import { MesaForm, MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_TABLE } from "@/components/URI/URI";
 
-export const validateTableByNumber = async (number: number) => {
+
+export const validateTableByNumber = async (number: number, token: string) => {
   try {
     const response = await fetch(`${URI_TABLE}/by-number/${number}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
     });
 
     if (response.status === 200) {
@@ -26,11 +30,14 @@ export const validateTableByNumber = async (number: number) => {
 };
 
 
-export const validateTableByName = async (name: string) => {
+export const validateTableByName = async (name: string, token: string) => {
   try {
     const response = await fetch(`${URI_TABLE}/by-name/${name}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
     });
 
     if (response.status === 200) {
@@ -50,10 +57,13 @@ export const validateTableByName = async (name: string) => {
   }
 };
 
-export const tableToOpen = async (id: string) => {
+export const tableToOpen = async (id: string, token: string) => {
   const response = await fetch(`${URI_TABLE}/close/${id}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
   if (!response.ok) {
@@ -65,10 +75,13 @@ export const tableToOpen = async (id: string) => {
 };
 
 
-export const editTable = async (id: string, data: MesaForm) => {
+export const editTable = async (id: string, data: MesaForm, token: string) => {
   const response = await fetch(`${URI_TABLE}/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
     body: JSON.stringify({ ...data }),
   });
 

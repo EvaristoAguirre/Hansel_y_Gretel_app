@@ -14,6 +14,7 @@ import Ingredients from "./TabIngredients/Ingredients";
 import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
+import { useAuth } from "@/app/context/authContext";
 
 
 const ProductsPage: React.FC = () => {
@@ -43,12 +44,16 @@ const ProductsPage: React.FC = () => {
   const { connectWebSocket } = useProductos();
 
   const { categories, setCategories, } = useCategoryStore();
+  const { getAccessToken } = useAuth();
+
 
   // Obtener categorías al cargar el componente
   useEffect(() => {
     const fetchData = async () => {
+      const token = getAccessToken();
+      if (!token) return;
       try {
-        const data = await fetchCategories();
+        const data = await fetchCategories(token);
         setCategories(data);
         connectWebSocket();
       } catch (error) {
