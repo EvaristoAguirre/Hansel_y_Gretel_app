@@ -7,20 +7,16 @@ import { ProductRepository } from './product.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
-import { JwtService } from '@nestjs/jwt';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UserModule } from 'src/User/user.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Category, UnitOfMeasure]),
     forwardRef(() => CategoryModule),
+    UserModule,
   ],
   controllers: [ProductController],
-  providers: [
-    ProductService,
-    ProductRepository,
-    CategoryRepository,
-    JwtService,
-  ],
+  providers: [ProductService, ProductRepository, CategoryRepository],
   exports: [ProductService],
 })
 export class ProductModule {}
