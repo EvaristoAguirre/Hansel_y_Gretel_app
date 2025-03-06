@@ -39,7 +39,12 @@ export class ProductRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
-        relations: ['categories'],
+        relations: [
+          'categories',
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
+        ],
       });
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -213,7 +218,21 @@ export class ProductRepository {
 
       await queryRunner.commitTransaction();
 
-      return savedProduct;
+      const productWithRelations = await queryRunner.manager.findOne(Product, {
+        where: { id: savedProduct.id },
+        relations: [
+          'categories',
+          'ingredients',
+          'ingredients.ingredient',
+          'ingredients.unitOfMeasure',
+        ],
+      });
+
+      if (!productWithRelations) {
+        throw new NotFoundException('Product not found after creation');
+      }
+
+      return productWithRelations;
     } catch (error) {
       // ------------------  Rollback en caso de error
       await queryRunner.rollbackTransaction();
@@ -244,7 +263,11 @@ export class ProductRepository {
     try {
       const product = await this.productRepository.findOne({
         where: { id: id, isActive: true },
-        relations: ['categories'],
+        relations: [
+          'categories',
+          'productIngredients',
+          'productIngredients.ingredient',
+        ],
       });
 
       if (!product) {
@@ -348,7 +371,11 @@ export class ProductRepository {
 
       const [products, total] = await this.productRepository.findAndCount({
         where: whereConditions,
-        relations: ['categories'],
+        relations: [
+          'categories',
+          'productIngredients',
+          'productIngredients.ingredient',
+        ],
         skip: offset,
         take: limit,
       });

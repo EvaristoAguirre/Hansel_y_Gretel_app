@@ -12,6 +12,7 @@ import { CategoryRepository } from 'src/Category/category.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UserModule } from 'src/User/user.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
       UnitOfMeasure,
     ]),
     forwardRef(() => CategoryModule),
+    UserModule,
   ],
   controllers: [StockController],
   providers: [
