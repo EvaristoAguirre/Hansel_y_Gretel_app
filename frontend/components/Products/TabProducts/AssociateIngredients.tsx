@@ -32,10 +32,9 @@ interface IngredientDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (ingredientsForm: IingredientForm[]) => void;
-  PaperProps?: PaperProps;
 }
 
-const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, PaperProps }) => {
+const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, }) => {
   const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<IingredientForm[]>([]);
@@ -102,7 +101,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   };
 
   return (
-    <Dialog open={open} onClose={onClose} PaperProps={PaperProps} >
+    <Dialog open={open} onClose={onClose}  >
       <DialogTitle>Asociar Ingredientes</DialogTitle>
       <DialogContent>
         {/* Sección para agregar un nuevo ingrediente */}
@@ -136,10 +135,10 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
             onChange={(e) =>
               setNewIngredient({ ...newIngredient, quantityOfIngredient: +e.target.value })
             }
-            sx={{ minWidth: 120, width: "20%" }}
+            sx={{ minWidth: 120, width: "15%" }}
           />
-          <FormControl variant="outlined" sx={{ minWidth: 120, width: "40%" }}>
-            <InputLabel>Unidad de medida</InputLabel>
+          <FormControl variant="outlined" sx={{ minWidth: 120, width: "45%" }}>
+            <InputLabel sx={{ fontSize: "15px" }}>Unidad de Medida</InputLabel>
             <Select
               label="Unidad de medida"
               value={newIngredient.unitOfMeasureId}
@@ -154,9 +153,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
               ))}
             </Select>
           </FormControl>
-
         </FormControl>
-
         <Button
           onClick={handleAddIngredient}
           variant="contained"
