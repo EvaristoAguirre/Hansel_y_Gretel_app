@@ -3,7 +3,6 @@ import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from './authContext';
-import { useOrderContext } from './order.context';
 type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
@@ -70,9 +69,15 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
+
     async function fetchSalas() {
       try {
-        const response = await fetch(URI_ROOM, { method: "GET" });
+        const response = await fetch(URI_ROOM, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          }
+        });
         const data = await response.json();
         setSalas(data);
       } catch (error) {

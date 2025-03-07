@@ -8,8 +8,9 @@ import { ProductForm } from '../Interfaces/IProducts';
 import { useAuth } from "@/app/context/authContext";
 
 export const useProductos = () => {
-  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
+  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
   const [loading, setLoading] = useState<boolean>(true);
@@ -24,17 +25,23 @@ export const useProductos = () => {
     ingredients: [],
     isActive: true,
   });
-  const [token, setToken] = useState<string | null>(null);
 
+  // Llamada inicial para cargar productos
   useEffect(() => {
-    const token = getAccessToken();
+    const getToken = getAccessToken();
     if (!token) return;
-    setToken(token);
-  })
-  const fetchAndSetProducts = async () => {
+    setToken(getToken);
+    if (token) {
+      fetchAndSetProducts(token);
+    }
+  }, [token]);
+
+  const fetchAndSetProducts = async (token: string) => {
     setLoading(true);
+
     try {
-      const fetchedProducts = await fetchProducts("1", "50", token as string);
+      if (!token) return;
+      const fetchedProducts = await fetchProducts("1", "50", token);
 
       setProducts(fetchedProducts);
     } catch (error) {
@@ -44,12 +51,7 @@ export const useProductos = () => {
     }
   };
 
-  // Llamada inicial para cargar productos
-  useEffect(() => {
-    fetchAndSetProducts();
-  }, [connectWebSocket]);
-
-  const handleCreate = async () => {
+  const handleCreate = async (token: string) => {
 
     try {
       const preparedForm = {
@@ -59,7 +61,7 @@ export const useProductos = () => {
         cost: parseFloat(form.cost as any),
       };
 
-      const newProduct = await createProduct(preparedForm, token as string);
+      const newProduct = await createProduct(preparedForm, token);
 
       addProduct(newProduct);
       handleCloseModal();
@@ -72,7 +74,7 @@ export const useProductos = () => {
     }
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (token: string) => {
     try {
       const preparedForm = {
         ...form,
@@ -82,7 +84,7 @@ export const useProductos = () => {
         id: form.id,
       };
 
-      const updatedProduct = await editProduct(preparedForm, token as string);
+      const updatedProduct = await editProduct(preparedForm, token);
 
       updateProduct(updatedProduct);
 
@@ -97,7 +99,7 @@ export const useProductos = () => {
   };
 
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, token: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -109,7 +111,13 @@ export const useProductos = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_PRODUCT}/${id}`, {
+          method: "DELETE",
+          headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${token}`,
+          }
+        });
         removeProduct(id);
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
       } catch (error) {

@@ -9,6 +9,8 @@ import {
 } from "@mui/material";
 import { MesaForm, MesaModalProps } from "../Interfaces/Cafe_interfaces";
 import { validateTableByName, validateTableByNumber } from "@/api/tables";
+import { useAuth } from "@/app/context/authContext";
+
 
 interface Errors {
   [clave: string]: string;
@@ -22,16 +24,23 @@ const TableModal: React.FC<MesaModalProps> = ({
   onSave,
   onChange,
 }) => {
-  // Dejo comentarios para ayudar a la lectura del código.
-  // Borrar de necesario.
-
-  // Iniciamos los errores en string vacíos.
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({
     name: "",
     number: "",
     coment: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
+
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (token) {
+      setToken(token);
+    }
+  }, [getAccessToken]);
+
 
   // Etiquetas de los campos en español.
   const fieldLabels: Partial<Record<keyof MesaForm, string>> = {
@@ -71,11 +80,15 @@ const TableModal: React.FC<MesaModalProps> = ({
       } else {
         // Validamos que el número de mesa no este en uso
         try {
-          const result = await validateTableByNumber(numValue);
-          if (!result.ok && result.status === 200) {
-            error = result.message;
-          } else if (!result.ok) {
-            error = result.message || "Error al validar el número";
+          if (token) {
+            const result = await validateTableByNumber(numValue, token);
+            if (!result.ok && result.status === 200) {
+              error = result.message;
+            } else if (!result.ok) {
+              error = result.message || "Error al validar el número";
+            }
+          } else {
+            error = "No existe o caducó el token";
           }
         } catch (err) {
           console.error("Error al validar el número:", err);
@@ -89,11 +102,16 @@ const TableModal: React.FC<MesaModalProps> = ({
       } else {
         // Validamos que el nombre no este en uso
         try {
-          const result = await validateTableByName(value);
-          if (!result.ok && result.status === 200) {
-            error = result.message;
-          } else if (!result.ok) {
-            error = result.message || "Error al validar el nombre";
+          if (token) {
+            const result = await validateTableByName(value, token);
+            if (!result.ok && result.status === 200) {
+              error = result.message;
+            } else if (!result.ok) {
+              error = result.message || "Error al validar el nombre";
+            }
+
+          } else {
+            error = "No existe o caducó el token";
           }
         } catch (err) {
           console.error("Error al validar el nombre:", err);

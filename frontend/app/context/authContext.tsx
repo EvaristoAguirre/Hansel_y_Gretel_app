@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 
 interface AuthContextProps {
   user: any;
+  accessToken: string | null;
   setUser: (user: any) => void;
   validateUserSession: () => boolean | null;
   userRoleFromToken: () => string | null;
@@ -27,6 +28,7 @@ interface CustomJwtPayload extends JwtPayload {
 
 const AuthContext = createContext<AuthContextProps>({
   user: null,
+  accessToken: null,
   setUser: () => { },
   validateUserSession: () => null,
   userRoleFromToken: () => null,
@@ -43,10 +45,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
+
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-        setAccessToken(parsedUser.accessToken || null);
+        const parseToken = JSON.parse(storedUser).accessToken;
+        setAccessToken(parseToken);
       }
     }
   }, []);
@@ -57,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!userSession) return null;
 
     try {
-      return JSON.parse(userSession).accessToken || null;
+      return JSON.parse(userSession).accessToken;
     } catch (error) {
       console.error("Failed to retrieve token", error);
       return null;
@@ -139,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        accessToken,
         getAccessToken,
         setUser,
         validateUserSession,

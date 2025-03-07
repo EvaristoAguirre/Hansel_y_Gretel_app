@@ -47,6 +47,7 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
+  ingredients: IingredientForm[]
 }
 
 export interface ProductState {

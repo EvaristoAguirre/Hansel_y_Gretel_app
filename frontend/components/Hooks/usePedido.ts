@@ -9,6 +9,7 @@ import { useTableStore } from "../Table/useTableStore";
 import { IOrderDetails } from "../Interfaces/IOrderDetails";
 import { SelectedProductsI } from '../Interfaces/IProducts';
 import { useOrderContext } from '../../app/context/order.context';
+import { useAuth } from "@/app/context/authContext";
 
 const usePedido = () => {
   const {
@@ -19,7 +20,8 @@ const usePedido = () => {
     updateOrder,
     connectWebSocket,
   } = useOrderStore();
-
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const { tables, updateTable } = useTableStore();
 
   const { selectedProducts, confirmedProducts } = useOrderContext();
@@ -55,6 +57,12 @@ const usePedido = () => {
   useEffect(() => {
     setProductosDisponibles(products); // Sincronizar productos disponibles
   }, [products]);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+  }, [getAccessToken]);
 
   // const handleSeleccionarProducto = (producto: any) => {
   //   const foundProduct = productsDetails.find(
@@ -118,9 +126,12 @@ const usePedido = () => {
   // };
 
   useEffect(() => {
-    async function fetchOrders() {
+    async function fetchOrders(token: string) {
       try {
-        const response = await fetch(`${URI_ORDER}/active`, { method: "GET" });
+        const response = await fetch(`${URI_ORDER}/active`, {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${token}`, },
+        });
         const data = await response.json();
         setOrders(data);
       } catch (error) {
@@ -128,8 +139,9 @@ const usePedido = () => {
         console.error(error);
       }
     }
-
-    fetchOrders();
+    if (token) {
+      fetchOrders(token);
+    }
     connectWebSocket();
   }, [setOrders, connectWebSocket]);
 
