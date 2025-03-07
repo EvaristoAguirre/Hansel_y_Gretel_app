@@ -28,14 +28,16 @@ import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
 import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
+import { ProductForm } from "@/components/Interfaces/IProducts";
 
 interface IngredientDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (ingredientsForm: IingredientForm[]) => void;
+  form: ProductForm;
 }
 
-const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, }) => {
+const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, form }) => {
   const { getAccessToken } = useAuth();
   const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
@@ -54,6 +56,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
+    console.log("ingredientes del form", form);
+
+    setSelectedIngredients(form.ingredients);
     fetchUnits(token).then(units => setUnit(units));
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);

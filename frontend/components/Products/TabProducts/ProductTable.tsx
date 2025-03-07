@@ -59,7 +59,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
       fetchProductsByCategory();
     } else {
-      fetchAndSetProducts();
+      fetchAndSetProducts(token);
     }
   }, [selectedCategoryId]);
 
@@ -91,7 +91,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Limpiar búsqueda y mostrar todos los productos
   const handleClearSearch = () => {
-    fetchAndSetProducts();
+    token && fetchAndSetProducts(token);
     setSearchResults(products);
     setSelectedProducts([]);
     setSearchTerm("");

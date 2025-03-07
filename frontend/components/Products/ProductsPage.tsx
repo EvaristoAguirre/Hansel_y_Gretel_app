@@ -15,6 +15,7 @@ import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
 import { useAuth } from "@/app/context/authContext";
+import { useSessionExpiration } from "../Hooks/useSessionExpiration";
 
 
 const ProductsPage: React.FC = () => {
@@ -74,6 +75,9 @@ const ProductsPage: React.FC = () => {
   const clearSelectedCategory = () => {
     setSelectedCategoryId(null);
   };
+
+
+  useSessionExpiration();
 
   return (
     <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>

@@ -1,4 +1,5 @@
 "use client";
+import { useAuth } from "@/app/context/authContext";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
@@ -7,7 +8,7 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 
@@ -23,7 +24,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     setModalOpen,
     setModalType,
     setForm,
-    handleCreate,
+    handleCreateProduct,
     handleEdit,
     handleDelete,
     handleCloseModal,
@@ -34,9 +35,30 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     categories,
   } = useCategoryStore();
 
+  const [token, setToken] = useState<string | null>(null);
+
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
+
+  const { getAccessToken } = useAuth();
+
+  useEffect(() => {
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      setToken(accessToken);
+    }
+  }, [getAccessToken]);
+
+  const handleSave = () => {
+    if (token) {
+      if (modalType === "create") {
+        return handleCreateProduct(token);
+      } else {
+        return handleEdit(token!);
+      }
+    }
+  };
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
@@ -68,7 +90,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
-                ingredients: params.row.ingredients,
+                ingredient: params.row.ingredients,
                 isActive: true,
               });
               setModalType("edit");
@@ -81,7 +103,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             className="bg-[--color-primary] text-bold mt-2 p-1"
             variant="contained"
             size="small"
-            onClick={() => handleDelete(params.row.id)}
+            onClick={() => handleDelete(params.row.id, token!)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
@@ -115,7 +137,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
           products={products}
           onChange={handleChangeProductInfo}
           onClose={handleCloseModal}
-          onSave={modalType === "create" ? handleCreate : handleEdit}
+          onSave={handleSave}
         />
       )}
     </Box>

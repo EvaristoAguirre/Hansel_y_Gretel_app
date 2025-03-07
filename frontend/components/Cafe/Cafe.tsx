@@ -5,6 +5,7 @@ import Salas from "../Rooms/Rooms";
 import OrderProvider from '../../app/context/order.context';
 import RoomProvider from "@/app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
+import { useSessionExpiration } from "../Hooks/useSessionExpiration";
 
 const Cafe = () => {
   const { getAccessToken } = useAuth();
@@ -25,6 +26,8 @@ const Cafe = () => {
       setNavbarHeight(navbar.offsetHeight);
     }
   }, []);
+
+  useSessionExpiration();
 
   return (
     <div className="cafe" style={{

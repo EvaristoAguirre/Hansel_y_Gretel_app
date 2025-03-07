@@ -10,6 +10,7 @@ import { RegisterRequest } from '@/components/Interfaces/IUsers';
 import Swal from 'sweetalert2';
 import { UserRole } from '@/components/Enums/user';
 import { useAuth } from '@/app/context/authContext';
+import { useSessionExpiration } from '@/components/Hooks/useSessionExpiration';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -94,6 +95,9 @@ export default function RegisterForm() {
       Swal.fire('Error en el registro', error.message, 'error');
     }
   };
+
+  useSessionExpiration();
+
 
   return (
     <ThemeProvider theme={theme}>

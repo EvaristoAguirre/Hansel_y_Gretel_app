@@ -22,7 +22,7 @@ export const useProductos = () => {
     price: null,
     cost: null,
     categories: [],
-    ingredients: [],
+    ingredient: [],
     isActive: true,
   });
 
@@ -51,7 +51,7 @@ export const useProductos = () => {
     }
   };
 
-  const handleCreate = async (token: string) => {
+  const handleCreateProduct = async (token: string) => {
 
     try {
       const preparedForm = {
@@ -60,11 +60,16 @@ export const useProductos = () => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),
       };
+      if (token) {
+        const newProduct = await createProduct(preparedForm, token!);
+        addProduct(newProduct);
+        handleCloseModal();
 
-      const newProduct = await createProduct(preparedForm, token);
+      } else {
+        throw new Error("Token no disponible");
+      }
 
-      addProduct(newProduct);
-      handleCloseModal();
+
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
 
@@ -83,10 +88,14 @@ export const useProductos = () => {
         cost: parseFloat(form.cost as any),
         id: form.id,
       };
+      if (token) {
+        const updatedProduct = await editProduct(preparedForm, token);
+        updateProduct(updatedProduct);
 
-      const updatedProduct = await editProduct(preparedForm, token);
+      } else {
+        throw new Error("Token no disponible");
+      }
 
-      updateProduct(updatedProduct);
 
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
 
@@ -137,7 +146,7 @@ export const useProductos = () => {
       price: null,
       cost: null,
       categories: [],
-      ingredients: [],
+      ingredient: [],
       isActive: true,
     });
   };
@@ -151,7 +160,7 @@ export const useProductos = () => {
     setModalOpen,
     setModalType,
     setForm,
-    handleCreate,
+    handleCreateProduct,
     handleEdit,
     handleDelete,
     handleCloseModal,

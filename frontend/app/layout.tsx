@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/Navbar/Navbar";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "@/styles/theme";
 import { AuthProvider } from "./context/authContext";
+
 
 
 

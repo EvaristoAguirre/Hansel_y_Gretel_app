@@ -57,7 +57,8 @@ export const useOrderContext = () => {
 
 const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { getAccessToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null); const { addOrder, updateOrder, removeOrder } = useOrderStore();
+  const [token, setToken] = useState<string | null>(null);
+  const { addOrder, updateOrder, removeOrder } = useOrderStore();
   const { selectedMesa, selectedSala, handleSelectMesa } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
   const [confirmedProducts, setConfirmedProducts] = useState<SelectedProductsI[]>([]);
@@ -228,7 +229,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     }
   };
 
-  const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
+  const handleEditOrder = async (
+    id: string,
+    selectedProducts: SelectedProductsI[],
+    numberCustomers: number,
+    comment: string
+  ) => {
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
@@ -237,7 +243,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,

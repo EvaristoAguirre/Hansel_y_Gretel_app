@@ -14,7 +14,7 @@ import { ICategory } from "../../Interfaces/ICategories";
 import { Autocomplete } from "@mui/material";
 import { getProductByCode } from "@/api/products";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
-import IngredientDialog from "./AssociateIngredients";
+import IngredientDialog from "./IngredientDialog";
 import { useAuth } from "@/app/context/authContext";
 
 interface ProductDialogProps {
@@ -39,7 +39,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   categories,
   onChange,
   onClose,
-  onSave,
+  onSave
 }) => {
   const { getAccessToken } = useAuth();
   const [errors, setErrors] = useState<Errors>({
@@ -54,11 +54,14 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   const [isIngredientDialogOpen, setIngredientDialogOpen] = useState(false);
   const [associatedIngredients, setAssociatedIngredients] = useState<IingredientForm[]>([]);
   const [modalPosition, setModalPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [token, setToken] = useState<string | null>(null);
 
-  const validateField = async (field: string, value: any) => {
+  useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
-
+    setToken(token);
+  })
+  const validateField = async (field: string, value: any) => {
     let error = "";
 
     if (field === "categories" && Array.isArray(value) && value.length === 0) {
@@ -71,15 +74,17 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         // Validación del código
         setIsCheckingCode(true);
         try {
-          const result = await getProductByCode(value, token);
-
-          if (result.ok) {
-            error = "El código ya está en uso";
-          } else if (result.status === 404) {
-            error = "";
-          } else {
-            error = result.error || "Error al validar el código";
+          if (token) {
+            const result = await getProductByCode(value, token)
+            if (result.ok) {
+              error = "El código ya está en uso";
+            } else if (result.status === 404) {
+              error = "";
+            } else {
+              error = result.error || "Error al validar el código";
+            }
           }
+
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
@@ -139,7 +144,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   };
 
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
-    onChange("ingredients", ingredientsForm);
+    onChange("ingredient", ingredientsForm);
   };
 
   const handleSaveProduct = () => {
@@ -247,6 +252,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
 
       </DialogActions>
       <IngredientDialog
+        form={form}
         open={isIngredientDialogOpen}
         onClose={() => setIngredientDialogOpen(false)}
         onSave={handleSaveIngredients}

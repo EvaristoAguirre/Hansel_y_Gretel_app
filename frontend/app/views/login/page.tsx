@@ -7,6 +7,7 @@ import theme from '@/styles/theme';
 import Image from 'next/image';
 import { loginUser } from '@/api/login-register';
 import Swal from 'sweetalert2';
+import { useSessionExpiration } from '@/components/Hooks/useSessionExpiration';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -41,6 +42,7 @@ export default function RegisterForm() {
       });
     }
   };
+  useSessionExpiration();
 
   return (
     <ThemeProvider theme={theme}>
