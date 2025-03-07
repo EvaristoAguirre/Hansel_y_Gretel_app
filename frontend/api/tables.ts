@@ -1,4 +1,4 @@
-import { MesaForm, MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
+import { MesaForm } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_TABLE } from "@/components/URI/URI";
 
 
