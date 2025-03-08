@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import { Button, Box, Autocomplete, TextField } from "@mui/material";
-import { esES } from "@mui/x-data-grid/locales/esES";
-import { getProductsByCategory, searchProducts } from "@/helpers/products";
-import { ProductTableProps } from "@/components/Interfaces/IProducts";
+import { Button, Box } from "@mui/material";
+import { getProductsByCategory, searchProducts } from "@/api/products";
+import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";
+import AutoCompleteProduct from "@/components/Utils/Autocomplete";
+import DataGridComponent from '../../Utils/ProductTable';
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -16,7 +16,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
-  const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
+  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
 
   // Actualizar los resultados de búsqueda cuando `products` cambie
@@ -104,32 +104,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
 
         {/* Buscador de productos */}
-        <Autocomplete
-          sx={{ flexGrow: 1, width: '60%', marginRight: 2 }}
+        <AutoCompleteProduct
           options={selectedCategoryId ? searchResults : products}
-          getOptionLabel={(product) =>
-            `${product.name} - (Código: ${product.code})`
-          }
-          onInputChange={(event, value) => handleSearch(value)}
-          onChange={(event, selectedProduct) => {
-            if (selectedProduct) {
-              handleSelectProduct(selectedProduct);
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Buscar productos por nombre o código"
-              variant="outlined"
-              fullWidth
-            />
-          )}
-          renderOption={(props, product) => (
-            <li {...props} key={String(product.id)}>
-              {`${product.name} - (Código: ${product.code})`}
-            </li>
-          )}
+          onSearch={handleSearch}
+          onSelect={handleSelectProduct}
         />
+
         {/* Botón para limpiar búsqueda */}
         <Button
           sx={{ flexGrow: 1, width: '20%' }}
@@ -141,22 +121,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
       </Box>
       {/* Tabla de productos */}
-      <Box sx={{ height: 450, mt: 2 }}>
-        <DataGrid
-          rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
-          columns={columns}
-          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 1, pageSize: 5 },
-            },
-            sorting: {
-              sortModel: [{ field: 'name', sort: 'asc' }],
-            }
-          }}
-          pageSizeOptions={[2, 5, 7, 9, 15]}
-        />
-      </Box>
+      <DataGridComponent rows={selectedProducts.length > 0 ? selectedProducts : searchResults} columns={columns} />
     </Box>
   );
 };

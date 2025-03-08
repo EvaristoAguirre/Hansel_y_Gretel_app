@@ -5,7 +5,7 @@ import { Card, CardContent, Typography, TextField, Button, Box } from '@mui/mate
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
-import { loginUser } from '@/helpers/login-register';
+import { loginUser } from '@/api/login-register';
 import Swal from 'sweetalert2';
 
 export default function RegisterForm() {

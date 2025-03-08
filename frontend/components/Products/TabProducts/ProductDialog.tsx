@@ -12,7 +12,9 @@ import {
 import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
 import { ICategory } from "../../Interfaces/ICategories";
 import { Autocomplete } from "@mui/material";
-import { getProductByCode } from "@/helpers/products";
+import { getProductByCode } from "@/api/products";
+import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
+import IngredientDialog from "./AssociateIngredients";
 
 interface ProductDialogProps {
   open: boolean;
@@ -20,7 +22,7 @@ interface ProductDialogProps {
   form: ProductForm;
   products: ProductCreated[];
   categories: ICategory[];
-  onChange: (field: keyof ProductForm, value: string | number | null | string[]) => void;
+  onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[]) => void;
   onClose: () => void;
   onSave: () => void;
 }
@@ -47,6 +49,9 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const [isIngredientDialogOpen, setIngredientDialogOpen] = useState(false);
+  const [associatedIngredients, setAssociatedIngredients] = useState<IingredientForm[]>([]);
+  const [modalPosition, setModalPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
 
   const validateField = async (field: string, value: any) => {
     let error = "";
@@ -116,8 +121,35 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     onChange("categories", updatedCategories);
   };
 
+  const handleOpenIngredientDialog = () => {
+    const dialogElement = document.getElementById("product-dialog");
+    if (dialogElement) {
+      const rect = dialogElement.getBoundingClientRect();
+      setModalPosition({
+        left: rect.right + 10, // Justo al lado derecho del modal principal
+        top: rect.top, // Mantiene la alineación vertical
+      });
+    }
+    setIngredientDialogOpen(true);
+  };
+
+  const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
+    onChange("ingredients", ingredientsForm);
+  };
+
+  const handleSaveProduct = () => {
+    const productData = {
+      ...form,
+      ingredients: associatedIngredients,
+    };
+    onSave();
+    onClose();
+  };
+
+
+
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog id="product-dialog" open={open} onClose={onClose}>
       <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
         {modalType === "create" ? "Crear Producto" : "Editar Producto"}
       </DialogTitle>
@@ -198,13 +230,23 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color="error">
           Cancelar
         </Button>
-        <Button onClick={onSave} color="primary" disabled={!isFormValid}>
+        <Button onClick={handleOpenIngredientDialog} color="secondary">
+          Asociar Ingredientes
+        </Button>
+        <Button onClick={handleSaveProduct} color="primary" disabled={!isFormValid}>
           Guardar
         </Button>
+
       </DialogActions>
+      <IngredientDialog
+        open={isIngredientDialogOpen}
+        onClose={() => setIngredientDialogOpen(false)}
+        onSave={handleSaveIngredients}
+
+      />
     </Dialog>
   );
 };

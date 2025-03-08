@@ -20,7 +20,7 @@ export class TableRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-  ) {}
+  ) { }
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
@@ -149,10 +149,7 @@ export class TableRepository {
           id: table.room?.id,
           name: table.room?.name,
         },
-        orders: table.orders.map((order) => ({
-          id: order.id,
-          state: order.state,
-        })),
+        orders: table.orders.map((order) => order.id),
       }));
 
       return result;
