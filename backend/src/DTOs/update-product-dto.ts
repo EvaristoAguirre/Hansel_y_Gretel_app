@@ -8,7 +8,10 @@ import {
   IsUUID,
   IsNumber,
   IsBoolean,
+  ValidateNested,
 } from 'class-validator';
+import { ProductIngredientDto } from './productIngredient.dto';
+import { Type } from 'class-transformer';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -47,4 +50,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductIngredientDto)
+  ingredients?: ProductIngredientDto[];
 }

@@ -218,9 +218,9 @@ export class ProductRepository {
 
       if (ingredients && ingredients.length > 0) {
         relationsToLoad.push(
-          'ingredients',
-          'ingredients.ingredient',
-          'ingredients.unitOfMeasure',
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
         );
       }
 
