@@ -2,7 +2,7 @@ import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
 import { ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
 
 
-export const createProduct = async (form: ProductCreated, token: string) => {
+export const createProduct = async (form: ProductForm, token: string) => {
   const response = await fetch(URI_PRODUCT, {
     method: "POST",
     headers: {

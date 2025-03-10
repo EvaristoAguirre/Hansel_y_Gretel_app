@@ -21,7 +21,7 @@ interface ProductDialogProps {
   open: boolean;
   modalType: "create" | "edit";
   form: ProductForm;
-  products: ProductResponse[];
+  products: ProductCreated[];
   categories: ICategory[];
   onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[]) => void;
   onClose: () => void;
@@ -60,8 +60,6 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
-    console.log("Categorias", categories);
-
   }, [getAccessToken]);
   const validateField = async (field: string, value: any) => {
     let error = "";

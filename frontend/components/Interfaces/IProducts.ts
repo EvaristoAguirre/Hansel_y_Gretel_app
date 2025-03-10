@@ -27,12 +27,14 @@ export interface ProductTableProps {
 
 export interface ProductCreated {
   [key: string]: string | number | boolean | null | string[] | IingredientForm[];
+  id: string;
   categories: string[];
   code: number;
   description: string;
   isActive: boolean;
   name: string;
   price: number;
+  cost: number;
   productIngredients: IingredientForm[]
 
 };

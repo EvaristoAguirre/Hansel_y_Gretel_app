@@ -57,21 +57,12 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
-    console.log("ingredientes del form", form);
-
     if (form.ingredients) {
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
-        // export interface IingredientForm {
-        //   name: string,
-        //   ingredientId: string,
-        //   quantityOfIngredient: number | null,
-        //   unitOfMeasureId: string
-        // }
         name: ingredient.ingredient.name,
         ingredientId: ingredient.ingredient.id,
         quantityOfIngredient: ingredient.quantityOfIngredient,
         unitOfMeasureId: ingredient.unitOfMeasure.id
-
       }))
       setSelectedIngredients(preparedIngredients);
     }

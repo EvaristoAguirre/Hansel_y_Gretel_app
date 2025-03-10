@@ -70,7 +70,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
       fetchProductsByCategory();
     } else {
-      fetchAndSetProducts();
+      fetchAndSetProducts(token);
     }
   }, [selectedCategoryId]);
 
@@ -100,7 +100,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   // Limpiar búsqueda y mostrar todos los productos
   const handleClearSearch = () => {
-    fetchAndSetProducts();
+    token && fetchAndSetProducts(token);
     setSearchResults(products);
     setSelectedProducts([]);
     onClearSelectedCategory();

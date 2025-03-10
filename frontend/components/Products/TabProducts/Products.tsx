@@ -79,7 +79,8 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
         <div>
           <Button
             variant="contained"
-            className="bg-[--color-primary] text-bold mt-2 mr-2"
+            sx={{ mr: 1 }}
+            className="bg-[--color-primary]"
             size="small"
             onClick={() => {
               setForm({
@@ -100,14 +101,14 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             <FontAwesomeIcon icon={faEdit} />
           </Button>
           <Button
-            className="bg-[--color-primary] text-bold mt-2 p-1"
+            className="bg-[--color-primary]"
             variant="contained"
             size="small"
             onClick={() => handleDelete(params.row.id, token!)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
-        </div>
+        </div >
       ),
     },
   ];

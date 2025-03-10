@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { TableState } from "../Enums/Enums";
 import { ISala } from "../Interfaces/Cafe_interfaces";
-import { OrderDetailsCreated } from "../Order/useOrderDetailsStore";
-import { OrderCreated } from "../Order/useOrderStore";
-import { strict } from "assert";
 
 export interface TableCreated {
   id: string;

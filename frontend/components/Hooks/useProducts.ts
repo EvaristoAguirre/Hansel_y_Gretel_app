@@ -6,6 +6,7 @@ import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
 import { useAuth } from "@/app/context/authContext";
+import { Ingredient } from '../../../backend/src/Ingredient/ingredient.entity';
 
 export const useProductos = () => {
   const { getAccessToken } = useAuth();
@@ -36,10 +37,6 @@ export const useProductos = () => {
     }
   }, [token]);
 
-  useEffect(() => {
-    console.log("data formulario", form);
-
-  }, [form]);
 
   const fetchAndSetProducts = async (token: string) => {
     setLoading(true);
@@ -64,6 +61,7 @@ export const useProductos = () => {
         code: parseInt(form.code as any, 10),
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),
+
       };
       if (token) {
         const newProduct = await createProduct(preparedForm, token!);
