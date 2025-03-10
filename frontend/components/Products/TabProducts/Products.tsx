@@ -90,7 +90,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
-                ingredient: params.row.ingredients,
+                ingredients: params.row.productIngredients,
                 isActive: true,
               });
               setModalType("edit");

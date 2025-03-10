@@ -1,4 +1,3 @@
-import { useSessionExpiration } from "@/components/Hooks/useSessionExpiration";
 
 
 export default function Home() {

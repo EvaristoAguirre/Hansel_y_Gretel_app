@@ -9,19 +9,19 @@ import {
   FormControl,
   Chip,
 } from "@mui/material";
-import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
-import { ICategory } from "../../Interfaces/ICategories";
+import { ProductForm, ProductCreated, ProductResponse } from "../../Interfaces/IProducts";
 import { Autocomplete } from "@mui/material";
 import { getProductByCode } from "@/api/products";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
 import { useAuth } from "@/app/context/authContext";
+import { ICategory } from "@/components/Interfaces/ICategories";
 
 interface ProductDialogProps {
   open: boolean;
   modalType: "create" | "edit";
   form: ProductForm;
-  products: ProductCreated[];
+  products: ProductResponse[];
   categories: ICategory[];
   onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[]) => void;
   onClose: () => void;
@@ -60,7 +60,9 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
-  })
+    console.log("Categorias", categories);
+
+  }, [getAccessToken]);
   const validateField = async (field: string, value: any) => {
     let error = "";
 
@@ -122,6 +124,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     price: "Precio",
     cost: "Costo",
     categories: "Categoría",
+    ingredients: "Ingredientes",
     isActive: "Inactivo",
     id: "ID",
   };
@@ -144,7 +147,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   };
 
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
-    onChange("ingredient", ingredientsForm);
+    onChange("ingredients", ingredientsForm);
   };
 
   const handleSaveProduct = () => {

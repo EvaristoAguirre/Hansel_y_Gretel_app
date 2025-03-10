@@ -22,7 +22,7 @@ export const useProductos = () => {
     price: null,
     cost: null,
     categories: [],
-    ingredient: [],
+    ingredients: [],
     isActive: true,
   });
 
@@ -35,6 +35,11 @@ export const useProductos = () => {
       fetchAndSetProducts(token);
     }
   }, [token]);
+
+  useEffect(() => {
+    console.log("data formulario", form);
+
+  }, [form]);
 
   const fetchAndSetProducts = async (token: string) => {
     setLoading(true);
@@ -146,7 +151,7 @@ export const useProductos = () => {
       price: null,
       cost: null,
       categories: [],
-      ingredient: [],
+      ingredients: [],
       isActive: true,
     });
   };

@@ -11,7 +11,7 @@ export interface ProductForm {
   price: null | number;
   cost: null | number;
   categories: string[];
-  ingredient: IingredientForm[];
+  ingredients: IingredientForm[];
   isActive: boolean;
 }
 
@@ -30,10 +30,11 @@ export interface ProductCreated {
   categories: string[];
   code: number;
   description: string;
-  ingredient: IingredientForm[];
   isActive: boolean;
   name: string;
   price: number;
+  productIngredients: IingredientForm[]
+
 };
 
 
@@ -47,7 +48,7 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
-  ingredients: IingredientForm[]
+  productIngredients: IingredientForm[]
 }
 
 export interface ProductState {

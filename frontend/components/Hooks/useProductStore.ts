@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ICategory } from "../Interfaces/ICategories";
-import { ProductState } from "../Interfaces/IProducts";
+import { ProductResponse, ProductState } from "../Interfaces/IProducts";
 
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => (
@@ -32,7 +32,7 @@ export const useProductStore = create<ProductState>((set) => ({
     const parsedProduct = {
       ...product,
       categories: parseCategories(product.categories),
-      ingredients: product.ingredients || [],
+      productIngredients: product.productIngredients
     };
 
     return set((state) => ({ products: [...state.products, parsedProduct] }));

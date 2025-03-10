@@ -29,6 +29,7 @@ import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
+import { Ingredient } from '../../../../backend/src/Ingredient/ingredient.entity';
 
 interface IngredientDialogProps {
   open: boolean;
@@ -58,7 +59,22 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
     if (!token) return;
     console.log("ingredientes del form", form);
 
-    setSelectedIngredients(form.ingredients);
+    if (form.ingredients) {
+      const preparedIngredients = form.ingredients.map((ingredient: any) => ({
+        // export interface IingredientForm {
+        //   name: string,
+        //   ingredientId: string,
+        //   quantityOfIngredient: number | null,
+        //   unitOfMeasureId: string
+        // }
+        name: ingredient.ingredient.name,
+        ingredientId: ingredient.ingredient.id,
+        quantityOfIngredient: ingredient.quantityOfIngredient,
+        unitOfMeasureId: ingredient.unitOfMeasure.id
+
+      }))
+      setSelectedIngredients(preparedIngredients);
+    }
     fetchUnits(token).then(units => setUnit(units));
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
@@ -253,7 +269,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
                   </FormControl>
                 </div>
               ) : (
+
                 // Vista del ingrediente agregado
+
                 <ListItemText
                   primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${unit.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ingredient.unitOfMeasureId}`}
                 />
