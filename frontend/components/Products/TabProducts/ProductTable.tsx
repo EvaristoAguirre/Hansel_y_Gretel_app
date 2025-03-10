@@ -65,15 +65,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
 
   // búsqueda de productos con endpoint 
-  const handleSearch = async (value: string) => {
+  const handleSearch = async (value: string, token: string) => {
     const searchTerm = value.trim();
-    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
+    if (searchTerm.length > 0) {
+      console.log("Buscando productos al escribir");
       setSearchTerm(searchTerm);
       if (token) {
+        console.log("Buscando productos... con token");
+
         const results = await searchProducts(searchTerm, selectedCategoryId, token);
         setSearchResults(results);
       }
     } else if (searchTerm.length === 0) {
+      console.log("Mostrando todos los productos sin token");
+
       setSearchResults(products);
     }
   };
@@ -114,7 +119,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Buscador de productos */}
         <AutoCompleteProduct
           options={selectedCategoryId ? searchResults : products}
-          onSearch={handleSearch}
+          onSearch={(value) => handleSearch(value, token!)}
           onSelect={handleSelectProduct}
         />
 

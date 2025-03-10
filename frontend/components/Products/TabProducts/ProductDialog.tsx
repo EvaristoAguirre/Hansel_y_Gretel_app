@@ -16,6 +16,7 @@ import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredient
 import IngredientDialog from "./IngredientDialog";
 import { useAuth } from "@/app/context/authContext";
 import { ICategory } from "@/components/Interfaces/ICategories";
+import Home from '../../../app/page';
 
 interface ProductDialogProps {
   open: boolean;
@@ -161,7 +162,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
 
   return (
     <Dialog id="product-dialog" open={open} onClose={onClose}>
-      <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
+      <DialogTitle sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}>
         {modalType === "create" ? "Crear Producto" : "Editar Producto"}
       </DialogTitle>
       <DialogContent>
@@ -238,19 +239,26 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             }
             isOptionEqualToValue={(option, value) => option.id === value.id}
           />
+          <DialogActions
+            sx={{ display: "flex", justifyContent: "start", p: 0, mt: 2, width: "100%" }}
+          >
+            <Button
+              onClick={handleOpenIngredientDialog}
+              color="primary"
+              variant="outlined"
+              sx={{ width: "100%", ":hover": { backgroundColor: "#f3d49ab8" } }}>
+              Asociar Ingredientes
+            </Button>
+          </DialogActions>
         </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancelar
         </Button>
-        <Button onClick={handleOpenIngredientDialog} color="secondary">
-          Asociar Ingredientes
-        </Button>
         <Button onClick={handleSaveProduct} color="primary" disabled={!isFormValid}>
           Guardar
         </Button>
-
       </DialogActions>
       <IngredientDialog
         form={form}

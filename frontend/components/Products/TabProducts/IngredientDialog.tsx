@@ -53,6 +53,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   // Estados para editar
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editIngredient, setEditIngredient] = useState<IingredientForm | null>(null);
+  const [isAddButtonDisabled, setIsAddButtonDisabled] = useState(true);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -69,6 +70,15 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
     fetchUnits(token).then(units => setUnit(units));
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
+
+  useEffect(() => {
+    setIsAddButtonDisabled(
+      !newIngredient.ingredientId ||
+      !newIngredient.quantityOfIngredient ||
+      newIngredient.quantityOfIngredient <= 0 ||
+      !newIngredient.unitOfMeasureId
+    );
+  }, [newIngredient]);
 
   const handleAddIngredient = () => {
     if (
@@ -118,7 +128,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
 
   return (
     <Dialog open={open} onClose={onClose}  >
-      <DialogTitle>Asociar Ingredientes</DialogTitle>
+      <DialogTitle
+        sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}
+      >Asociar Ingredientes</DialogTitle>
       <DialogContent>
         {/* Sección para agregar un nuevo ingrediente */}
         <FormControl margin="dense"
@@ -175,6 +187,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
           variant="contained"
           color="primary"
           sx={{ mt: 2, display: "flex", justifySelf: "end" }}
+          disabled={isAddButtonDisabled}
         >
           Agregar Ingrediente
         </Button>
