@@ -83,26 +83,51 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const userRoleFromToken = useCallback((): string | null => {
-    if (!accessToken) return null;
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const userSession = localStorage.getItem("user");
+    if (!userSession) {
+      return null;
+    }
+
     try {
-      const decodedToken = jwtDecode<CustomJwtPayload>(accessToken);
+      const token = JSON.parse(userSession).accessToken;
+      if (!token) {
+        return null;
+      }
+      const decodedToken = jwtDecode<CustomJwtPayload>(token);
       return decodedToken.role;
     } catch (error) {
       console.error("Failed to decode token", error);
       return null;
     }
-  }, [accessToken]);
+  }, []);
 
   const usernameFromToken = useCallback((): string => {
-    if (!accessToken) return "";
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    const userSession = localStorage.getItem("user");
+    if (!userSession) {
+      return "";
+    }
+
     try {
-      const decodedToken = jwtDecode<CustomJwtPayload>(accessToken);
+      const token = JSON.parse(userSession).accessToken;
+      if (!token) {
+        return "";
+      }
+      const decodedToken = jwtDecode<CustomJwtPayload>(token);
       return decodedToken.username || "";
     } catch (error) {
       console.error("Failed to decode token", error);
       return "";
     }
-  }, [accessToken]);
+  }, []);
+
 
   const validateUserSession = () => {
     return !!accessToken;
@@ -117,6 +142,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const expirationTime = decoded.exp * 1000 - Date.now(); // En milisegundos
 
       if (expirationTime <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Sesión expirada",
+          text: "Tu sesión ha expirado. Serás redirigido al login.",
+          confirmButtonText: "OK",
+        })
         removeAccessToken();
         window.location.href = "/views/login";
         return;
