@@ -1,8 +1,12 @@
+import LoadingLottie from '@/components/Loader/Loading';
+import { Suspense } from 'react';
 import Cafe from '../../../components/Cafe/Cafe';
 const ViewCafe = () => {
 
   return (
-    <Cafe />
+    <Suspense fallback={<LoadingLottie />}>
+      <Cafe />
+    </Suspense>
   );
 }
 
