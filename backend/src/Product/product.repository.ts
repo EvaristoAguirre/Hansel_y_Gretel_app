@@ -15,6 +15,8 @@ import { Category } from 'src/Category/category.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { ProductResponseDto } from 'src/DTOs/updateProductResponse.dto';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class ProductRepository {
@@ -28,6 +30,7 @@ export class ProductRepository {
     private readonly dataSource: DataSource,
   ) {}
 
+  //---- Estandarizado
   async getAllProducts(page: number, limit: number): Promise<Product[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
@@ -115,18 +118,30 @@ export class ProductRepository {
       );
     }
     try {
-      return await this.dataSource
+      const products = await this.dataSource
         .createQueryBuilder(Product, 'product')
-        .innerJoin('product.categories', 'category')
-        .where('category.id IN (:...categories)', {
-          categories,
-          isActive: true,
+        .leftJoinAndSelect('product.categories', 'selectedCategories')
+        .leftJoinAndSelect('product.productIngredients', 'productIngredients')
+        .leftJoinAndSelect('productIngredients.ingredient', 'ingredient')
+        .leftJoinAndSelect('productIngredients.unitOfMeasure', 'unitOfMeasure')
+        .where((qb) => {
+          // Subconsulta para verificar que el producto tenga todas las categorías
+          const subQuery = qb
+            .subQuery()
+            .select('pc.productId')
+            .from('product_categories_category', 'pc')
+            .where('pc.categoryId IN (:...categories)', { categories })
+            .groupBy('pc.productId')
+            .having('COUNT(pc.categoryId) = :numCategories', {
+              numCategories: categories.length,
+            })
+            .getQuery();
+          return `product.id IN ${subQuery}`;
         })
-        .groupBy('product.id')
-        .having('COUNT(DISTINCT category.id) = :numCategories', {
-          numCategories: categories.length,
-        })
+        .andWhere('product.isActive = :isActive', { isActive: true })
         .getMany();
+      // Transformar la respuesta usando DTOs
+      return products;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -136,6 +151,7 @@ export class ProductRepository {
     }
   }
 
+  //---- Estandarizado
   async createProduct(productToCreate: CreateProductDto): Promise<Product> {
     const queryRunner = this.dataSource.createQueryRunner();
 
@@ -251,23 +267,26 @@ export class ProductRepository {
     }
   }
 
+  //---- Estandarizado
   async updateProduct(
     id: string,
     updateData: UpdateProductDto,
-  ): Promise<Product> {
-    if (!id) {
-      throw new BadRequestException('Product ID must be provided.');
-    }
+  ): Promise<ProductResponseDto> {
+    const queryRunner = this.dataSource.createQueryRunner();
 
-    const { categories, ...otherAttributes } = updateData;
-    const categoriesIds = categories;
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const product = await this.productRepository.findOne({
+      const { categories, ingredients, ...otherAttributes } = updateData;
+
+      const product = await queryRunner.manager.findOne(Product, {
         where: { id: id, isActive: true },
         relations: [
           'categories',
           'productIngredients',
           'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
         ],
       });
 
@@ -277,35 +296,119 @@ export class ProductRepository {
 
       Object.assign(product, otherAttributes);
 
-      if (categoriesIds) {
-        if (categoriesIds.length > 0) {
-          const categories = await this.categoryRepository.find({
-            where: { id: In(categoriesIds), isActive: true },
+      if (categories) {
+        if (categories.length > 0) {
+          const categoryEntities = await queryRunner.manager.find(Category, {
+            where: { id: In(categories), isActive: true },
           });
 
-          const foundIds = categories.map((cat) => cat.id);
-          const invalidIds = categoriesIds.filter(
-            (id) => !foundIds.includes(id),
-          );
+          const foundIds = categoryEntities.map((cat) => cat.id);
+          const invalidIds = categories.filter((id) => !foundIds.includes(id));
           if (invalidIds.length > 0) {
             throw new BadRequestException(
               `Invalid category IDs: ${invalidIds.join(', ')}`,
             );
           }
 
-          product.categories = categories;
+          product.categories = categoryEntities;
         } else {
           product.categories = [];
         }
       }
 
-      return await this.productRepository.save(product);
+      if (ingredients) {
+        if (!product.productIngredients) {
+          product.productIngredients = [];
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const existingIngredientIds = product.productIngredients.map(
+          (pi) => pi.ingredient.id,
+        );
+        const newIngredientIds = ingredients.map((i) => i.ingredientId);
+
+        const ingredientsToRemove = product.productIngredients.filter(
+          (pi) => !newIngredientIds.includes(pi.ingredient.id),
+        );
+
+        await queryRunner.manager.remove(
+          ProductIngredient,
+          ingredientsToRemove,
+        );
+
+        const updatedIngredients = await Promise.all(
+          ingredients.map(async (ingredientDto) => {
+            const ingredient = await queryRunner.manager.findOne(Ingredient, {
+              where: { id: ingredientDto.ingredientId },
+            });
+            if (!ingredient) {
+              throw new BadRequestException(
+                `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
+              );
+            }
+
+            const unitOfMeasure = await queryRunner.manager.findOne(
+              UnitOfMeasure,
+              {
+                where: { id: ingredientDto.unitOfMeasureId },
+              },
+            );
+            if (!unitOfMeasure) {
+              throw new BadRequestException(
+                `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+              );
+            }
+
+            const existingProductIngredient = product.productIngredients.find(
+              (pi) => pi.ingredient.id === ingredientDto.ingredientId,
+            );
+
+            if (existingProductIngredient) {
+              existingProductIngredient.quantityOfIngredient =
+                ingredientDto.quantityOfIngredient;
+              existingProductIngredient.unitOfMeasure = unitOfMeasure;
+              return queryRunner.manager.save(existingProductIngredient);
+            } else {
+              const productIngredient = queryRunner.manager.create(
+                ProductIngredient,
+                {
+                  product,
+                  ingredient,
+                  quantityOfIngredient: ingredientDto.quantityOfIngredient,
+                  unitOfMeasure,
+                },
+              );
+              return queryRunner.manager.save(productIngredient);
+            }
+          }),
+        );
+
+        product.productIngredients = updatedIngredients;
+      }
+
+      const updatedProduct = await queryRunner.manager.save(product);
+
+      await queryRunner.commitTransaction();
+
+      const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
+        excludeExtraneousValues: true,
+      });
+
+      const plainProduct = instanceToPlain(productDto);
+
+      return plainProduct as ProductResponseDto;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
+      await queryRunner.rollbackTransaction();
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException(
-        'Error updating the product.',
+        'Error updating the product',
         error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -332,6 +435,7 @@ export class ProductRepository {
     }
   }
 
+  //---- Estandarizado
   async searchProducts(
     name?: string,
     code?: string,
@@ -339,7 +443,7 @@ export class ProductRepository {
     isActive: boolean = true,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: Product[]; total: number }> {
+  ): Promise<Product[]> {
     try {
       if (!name && !code) {
         throw new BadRequestException(
@@ -370,12 +474,13 @@ export class ProductRepository {
         whereConditions.id = In(productIds);
       }
 
-      const [products, total] = await this.productRepository.findAndCount({
+      const [products] = await this.productRepository.findAndCount({
         where: whereConditions,
         relations: [
           'categories',
           'productIngredients',
           'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
         ],
         skip: offset,
         take: limit,
@@ -386,7 +491,7 @@ export class ProductRepository {
         throw new NotFoundException(`No products found with ${searchCriteria}`);
       }
 
-      return { data: products, total };
+      return products;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

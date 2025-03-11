@@ -12,6 +12,6 @@ export class AuthMiddleware implements NestMiddleware {
     // Si es válido:
     next();
     // Si no:
-    // return res.status(401).json({ message: 'Sesión no válida' });
+    return res.status(401).json({ message: 'Sesión no válida' });
   }
 }
