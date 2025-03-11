@@ -27,21 +27,25 @@ export class StockController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async getAllStock(
-    @Param() page: number,
-    @Param() limit: number,
+    @Param('page') page: number = 1,
+    @Param('limit') limit: number = 10,
   ): Promise<Stock[]> {
     return await this.stockService.getAllStocks(page, limit);
   }
 
   @Get('/product/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByProductId(@Param() productId: string): Promise<Stock> {
+  async getStockByProductId(
+    @Param('productId') productId: string,
+  ): Promise<Stock> {
     return await this.stockService.getStockByProductId(productId);
   }
 
   @Get('/ingredient/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByIngredientId(@Param() ingredientId: string): Promise<Stock> {
+  async getStockByIngredientId(
+    @Param('ingredientId') ingredientId: string,
+  ): Promise<Stock> {
     return await this.stockService.getStockByIngredientId(ingredientId);
   }
 
@@ -56,7 +60,7 @@ export class StockController {
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateStock(
-    @Param() id: string,
+    @Param('id') id: string,
     @Body() updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
     const updatedStock = await this.stockService.updateStock(
