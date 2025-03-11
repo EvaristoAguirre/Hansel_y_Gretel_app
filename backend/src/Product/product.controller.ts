@@ -17,10 +17,10 @@ import { Product } from './product.entity';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
-import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
+import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -46,7 +46,7 @@ export class ProductController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('categories') categories?: string[],
-  ): Promise<{ data: Product[]; total: number }> {
+  ): Promise<Product[]> {
     return this.productService.searchProducts(
       name,
       code,
