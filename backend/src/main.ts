@@ -4,9 +4,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { LoggerMidleware } from './Middleware/logger.middleware';
 import { WsAdapter } from '@nestjs/platform-ws';
+import { JwtExceptionFilter } from './Filters/token.filters';
+import { ValidationExceptionFilter } from './Filters/validation.filters';
+import { DatabaseExceptionFilter } from './Filters/database.filters';
+// import { GlobalExceptionFilter } from './Filters/globalException.filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(
+    new JwtExceptionFilter(),
+    new ValidationExceptionFilter(),
+    new DatabaseExceptionFilter(),
+    // new GlobalExceptionFilter(),
+  );
 
   const documentConfig = new DocumentBuilder()
     .setTitle('Hansel & Gretel')
