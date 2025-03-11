@@ -9,12 +9,14 @@ import {
   FormControl,
   Chip,
 } from "@mui/material";
-import { ProductForm, ProductCreated } from "../../Interfaces/IProducts";
-import { ICategory } from "../../Interfaces/ICategories";
+import { ProductForm, ProductCreated, ProductResponse } from "../../Interfaces/IProducts";
 import { Autocomplete } from "@mui/material";
 import { getProductByCode } from "@/api/products";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
-import IngredientDialog from "./AssociateIngredients";
+import IngredientDialog from "./IngredientDialog";
+import { useAuth } from "@/app/context/authContext";
+import { ICategory } from "@/components/Interfaces/ICategories";
+import Home from '../../../app/page';
 
 interface ProductDialogProps {
   open: boolean;
@@ -38,8 +40,9 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   categories,
   onChange,
   onClose,
-  onSave,
+  onSave
 }) => {
+  const { getAccessToken } = useAuth();
   const [errors, setErrors] = useState<Errors>({
     code: "",
     name: "",
@@ -52,7 +55,13 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   const [isIngredientDialogOpen, setIngredientDialogOpen] = useState(false);
   const [associatedIngredients, setAssociatedIngredients] = useState<IingredientForm[]>([]);
   const [modalPosition, setModalPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [token, setToken] = useState<string | null>(null);
 
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+  }, [getAccessToken]);
   const validateField = async (field: string, value: any) => {
     let error = "";
 
@@ -66,15 +75,17 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
         // Validación del código
         setIsCheckingCode(true);
         try {
-          const result = await getProductByCode(value);
-
-          if (result.ok) {
-            error = "El código ya está en uso";
-          } else if (result.status === 404) {
-            error = "";
-          } else {
-            error = result.error || "Error al validar el código";
+          if (token) {
+            const result = await getProductByCode(value, token)
+            if (result.ok) {
+              error = "El código ya está en uso";
+            } else if (result.status === 404) {
+              error = "";
+            } else {
+              error = result.error || "Error al validar el código";
+            }
           }
+
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
@@ -112,6 +123,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
     price: "Precio",
     cost: "Costo",
     categories: "Categoría",
+    ingredients: "Ingredientes",
     isActive: "Inactivo",
     id: "ID",
   };
@@ -150,7 +162,7 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
 
   return (
     <Dialog id="product-dialog" open={open} onClose={onClose}>
-      <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
+      <DialogTitle sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}>
         {modalType === "create" ? "Crear Producto" : "Editar Producto"}
       </DialogTitle>
       <DialogContent>
@@ -227,21 +239,29 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
             }
             isOptionEqualToValue={(option, value) => option.id === value.id}
           />
+          <DialogActions
+            sx={{ display: "flex", justifyContent: "start", p: 0, mt: 2, width: "100%" }}
+          >
+            <Button
+              onClick={handleOpenIngredientDialog}
+              color="primary"
+              variant="outlined"
+              sx={{ width: "100%", ":hover": { backgroundColor: "#f3d49ab8" } }}>
+              Asociar Ingredientes
+            </Button>
+          </DialogActions>
         </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancelar
         </Button>
-        <Button onClick={handleOpenIngredientDialog} color="secondary">
-          Asociar Ingredientes
-        </Button>
         <Button onClick={handleSaveProduct} color="primary" disabled={!isFormValid}>
           Guardar
         </Button>
-
       </DialogActions>
       <IngredientDialog
+        form={form}
         open={isIngredientDialogOpen}
         onClose={() => setIngredientDialogOpen(false)}
         onSave={handleSaveIngredients}

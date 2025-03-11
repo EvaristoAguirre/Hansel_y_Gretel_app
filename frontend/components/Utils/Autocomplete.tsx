@@ -5,7 +5,7 @@ import { ProductCreated } from "../Interfaces/IProducts";
 import { Iingredient } from "../Interfaces/Ingredients";
 
 interface AutoCompleteProductProps {
-  options: ProductCreated[] | Iingredient[];
+  options: ProductCreated[];
   onSearch: (value: string) => void;
   onSelect: (product: any) => void;
   label?: string;

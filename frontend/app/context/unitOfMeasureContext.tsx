@@ -4,7 +4,7 @@ import { IUnitOfMeasure } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { createUnit, editUnit, deleteUnit, fetchUnits } from '../../api/unitOfMeasure';
-import UnitOfMeasure from '../../components/Products/TabUnitOfMeasure/UnitOfMeasure';
+import { useAuth } from './authContext';
 
 
 type UnitContextType = {
@@ -49,6 +49,8 @@ export const useUnitContext = () => {
 
 
 const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const [formUnit, setFormUnit] = useState<IUnitOfMeasure>({
     name: "",
     abbreviation: "",
@@ -60,7 +62,10 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
 
   useEffect(() => {
-    fetchUnits().then(dataUnit => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+    fetchUnits(token).then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
     });
   }, []);
@@ -87,7 +92,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         ...formUnit,
         equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
       };
-      const newUnit = await createUnit(preparedForm);
+      const newUnit = await createUnit(preparedForm, token as string);
       addUnit(newUnit);
 
       handleCloseFormUnit();
@@ -107,7 +112,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
         id: formUnit.id,
       };
-      const updatedUnit = await editUnit(preparedForm);
+      const updatedUnit = await editUnit(preparedForm, token as string);
 
       updateUnit(updatedUnit);
 
@@ -133,7 +138,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
     if (confirm.isConfirmed) {
       try {
-        const deletedIngredient = await deleteUnit(id);
+        const deletedIngredient = await deleteUnit(id, token as string);
         if (deletedIngredient) {
           removeUnit(id);
         }

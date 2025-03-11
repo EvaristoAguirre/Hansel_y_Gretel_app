@@ -5,8 +5,13 @@ import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
+import { useAuth } from "@/app/context/authContext";
+import { Ingredient } from '../../../backend/src/Ingredient/ingredient.entity';
 
 export const useProductos = () => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
+  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
   const [loading, setLoading] = useState<boolean>(true);
@@ -22,13 +27,23 @@ export const useProductos = () => {
     isActive: true,
   });
 
-  // Estado global desde el store
-  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
+  // Llamada inicial para cargar productos
+  useEffect(() => {
+    const getToken = getAccessToken();
+    if (!token) return;
+    setToken(getToken);
+    if (token) {
+      fetchAndSetProducts(token);
+    }
+  }, [token]);
 
-  const fetchAndSetProducts = async () => {
+
+  const fetchAndSetProducts = async (token: string) => {
     setLoading(true);
+
     try {
-      const fetchedProducts = await fetchProducts("1", "50");
+      if (!token) return;
+      const fetchedProducts = await fetchProducts("1", "50", token);
 
       setProducts(fetchedProducts);
     } catch (error) {
@@ -38,12 +53,7 @@ export const useProductos = () => {
     }
   };
 
-  // Llamada inicial para cargar productos
-  useEffect(() => {
-    fetchAndSetProducts();
-  }, [connectWebSocket]);
-
-  const handleCreate = async () => {
+  const handleCreateProduct = async (token: string) => {
 
     try {
       const preparedForm = {
@@ -51,12 +61,18 @@ export const useProductos = () => {
         code: parseInt(form.code as any, 10),
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),
+
       };
+      if (token) {
+        const newProduct = await createProduct(preparedForm, token!);
+        addProduct(newProduct);
+        handleCloseModal();
 
-      const newProduct = await createProduct(preparedForm);
+      } else {
+        throw new Error("Token no disponible");
+      }
 
-      addProduct(newProduct);
-      handleCloseModal();
+
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
 
@@ -66,7 +82,7 @@ export const useProductos = () => {
     }
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (token: string) => {
     try {
       const preparedForm = {
         ...form,
@@ -75,10 +91,14 @@ export const useProductos = () => {
         cost: parseFloat(form.cost as any),
         id: form.id,
       };
+      if (token) {
+        const updatedProduct = await editProduct(preparedForm, token);
+        updateProduct(updatedProduct);
 
-      const updatedProduct = await editProduct(preparedForm);
+      } else {
+        throw new Error("Token no disponible");
+      }
 
-      updateProduct(updatedProduct);
 
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
 
@@ -91,7 +111,7 @@ export const useProductos = () => {
   };
 
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, token: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -103,7 +123,13 @@ export const useProductos = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_PRODUCT}/${id}`, {
+          method: "DELETE",
+          headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${token}`,
+          }
+        });
         removeProduct(id);
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
       } catch (error) {
@@ -137,7 +163,7 @@ export const useProductos = () => {
     setModalOpen,
     setModalType,
     setForm,
-    handleCreate,
+    handleCreateProduct,
     handleEdit,
     handleDelete,
     handleCloseModal,

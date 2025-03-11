@@ -17,6 +17,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 import { fetchCategories } from "@/api/categories";
+import { useAuth } from "@/app/context/authContext";
 
 const ProductsCategory: React.FC = () => {
   const {
@@ -34,12 +35,15 @@ const ProductsCategory: React.FC = () => {
     null
   );
   const [nombre, setNombre] = useState("");
+  const { getAccessToken } = useAuth();
 
   // Obtener categorías al cargar el componente
   useEffect(() => {
     const fetchData = async () => {
+      const token = getAccessToken();
+      if (!token) return;
       try {
-        const data = await fetchCategories();
+        const data = await fetchCategories(token);
         setCategories(data);
         connectWebSocket();
       } catch (error) {

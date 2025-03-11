@@ -19,4 +19,4 @@ import { UserModule } from 'src/User/user.module';
   providers: [ProductService, ProductRepository, CategoryRepository],
   exports: [ProductService],
 })
-export class ProductModule {}
+export class ProductModule { }

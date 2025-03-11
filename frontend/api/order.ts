@@ -1,9 +1,12 @@
 import { URI_ORDER } from "@/components/URI/URI";
 
-export const orderToPending = async (id: string) => {
+export const orderToPending = async (id: string, token: string) => {
   const response = await fetch(`${URI_ORDER}/pending/${id}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
   if (!response.ok) {
@@ -14,10 +17,13 @@ export const orderToPending = async (id: string) => {
   return await response.json();
 };
 
-export const orderToClosed = async (id: string) => {
+export const orderToClosed = async (id: string, token: string) => {
   const response = await fetch(`${URI_ORDER}/close/${id}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
   if (!response.ok) {
@@ -28,10 +34,13 @@ export const orderToClosed = async (id: string) => {
   return await response.json();
 };
 
-export const deleteOrder = async (id: string) => {
+export const deleteOrder = async (id: string, token: string) => {
   const response = await fetch(`${URI_ORDER}/${id}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
   if (response.status !== 200) {

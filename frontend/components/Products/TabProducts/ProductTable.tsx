@@ -6,6 +6,7 @@ import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from '../../Utils/ProductTable';
+import { useAuth } from "@/app/context/authContext";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -13,11 +14,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   selectedCategoryId,
   onClearSelectedCategory,
 }) => {
+  const { getAccessToken } = useAuth();
   const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
+  const [token, setToken] = useState<string | null>(null);
 
   // Actualizar los resultados de búsqueda cuando `products` cambie
   useEffect(() => {
@@ -33,9 +36,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [products]);
 
   useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
     if (selectedCategoryId) {
       const fetchProductsByCategory = async () => {
-        const response = await getProductsByCategory(selectedCategoryId);
+        const response = await getProductsByCategory(selectedCategoryId, token);
 
         if (!response.ok) {
           console.warn("No se encontraron productos o hubo un error:", response.message);
@@ -53,19 +59,26 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
       fetchProductsByCategory();
     } else {
-      fetchAndSetProducts();
+      fetchAndSetProducts(token);
     }
   }, [selectedCategoryId]);
 
 
   // búsqueda de productos con endpoint 
-  const handleSearch = async (value: string) => {
+  const handleSearch = async (value: string, token: string) => {
     const searchTerm = value.trim();
-    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
+    if (searchTerm.length > 0) {
+      console.log("Buscando productos al escribir");
       setSearchTerm(searchTerm);
-      const results = await searchProducts(searchTerm, selectedCategoryId);
-      setSearchResults(results);
+      if (token) {
+        console.log("Buscando productos... con token");
+
+        const results = await searchProducts(searchTerm, selectedCategoryId, token);
+        setSearchResults(results);
+      }
     } else if (searchTerm.length === 0) {
+      console.log("Mostrando todos los productos sin token");
+
       setSearchResults(products);
     }
   };
@@ -83,7 +96,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Limpiar búsqueda y mostrar todos los productos
   const handleClearSearch = () => {
-    fetchAndSetProducts();
+    token && fetchAndSetProducts(token);
     setSearchResults(products);
     setSelectedProducts([]);
     setSearchTerm("");
@@ -106,7 +119,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Buscador de productos */}
         <AutoCompleteProduct
           options={selectedCategoryId ? searchResults : products}
-          onSearch={handleSearch}
+          onSearch={(value) => handleSearch(value, token!)}
           onSelect={handleSelectProduct}
         />
 

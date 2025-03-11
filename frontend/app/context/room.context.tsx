@@ -2,7 +2,7 @@ import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
 import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { useOrderContext } from './order.context';
+import { useAuth } from './authContext';
 type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
@@ -53,6 +53,8 @@ export const useRoomContext = () => {
 };
 
 const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const [salas, setSalas] = useState<ISala[]>([]);
   const [selectedSala, setSelectedSala] = useState<ISala | null>(null);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
@@ -64,9 +66,18 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
 
   useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    setToken(token);
+
     async function fetchSalas() {
       try {
-        const response = await fetch(URI_ROOM, { method: "GET" });
+        const response = await fetch(URI_ROOM, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          }
+        });
         const data = await response.json();
         setSalas(data);
       } catch (error) {
@@ -87,7 +98,10 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       try {
         const response = await fetch(`${URI_ROOM}/${sala.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify(sala),
         });
 
@@ -107,7 +121,10 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       try {
         const response = await fetch(URI_ROOM, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify(sala),
         });
 
@@ -141,6 +158,10 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       try {
         const response = await fetch(`${URI_ROOM}/${menuSala.id}`, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) throw new Error("Error al eliminar la sala.");

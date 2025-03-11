@@ -7,6 +7,7 @@ import { useOrderContext } from '../../app/context/order.context';
 import { editTable } from "@/api/tables";
 import { TableState } from "../Enums/Enums";
 import { useRoomContext } from '../../app/context/room.context';
+import { useAuth } from "@/app/context/authContext";
 
 interface Props {
   view: string;
@@ -21,10 +22,11 @@ const TableEditor = ({
   handleNextStep,
   handleCompleteStep
 }: Props) => {
+  const { getAccessToken } = useAuth();
+  const { selectedMesa, setSelectedMesa } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null)
   const [comentario, setComentario] = useState('');
   const { handleCreateOrder, handleEditOrder, selectedProducts, selectedOrderByTable } = useOrderContext();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
 
 
 
@@ -52,7 +54,9 @@ const TableEditor = ({
    * este cambia estado de la mesa a 'OPEN'
    */
   const handleOpenTable = async (selectedMesa: MesaInterface) => {
-    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.OPEN });
+    const token = getAccessToken();
+    if (!token) return;
+    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.OPEN }, token);
     setSelectedMesa(tableEdited);
     handleNextStep();
   };

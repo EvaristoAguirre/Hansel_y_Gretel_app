@@ -22,7 +22,6 @@ export default function RegisterForm() {
     e.preventDefault();
     try {
       const response = await loginUser(formData);
-      console.log('Respuesta del servidor:', response);
       const { accessToken } = response;
       localStorage.setItem("user", JSON.stringify({ accessToken }));
       Swal.fire({

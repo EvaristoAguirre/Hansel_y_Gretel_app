@@ -8,6 +8,7 @@ import { useOrderStore } from '../../components/Order/useOrderStore';
 import { useRoomContext } from './room.context';
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
+import { useAuth } from "./authContext";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -55,6 +56,8 @@ export const useOrderContext = () => {
 };
 
 const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const { addOrder, updateOrder, removeOrder } = useOrderStore();
   const { selectedMesa, selectedSala, handleSelectMesa } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
@@ -62,14 +65,20 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
   const [selectedOrderByTable, setSelectedOrderByTable] = useState<IOrderDetails | null>(null);
 
+  useEffect(() => {
+    const token = getAccessToken();
+    if (token) {
+      setToken(token);
+    }
+  }, [getAccessToken]);
+
   /**
+   * 
    * Al cambiar la Mesa o la Sala seleccionada se limpia
    *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
   useEffect(() => {
-    console.log("💘MESA SELECCIONADA", selectedMesa);
     handleResetSelectedOrder();
-
   }, [selectedMesa]);
 
   const handleResetSelectedOrder = () => {
@@ -87,6 +96,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         if (selectedMesa?.orders.length > 0) {
           const response = await fetch(`${URI_ORDER}/${selectedMesa.orders[0]}`, {
             method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            }
           });
           const data = await response.json();
 
@@ -185,11 +197,14 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
       const response = await fetch(URI_ORDER_OPEN, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(pedido),
       });
 
-      if (!response.ok) {
+      if (response.status !== 201) {
         const errorData = await response.json();
         console.error("Error:", errorData);
         throw new Error(`Error: ${response.status} ${response.statusText}`);
@@ -214,7 +229,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     }
   };
 
-  const handleEditOrder = async (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => {
+  const handleEditOrder = async (
+    id: string,
+    selectedProducts: SelectedProductsI[],
+    numberCustomers: number,
+    comment: string
+  ) => {
     if (!id) {
       Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
@@ -223,7 +243,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,

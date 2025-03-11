@@ -5,6 +5,7 @@ import { createContext, useContext, useState } from 'react';
 import Swal from 'sweetalert2';
 import { createIngredient, deleteIngredient, editIngredient, fetchIngredients } from '../../api/ingredients';
 import { useEffect } from 'react';
+import { useAuth } from './authContext';
 
 
 type IngredientsContextType = {
@@ -59,9 +60,12 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
+  const { getAccessToken } = useAuth();
 
   useEffect(() => {
-    fetchIngredients().then(dataIngredients => {
+    const token = getAccessToken();
+    if (!token) return;
+    fetchIngredients(token).then(dataIngredients => {
       if (dataIngredients) setIngredients(dataIngredients);
     });
   }, []);
@@ -85,13 +89,15 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   };
 
   const handleCreateIngredient = async () => {
+    const token = getAccessToken();
+    if (!token) return;
     try {
       const preparedForm = {
         ...formIngredients,
         price: parseFloat(formIngredients.price as any),
         cost: parseFloat(formIngredients.cost as any),
       };
-      const newIngredient = await createIngredient(preparedForm);
+      const newIngredient = await createIngredient(preparedForm, token);
       addIngredient(newIngredient);
 
       handleCloseForm();
@@ -105,6 +111,8 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   };
 
   const handleEditIngredient = async () => {
+    const token = getAccessToken();
+    if (!token) return;
     try {
       const preparedForm = {
         ...formIngredients,
@@ -112,7 +120,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         cost: parseFloat(formIngredients.cost as any),
         id: formIngredients.id,
       };
-      const updatedIngredient = await editIngredient(preparedForm);
+      const updatedIngredient = await editIngredient(preparedForm, token);
 
       updateIngredient(updatedIngredient);
 
@@ -127,6 +135,9 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   };
 
   const handleDeleteIngredient = async (id: string) => {
+    const token = getAccessToken();
+    if (!token) return;
+
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -138,7 +149,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
 
     if (confirm.isConfirmed) {
       try {
-        const deletedIngredient = await deleteIngredient(id);
+        const deletedIngredient = await deleteIngredient(id, token);
         if (deletedIngredient) {
           removeIngredient(id);
         }
