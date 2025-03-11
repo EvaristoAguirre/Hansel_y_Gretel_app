@@ -86,7 +86,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
       newIngredient.quantityOfIngredient &&
       newIngredient.quantityOfIngredient > 0
     ) {
-      // Asignar el nombre basado en el ingredientId (opcional)
+      // Asignar el nombre basado en el ingredientId 
       const ingredientData = ingredients.find(ing => ing.id === newIngredient.ingredientId);
       const ingredientWithName = {
         ...newIngredient,
@@ -161,7 +161,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
             margin="dense"
             value={newIngredient.quantityOfIngredient}
             onChange={(e) =>
-              setNewIngredient({ ...newIngredient, quantityOfIngredient: +e.target.value })
+              setNewIngredient({ ...newIngredient, quantityOfIngredient: parseFloat(e.target.value) })
             }
             sx={{ minWidth: 120, width: "15%" }}
           />
@@ -249,7 +249,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
                     onChange={(e) =>
                       setEditIngredient({
                         ...editIngredient,
-                        quantityOfIngredient: +e.target.value,
+                        quantityOfIngredient: parseFloat(e.target.value),
                       })
                     }
                   />
