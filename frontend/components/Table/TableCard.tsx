@@ -4,8 +4,8 @@ import { MesaCardProps, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
-import { useOrderContext } from '../../app/context/order.context';
 import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
@@ -88,8 +88,12 @@ const TableCard: React.FC<MesaCardProps> = ({
       {/* Botones */}
       <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
         <Tooltip title="Ver detalles" arrow>
-          <Button sx={{ minWidth: "2.5rem", color: "#bab6b6" }} onClick={() => handleClickMesa(mesa)}>
-            <VisibilityIcon />
+          <Button
+            sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
+            onClick={() => handleClickMesa(mesa)} >
+            {
+              selectedMesa?.id === mesa.id ? <VisibilityOffIcon /> : <VisibilityIcon />
+            }
           </Button>
         </Tooltip>
         {
