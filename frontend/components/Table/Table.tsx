@@ -1,3 +1,4 @@
+'useClient';
 import React, { useEffect, useState } from "react";
 import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
@@ -7,6 +8,8 @@ import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 import TablesStatus from "./TablesStatus";
 import TableCard from "./TableCard";
+import { UserRole } from "../Enums/user";
+import { useAuth } from "@/app/context/authContext";
 
 const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
@@ -25,6 +28,9 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
 
   const { selectedMesa } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
+  const { userRoleFromToken } = useAuth();
+  const role = userRoleFromToken();
+
   /**
    * Filtrar mesas por sala y estado
    * @returns mesas filtradas
@@ -45,14 +51,18 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div className="flex flex-wrap justify-between">
-        <Button
-          variant="outlined"
-          color="primary"
-          className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
-          onClick={() => handleOpenModal("create")}
-        >
-          + Agregar mesa
-        </Button>
+        {
+          role !== UserRole.MOZO && (
+            <Button
+              variant="outlined"
+              color="primary"
+              className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
+              onClick={() => handleOpenModal("create")}
+            >
+              + Agregar mesa
+            </Button>
+          )
+        }
         <TablesStatus
           currentFilter={filterState}
           onFilterChange={(newFilter) => setFilterState(newFilter)}

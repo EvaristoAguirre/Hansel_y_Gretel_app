@@ -1,13 +1,14 @@
-import React from "react";
+'useClient';
+import React, { useEffect } from "react";
 import { useState } from 'react';
 import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import SalaModal from "./RoomModal";
 import { StepperTable } from "../Table/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
 import Table from "../Table/Table";
 import { UserRole } from "../Enums/user";
 import { useAuth } from '../../app/context/authContext';
+import RoomModal from "./RoomModal";
 
 const Rooms = () => {
   const {
@@ -33,7 +34,11 @@ const Rooms = () => {
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const { userRoleFromToken } = useAuth();
-  const role = userRoleFromToken();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(userRoleFromToken());
+  }, []);
 
   return (
     <>
@@ -168,7 +173,7 @@ const Rooms = () => {
       }
 
       {/* Modal de sala */}
-      <SalaModal
+      <RoomModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSaveSala}
