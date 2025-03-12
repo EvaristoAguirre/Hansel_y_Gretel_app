@@ -111,6 +111,7 @@ export class ProductRepository {
     }
   }
 
+  //---- Estandarizado
   async getProductsByCategories(categories: string[]): Promise<Product[]> {
     if (!categories || categories.length === 0) {
       throw new BadRequestException(
@@ -125,13 +126,12 @@ export class ProductRepository {
         .leftJoinAndSelect('productIngredients.ingredient', 'ingredient')
         .leftJoinAndSelect('productIngredients.unitOfMeasure', 'unitOfMeasure')
         .where((qb) => {
-          // Subconsulta para verificar que el producto tenga todas las categorías
           const subQuery = qb
             .subQuery()
-            .select('pc.productId')
-            .from('product_categories_category', 'pc')
+            .select('pc.productsId')
+            .from('product_categories', 'pc')
             .where('pc.categoryId IN (:...categories)', { categories })
-            .groupBy('pc.productId')
+            .groupBy('pc.productsId')
             .having('COUNT(pc.categoryId) = :numCategories', {
               numCategories: categories.length,
             })
