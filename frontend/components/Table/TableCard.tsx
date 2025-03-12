@@ -7,6 +7,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
 import { useOrderContext } from '../../app/context/order.context';
 import { useRoomContext } from '@/app/context/room.context';
+import { useAuth } from "@/app/context/authContext";
+import { UserRole } from "../Enums/user";
 
 const TableCard: React.FC<MesaCardProps> = ({
   mesa, handleOpenModal, handleDelete
@@ -19,11 +21,19 @@ const TableCard: React.FC<MesaCardProps> = ({
   };
   const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
   const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
+  const { userRoleFromToken } = useAuth();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(userRoleFromToken());
+  }, []);
 
   const handleClickMesa = (table: MesaInterface) => {
     const isTheSameTable: boolean = table?.id === selectedMesa?.id;
     return selectedMesa && isTheSameTable ? handleSelectMesa(null) : handleSelectMesa(table);
   };
+
+
 
   return (
     <div
@@ -82,30 +92,34 @@ const TableCard: React.FC<MesaCardProps> = ({
             <VisibilityIcon />
           </Button>
         </Tooltip>
-
-        <Tooltip title="Editar mesa" arrow>
-          <Button
-            sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenModal("edit", mesa);
-            }}
-          >
-            <EditIcon />
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="Eliminar mesa" arrow>
-          <Button
-            sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(mesa.id);
-            }}
-          >
-            <DeleteIcon />
-          </Button>
-        </Tooltip>
+        {
+          role !== UserRole.MOZO && (
+            <>
+              <Tooltip title="Editar mesa" arrow>
+                <Button
+                  sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenModal("edit", mesa);
+                  }}
+                >
+                  <EditIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title="Eliminar mesa" arrow>
+                <Button
+                  sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(mesa.id);
+                  }}
+                >
+                  <DeleteIcon />
+                </Button>
+              </Tooltip>
+            </>
+          )
+        }
       </div>
     </div>
   );

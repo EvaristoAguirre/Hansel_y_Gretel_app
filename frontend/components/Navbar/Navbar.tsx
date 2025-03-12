@@ -10,6 +10,7 @@ import proveedor from "../../public/icons/providers.jpeg";
 import configuracion from "../../public/icons/settings.png";
 import user from "../../public/user.svg";
 import { useAuth } from "@/app/context/authContext";
+import { UserRole } from "../Enums/user";
 
 const Navbar = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -37,6 +38,10 @@ const Navbar = () => {
     { label: "Configuración", path: "/views/configuracion", icon: configuracion },
   ];
 
+  const filteredSections = sections.filter(
+    (section) => !(userRole === UserRole.MOZO && section.label === "Productos")
+  );
+
   return (
     <nav className="bg-black shadow-md py-4 absolute top-0 left-0 right-0 z-50 w-full">
       <div className="flex justify-between items-center px-8 border-b-8 border-[#856D5E]">
@@ -49,7 +54,7 @@ const Navbar = () => {
 
         {/* Menú de secciones para pantallas grandes */}
         <div className="hidden lg:flex gap-8 items-center">
-          {sections.map((section) => (
+          {filteredSections.map((section) => (
             <Link key={section.label} href={section.path}>
               <div
                 onClick={() => setSelectedSection(section.label)}

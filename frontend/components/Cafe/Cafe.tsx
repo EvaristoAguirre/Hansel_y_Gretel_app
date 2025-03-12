@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
-import Salas from "../Rooms/Rooms";
 import OrderProvider from '../../app/context/order.context';
 import RoomProvider from "@/app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
+import Rooms from "../Rooms/Rooms";
 
 const Cafe = () => {
   const { getAccessToken } = useAuth();
@@ -35,7 +35,7 @@ const Cafe = () => {
       <div style={{ width: "100%" }}>
         <RoomProvider>
           <OrderProvider>
-            <Salas />
+            <Rooms />
           </OrderProvider>
         </RoomProvider>
       </div>
