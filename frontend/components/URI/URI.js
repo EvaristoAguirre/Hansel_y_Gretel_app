@@ -35,3 +35,7 @@ export const URI_ORDER = "http://localhost:3000/order"
 //USERS
 
 export const URI_USER = "http://localhost:3000/user"
+
+//STOCK
+
+export const URI_STOCK = "http://localhost:3000/stock"

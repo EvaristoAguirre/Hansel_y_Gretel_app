@@ -18,7 +18,7 @@ type RoomContextType = {
   handleSelectSala: (sala: ISala | null) => void;
   handleSaveSala: (sala: { id?: string; name: string }) => void;
   handleDeleteSala: () => void;
-  handleSelectMesa: (mesa: MesaInterface) => void;
+  handleSelectMesa: (mesa: MesaInterface | null) => void;
   handleAbrirPedido: () => void;
   handleVolverAMesaEditor: () => void;
   handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, sala: ISala) => void;
@@ -193,7 +193,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
    * Se setea la orden de la mesa en `selectedOrderByTable`.
    * Se limpia la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
-  const handleSelectMesa = async (mesa: MesaInterface) => {
+  const handleSelectMesa = async (mesa: MesaInterface | null) => {
     setSelectedMesa(mesa);
   };
 
