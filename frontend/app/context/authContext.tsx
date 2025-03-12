@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "jwt-decode";
 import Swal from "sweetalert2";
+import { UserRole } from "@/components/Enums/user";
 
 interface AuthContextProps {
   user: any;
@@ -17,7 +18,7 @@ interface AuthContextProps {
 }
 
 interface CustomJwtPayload extends JwtPayload {
-  role: string;
+  role: UserRole;
   username: string;
 }
 
@@ -82,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const userRoleFromToken = useCallback((): string | null => {
+  const userRoleFromToken = useCallback((): UserRole | null => {
     if (typeof window === "undefined") {
       return null;
     }
@@ -98,7 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       const decodedToken = jwtDecode<CustomJwtPayload>(token);
-      return decodedToken.role;
+      return decodedToken.role as UserRole;
+
     } catch (error) {
       console.error("Failed to decode token", error);
       return null;
