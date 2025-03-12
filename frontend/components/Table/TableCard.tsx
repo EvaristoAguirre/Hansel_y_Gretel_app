@@ -1,6 +1,6 @@
 'use client'
 import React from "react";
-import { MesaCardProps } from "../Interfaces/Cafe_interfaces";
+import { MesaCardProps, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -17,8 +17,13 @@ const TableCard: React.FC<MesaCardProps> = ({
     pending_payment: "#f9b32d",
     closed: "#21b492",
   };
-  const { selectedSala, setSelectedMesa } = useRoomContext();
-  const borderColor = mesaColors[mesa.state] || mesaColors.closed;
+  const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
+  const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
+
+  const handleClickMesa = (table: MesaInterface) => {
+    const isTheSameTable: boolean = table?.id === selectedMesa?.id;
+    return selectedMesa && isTheSameTable ? handleSelectMesa(null) : handleSelectMesa(table);
+  };
 
   return (
     <div
@@ -37,7 +42,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         transition: "background-color 0.3s ease",
         position: "relative",
       }}
-      onClick={() => setSelectedMesa(mesa)}
+      onClick={() => handleClickMesa(mesa)}
     >
       {/* Indicador de estado */}
       <div
@@ -73,7 +78,7 @@ const TableCard: React.FC<MesaCardProps> = ({
       {/* Botones */}
       <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
         <Tooltip title="Ver detalles" arrow>
-          <Button sx={{ minWidth: "2.5rem", color: "#bab6b6" }}>
+          <Button sx={{ minWidth: "2.5rem", color: "#bab6b6" }} onClick={() => handleClickMesa(mesa)}>
             <VisibilityIcon />
           </Button>
         </Tooltip>

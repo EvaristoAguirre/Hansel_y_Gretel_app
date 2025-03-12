@@ -60,10 +60,10 @@ export const getProductsByCategory = async (id: string, token: string) => {
       body: JSON.stringify({ categories: [id] }),
     });
 
-    if (!response.ok) {
-      // Manejo de errores según el status code
-      return { ok: false, status: response.status, message: await response.text() };
-    }
+    // if (!response.ok) {
+    //   // Manejo de errores según el status code
+    //   return { ok: false, status: response.status, message: await response.text() };
+    // }
 
     const data = await response.json();
     return { ok: true, data };
