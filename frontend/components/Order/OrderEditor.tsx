@@ -18,6 +18,7 @@ import "../../styles/pedidoEditor.css";
 import { deleteOrder } from "@/api/order";
 import Swal from "sweetalert2";
 import { useAuth } from "@/app/context/authContext";
+import { useOrderStore } from "./useOrderStore";
 
 export interface Product {
   price: number;
@@ -58,7 +59,7 @@ const useOrderDetailsStore = ({
 
   const { getAccessToken } = useAuth();
 
-
+  const { orders } = useOrderStore();
 
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
@@ -110,6 +111,22 @@ const useOrderDetailsStore = ({
       text: "El pedido ha sido eliminado con éxito.",
     });
   };
+
+  useEffect(() => {
+    if (selectedOrderByTable) {
+      // Buscar la orden actualizada en la lista de pedidos
+      const updatedOrder = orders.find(order => order.id === selectedOrderByTable.id);
+      if (updatedOrder) {
+        setSelectedOrderByTable(updatedOrder);
+      } else {
+        // Si la orden fue eliminada, limpiar la selección
+        setSelectedOrderByTable(null);
+        setConfirmedProducts([]);
+      }
+    }
+  }, [orders]);
+  
+
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
