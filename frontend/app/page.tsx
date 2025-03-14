@@ -1,7 +1,11 @@
+"use client";
+import { useEffect } from "react";
+import { io } from "socket.io-client";
+
 
 
 export default function Home() {
-
+ 
 
   return (
     <div className="bg-black min-h-screen flex items-center justify-center">

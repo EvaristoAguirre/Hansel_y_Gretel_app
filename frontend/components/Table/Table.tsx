@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
 import MesaModal from "./TableModal";
-import { TableCreated } from "./useTableStore";
+import { TableCreated, useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 import TablesStatus from "./TablesStatus";
@@ -17,7 +17,6 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     modalOpen,
     modalType,
     form,
-    tables,
     handleOpenModal,
     handleCloseModal,
     handleCreate,
@@ -25,6 +24,8 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     handleDelete,
     setForm,
   } = useMesa(salaId);
+
+  const { tables } = useTableStore();  
 
   const { selectedMesa } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
@@ -46,7 +47,8 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     if (selectedMesa) {
       setForm({ ...form, id: selectedMesa.id });
     }
-  }, [selectedMesa]);
+    console.log("Renderizado");
+  }, [selectedMesa, tables]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
