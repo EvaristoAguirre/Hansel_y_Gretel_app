@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Drawer, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
 import { ICategory } from "@/components/Interfaces/ICategories";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 export const Sidebar: React.FC<{
   onCategorySelected: (categoryId: string) => void;
   selectedCategoryId: string | null;
@@ -33,7 +34,7 @@ export const Sidebar: React.FC<{
       <List>
         {categories && categories.length > 0 ? (
           categories.map((category: ICategory) => {
-            const isSelected = selectedCategoryId === category.id; // Comparar con la categoría seleccionada
+            const isSelected = selectedCategoryId === category.id;
             return (
               <ListItem key={category.id} disablePadding>
                 <ListItemButton
@@ -46,7 +47,7 @@ export const Sidebar: React.FC<{
                     },
                   }}
                 >
-                  <ListItemText primary={category.name} />
+                  <ListItemText primary={capitalizeFirstLetter(category.name)} />
                 </ListItemButton>
               </ListItem>
             );

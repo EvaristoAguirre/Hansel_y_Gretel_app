@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useCategoryStore } from "../useCategoryStore";
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import {
@@ -18,6 +17,8 @@ import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 import { fetchCategories } from "@/api/categories";
 import { useAuth } from "@/app/context/authContext";
+import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
+import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 
 const ProductsCategory: React.FC = () => {
   const {
@@ -188,7 +189,7 @@ const ProductsCategory: React.FC = () => {
       {/* Tabla */}
       <Box sx={{ height: 450, ml: 2 }}>
         <DataGrid
-          rows={rows}
+          rows={capitalizeFirstLetterTable(rows, ['name'])}
           columns={columns}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         />
