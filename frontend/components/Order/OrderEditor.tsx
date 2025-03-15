@@ -13,34 +13,30 @@ import {
 import usePedido from "../Hooks/usePedido";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { Box } from "@mui/system";
-import { useOrderContext } from '../../app/context/order.context';
+import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
 import { deleteOrder } from "@/api/order";
 import Swal from "sweetalert2";
 import { useAuth } from "@/app/context/authContext";
+import { useOrderStore } from "./useOrderStore";
 
 export interface Product {
   price: number;
   quantity: number;
   productId: string;
   name: string;
-};
+}
 
 interface Props {
   handleNextStep: () => void;
   handleCompleteStep: () => void;
-
 }
 const useOrderDetailsStore = ({
   handleNextStep,
-  handleCompleteStep
+  handleCompleteStep,
 }: Props) => {
-
-  const {
-    productosDisponibles,
-    products,
-    setProductosDisponibles,
-  } = usePedido();
+  const { productosDisponibles, products, setProductosDisponibles } =
+    usePedido();
 
   const {
     selectedProducts,
@@ -53,25 +49,29 @@ const useOrderDetailsStore = ({
     handleDeleteSelectedProduct,
     increaseProductNumber,
     decreaseProductNumber,
-    handleEditOrder
+    handleEditOrder,
   } = useOrderContext();
 
   const { getAccessToken } = useAuth();
 
-
+  const { connectWebSocket, orders } = useOrderStore();
 
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
     if (selectedOrderByTable) {
-      handleEditOrder(selectedOrderByTable.id, selectedProducts, selectedOrderByTable.numberCustomers, selectedOrderByTable.comment);
+      handleEditOrder(
+        selectedOrderByTable.id,
+        selectedProducts,
+        selectedOrderByTable.numberCustomers,
+        selectedOrderByTable.comment
+      );
       setSelectedProducts([]);
       handleCompleteStep();
       handleNextStep();
     }
   };
-
 
   useEffect(() => {
     const calcularSubtotal = () => {
@@ -91,7 +91,6 @@ const useOrderDetailsStore = ({
       );
     };
     calculateTotal();
-
   }, [selectedProducts, confirmedProducts]);
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -111,19 +110,31 @@ const useOrderDetailsStore = ({
     });
   };
 
+  // useEffect(() => {
+  //   connectWebSocket(); // Asegura la conexión WebSocket en la app de escritorio
+  // }, [orders]);
+
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{
-        width: "100%", display: "flex",
-        flexDirection: "row", gap: "2rem",
-
-      }}>
-        <div style={{
-          width: "100%", display: "flex",
-          flexDirection: "column", border: "1px solid #d4c0b3",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
-          justifyContent: "space-between"
-        }}>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "row",
+          gap: "2rem",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            border: "1px solid #d4c0b3",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "1rem",
+            justifyContent: "space-between",
+          }}
+        >
           <div
             style={{
               height: "2rem",
@@ -132,17 +143,14 @@ const useOrderDetailsStore = ({
               justifyContent: "center",
               alignItems: "center",
               color: "#ffffff",
-              marginBottom: "1rem"
+              marginBottom: "1rem",
             }}
           >
             <h2>Seleccionar productos</h2>
           </div>
-          <Box
-            sx={{ borderRadius: "5px" }}
-          >
+          <Box sx={{ borderRadius: "5px" }}>
             <Autocomplete
               options={productosDisponibles}
-
               getOptionLabel={(producto) =>
                 `${producto.name} - $${producto.price} (Código: ${producto.code})`
               }
@@ -152,7 +160,10 @@ const useOrderDetailsStore = ({
                   products.filter(
                     (producto) =>
                       producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code.toString().toLowerCase().includes(searchTerm)
+                      producto.code
+                        .toString()
+                        .toLowerCase()
+                        .includes(searchTerm)
                   )
                 );
               }}
@@ -161,11 +172,9 @@ const useOrderDetailsStore = ({
                   handleSelectedProducts(selectedProducto);
                 }
               }}
-
               renderInput={(params) => (
                 <TextField
                   {...params}
-
                   label="Buscar productos por nombre o código"
                   variant="outlined"
                   fullWidth
@@ -208,7 +217,9 @@ const useOrderDetailsStore = ({
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center" }}>
-                      <IconButton onClick={() => decreaseProductNumber(item.productId)}>
+                      <IconButton
+                        onClick={() => decreaseProductNumber(item.productId)}
+                      >
                         <Remove color="error" />
                       </IconButton>
                       <Typography
@@ -222,7 +233,9 @@ const useOrderDetailsStore = ({
                       >
                         {item.quantity}
                       </Typography>
-                      <IconButton onClick={() => increaseProductNumber(item.productId)}>
+                      <IconButton
+                        onClick={() => increaseProductNumber(item.productId)}
+                      >
                         <Add color="success" />
                       </IconButton>
                     </div>
@@ -242,16 +255,25 @@ const useOrderDetailsStore = ({
                     <Typography style={{ color: "black" }}>
                       ${item.unitaryPrice * item.quantity}
                     </Typography>
-                    <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
+                    <IconButton
+                      onClick={() =>
+                        handleDeleteSelectedProduct(item.productId)
+                      }
+                    >
                       <Delete />
                     </IconButton>
                   </ListItem>
                 ))}
-
-
               </List>
             ) : (
-              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
+              <Typography
+                style={{
+                  margin: "1rem 0",
+                  color: "gray",
+                  fontSize: "0.8rem",
+                  width: "100%",
+                }}
+              >
                 No hay productos pre-seleccionados.
               </Typography>
             )}
@@ -331,16 +353,25 @@ const useOrderDetailsStore = ({
                     <Typography style={{ color: "black" }}>
                       ${item.unitaryPrice * item.quantity}
                     </Typography>
-                    <IconButton onClick={() => handleDeleteSelectedProduct(item.productId)}>
+                    <IconButton
+                      onClick={() =>
+                        handleDeleteSelectedProduct(item.productId)
+                      }
+                    >
                       <Delete />
                     </IconButton>
                   </ListItem>
                 ))}
-
-
               </List>
             ) : (
-              <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem", width: "100%" }}>
+              <Typography
+                style={{
+                  margin: "1rem 0",
+                  color: "gray",
+                  fontSize: "0.8rem",
+                  width: "100%",
+                }}
+              >
                 No hay productos confirmados.
               </Typography>
             )}
@@ -368,21 +399,20 @@ const useOrderDetailsStore = ({
             >
               CONFIRMAR PRODUCTOS A COMANDA
             </Button> */}
-            {
-              confirmedProducts.length > 0 && selectedOrderByTable &&
+            {confirmedProducts.length > 0 && selectedOrderByTable && (
               <Button
                 fullWidth
                 color="error"
                 variant="outlined"
-                style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                onClick={
-                  () => handleDeleteOrder(selectedOrderByTable.id)
-
-                }
+                style={{
+                  marginTop: "1rem",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                }}
+                onClick={() => handleDeleteOrder(selectedOrderByTable.id)}
               >
                 Cancelar Pedido
               </Button>
-            }
+            )}
           </div>
         </div>
       </div>
@@ -394,4 +424,3 @@ export default useOrderDetailsStore;
 function setInputValue(arg0: string) {
   throw new Error("Function not implemented.");
 }
-
