@@ -21,6 +21,7 @@ import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
+import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -33,7 +34,7 @@ export class ProductController {
   async getAllProducts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<Product[]> {
+  ): Promise<ProductResponseDto[]> {
     return this.productService.getAllProducts(page, limit);
   }
 
@@ -46,7 +47,7 @@ export class ProductController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('categories') categories?: string[],
-  ): Promise<Product[]> {
+  ): Promise<ProductResponseDto[]> {
     return this.productService.searchProducts(
       name,
       code,
@@ -72,7 +73,7 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductsByCategories(
     @Body(ValidationPipe) body: GetProductsByCategoriesDto,
-  ): Promise<Product[]> {
+  ): Promise<ProductResponseDto[]> {
     const { categories } = body;
     if (!categories || categories.length === 0) {
       throw new BadRequestException(
@@ -84,7 +85,9 @@ export class ProductController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async createProduct(@Body() productToCreate: CreateProductDto) {
+  async createProduct(
+    @Body() productToCreate: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     return await this.productService.createProduct(productToCreate);
   }
 

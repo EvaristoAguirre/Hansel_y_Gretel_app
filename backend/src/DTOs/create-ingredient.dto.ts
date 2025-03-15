@@ -16,10 +16,10 @@ export class CreateIngredientDto {
   @IsOptional()
   description?: string;
 
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  price?: number;
+  // @IsNumber()
+  // @Min(0)
+  // @IsOptional()
+  // price?: number;
 
   @IsNumber()
   @Min(0)

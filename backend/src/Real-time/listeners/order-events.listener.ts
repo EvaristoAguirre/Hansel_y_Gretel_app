@@ -21,4 +21,14 @@ export class OrderWSListener {
   handleOrderDeleted(event: { order: Order }) {
     this.broadcastService.broadcast('orderDeleted', event.order);
   }
+
+  @OnEvent('order.updatePending')
+  handleOrderUpdatePending(event: { order: Order }) {
+    this.broadcastService.broadcast('orderUpdatedPending', event.order);
+  }
+
+  @OnEvent('order.updateClose')
+  handleOrderUpdateClose(event: { order: Order }) {
+    this.broadcastService.broadcast('orderUpdatedClose', event.order);
+  }
 }

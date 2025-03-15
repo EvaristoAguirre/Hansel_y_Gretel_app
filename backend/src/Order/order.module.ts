@@ -19,6 +19,7 @@ import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
+import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UserModule } from 'src/User/user.module';
       Room,
       Category,
       UnitOfMeasure,
+      PromotionProduct,
     ]),
     UserModule,
   ],
