@@ -20,7 +20,7 @@ export class TableRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-  ) { }
+  ) {}
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
