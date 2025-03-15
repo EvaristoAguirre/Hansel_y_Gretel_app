@@ -39,7 +39,7 @@ const Order: React.FC<OrderProps> = ({
     handleDeleteOrder,
   } = useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
-  const { addOrder, connectWebSocket, orders } = useOrderStore();
+  const { addOrder, connectWebSocket, orders, updateOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken } = useAuth();
@@ -69,6 +69,7 @@ const Order: React.FC<OrderProps> = ({
 
       setSelectedOrderByTable(ordenPendingPay);
       addOrder(ordenPendingPay);
+      // updateOrder(ordenPendingPay);
     }
 
     const tableEdited = await editTable(

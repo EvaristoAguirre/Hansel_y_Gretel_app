@@ -38,6 +38,8 @@ const useOrderDetailsStore = ({
   const { productosDisponibles, products, setProductosDisponibles } =
     usePedido();
 
+ 
+
   const {
     selectedProducts,
     setSelectedProducts,
@@ -51,6 +53,8 @@ const useOrderDetailsStore = ({
     decreaseProductNumber,
     handleEditOrder,
   } = useOrderContext();
+
+  console.log("selectedOrderByTable", selectedOrderByTable);
 
   const { getAccessToken } = useAuth();
 
@@ -71,6 +75,7 @@ const useOrderDetailsStore = ({
       handleCompleteStep();
       handleNextStep();
     }
+    console.log("selectedOrderByTable (dentro de confirmarPedido)", selectedOrderByTable);
   };
 
   useEffect(() => {
@@ -110,9 +115,19 @@ const useOrderDetailsStore = ({
     });
   };
 
+
   // useEffect(() => {
-  //   connectWebSocket(); // Asegura la conexión WebSocket en la app de escritorio
-  // }, [orders]);
+  //   if (orders && orders.length > 0) {
+  //     // Verifica si hay un pedido seleccionado y actualiza su estado si es necesario
+  //     const updatedOrder = orders.find(order => order.id === selectedOrderByTable?.id);
+      
+  //     if (updatedOrder) {
+  //       setSelectedOrderByTable(updatedOrder);
+  //     }
+  //   }
+  // }, [orders]); // Se ejecuta cada vez que orders cambia
+  
+
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>

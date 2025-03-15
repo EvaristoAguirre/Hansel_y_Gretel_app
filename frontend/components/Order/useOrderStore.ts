@@ -107,6 +107,25 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
     }));
   });
 
+  socket.on("orderUpdatedPending", (data) => {
+    console.log("🟠 Orden marcada como pendiente de pago:", data);
+    set((state) => ({
+      orders: state.orders.map((order) =>
+        order.id === data.id ? { ...order, status: "pending_payment" } : order
+      ),
+    }));
+  });
+  
+  socket.on("orderUpdatedClose", (data) => {
+    console.log("🟢 Orden marcada como cerrada:", data);
+    set((state) => ({
+      orders: state.orders.map((order) =>
+        order.id === data.id ? { ...order, status: "closed" } : order
+      ),
+    }));
+  });
+  
+
   socket.on("orderDeleted", (data) => {
     console.log("🔴 Orden eliminada:", data);
     set((state) => ({

@@ -36,9 +36,9 @@ export const StepperTable: React.FC<Props> = ({
 
   const { confirmedProducts, handleResetSelectedOrder } = useOrderContext();
 
-  const { selectedOrderByTable } = useOrderContext();
+  const { selectedOrderByTable, fetchOrderBySelectedTable } = useOrderContext();
 
-  const { connectWebSocket } = useOrderStore();
+  // const { connectWebSocket } = useOrderStore();
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -76,10 +76,14 @@ export const StepperTable: React.FC<Props> = ({
     // función de impresión
   };
 
-  React.useEffect(() => {
-    // Cuando selectedOrderByTable cambie, se actualiza el componente
-    setActiveStep(0); // O alguna lógica específica que necesites
-  }, [selectedOrderByTable]);
+  // React.useEffect(() => {
+  //   console.log("fetchOrderBySelectedTable:", fetchOrderBySelectedTable);
+  //   if (selectedOrderByTable) {
+  //     fetchOrderBySelectedTable();
+  //   }
+  // }, [selectedOrderByTable]);
+  
+  
 
   const renderStepContent = (step: number) => {
     switch (step) {

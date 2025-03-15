@@ -27,6 +27,7 @@ type OrderContextType = {
   handleEditOrder: (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => Promise<void>
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
+  fetchOrderBySelectedTable: () => void;
 
 }
 
@@ -47,6 +48,7 @@ const OrderContext = createContext<OrderContextType>({
   handleEditOrder: async () => { },
   handleDeleteOrder: async () => { },
   handleResetSelectedOrder: () => { },
+  fetchOrderBySelectedTable: () => { },
 
 });
 
@@ -121,7 +123,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
   useEffect(() => {
     fetchOrderBySelectedTable();
-  }, [fetchOrderBySelectedTable])
+  }, [fetchOrderBySelectedTable, selectedOrderByTable])
+
+  
 
   const handleSelectedProducts = (product: ProductResponse) => {
     const foundProduct = confirmedProducts.find(
@@ -302,6 +306,13 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     }
   };
 
+  useEffect(() => {
+    if (selectedMesa) {
+      const order = orders.find(o => o.table.id === selectedMesa.id);
+      setSelectedOrderByTable(order || null);
+    }
+  }, [orders, selectedMesa]);
+
   return (
     <OrderContext.Provider
       value={{
@@ -321,6 +332,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         handleEditOrder,
         handleDeleteOrder,
         handleResetSelectedOrder,
+        fetchOrderBySelectedTable,
       }}
     >
       {children}

@@ -84,9 +84,11 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     closed: "text-green-500",
   };
 
+  
+
   // useEffect(() => {
-  //   connectWebSocket(); // Asegura la conexión WebSocket en la app de escritorio
-  // }, []);
+  //   console.log("Cambio en selectedOrderByTable (desde PayOrder):", selectedOrderByTable);
+  // }, [selectedOrderByTable]);
 
   return (
     <div
