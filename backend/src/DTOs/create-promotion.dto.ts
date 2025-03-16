@@ -44,7 +44,6 @@ export class CreatePromotionDto {
 export class PromotionProductDto {
   @IsString()
   productId: string;
-
   @IsNumber()
   quantity: number;
 }

@@ -176,11 +176,9 @@ export class ProductRepository {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { categories, ingredients, type, ...productData } = productToCreate;
 
-      // Verificar si el código y el nombre ya existen
       await this.checkProductUniqueness(queryRunner, productData);
 
       if (type === 'promotion') {
-        // Crear una promoción
         const promotion = await this.createPromotion(
           queryRunner,
           productToCreate,
@@ -190,7 +188,6 @@ export class ProductRepository {
       }
 
       if (type === 'product') {
-        // Crear un producto normal
         const product = await this.createNormalProduct(
           queryRunner,
           productToCreate,
@@ -226,125 +223,27 @@ export class ProductRepository {
     await queryRunner.startTransaction();
 
     try {
-      const { categories, ingredients, ...otherAttributes } = updateData;
-
-      const product = await queryRunner.manager.findOne(Product, {
-        where: { id: id, isActive: true },
-        relations: [
-          'categories',
-          'productIngredients',
-          'productIngredients.ingredient',
-          'productIngredients.unitOfMeasure',
-        ],
-      });
-
-      if (!product) {
-        throw new NotFoundException(`Product with ID: ${id} not found`);
+      if (updateData.type === 'promotion') {
+        const promotion = await this.updatePromotion(
+          queryRunner,
+          id,
+          updateData,
+        );
+        await queryRunner.commitTransaction();
+        return promotion;
       }
 
-      Object.assign(product, otherAttributes);
-
-      if (categories) {
-        if (categories.length > 0) {
-          const categoryEntities = await queryRunner.manager.find(Category, {
-            where: { id: In(categories), isActive: true },
-          });
-
-          const foundIds = categoryEntities.map((cat) => cat.id);
-          const invalidIds = categories.filter((id) => !foundIds.includes(id));
-          if (invalidIds.length > 0) {
-            throw new BadRequestException(
-              `Invalid category IDs: ${invalidIds.join(', ')}`,
-            );
-          }
-
-          product.categories = categoryEntities;
-        } else {
-          product.categories = [];
-        }
+      if (updateData.type === 'product') {
+        const product = await this.updateNormalProduct(
+          queryRunner,
+          id,
+          updateData,
+        );
+        await queryRunner.commitTransaction();
+        return product;
       }
 
-      if (ingredients) {
-        if (!product.productIngredients) {
-          product.productIngredients = [];
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const existingIngredientIds = product.productIngredients.map(
-          (pi) => pi.ingredient.id,
-        );
-        const newIngredientIds = ingredients.map((i) => i.ingredientId);
-
-        const ingredientsToRemove = product.productIngredients.filter(
-          (pi) => !newIngredientIds.includes(pi.ingredient.id),
-        );
-
-        await queryRunner.manager.remove(
-          ProductIngredient,
-          ingredientsToRemove,
-        );
-
-        const updatedIngredients = await Promise.all(
-          ingredients.map(async (ingredientDto) => {
-            const ingredient = await queryRunner.manager.findOne(Ingredient, {
-              where: { id: ingredientDto.ingredientId },
-            });
-            if (!ingredient) {
-              throw new BadRequestException(
-                `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
-              );
-            }
-
-            const unitOfMeasure = await queryRunner.manager.findOne(
-              UnitOfMeasure,
-              {
-                where: { id: ingredientDto.unitOfMeasureId },
-              },
-            );
-            if (!unitOfMeasure) {
-              throw new BadRequestException(
-                `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
-              );
-            }
-
-            const existingProductIngredient = product.productIngredients.find(
-              (pi) => pi.ingredient.id === ingredientDto.ingredientId,
-            );
-
-            if (existingProductIngredient) {
-              existingProductIngredient.quantityOfIngredient =
-                ingredientDto.quantityOfIngredient;
-              existingProductIngredient.unitOfMeasure = unitOfMeasure;
-              return queryRunner.manager.save(existingProductIngredient);
-            } else {
-              const productIngredient = queryRunner.manager.create(
-                ProductIngredient,
-                {
-                  product,
-                  ingredient,
-                  quantityOfIngredient: ingredientDto.quantityOfIngredient,
-                  unitOfMeasure,
-                },
-              );
-              return queryRunner.manager.save(productIngredient);
-            }
-          }),
-        );
-
-        product.productIngredients = updatedIngredients;
-      }
-
-      const updatedProduct = await queryRunner.manager.save(product);
-
-      await queryRunner.commitTransaction();
-
-      const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
-        excludeExtraneousValues: true,
-      });
-
-      const plainProduct = instanceToPlain(productDto);
-
-      return plainProduct as ProductResponseDto;
+      throw new BadRequestException('Invalid product type');
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -471,7 +370,6 @@ export class ProductRepository {
       }
     }
 
-    // Crear la promoción (un producto de tipo 'promotion')
     const promotion = queryRunner.manager.create(Product, {
       name,
       code,
@@ -482,7 +380,6 @@ export class ProductRepository {
     });
     const savedPromotion = await queryRunner.manager.save(promotion);
 
-    // Crear las relaciones con los productos y sus cantidades
     for (const productDto of products) {
       const product = await queryRunner.manager.findOne(Product, {
         where: { id: productDto.productId },
@@ -499,7 +396,6 @@ export class ProductRepository {
       }
     }
 
-    // Cargar la promoción con los productos asociados
     const promotionWithDetails = await queryRunner.manager.findOne(Product, {
       where: { id: savedPromotion.id },
       relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
@@ -509,7 +405,6 @@ export class ProductRepository {
       throw new NotFoundException('Promotion not found after creation');
     }
 
-    // Formatear la respuesta para incluir los productos asociados
     const promotionCreated = promotionWithDetails;
 
     return promotionCreated;
@@ -521,7 +416,6 @@ export class ProductRepository {
   ): Promise<ProductResponseDto> {
     const { categories, ingredients, ...productData } = productToCreate;
 
-    // Buscar categorías si se proporcionan
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
       categoryEntities = await queryRunner.manager.find(Category, {
@@ -532,14 +426,12 @@ export class ProductRepository {
       }
     }
 
-    // Crear el producto
     const product = queryRunner.manager.create(Product, {
       ...productData,
       categories: categoryEntities,
     });
     const savedProduct = await queryRunner.manager.save(product);
 
-    // Manejar ingredientes si se proporcionan
     if (ingredients && ingredients.length > 0) {
       const productIngredients = ingredients.map(async (ingredientDto) => {
         const ingredient = await queryRunner.manager.findOne(Ingredient, {
@@ -576,7 +468,6 @@ export class ProductRepository {
       await Promise.all(productIngredients);
     }
 
-    // Cargar relaciones
     const relationsToLoad = ['categories'];
     if (ingredients && ingredients.length > 0) {
       relationsToLoad.push(
@@ -617,5 +508,223 @@ export class ProductRepository {
     if (existingProductByName) {
       throw new ConflictException('Product name already exists');
     }
+  }
+
+  private async updateNormalProduct(
+    queryRunner: QueryRunner,
+    id: string,
+    updateData: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
+    const { categories, ingredients, ...otherAttributes } = updateData;
+
+    const product = await queryRunner.manager.findOne(Product, {
+      where: { id: id, isActive: true },
+      relations: [
+        'categories',
+        'productIngredients',
+        'productIngredients.ingredient',
+        'productIngredients.unitOfMeasure',
+      ],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID: ${id} not found`);
+    }
+
+    Object.assign(product, otherAttributes);
+
+    if (categories) {
+      if (categories.length > 0) {
+        const categoryEntities = await queryRunner.manager.find(Category, {
+          where: { id: In(categories), isActive: true },
+        });
+
+        const foundIds = categoryEntities.map((cat) => cat.id);
+        const invalidIds = categories.filter((id) => !foundIds.includes(id));
+        if (invalidIds.length > 0) {
+          throw new BadRequestException(
+            `Invalid category IDs: ${invalidIds.join(', ')}`,
+          );
+        }
+
+        product.categories = categoryEntities;
+      } else {
+        product.categories = [];
+      }
+    }
+
+    if (ingredients) {
+      if (!product.productIngredients) {
+        product.productIngredients = [];
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const existingIngredientIds = product.productIngredients.map(
+        (pi) => pi.ingredient.id,
+      );
+      const newIngredientIds = ingredients.map((i) => i.ingredientId);
+
+      const ingredientsToRemove = product.productIngredients.filter(
+        (pi) => !newIngredientIds.includes(pi.ingredient.id),
+      );
+
+      await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
+
+      const updatedIngredients = await Promise.all(
+        ingredients.map(async (ingredientDto) => {
+          const ingredient = await queryRunner.manager.findOne(Ingredient, {
+            where: { id: ingredientDto.ingredientId },
+          });
+          if (!ingredient) {
+            throw new BadRequestException(
+              `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
+            );
+          }
+
+          const unitOfMeasure = await queryRunner.manager.findOne(
+            UnitOfMeasure,
+            {
+              where: { id: ingredientDto.unitOfMeasureId },
+            },
+          );
+          if (!unitOfMeasure) {
+            throw new BadRequestException(
+              `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+            );
+          }
+
+          const existingProductIngredient = product.productIngredients.find(
+            (pi) => pi.ingredient.id === ingredientDto.ingredientId,
+          );
+
+          if (existingProductIngredient) {
+            existingProductIngredient.quantityOfIngredient =
+              ingredientDto.quantityOfIngredient;
+            existingProductIngredient.unitOfMeasure = unitOfMeasure;
+            return queryRunner.manager.save(existingProductIngredient);
+          } else {
+            const productIngredient = queryRunner.manager.create(
+              ProductIngredient,
+              {
+                product,
+                ingredient,
+                quantityOfIngredient: ingredientDto.quantityOfIngredient,
+                unitOfMeasure,
+              },
+            );
+            return queryRunner.manager.save(productIngredient);
+          }
+        }),
+      );
+
+      product.productIngredients = updatedIngredients;
+    }
+
+    const updatedProduct = await queryRunner.manager.save(product);
+
+    const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
+      excludeExtraneousValues: true,
+    });
+
+    return instanceToPlain(productDto) as ProductResponseDto;
+  }
+
+  private async updatePromotion(
+    queryRunner: QueryRunner,
+    id: string,
+    updateData: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
+    const { categories, products, ...otherAttributes } = updateData;
+
+    const promotion = await queryRunner.manager.findOne(Product, {
+      where: { id: id, isActive: true },
+      relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
+    });
+    if (!promotion) {
+      throw new NotFoundException(`Promotion with ID: ${id} not found`);
+    }
+
+    Object.assign(promotion, otherAttributes);
+
+    if (categories) {
+      if (categories.length > 0) {
+        const categoryEntities = await queryRunner.manager.find(Category, {
+          where: { id: In(categories), isActive: true },
+        });
+
+        const foundIds = categoryEntities.map((cat) => cat.id);
+        const invalidIds = categories.filter((id) => !foundIds.includes(id));
+        if (invalidIds.length > 0) {
+          throw new BadRequestException(
+            `Invalid category IDs: ${invalidIds.join(', ')}`,
+          );
+        }
+
+        promotion.categories = categoryEntities;
+      } else {
+        promotion.categories = [];
+      }
+    }
+
+    if (products) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const existingProductIds = promotion.promotionDetails.map((p) => p.id);
+
+      const updatedProductIds = products.map((p) => p.productId);
+
+      const productsToRemove = promotion.promotionDetails.filter(
+        (p) => !updatedProductIds.includes(p.id),
+      );
+
+      if (productsToRemove.length > 0) {
+        await queryRunner.manager.remove(productsToRemove);
+      }
+
+      const updatedProducts = await Promise.all(
+        products.map(async (productDto) => {
+          const product = await queryRunner.manager.findOne(Product, {
+            where: { id: productDto.productId, isActive: true },
+          });
+
+          if (!product) {
+            throw new BadRequestException(
+              `Product with ID ${productDto.productId} not found`,
+            );
+          }
+
+          const existingProduct = promotion.promotionDetails.find(
+            (p) => p.id === productDto.productId,
+          );
+
+          if (existingProduct) {
+            existingProduct.quantity = productDto.quantity;
+            return queryRunner.manager.save(existingProduct);
+          } else {
+            const promotionProduct = queryRunner.manager.create(
+              PromotionProduct,
+              {
+                promotion,
+                product,
+                quantity: productDto.quantity,
+              },
+            );
+            return queryRunner.manager.save(promotionProduct);
+          }
+        }),
+      );
+
+      promotion.promotionDetails = updatedProducts;
+    }
+    await queryRunner.manager.save(promotion);
+    const updatedPromotion = await queryRunner.manager.findOne(Product, {
+      where: { id: id, isActive: true },
+      relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
+    });
+    // const promotionDto = plainToInstance(ProductResponseDto, updatedPromotion, {
+    //   excludeExtraneousValues: true,
+    // });
+
+    // return instanceToPlain(promotionDto) as ProductResponseDto;
+    return updatedPromotion;
   }
 }

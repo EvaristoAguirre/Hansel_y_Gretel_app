@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, ILike, Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
@@ -98,12 +98,14 @@ export class TableRepository {
     }
   }
 
-  async deleteTable(id: string): Promise<DeleteResult> {
+  async deleteTable(id: string): Promise<string> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
-      return await this.tableRepository.delete(id);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const tableDeleted = await this.tableRepository.delete(id);
+      return id;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
