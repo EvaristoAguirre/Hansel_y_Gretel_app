@@ -7,12 +7,14 @@ import theme from '@/styles/theme';
 import Image from 'next/image';
 import { loginUser } from '@/api/login-register';
 import Swal from 'sweetalert2';
+import { useAuth } from '@/app/context/authContext';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
+  const { validateUserSession } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,9 +30,12 @@ export default function RegisterForm() {
         icon: "success",
         title: "Ingresaste con éxito!",
       });
+
       setTimeout(() => {
         window.location.href = "/";
       }, 1000);
+
+      validateUserSession();
 
     } catch (error: any) {
       Swal.fire({
