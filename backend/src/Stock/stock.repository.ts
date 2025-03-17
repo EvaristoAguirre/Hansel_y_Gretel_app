@@ -82,7 +82,7 @@ export class StockRepository {
     }
     try {
       const stock = await this.stockRepository.findOne({
-        where: { product: { id: ingredientId } },
+        where: { ingredient: { id: ingredientId } },
         relations: ['ingredient'],
       });
 
@@ -188,8 +188,17 @@ export class StockRepository {
       throw new BadRequestException('Either ID must be provided.');
     }
 
+    if (!productId && !ingredientId) {
+      throw new BadRequestException(
+        'You must provide either a productId or an ingredientId.',
+      );
+    }
+
     try {
-      const stock = await this.stockRepository.findOne({ where: { id } });
+      const stock = await this.stockRepository.findOne({
+        where: { id },
+        relations: ['product', 'ingredient'],
+      });
       if (!stock) {
         throw new NotFoundException(`Stock with ID ${id} not found.`);
       }
