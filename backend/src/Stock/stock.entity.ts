@@ -19,6 +19,9 @@ export class Stock {
   @Column({ type: 'int', nullable: true })
   minimumStock: number;
 
+  //@Column()
+  //unitOfMeasureId: string;
+
   // -------------- Relaciones -----------------//
 
   @OneToOne(() => Product, (product) => product.stock)

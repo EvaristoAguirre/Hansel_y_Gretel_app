@@ -35,18 +35,15 @@ export class StockController {
 
   @Get('/product/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByProductId(
-    @Param('productId') productId: string,
-  ): Promise<Stock> {
-    return await this.stockService.getStockByProductId(productId);
+  async getStockByProductId(@Param('id') id: string): Promise<Stock> {
+    console.log(id);
+    return await this.stockService.getStockByProductId(id);
   }
 
   @Get('/ingredient/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByIngredientId(
-    @Param('ingredientId') ingredientId: string,
-  ): Promise<Stock> {
-    return await this.stockService.getStockByIngredientId(ingredientId);
+  async getStockByIngredientId(@Param('id') id: string): Promise<Stock> {
+    return await this.stockService.getStockByIngredientId(id);
   }
 
   @Post()
