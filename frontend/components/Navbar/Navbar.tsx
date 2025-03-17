@@ -122,7 +122,7 @@ const Navbar = () => {
       {/* Menú desplegable para pantallas pequeñas */}
       {isMenuOpen && (
         <div className="lg:hidden bg-gray-900 text-white py-4">
-          {sections.map((section) => (
+          {filteredSections.map((section) => (
             <Link key={section.label} href={section.path}>
               <div
                 onClick={() => {
