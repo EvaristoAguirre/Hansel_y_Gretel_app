@@ -14,21 +14,14 @@ import { UserRole } from "../Enums/user";
 
 const Navbar = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [showUsername, setShowUsername] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para el menú móvil
 
-  const { usernameFromToken, handleSignOut, userRoleFromToken } = useAuth();
+  const { usernameFromToken, handleSignOut, userRoleFromToken, validateUserSession } = useAuth();
 
-  useEffect(() => {
-    const username = usernameFromToken();
-    const userRole = userRoleFromToken();
-
-    if (username) {
-      setShowUsername(username);
-      setUserRole(userRole);
-    }
-  }, []);
+  // Computa los valores dinámicamente sin usar useState
+  const sesion = validateUserSession();
+  const showUsername = sesion ? usernameFromToken() : null;
+  const userRole = sesion ? userRoleFromToken() : null;
 
   const sections = [
     { label: "Cafe", path: "/views/cafe", icon: cafe },
@@ -51,41 +44,46 @@ const Navbar = () => {
             <Image src={logo} alt="Logo Hansel y Gretel" width={100} height={100} />
           </Link>
         </div>
-
-        {/* Menú de secciones para pantallas grandes */}
-        <div className="hidden lg:flex gap-8 items-center">
-          {filteredSections.map((section) => (
-            <Link key={section.label} href={section.path}>
-              <div
-                onClick={() => setSelectedSection(section.label)}
-                className={`relative group cursor-pointer p-3 transition-colors 
+        {
+          sesion && (
+            <>
+              {/* Menú de secciones para pantallas grandes */}
+              <div className="hidden lg:flex gap-8 items-center">
+                {filteredSections.map((section) => (
+                  <Link key={section.label} href={section.path}>
+                    <div
+                      onClick={() => setSelectedSection(section.label)}
+                      className={`relative group cursor-pointer p-3 transition-colors 
                 ${selectedSection === section.label ? "bg-[#856D5E] rounded-t-md" : "bg-transparent"
-                  }`}
-              >
-                <Image
-                  src={section.icon}
-                  alt={`Logo pestaña ${section.label.toLowerCase()}`}
-                  width={40}
-                  height={40}
-                  className="group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute bottom-[-30px] left-1/2 transform
+                        }`}
+                    >
+                      <Image
+                        src={section.icon}
+                        alt={`Logo pestaña ${section.label.toLowerCase()}`}
+                        width={40}
+                        height={40}
+                        className="group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute bottom-[-30px] left-1/2 transform
                  -translate-x-1/2 bg-gray-800 text-white text-sm px-2 py-1 
                  rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                  {section.label}
-                </div>
+                        {section.label}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
 
-        {/* Botón de menú para pantallas pequeñas */}
-        <button
-          className="lg:hidden text-white focus:outline-none text-3xl hover:scale-105 transition-transform"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          ☰
-        </button>
+              {/* Botón de menú para pantallas pequeñas */}
+              <button
+                className="lg:hidden text-white focus:outline-none text-3xl hover:scale-105 transition-transform"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                ☰
+              </button>
+            </>
+          )
+        }
 
         {/* Sesión de usuario */}
         <div className="flex items-center gap-4 text-white">
@@ -119,28 +117,34 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Menú desplegable para pantallas pequeñas */}
-      {isMenuOpen && (
-        <div className="lg:hidden bg-gray-900 text-white py-4">
-          {sections.map((section) => (
-            <Link key={section.label} href={section.path}>
-              <div
-                onClick={() => {
-                  setSelectedSection(section.label);
-                  setIsMenuOpen(false);
-                }}
-                className={`p-3 transition-colors ${selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
-                  }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Image src={section.icon} alt={section.label} width={30} height={30} />
-                  <span>{section.label}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {
+        sesion &&
+        <>
+          {/* Menú desplegable para pantallas pequeñas */}
+          {isMenuOpen && (
+            <div className="lg:hidden bg-gray-900 text-white py-4">
+              {filteredSections.map((section) => (
+                <Link key={section.label} href={section.path}>
+                  <div
+                    onClick={() => {
+                      setSelectedSection(section.label);
+                      setIsMenuOpen(false);
+                    }}
+                    className={`p-3 transition-colors ${selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Image src={section.icon} alt={section.label} width={30} height={30} />
+                      <span>{section.label}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+
+      }
     </nav>
   );
 };
