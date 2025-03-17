@@ -5,7 +5,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
-import { useOrderContext } from '../../app/context/order.context';
+// import { useOrderContext } from '../../app/context/order.context';
 import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
@@ -20,7 +20,7 @@ const TableCard: React.FC<MesaCardProps> = ({
     closed: "#21b492",
   };
   const { selectedSala, setSelectedMesa } = useRoomContext();
-  const borderColor = mesaColors[mesa.state] || mesaColors.closed;
+  const borderColor = mesaColors[mesa.state ?? 'closed'];
   const { userRoleFromToken } = useAuth();
   const [role, setRole] = useState<string | null>(null);
 

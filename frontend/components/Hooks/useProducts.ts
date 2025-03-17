@@ -6,7 +6,6 @@ import { URI_PRODUCT } from "../URI/URI";
 import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
 import { useAuth } from "@/app/context/authContext";
-import { Ingredient } from '../../../backend/src/Ingredient/ingredient.entity';
 
 export const useProductos = () => {
   const { getAccessToken } = useAuth();

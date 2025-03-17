@@ -112,13 +112,41 @@ const ProductsCategory: React.FC = () => {
   };
 
   // Crear categoría
+  // const handleCreate = async () => {
+  //   try {
+  //     const response = await fetch(URI_CATEGORY, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ name: nombre }),
+  //     });
+  //     const newCategory = await response.json();
+  //     addCategory(newCategory);
+  //     Swal.fire("Éxito", "Categoría creada correctamente.", "success");
+  //     handleCloseModal();
+  //   } catch (error) {
+  //     Swal.fire("Error", "No se pudo crear la categoría.", "error");
+  //     console.error(error);
+  //   }
+  // };
+
+
   const handleCreate = async () => {
     try {
+      const token = localStorage.getItem("token"); // Obtiene el token del almacenamiento local
+  
       const response = await fetch(URI_CATEGORY, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Agregar el token aquí
+        },
         body: JSON.stringify({ name: nombre }),
       });
+  
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+  
       const newCategory = await response.json();
       addCategory(newCategory);
       Swal.fire("Éxito", "Categoría creada correctamente.", "success");
@@ -128,6 +156,8 @@ const ProductsCategory: React.FC = () => {
       console.error(error);
     }
   };
+  
+
 
   // Editar categoría
   const handleEdit = async () => {

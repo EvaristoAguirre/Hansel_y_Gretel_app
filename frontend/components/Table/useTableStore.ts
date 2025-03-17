@@ -82,7 +82,7 @@
 
 import { create } from "zustand";
 import { TableState } from "../Enums/Enums";
-import { ISala } from "../Interfaces/Cafe_interfaces";
+import { IOrder, ISala } from "../Interfaces/Cafe_interfaces";
 import { io } from "socket.io-client";
 
 export interface TableCreated {
@@ -92,7 +92,8 @@ export interface TableCreated {
   number: number;
   state: TableState;
   room: ISala;
-  orders: string[];
+  // orders: string[];
+  orders: IOrder[];
 }
 
 interface TableStateZustand {

@@ -29,7 +29,7 @@ import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
-import { Ingredient } from '../../../../backend/src/Ingredient/ingredient.entity';
+// import { Ingredient } from '../../../../backend/src/Ingredient/ingredient.entity';
 
 interface IngredientDialogProps {
   open: boolean;
