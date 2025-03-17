@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ICategory } from "../Interfaces/ICategories";
+import { ICategory } from "../../Interfaces/ICategories";
 
 interface CategoryState {
   categories: ICategory[];

@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/app/context/authContext";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";

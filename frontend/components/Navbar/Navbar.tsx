@@ -59,7 +59,7 @@ const Navbar = () => {
               <div
                 onClick={() => setSelectedSection(section.label)}
                 className={`relative group cursor-pointer p-3 transition-colors 
-                ${selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
+                ${selectedSection === section.label ? "bg-[#856D5E] rounded-t-md" : "bg-transparent"
                   }`}
               >
                 <Image

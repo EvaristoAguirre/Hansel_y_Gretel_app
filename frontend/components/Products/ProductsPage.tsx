@@ -5,8 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/api/categories";
 import { useProductos } from "@/components/Hooks/useProducts";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
-import CategoriasProductos from "@/components/Categories/ProductsCategory/ProductsCategory";
+import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
 import { Tab } from "../Enums/view-products";
@@ -15,6 +14,7 @@ import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
 import { useAuth } from "@/app/context/authContext";
+import ProductsCategory from "./TabProductsCategory/ProductsCategory";
 
 
 const ProductsPage: React.FC = () => {
@@ -94,7 +94,7 @@ const ProductsPage: React.FC = () => {
             onClearSelectedCategory={clearSelectedCategory}
           />
         }
-        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriasProductos />}
+        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
         {selectedTab === Tab.CONTROL_DE_STOCK && (
           <Box flex={1} overflow="auto">
             <StockControl
