@@ -9,3 +9,8 @@ export enum Categoria {
   PRODUCTOS = 'productos',
   INGREDIENTES = 'ingredientes',
 }
+
+export enum StockModalType {
+  INGREDIENT = 'ingredient',
+  PRODUCT = 'product',
+}

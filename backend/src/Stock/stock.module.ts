@@ -13,6 +13,7 @@ import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
+import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UserModule } from 'src/User/user.module';
       Ingredient,
       Category,
       UnitOfMeasure,
+      PromotionProduct,
     ]),
     forwardRef(() => CategoryModule),
     UserModule,

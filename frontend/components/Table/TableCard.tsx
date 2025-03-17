@@ -1,11 +1,11 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { MesaCardProps } from "../Interfaces/Cafe_interfaces";
+import { MesaCardProps, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
-// import { useOrderContext } from '../../app/context/order.context';
 import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
@@ -19,14 +19,21 @@ const TableCard: React.FC<MesaCardProps> = ({
     pending_payment: "#f9b32d",
     closed: "#21b492",
   };
-  const { selectedSala, setSelectedMesa } = useRoomContext();
-  const borderColor = mesaColors[mesa.state ?? 'closed'];
+  const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
+  const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
   const { userRoleFromToken } = useAuth();
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     setRole(userRoleFromToken());
   }, []);
+
+  const handleClickMesa = (table: MesaInterface) => {
+    const isTheSameTable: boolean = table?.id === selectedMesa?.id;
+    return selectedMesa && isTheSameTable ? handleSelectMesa(null) : handleSelectMesa(table);
+  };
+
+
 
   return (
     <div
@@ -45,7 +52,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         transition: "background-color 0.3s ease",
         position: "relative",
       }}
-      onClick={() => setSelectedMesa(mesa)}
+      onClick={() => handleClickMesa(mesa)}
     >
       {/* Indicador de estado */}
       <div
@@ -81,8 +88,12 @@ const TableCard: React.FC<MesaCardProps> = ({
       {/* Botones */}
       <div style={{ display: "flex", justifyContent: "center", marginTop: "0.5rem" }}>
         <Tooltip title="Ver detalles" arrow>
-          <Button sx={{ minWidth: "2.5rem", color: "#bab6b6" }}>
-            <VisibilityIcon />
+          <Button
+            sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
+            onClick={() => handleClickMesa(mesa)} >
+            {
+              selectedMesa?.id === mesa.id ? <VisibilityOffIcon /> : <VisibilityIcon />
+            }
           </Button>
         </Tooltip>
         {

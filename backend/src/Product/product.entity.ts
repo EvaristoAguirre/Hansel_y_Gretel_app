@@ -14,6 +14,7 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
+import { PromotionProduct } from './promotionProducts.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -46,6 +47,9 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'enum', enum: ['product', 'promotion'] })
+  type: 'product' | 'promotion';
+
   // ---------       Relaciones   -----------
 
   @ManyToMany(() => Category, (category) => category.products, {
@@ -70,4 +74,17 @@ export class Product {
     (productIngredient) => productIngredient.product,
   )
   productIngredients: ProductIngredient[];
+
+  @OneToMany(
+    () => PromotionProduct,
+    (promotionProduct) => promotionProduct.promotion,
+  )
+  promotionDetails: PromotionProduct[];
+
+  // Relación para productos que forman parte de una promoción
+  @OneToMany(
+    () => PromotionProduct,
+    (promotionProduct) => promotionProduct.product,
+  )
+  componentDetails: PromotionProduct[];
 }

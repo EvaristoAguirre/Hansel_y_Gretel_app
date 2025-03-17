@@ -13,7 +13,6 @@ import { TableService } from './table.service';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { Table } from './table.entity';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
-import { DeleteResult } from 'typeorm';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
@@ -40,7 +39,7 @@ export class TableController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  deleteTable(@Param('id') id: string): Promise<DeleteResult> {
+  deleteTable(@Param('id') id: string): Promise<string> {
     return this.tableService.deleteTable(id);
   }
 

@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
 import { IRowData } from "../Interfaces/IGridMUI";
+import { capitalizeFirstLetterTable } from "./CapitalizeFirstLetter";
 
 interface ProductTableProps {
   rows: IRowData[];
@@ -13,7 +14,7 @@ const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, height 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
       <DataGrid
-        rows={rows}
+        rows={capitalizeFirstLetterTable(rows, ['name', 'description'])}
         columns={columns}
         localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         initialState={{

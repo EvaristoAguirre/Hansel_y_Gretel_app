@@ -44,9 +44,8 @@ export class TableWSListener {
     this.broadcastService.broadcast("tableUpdated", event.table);
   }
 
-  @OnEvent("table.deleted")
-  handleTableDelete(event: { table: Table }) {
-    console.log("🔴 Evento recibido: table.deleted", event.table);
-    this.broadcastService.broadcast("tableDeleted", event.table);
+  @OnEvent('table.deleted')
+  handleTableDelete(event: { tableId: Table }) {
+    this.broadcastService.broadcast('tableDelete', event.tableId);
   }
 }

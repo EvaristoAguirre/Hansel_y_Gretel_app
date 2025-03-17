@@ -9,20 +9,22 @@ import {
   IsNumber,
   IsNotEmpty,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
 import { ProductIngredientDto } from './productIngredient.dto';
 import { Type } from 'class-transformer';
+import { PromotionProductDto } from './create-promotion.dto';
 
 export class CreateProductDto {
+  @IsNotEmpty({ message: 'El nombre del producto es obligatorio' })
+  @IsString()
+  name: string;
+
   @IsOptional()
   @IsInt()
   @Min(0)
   @Max(9999)
   code?: number;
-
-  @IsNotEmpty({ message: 'El nombre del producto es obligatorio' })
-  @IsString()
-  name: string;
 
   @IsOptional()
   @IsString()
@@ -52,4 +54,14 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductIngredientDto)
   ingredients?: ProductIngredientDto[];
+
+  @IsOptional()
+  @IsEnum(['product', 'promotion'])
+  type?: 'product' | 'promotion';
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => PromotionProductDto)
+  products?: PromotionProductDto[];
 }

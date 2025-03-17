@@ -3,30 +3,31 @@ import { Box, Typography, Card, CardContent, TextField, Autocomplete, Button } f
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
 import { useProductos } from "../../Hooks/useProducts";
-import { ProductsProps } from "@/components/Interfaces/IProducts";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { getProductsByCategory, searchProducts } from "@/api/products";
+import { searchProducts } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
+import { Iingredient } from "@/components/Interfaces/Ingredients";
+import { fetchIngredients } from "@/api/ingredients";
+import ModalStock from "./ModalStock";
+import { StockModalType } from "@/components/Enums/view-products";
 
-const ingredientes = [
-  { id: 1, nombre: "Leche", stock: "2 L", costo: "$100,00" },
-  { id: 2, nombre: "Harina", stock: "20 Kg", costo: "$100,00" },
-];
+
 
 const costos = ["Costo total productos", "Costo total ingredientes", "Costo total"];
 
 const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
-  const { products, setProducts, connectWebSocket } = useProductStore();
+  const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const [searchResults, setSearchResults] = useState(products); // Productos filtrados
-  const [selectedProducts, setSelectedProducts] = useState<any[]>([]); // Productos seleccionados
-  const { categories } = useCategoryStore();
   const { fetchAndSetProducts } = useProductos();
+  const [searchResults, setSearchResults] = useState(products); // Productos filtrados
+  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
   const [token, setToken] = useState<string | null>(null);
-
+  const [ingredients, setIngredients] = useState<Iingredient[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
 
   useEffect(() => {
@@ -50,29 +51,18 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
-    if (selectedCategoryId) {
-      const fetchProductsByCategory = async () => {
-        const response = await getProductsByCategory(selectedCategoryId, token);
+  }, []);
 
-        if (!response.ok) {
-          console.warn("No se encontraron productos o hubo un error:", response.message);
-          setProducts([]);
-          return;
-        }
 
-        const productsWithCategories = response.data.map((product: any) => ({
-          ...product,
-          categories: [selectedCategoryId],
-        }));
-
-        setProducts(productsWithCategories);
-      };
-
-      fetchProductsByCategory();
-    } else {
-      fetchAndSetProducts(token);
+  useEffect(() => {
+    if (token) {
+      fetchIngredients(token).then((data) => {
+        setIngredients(data);
+        console.log(data);
+      });
     }
-  }, [selectedCategoryId]);
+
+  }, [token]);
 
   // Manejar búsqueda de productos
   const handleSearch = async (value: string) => {
@@ -89,7 +79,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   };
 
   // Manejar selección de un producto
-  const handleSelectProduct = (product: any) => {
+  const handleSelectProduct = (product: ProductCreated) => {
     if (!selectedProducts.find((p) => p.id === product.id)) {
       setSelectedProducts([...selectedProducts, product]);
     }
@@ -107,20 +97,28 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   };
 
   //Edición de Producto
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (item: any, type: StockModalType) => {
+    setSelectedItem({ ...item, type });
+    setModalOpen(true);
   };
 
   const productColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
-    { field: "price", headerName: "Stock", flex: 1 },
+    { field: "stock", headerName: "Stock", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
 
   const ingredientColumns = [
-    { field: "nombre", headerName: "Nombre", flex: 1 },
+    { field: "name", headerName: "Nombre", flex: 1 },
     { field: "stock", headerName: "Stock", flex: 1 },
-    { field: "costo", headerName: "Costo", flex: 1 },
+    { field: "cost", headerName: "Costo", flex: 1 },
   ];
+
+  //limpiar el modal
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
 
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
@@ -192,7 +190,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             }}
             pageSizeOptions={[5, 7, 10]}
             sx={{ height: "100%" }}
-            onRowClick={(params) => handleEditProduct(params.row)}
+            onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
           />
         </Box>
 
@@ -202,7 +200,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             INGREDIENTES
           </Typography>
           <DataGrid
-            rows={ingredientes}
+            rows={ingredients}
             columns={ingredientColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
@@ -211,10 +209,20 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             }}
             pageSizeOptions={[5, 7, 10]}
             sx={{ height: "100%" }}
-            onRowClick={(params) => handleEditProduct(params.row)}
+            onRowClick={(params) => handleEditProduct(params.row, StockModalType.INGREDIENT)}
           />
         </Box>
       </Box>
+      {/* Modal para agregar stock */}
+      {selectedItem && (
+        <ModalStock
+          open={modalOpen}
+          selectedItem={selectedItem}
+          token={token}
+          onClose={() => setModalOpen(false)}
+          onSave={() => { handleCloseModal }}
+        />
+      )}
     </Box>
   );
 }
