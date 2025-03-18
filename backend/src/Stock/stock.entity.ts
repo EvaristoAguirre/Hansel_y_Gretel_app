@@ -1,9 +1,11 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { Product } from 'src/Product/product.entity';
 import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -19,10 +21,7 @@ export class Stock {
   @Column({ type: 'int', nullable: true })
   minimumStock: number;
 
-  //@Column()
-  //unitOfMeasureId: string;
-
-  // -------------- Relaciones -----------------//
+  //-----------------    Relaciones
 
   @OneToOne(() => Product, (product) => product.stock)
   @JoinColumn()
@@ -31,4 +30,8 @@ export class Stock {
   @OneToOne(() => Ingredient, (ingredient) => ingredient.stock)
   @JoinColumn()
   ingredient: Ingredient;
+
+  @ManyToOne(() => UnitOfMeasure, (unitOfMesure) => unitOfMesure.stock)
+  @JoinColumn({ name: 'unitOfMeasureId' })
+  unitOfMeasure: UnitOfMeasure;
 }
