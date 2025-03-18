@@ -3,7 +3,7 @@ import { useAuth } from "@/app/context/authContext";
 import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
+import { ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
@@ -63,7 +63,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | null | string[] | IingredientForm[]
+    value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]
   ) => setForm({ ...form, [field]: value });
 
   const columns = [
@@ -94,7 +94,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 cost: params.row.cost,
                 categories: params.row.categories,
                 ingredients: params.row.productIngredients,
-                products: params.row.products,
+                products: params.row.promotionDetails,
                 isActive: true,
               });
               setModalType("edit");

@@ -11,7 +11,7 @@ interface IProduct {
   type: TypeProduct | null;
   price: number | null;
   cost: number | null;
-  isActive: boolean;
+  isActive?: boolean;
 }
 export interface ProductForm extends IProduct {
   [key: string]: string | number | boolean | null | string[] | IingredientForm[] | ProductForPromo[];
@@ -21,7 +21,7 @@ export interface ProductForm extends IProduct {
   isActive: boolean;
 }
 
-interface ProductForPromo {
+export interface ProductForPromo {
   productId: string;
   quantity: number;
 }
@@ -35,20 +35,12 @@ export interface ProductTableProps {
 
 }
 
-export interface ProductCreated {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[];
-  id: string;
-  categories: string[];
-  code: number;
-  description: string;
-  isActive: boolean;
-  name: string;
-  price: number;
-  cost: number;
+export interface ProductCreated extends IProduct {
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[] | undefined;
+  quantity?: number | null;
   productIngredients: IingredientForm[] | null;
   promotionDetails: IPromotionDetails[];
 };
-
 
 
 interface IPromotionDetails {
@@ -91,6 +83,8 @@ export interface SelectedProductsI {
   quantity: number;
   unitaryPrice: number;
 };
+
+
 
 export interface IConfirmedProducts {
   id: string;

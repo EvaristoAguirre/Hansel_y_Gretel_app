@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip, DialogActions } from '@mui/material';
-import { ProductCreated, ProductForm } from '@/components/Interfaces/IProducts';
+import { ProductCreated, ProductForm, ProductForPromo } from '@/components/Interfaces/IProducts';
 import { ICategory } from '@/components/Interfaces/ICategories';
 import { TypeProduct } from '@/components/Enums/view-products';
 import * as path from 'path';
-import { getProductByCode } from '@/api/products';
+import { getProductByCode, searchProducts } from '@/api/products';
 import { useAuth } from '@/app/context/authContext';
 import { IingredientForm } from '@/components/Interfaces/Ingredients';
 import IngredientDialog from './IngredientDialog';
+import usePedido from '@/components/Hooks/usePedido';
+import AutoCompleteProduct from '@/components/Utils/Autocomplete';
+import InputsPromo from './InputsPromo';
 
 interface ProductCreationModalProps {
   open: boolean;
   form: ProductForm;
   categories: ICategory[];
   onClose: () => void;
-  onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[]) => void;
+  onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]) => void;
   onSave: () => void;
   modalType: "create" | "edit";
   products: ProductCreated[];
@@ -45,6 +48,8 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const [isFormValid, setIsFormValid] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+
+
   const { getAccessToken } = useAuth();
 
   useEffect(() => {
@@ -142,6 +147,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
     onChange("ingredients", ingredientsForm);
   };
+  const handleProductsPromo = (productsForm: ProductForPromo[]) => {
+    onChange("products", productsForm);
+  }
 
   const handleSaveProduct = () => {
     // const productData = {
@@ -151,6 +159,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     onSave();
     onClose();
   };
+
+
+
+
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -204,7 +216,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         <FormControl
           fullWidth
           margin="dense"
-          //  error={!!errors.categories} 
+          //  error={!!errors.categories}
           variant="outlined">
           <Autocomplete
             multiple
@@ -240,30 +252,24 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           />
         </FormControl>
 
-        {/* Campos específicos según el tipo */}
+        {/* Campos para ingredientes */}
         {tabValue === 1 && (
-          // <TextField
-          //   fullWidth
-          //   label="Ingredientes (IDs y cantidades)"
-          //   name="ingredients"
-          //   value={form.ingredients}
-          //   onChange={handleChange}
-          //   margin="normal"
-          //   helperText="Ej: id, cantidad, unidad"
-          // />
           <IngredientDialog onSave={handleSaveIngredients} form={form} />
         )}
 
+        {/* Campos para promos */}
         {tabValue === 2 && (
-          <TextField
-            fullWidth
-            label="Productos (IDs y cantidades)"
-            name="products"
-            value={form.products}
-            onChange={handleChange}
-            margin="normal"
-            helperText="Ej: id, cantidad"
-          />
+          // <TextField
+          //   fullWidth
+          //   label="Productos (IDs y cantidades)"
+          //   name="products"
+          //   value={form.products}
+          //   onChange={handleChange}
+          //   margin="normal"
+          //   helperText="Ej: id, cantidad"
+          // />
+          <InputsPromo onSave={handleProductsPromo} form={form} />
+
         )}
 
         <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
