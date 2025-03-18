@@ -117,8 +117,12 @@ const ProductsCategory: React.FC = () => {
     try {
       const response = await fetch(URI_CATEGORY, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAccessToken()}`
+        },
         body: JSON.stringify({ name: nombre }),
+
       });
       const newCategory = await response.json();
       addCategory(newCategory);
@@ -137,7 +141,10 @@ const ProductsCategory: React.FC = () => {
     try {
       const response = await fetch(`${URI_CATEGORY}/${selectedCategoryId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAccessToken()}`
+        },
         body: JSON.stringify({ name: nombre }),
       });
       const updatedCategory = await response.json();
@@ -163,7 +170,13 @@ const ProductsCategory: React.FC = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_CATEGORY}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_CATEGORY}/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${getAccessToken()}`,
+          }
+        });
         removeCategory(id);
         Swal.fire("Eliminado", "Categoría eliminada correctamente.", "success");
       } catch (error) {

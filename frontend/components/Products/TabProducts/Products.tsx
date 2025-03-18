@@ -11,6 +11,7 @@ import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
+import ProductCreationModal from "./ProductCreationModal";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -88,10 +89,12 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 code: params.row.code,
                 name: params.row.name,
                 description: params.row.description,
+                type: params.row.type,
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
                 ingredients: params.row.productIngredients,
+                products: params.row.products,
                 isActive: true,
               });
               setModalType("edit");
@@ -130,15 +133,25 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
       {/* Product Dialog */}
       {modalOpen && (
-        <ProductDialog
-          open={modalOpen}
+        // <ProductDialog
+        //   open={modalOpen}
+        //   modalType={modalType}
+        //   form={form}
+        //   categories={categories}
+        //   products={products}
+        //   onChange={handleChangeProductInfo}
+        //   onClose={handleCloseModal}
+        //   onSave={handleSave}
+        // />
+        <ProductCreationModal
           modalType={modalType}
           form={form}
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onChange={handleChangeProductInfo}
+          onSave={handleSave}
           categories={categories}
           products={products}
-          onChange={handleChangeProductInfo}
-          onClose={handleCloseModal}
-          onSave={handleSave}
         />
       )}
     </Box>

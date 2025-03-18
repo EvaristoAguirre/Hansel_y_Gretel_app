@@ -14,3 +14,8 @@ export enum StockModalType {
   INGREDIENT = 'ingredient',
   PRODUCT = 'product',
 }
+
+export enum TypeProduct {
+  PRODUCT = 'product',
+  PROMO = 'promo',
+}
