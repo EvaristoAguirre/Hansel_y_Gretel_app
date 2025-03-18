@@ -68,4 +68,12 @@ export class IngredientService {
       limitNumber,
     );
   }
+
+  async convertUnit(fromUnit: string, toUnit: string, quantity: number) {
+    return await this.ingredientRepository.convertUnit(
+      fromUnit,
+      toUnit,
+      quantity,
+    );
+  }
 }

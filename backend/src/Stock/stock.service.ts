@@ -30,4 +30,16 @@ export class StockService {
   ): Promise<Stock> {
     return await this.stockRepository.updateStock(id, updateStockDto);
   }
+
+  async deductStock(
+    productId: string,
+    quantity: number,
+    unitOfMeasureId: string,
+  ) {
+    return await this.stockRepository.deductStock(
+      productId,
+      quantity,
+      unitOfMeasureId,
+    );
+  }
 }

@@ -56,6 +56,8 @@ export class ProductRepository {
           'productIngredients.unitOfMeasure',
           'promotionDetails',
           'promotionDetails.product',
+          'stock',
+          'stock.unitOfMeasure',
         ],
       });
     } catch (error) {
@@ -138,6 +140,8 @@ export class ProductRepository {
         .leftJoinAndSelect('productIngredients.unitOfMeasure', 'unitOfMeasure')
         .leftJoinAndSelect('product.promotionDetails', 'promotionDetails')
         .leftJoinAndSelect('promotionDetails.product', 'promotionProduct')
+        .leftJoinAndSelect('product.stock', 'stock')
+        .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasureStock')
         .where((qb) => {
           const subQuery = qb
             .subQuery()
@@ -330,6 +334,8 @@ export class ProductRepository {
           'productIngredients.unitOfMeasure',
           'promotionDetails',
           'promotionDetails.product',
+          'stock',
+          'stock.unitOfMeasure',
         ],
         skip: offset,
         take: limit,
@@ -398,7 +404,13 @@ export class ProductRepository {
 
     const promotionWithDetails = await queryRunner.manager.findOne(Product, {
       where: { id: savedPromotion.id },
-      relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
+      relations: [
+        'categories',
+        'promotionDetails',
+        'promotionDetails.product',
+        'stock',
+        'stock.unitOfMeasure',
+      ],
     });
 
     if (!promotionWithDetails) {
@@ -474,6 +486,8 @@ export class ProductRepository {
         'productIngredients',
         'productIngredients.ingredient',
         'productIngredients.unitOfMeasure',
+        'stock',
+        'stock.unitOfMeasure',
       );
     }
 
@@ -524,6 +538,8 @@ export class ProductRepository {
         'productIngredients',
         'productIngredients.ingredient',
         'productIngredients.unitOfMeasure',
+        'stock',
+        'stock.unitOfMeasure',
       ],
     });
 
@@ -638,7 +654,13 @@ export class ProductRepository {
 
     const promotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true },
-      relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
+      relations: [
+        'categories',
+        'promotionDetails',
+        'promotionDetails.product',
+        'stock',
+        'stock.unitOfMeasure',
+      ],
     });
     if (!promotion) {
       throw new NotFoundException(`Promotion with ID: ${id} not found`);
@@ -718,7 +740,13 @@ export class ProductRepository {
     await queryRunner.manager.save(promotion);
     const updatedPromotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true },
-      relations: ['categories', 'promotionDetails', 'promotionDetails.product'],
+      relations: [
+        'categories',
+        'promotionDetails',
+        'promotionDetails.product',
+        'stock',
+        'stock.unitOfMeasure',
+      ],
     });
     // const promotionDto = plainToInstance(ProductResponseDto, updatedPromotion, {
     //   excludeExtraneousValues: true,

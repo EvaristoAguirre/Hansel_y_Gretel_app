@@ -13,6 +13,7 @@ import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
+import { UnitConversion } from './unitConversion.entity';
 
 @Injectable()
 export class IngredientRepository {
@@ -21,6 +22,8 @@ export class IngredientRepository {
     private readonly ingredientRepository: Repository<Ingredient>,
     @InjectRepository(UnitOfMeasure)
     private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
+    @InjectRepository(UnitConversion)
+    private readonly unitConversionRepository: Repository<UnitConversion>,
   ) {}
 
   async getAllIngredients(page: number, limit: number): Promise<Ingredient[]> {
@@ -151,61 +154,167 @@ export class IngredientRepository {
     }
   }
 
-  // ---------------- Unit Of Mesure ---------- //
+  // ---------------- Unit Of Measure ---------- //
+  // async createUnitOfMeasure(
+  //   createData: CreateUnitOfMeasureDto,
+  // ): Promise<UnitOfMeasure> {
+  //   const { name, abbreviation, equivalenceToBaseUnit, baseUnitId } =
+  //     createData;
+
+  //   if (!name) {
+  //     throw new BadRequestException('Name must be provided');
+  //   }
+
+  //   const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
+  //     where: { name: name },
+  //   });
+
+  //   if (existingUnitOfMeasure) {
+  //     throw new ConflictException('Unit of measure name already exists');
+  //   }
+
+  //   if (abbreviation) {
+  //     const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
+  //       where: { abbreviation: abbreviation },
+  //     });
+  //     if (existingUnitOfMeasure) {
+  //       throw new ConflictException(
+  //         'Unit of measure abbreviation already exists',
+  //       );
+  //     }
+  //   }
+
+  //   if (equivalenceToBaseUnit && baseUnitId) {
+  //     const baseUnit = await this.unitOfMeasureRepository.findOne({
+  //       where: { id: baseUnitId },
+  //     });
+
+  //     if (!baseUnit) {
+  //       throw new BadRequestException('Base unit does not exist');
+  //     }
+  //   }
+
+  //   try {
+  //     const unitOfMeasure = this.unitOfMeasureRepository.create(createData);
+  //     return await this.unitOfMeasureRepository.save(unitOfMeasure);
+  //   } catch (error) {
+  //     if (
+  //       error instanceof BadRequestException ||
+  //       error instanceof ConflictException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException(
+  //       'Error creating the unit of measure',
+  //       error.message,
+  //     );
+  //   }
+  // }
+
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,
   ): Promise<UnitOfMeasure> {
-    const { name, abbreviation, equivalenceToBaseUnit, baseUnitId } =
-      createData;
+    const {
+      name,
+      abbreviation,
+      equivalenceToBaseUnit,
+      baseUnitId,
+      conversions,
+    } = createData;
 
+    // Validación del nombre
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
 
-    const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-      where: { name: name },
+    // Verificar si ya existe una unidad con el mismo nombre
+    const existingUnitByName = await this.unitOfMeasureRepository.findOne({
+      where: { name },
     });
 
-    if (existingUnitOfMeasure) {
+    if (existingUnitByName) {
       throw new ConflictException('Unit of measure name already exists');
     }
 
+    // Verificar si ya existe una unidad con la misma abreviatura
     if (abbreviation) {
-      const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-        where: { abbreviation: abbreviation },
-      });
-      if (existingUnitOfMeasure) {
+      const existingUnitByAbbreviation =
+        await this.unitOfMeasureRepository.findOne({
+          where: { abbreviation },
+        });
+
+      if (existingUnitByAbbreviation) {
         throw new ConflictException(
           'Unit of measure abbreviation already exists',
         );
       }
     }
 
-    if (equivalenceToBaseUnit && baseUnitId) {
-      const baseUnit = await this.unitOfMeasureRepository.findOne({
+    // Validación de equivalenceToBaseUnit y baseUnitId
+    if (equivalenceToBaseUnit && !baseUnitId) {
+      throw new BadRequestException(
+        'baseUnitId must be provided when equivalenceToBaseUnit is defined',
+      );
+    }
+
+    if (baseUnitId && !equivalenceToBaseUnit) {
+      throw new BadRequestException(
+        'equivalenceToBaseUnit must be provided when baseUnitId is defined',
+      );
+    }
+
+    // Validar que la unidad base exista y sea convencional
+    let baseUnit: UnitOfMeasure | null = null;
+    if (baseUnitId) {
+      baseUnit = await this.unitOfMeasureRepository.findOne({
         where: { id: baseUnitId },
       });
 
       if (!baseUnit) {
         throw new BadRequestException('Base unit does not exist');
       }
+
+      if (!baseUnit.isConventional) {
+        throw new BadRequestException('Base unit must be conventional');
+      }
     }
 
-    try {
-      const unitOfMeasure = this.unitOfMeasureRepository.create(createData);
-      return await this.unitOfMeasureRepository.save(unitOfMeasure);
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
+    // Crear la unidad de medida
+    const unitOfMeasure = this.unitOfMeasureRepository.create({
+      ...createData,
+      baseUnit, // Asignar la unidad base
+    });
+
+    // Guardar la unidad de medida
+    const savedUnitOfMeasure =
+      await this.unitOfMeasureRepository.save(unitOfMeasure);
+
+    // Crear las conversiones si se proporcionaron
+    if (conversions && conversions.length > 0) {
+      for (const conversion of conversions) {
+        const { toUnitId, conversionFactor } = conversion;
+
+        // Verificar que la unidad de destino exista
+        const toUnit = await this.unitOfMeasureRepository.findOne({
+          where: { id: toUnitId },
+        });
+
+        if (!toUnit) {
+          throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
+        }
+
+        // Crear la conversión
+        const unitConversion = this.unitConversionRepository.create({
+          fromUnit: savedUnitOfMeasure,
+          toUnit,
+          conversionFactor,
+        });
+
+        await this.unitConversionRepository.save(unitConversion);
       }
-      throw new InternalServerErrorException(
-        'Error creating the unit of measure',
-        error.message,
-      );
     }
+
+    return savedUnitOfMeasure;
   }
 
   async getAllUnitOfMeasure(
@@ -353,5 +462,52 @@ export class IngredientRepository {
         error.message,
       );
     }
+  }
+
+  async convertUnit(
+    fromUnitId: string,
+    toUnitId: string,
+    quantity: number,
+  ): Promise<number> {
+    if (fromUnitId === toUnitId) {
+      return quantity;
+    }
+
+    // Buscar una conversión directa en la tabla de conversiones
+    const directConversion = await this.unitConversionRepository.findOne({
+      where: { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
+    });
+
+    if (directConversion) {
+      return quantity * directConversion.conversionFactor;
+    }
+
+    // Si no hay conversión directa, usar la unidad base
+    const fromUnit = await this.unitOfMeasureRepository.findOne({
+      where: { id: fromUnitId },
+      relations: ['baseUnit'],
+    });
+
+    const toUnit = await this.unitOfMeasureRepository.findOne({
+      where: { id: toUnitId },
+      relations: ['baseUnit'],
+    });
+
+    if (!fromUnit || !toUnit) {
+      throw new NotFoundException('One or both units not found.');
+    }
+
+    // Convertir desde la unidad original a la unidad base
+    let convertedQuantity = quantity;
+    if (fromUnit.baseUnit && fromUnit.equivalenceToBaseUnit) {
+      convertedQuantity *= fromUnit.equivalenceToBaseUnit;
+    }
+
+    // Convertir desde la unidad base a la unidad destino
+    if (toUnit.baseUnit && toUnit.equivalenceToBaseUnit) {
+      convertedQuantity /= toUnit.equivalenceToBaseUnit;
+    }
+
+    return convertedQuantity;
   }
 }
