@@ -354,32 +354,55 @@ export class StockRepository {
           'stock.unitOfMeasure',
           'productIngredients',
           'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
         ],
       });
 
-      if (!product || !product.stock) {
-        throw new NotFoundException(
-          `Product with ID ${productId} not found or has no stock.`,
-        );
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${productId} not found.`);
       }
 
       if (product.type === 'product') {
-        // Si el producto es simple, descontar directamente del stock
-        const stockUnitId = product.stock.unitOfMeasure.id;
-        const quantityToDeduct = await this.ingredientService.convertUnit(
-          unitOfMeasureId,
-          stockUnitId,
-          quantity,
-        );
-
-        if (product.stock.quantityInStock < quantityToDeduct) {
-          throw new BadRequestException(
-            `Insufficient stock for product ${product.name}.`,
+        if (product.productIngredients.length === 0) {
+          // Si el producto es simple, descontar directamente del stock
+          if (!product.stock) {
+            throw new NotFoundException(
+              `Product with ID ${productId} has no stock.`,
+            );
+          }
+          const stockUnitId = product.stock.unitOfMeasure.id;
+          const quantityToDeduct = await this.ingredientService.convertUnit(
+            unitOfMeasureId,
+            stockUnitId,
+            quantity,
           );
-        }
 
-        product.stock.quantityInStock -= quantityToDeduct;
-        await this.stockRepository.save(product.stock);
+          if (product.stock.quantityInStock < quantityToDeduct) {
+            throw new BadRequestException(
+              `Insufficient stock for product ${product.name}.`,
+            );
+          }
+
+          product.stock.quantityInStock -= quantityToDeduct;
+          await this.stockRepository.save(product.stock);
+        }
+        // Si el producto está compuesto por ingredientes, descontar los ingredientes
+        if (
+          product.productIngredients &&
+          product.productIngredients.length > 0
+        ) {
+          console.log(
+            'productIngredients..........',
+            product.productIngredients,
+          );
+          for (const productIngredient of product.productIngredients) {
+            await this.deductIngredientStock(
+              productIngredient.ingredient.id,
+              productIngredient.quantityOfIngredient * quantity,
+              productIngredient.unitOfMeasure.id,
+            );
+          }
+        }
       } else if (product.type === 'promotion') {
         // Si el producto es una promoción, descontar los productos que la componen
         const promotionProducts = await this.promotionProductRepository.find({
@@ -392,17 +415,6 @@ export class StockRepository {
             promotionProduct.product.id,
             promotionProduct.quantity * quantity,
             unitOfMeasureId,
-          );
-        }
-      }
-
-      // Si el producto está compuesto por ingredientes, descontar los ingredientes
-      if (product.productIngredients && product.productIngredients.length > 0) {
-        for (const productIngredient of product.productIngredients) {
-          await this.deductIngredientStock(
-            productIngredient.ingredient.id,
-            productIngredient.quantityOfIngredient * quantity,
-            productIngredient.unitOfMeasure.id,
           );
         }
       }

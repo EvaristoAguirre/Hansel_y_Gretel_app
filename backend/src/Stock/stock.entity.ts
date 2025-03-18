@@ -15,10 +15,16 @@ export class Stock {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   quantityInStock: number;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
   minimumStock: number;
 
   //-----------------    Relaciones
