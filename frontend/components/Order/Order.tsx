@@ -187,7 +187,7 @@ const Order: React.FC<OrderProps> = ({
           </div>
           <div>
             {
-              selectedOrderByTable?.state === OrderState.PENDING_PAYMENT ? (
+              ((selectedOrderByTable?.state === OrderState.PENDING_PAYMENT) || (selectedOrderByTable?.state === OrderState.CLOSED)) ? (
                 null
               ) :
                 <Button
