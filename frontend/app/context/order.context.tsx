@@ -57,9 +57,10 @@ export const useOrderContext = () => {
 
 const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { getAccessToken } = useAuth();
+
   const [token, setToken] = useState<string | null>(null);
   const { addOrder, updateOrder, removeOrder } = useOrderStore();
-  const { selectedMesa, selectedSala, handleSelectMesa } = useRoomContext();
+  const { selectedMesa, handleSelectMesa } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
   const [confirmedProducts, setConfirmedProducts] = useState<SelectedProductsI[]>([]);
 
@@ -88,10 +89,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
+
     if (selectedMesa?.state === TableState.AVAILABLE) {
       return setSelectedOrderByTable(null);
     }
     if (selectedMesa && selectedMesa.orders) {
+
       try {
         if (selectedMesa?.orders.length > 0) {
           const response = await fetch(`${URI_ORDER}/${selectedMesa.orders[0]}`, {
@@ -109,9 +112,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
           handleSetProductsByOrder(productsByOrder);
 
         }
-        // else {
-        //   setSelectedOrderByTable(null);
-        // }
       } catch (error) {
         console.error("Error al obtener el pedido:", error);
       }
@@ -124,12 +124,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   }, [fetchOrderBySelectedTable])
 
   const handleSelectedProducts = (product: ProductResponse) => {
-    const foundProduct = confirmedProducts.find(
+    const foundProduct = selectedProducts.find(
       (p: any) => p.productId === product.id
     );
 
     if (foundProduct) {
-      const updatedDetails = confirmedProducts.map((p) =>
+      const updatedDetails = selectedProducts.map((p) =>
         p.productId === product.id ? { ...p, quantity: p.quantity + 1 } : p
       );
       setSelectedProducts(updatedDetails);
@@ -174,8 +174,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     setSelectedProducts([]);
   };
 
-  // const handleConfirmedProducts = () => {};
-
   const deleteConfirmProduct = (id: string) => {
     setConfirmedProducts(
       confirmedProducts.filter((p: SelectedProductsI) => p.productId !== id)
@@ -213,6 +211,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
       const newOrder = await response.json();
 
       addOrder(newOrder);
+
       setSelectedOrderByTable(newOrder);
 
       const updatedTable = {
@@ -220,10 +219,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         room: selectedMesa.room,
         orders: [newOrder.id]
       };
-
       handleSelectMesa(updatedTable);
 
-      Swal.fire("Éxito", "Mesa abierta correctamente.", "success");
+
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");
     }
@@ -235,11 +233,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     numberCustomers: number,
     comment: string
   ) => {
+
     if (!id) {
-      Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
     }
-
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
@@ -265,8 +262,10 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
       const productsByOrder = updatedOrder.products
 
       handleSetProductsByOrder(productsByOrder);
-
       updateOrder(updatedOrder);
+      setSelectedOrderByTable(updatedOrder);
+
+      return updatedOrder;
 
     } catch (error) {
       console.error(error);
@@ -277,7 +276,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
   const handleDeleteOrder = async (id: string | null) => {
     if (!id) {
-      Swal.fire("Error", "ID del pedido no válido.", "error");
       return;
     };
 

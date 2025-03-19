@@ -145,8 +145,9 @@ const TableEditor = ({
                     handleCompleteStep();
                     handleNextStep();
                   } else {
-                    if (selectedMesa?.orders.length === 0) {
-                      handleEditOrder(selectedMesa.orders[0].id, selectedProducts, cantidadPersonas, comentario);
+                    if (selectedOrderByTable?.id) {
+
+                      handleEditOrder(selectedOrderByTable.id, selectedProducts, cantidadPersonas, comentario);
 
                       Swal.fire(
                         "Cambios Guardados",
