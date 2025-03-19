@@ -577,6 +577,8 @@ export class ProductRepository {
 
     Object.assign(product, otherAttributes);
 
+    product.cost = 0;
+
     if (categories) {
       if (categories.length > 0) {
         const categoryEntities = await queryRunner.manager.find(Category, {
@@ -662,6 +664,15 @@ export class ProductRepository {
       );
 
       product.productIngredients = updatedIngredients;
+
+      for (const ingredientDto of ingredients) {
+        const ingredient = await queryRunner.manager.findOne(Ingredient, {
+          where: { id: ingredientDto.ingredientId },
+        });
+        if (ingredient && ingredient.cost) {
+          product.cost += ingredient.cost * ingredientDto.quantityOfIngredient;
+        }
+      }
     }
 
     const updatedProduct = await queryRunner.manager.save(product);
@@ -695,6 +706,8 @@ export class ProductRepository {
     }
 
     Object.assign(promotion, otherAttributes);
+
+    promotion.cost = 0;
 
     if (categories) {
       if (categories.length > 0) {
@@ -764,7 +777,17 @@ export class ProductRepository {
       );
 
       promotion.promotionDetails = updatedProducts;
+
+      for (const productDto of products) {
+        const product = await queryRunner.manager.findOne(Product, {
+          where: { id: productDto.productId, isActive: true },
+        });
+        if (product && product.cost) {
+          promotion.cost += product.cost * productDto.quantity;
+        }
+      }
     }
+
     await queryRunner.manager.save(promotion);
     const updatedPromotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true },
