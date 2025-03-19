@@ -172,7 +172,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     <Modal open={open} onClose={onClose}>
       <Box sx={{ width: 600, bgcolor: 'background.paper', p: 4, mx: 'auto', mt: 5 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Producto final" />
+          <Tab label="Producto simple" />
           <Tab label="Producto con ingredientes" />
           <Tab label="Promo" />
         </Tabs>

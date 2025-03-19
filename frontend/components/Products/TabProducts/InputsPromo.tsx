@@ -37,6 +37,17 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
     }
   }, []);
 
+
+  // Auto-actualización: cada vez que cambie selectedProducts, actualizamos el formulario del padre.
+  useEffect(() => {
+    const productsForPromo: ProductForPromo[] = selectedProducts.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+    onSave(productsForPromo);
+  }, [selectedProducts]);
+
+
   const handleSearch = async (value: string) => {
     const token = getAccessToken();
     if (value.trim() && token) {
@@ -179,9 +190,6 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
               </IconButton>
             </ListItem>
           ))}
-          <Button onClick={handleSaveProducts} color="primary" disabled={selectedProducts.length === 0}>
-            Guardar
-          </Button>
         </List>
       ) : (
         <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem" }}>
