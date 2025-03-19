@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/app/context/authContext";
-import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
+
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
@@ -11,6 +11,7 @@ import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {

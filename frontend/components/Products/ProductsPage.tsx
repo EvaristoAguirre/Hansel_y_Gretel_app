@@ -5,7 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/api/categories";
 import { useProductos } from "@/components/Hooks/useProducts";
-import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
+import { useCategoryStore } from "../Categories/useCategoryStore";
 import Products from "./TabProducts/Products";
 import StockControl from "./TabControlStock/ControlStock";
 import { Tab } from "../Enums/view-products";

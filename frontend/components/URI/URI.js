@@ -34,8 +34,8 @@ export const URI_ORDER = "http://192.168.100.133:3000/order"
 
 //USERS
 
-export const URI_USER = "http://localhost:3000/user"
+export const URI_USER = "http://192.168.100.133:3000/user"
 
 //STOCK
 
-export const URI_STOCK = "http://localhost:3000/stock"
+export const URI_STOCK = "http://192.168.100.133:3000/stock"
