@@ -59,6 +59,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   }, [getAccessToken]);
 
 
+  useEffect(() => {
+    console.log("📝formulario", form);
+
+  })
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
     name: "Nombre",
@@ -259,15 +263,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
         {/* Campos para promos */}
         {tabValue === 2 && (
-          // <TextField
-          //   fullWidth
-          //   label="Productos (IDs y cantidades)"
-          //   name="products"
-          //   value={form.products}
-          //   onChange={handleChange}
-          //   margin="normal"
-          //   helperText="Ej: id, cantidad"
-          // />
           <InputsPromo onSave={handleProductsPromo} form={form} />
 
         )}
