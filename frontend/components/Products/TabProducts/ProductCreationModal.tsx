@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip, DialogActions } from '@mui/material';
+import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip } from '@mui/material';
 import { ProductCreated, ProductForm, ProductForPromo } from '@/components/Interfaces/IProducts';
 import { ICategory } from '@/components/Interfaces/ICategories';
-import { TypeProduct } from '@/components/Enums/view-products';
-import * as path from 'path';
-import { getProductByCode, searchProducts } from '@/api/products';
+import { FormType, TypeProduct } from '@/components/Enums/view-products';
+import { getProductByCode } from '@/api/products';
 import { useAuth } from '@/app/context/authContext';
 import { IingredientForm } from '@/components/Interfaces/Ingredients';
 import IngredientDialog from './IngredientDialog';
-import usePedido from '@/components/Hooks/usePedido';
-import AutoCompleteProduct from '@/components/Utils/Autocomplete';
 import InputsPromo from './InputsPromo';
 
 interface ProductCreationModalProps {
@@ -37,7 +34,17 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   modalType,
   products
 }) => {
-  const [tabValue, setTabValue] = useState(0);
+  /**
+ * Estado que almacena el valor actual de la pestaña seleccionada.
+ * Se inicializa en función del tipo de formulario y la modalidad de edición.
+ * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
+ *
+ * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
+ */
+  const [tabValue, setTabValue] = useState<number>(() => {
+    return modalType === FormType.EDIT && form.type === TypeProduct.PROMO ? 2 : 0;
+  });
+
   const [errors, setErrors] = useState<Errors>({
     code: "",
     name: "",
@@ -142,12 +149,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // const { name, value } = e.target;
-    // setFormData({ ...form, [name]: value });
-  };
-
-
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
     onChange("ingredients", ingredientsForm);
   };
@@ -156,17 +157,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   }
 
   const handleSaveProduct = () => {
-    // const productData = {
-    //   ...form,
-    //   ingredients: associatedIngredients,
-    // };
     onSave();
     onClose();
   };
-
-
-
-
 
   return (
     <Modal open={open} onClose={onClose}>

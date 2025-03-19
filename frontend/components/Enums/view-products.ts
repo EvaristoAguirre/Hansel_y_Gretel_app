@@ -19,3 +19,8 @@ export enum TypeProduct {
   PRODUCT = 'product',
   PROMO = 'promotion',
 }
+
+export enum FormType {
+  CREATE = 'create',
+  EDIT = 'edit'
+}

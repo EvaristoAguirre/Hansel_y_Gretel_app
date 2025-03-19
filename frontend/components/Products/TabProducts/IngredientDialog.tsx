@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
   DialogContent,
   TextField,
-  DialogActions,
   Button,
   FormControl,
   MenuItem,
@@ -15,13 +12,11 @@ import {
   IconButton,
   ListItemText,
   Tooltip,
-  PaperProps,
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import { fetchUnits } from "@/api/unitOfMeasure";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
@@ -29,7 +24,6 @@ import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
-import { Ingredient } from '../../../../backend/src/Ingredient/ingredient.entity';
 
 interface IngredientDialogProps {
   onSave: (ingredientsForm: IingredientForm[]) => void;
@@ -60,7 +54,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
         name: ingredient.ingredient.name,
         ingredientId: ingredient.ingredient.id,
-        quantityOfIngredient: ingredient.quantityOfIngredient,
+        quantityOfIngredient: Number(ingredient.quantityOfIngredient),
         unitOfMeasureId: ingredient.unitOfMeasure.id
       }))
       setSelectedIngredients(preparedIngredients);
@@ -77,6 +71,10 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
       !newIngredient.unitOfMeasureId
     );
   }, [newIngredient]);
+
+  useEffect(() => {
+    onSave(selectedIngredients);
+  }, [selectedIngredients]);
 
   const handleAddIngredient = () => {
     if (
@@ -280,18 +278,6 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
           ))}
         </List>
       </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            onSave(selectedIngredients);
-          }}
-          color="primary"
-          disabled={selectedIngredients.length === 0}
-        >
-          Guardar
-        </Button>
-      </DialogActions>
-
     </>
   );
 };
