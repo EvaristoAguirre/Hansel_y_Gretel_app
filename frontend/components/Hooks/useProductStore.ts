@@ -24,7 +24,9 @@ export const useProductStore = create<ProductState>((set) => ({
     const parsedProduct = products.map((product: any) => ({
       ...product,
       categories: parseCategories(product.categories)
+
     }));
+
 
     return set({ products: parsedProduct });
   },

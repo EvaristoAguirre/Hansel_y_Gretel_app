@@ -67,7 +67,7 @@ const Ingredients = () => {
     setFormOpen(true);
   }
   return (
-    <Box sx={{ m: 2 }}>
+    <Box sx={{ m: 2, minHeight: '100vh' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         {/* Botón para crear nuevo Ingrediente */}
         <Button

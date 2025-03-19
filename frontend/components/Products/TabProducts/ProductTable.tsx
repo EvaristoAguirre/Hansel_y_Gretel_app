@@ -73,7 +73,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       if (token) {
         console.log("Buscando productos... con token");
 
-        const results = await searchProducts(searchTerm, selectedCategoryId, token);
+        const results = await searchProducts(searchTerm, selectedCategoryId!, token);
         setSearchResults(results);
       }
     } else if (searchTerm.length === 0) {
