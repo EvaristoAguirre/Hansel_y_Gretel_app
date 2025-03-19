@@ -9,7 +9,6 @@ import Table from "../Table/Table";
 import { UserRole } from "../Enums/user";
 import { useAuth } from '../../app/context/authContext';
 import RoomModal from "./RoomModal";
-import Typography from "@mui/system/typography";
 
 const Rooms = () => {
   const {
@@ -17,7 +16,6 @@ const Rooms = () => {
     selectedSala,
     handleSelectSala,
     selectedMesa,
-    setSelectedMesa,
     view,
     modalOpen,
     setModalOpen,
@@ -47,13 +45,9 @@ const Rooms = () => {
       <AppBar
         position="sticky"
         sx={{
-          // "& .MuiTabs-root css-19dy00f-MuiTabs-root": {
-          //   height: "100%",
-          // },
           backgroundColor: "#f3d49ab8",
           color: "black",
           gap: 2,
-          // borderBottom: "2px solid #856D5E",
           boxShadow: "none",
           display: "flex",
           flexDirection: "row",
