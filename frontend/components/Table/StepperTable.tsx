@@ -13,7 +13,7 @@ import TableEditor from './TableEditor';
 import { TableState } from '../Enums/Enums';
 import OrderEditor from '../Order/OrderEditor';
 
-const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
+const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 
 interface Props {
   selectedMesa: MesaInterface;
