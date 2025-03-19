@@ -25,4 +25,4 @@ import { PromotionProduct } from './promotionProducts.entity';
   providers: [ProductService, ProductRepository, CategoryRepository],
   exports: [ProductService],
 })
-export class ProductModule { }
+export class ProductModule {}
