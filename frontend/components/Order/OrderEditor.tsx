@@ -54,7 +54,6 @@ const useOrderDetailsStore = ({
     handleEditOrder,
   } = useOrderContext();
 
-  console.log("selectedOrderByTable", selectedOrderByTable);
 
   const { getAccessToken } = useAuth();
 

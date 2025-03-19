@@ -12,6 +12,7 @@ import React, { useEffect, useState } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./ProductCreationModal";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
