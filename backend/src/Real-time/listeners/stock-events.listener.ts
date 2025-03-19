@@ -16,4 +16,9 @@ export class StockWSListener {
   handleUpdateStock(event: { stock: Stock }) {
     this.broadcastService.broadcast('stock.updated', event.stock);
   }
+
+  @OnEvent('deductStock')
+  handleDeductStock(event: { stock: Stock }) {
+    this.broadcastService.broadcast('stock.deducted', event.stock);
+  }
 }

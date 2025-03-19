@@ -474,6 +474,11 @@ export class ProductRepository {
           },
         );
 
+        if (ingredient.cost) {
+          savedProduct.cost +=
+            ingredient.cost * ingredientDto.quantityOfIngredient;
+        }
+
         return queryRunner.manager.save(productIngredient);
       });
 
@@ -507,20 +512,31 @@ export class ProductRepository {
     queryRunner: QueryRunner,
     productData: Partial<Product>,
   ): Promise<void> {
-    if (productData.code) {
-      const existingProductByCode = await queryRunner.manager.findOne(Product, {
-        where: { code: productData.code },
-      });
-      if (existingProductByCode) {
-        throw new ConflictException('Product code already exists');
+    try {
+      if (productData.code) {
+        const existingProductByCode = await queryRunner.manager.findOne(
+          Product,
+          {
+            where: { code: productData.code },
+          },
+        );
+        if (existingProductByCode) {
+          throw new ConflictException('Product code already exists');
+        }
       }
-    }
 
-    const existingProductByName = await queryRunner.manager.findOne(Product, {
-      where: { name: productData.name },
-    });
-    if (existingProductByName) {
-      throw new ConflictException('Product name already exists');
+      const existingProductByName = await queryRunner.manager.findOne(Product, {
+        where: { name: productData.name },
+      });
+      if (existingProductByName) {
+        throw new ConflictException('Product name already exists');
+      }
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Failed to check product uniqueness',
+        error,
+      );
     }
   }
 
@@ -748,11 +764,6 @@ export class ProductRepository {
         'stock.unitOfMeasure',
       ],
     });
-    // const promotionDto = plainToInstance(ProductResponseDto, updatedPromotion, {
-    //   excludeExtraneousValues: true,
-    // });
-
-    // return instanceToPlain(promotionDto) as ProductResponseDto;
     return updatedPromotion;
   }
 }
