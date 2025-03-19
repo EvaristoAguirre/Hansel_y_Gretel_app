@@ -78,31 +78,7 @@ const Rooms = () => {
             },
             "& .MuiTab-root": {
               fontWeight: "bold !important",
-              // width: "auto",
-              // flex: 1,
-              // height: "50px",
-              // display: "flex",
-              // flexDirection: "row",
-              // alignItems: "center",
-              // justifyContent: "flex-end",
-
-            },
-            "& .MuiTab-root.Mui-selected": {
-              // backgroundColor: "#D9CCBC !important",
-              // borderTopLeftRadius: "12px",
-              // borderTopRightRadius: "12px",
-              // borderLeft: "2px solid #856D5E",
-              // borderRight: "2px solid #856D5E",
-              // borderTop: "2px solid #856D5E",
-              // height: "50px",
-            },
-            // "& .MuiTabs-indicator": {
-            //   display: "none",
-            // },
-            // "& .MuiTabs-flexContainer": {
-            //   height: "100%",
-            //   position: "fixed",
-            // },
+            }
           }}
         >
           {Array.isArray(salas) &&
@@ -177,9 +153,7 @@ const Rooms = () => {
             </MenuItem>
             <MenuItem onClick={handleDeleteSala}>Borrar</MenuItem>
           </Menu>
-
         )
-
       }
 
       {/* Modal de sala */}

@@ -6,12 +6,12 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { MesaInterface } from '../Interfaces/Cafe_interfaces';
-import PedidoEditor from '../Order/OrderEditor';
 import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
 import { TableState } from '../Enums/Enums';
+import OrderEditor from '../Order/OrderEditor';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Confirmación', 'Pago'];
 
@@ -92,7 +92,7 @@ export const StepperTable: React.FC<Props> = (
       case 1:
         return selectedMesa.state === TableState.OPEN ? (
           selectedOrderByTable && (
-            <PedidoEditor
+            <OrderEditor
               handleNextStep={handleNextStep}
               handleCompleteStep={handleCompleteStep}
 
