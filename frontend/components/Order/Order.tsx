@@ -31,7 +31,7 @@ const Order: React.FC<OrderProps> = ({
     setConfirmedProducts,
     handleDeleteOrder
   } = useOrderContext();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
+  const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
@@ -60,13 +60,15 @@ const Order: React.FC<OrderProps> = ({
       const ordenPendingPay = await orderToPending(selectedOrderByTable.id, token);
 
       setSelectedOrderByTable(ordenPendingPay);
+      setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
     }
 
     const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT }, token);
     if (tableEdited) {
-      // setSelectedMesa(tableEdited);
+      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
       updateTable(tableEdited);
+
     }
     handleCompleteStep();
     handleNextStep();
@@ -143,9 +145,6 @@ const Order: React.FC<OrderProps> = ({
                         WebkitBoxOrient: "vertical",
                         WebkitLineClamp: 1,
                         overflow: "hidden",
-                        minWidth: "5rem",
-                        maxWidth: "5rem",
-
                       }}
                       primary={item.productName}
                     />
@@ -161,9 +160,6 @@ const Order: React.FC<OrderProps> = ({
                   >
                     {`$ ${item.unitaryPrice * item.quantity}`}
                   </Typography>
-                  {/* <IconButton onClick={() => deleteConfirmProduct(item.productId)}>
-                      <Delete />
-                    </IconButton> */}
                 </ListItem>
 
               ))}

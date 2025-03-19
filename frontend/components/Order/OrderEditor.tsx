@@ -31,7 +31,7 @@ interface Props {
   handleCompleteStep: () => void;
 
 }
-const useOrderDetailsStore = ({
+const OrderEditor = ({
   handleNextStep,
   handleCompleteStep
 }: Props) => {
@@ -405,7 +405,7 @@ const useOrderDetailsStore = ({
   );
 };
 
-export default useOrderDetailsStore;
+export default OrderEditor;
 function setInputValue(arg0: string) {
   throw new Error("Function not implemented.");
 }
