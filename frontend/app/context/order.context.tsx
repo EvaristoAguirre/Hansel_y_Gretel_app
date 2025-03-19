@@ -124,12 +124,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   }, [fetchOrderBySelectedTable])
 
   const handleSelectedProducts = (product: ProductResponse) => {
-    const foundProduct = confirmedProducts.find(
+    const foundProduct = selectedProducts.find(
       (p: any) => p.productId === product.id
     );
 
     if (foundProduct) {
-      const updatedDetails = confirmedProducts.map((p) =>
+      const updatedDetails = selectedProducts.map((p) =>
         p.productId === product.id ? { ...p, quantity: p.quantity + 1 } : p
       );
       setSelectedProducts(updatedDetails);
