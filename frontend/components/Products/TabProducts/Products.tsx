@@ -3,7 +3,7 @@ import { useAuth } from "@/app/context/authContext";
 
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { ProductForm, ProductsProps } from "@/components/Interfaces/IProducts";
+import { ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
@@ -11,7 +11,7 @@ import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import ProductCreationModal from "./ProductCreationModal";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -63,7 +63,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | null | string[] | IingredientForm[]
+    value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]
   ) => setForm({ ...form, [field]: value });
 
   const columns = [
@@ -89,10 +89,12 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 code: params.row.code,
                 name: params.row.name,
                 description: params.row.description,
+                type: params.row.type,
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
                 ingredients: params.row.productIngredients,
+                products: params.row.promotionDetails,
                 isActive: true,
               });
               setModalType("edit");
@@ -131,15 +133,25 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
       {/* Product Dialog */}
       {modalOpen && (
-        <ProductDialog
-          open={modalOpen}
+        // <ProductDialog
+        //   open={modalOpen}
+        //   modalType={modalType}
+        //   form={form}
+        //   categories={categories}
+        //   products={products}
+        //   onChange={handleChangeProductInfo}
+        //   onClose={handleCloseModal}
+        //   onSave={handleSave}
+        // />
+        <ProductCreationModal
           modalType={modalType}
           form={form}
+          open={modalOpen}
+          onClose={handleCloseModal}
+          onChange={handleChangeProductInfo}
+          onSave={handleSave}
           categories={categories}
           products={products}
-          onChange={handleChangeProductInfo}
-          onClose={handleCloseModal}
-          onSave={handleSave}
         />
       )}
     </Box>

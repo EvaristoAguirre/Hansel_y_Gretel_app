@@ -136,9 +136,10 @@ const ProductsCategory: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
+          "Authorization": `Bearer ${getAccessToken()}`
         },
         body: JSON.stringify({ name: nombre }),
+
       });
 
       if (!response.ok) {
@@ -164,7 +165,7 @@ const ProductsCategory: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
+          "Authorization": `Bearer ${getAccessToken()}`
         },
         body: JSON.stringify({ name: nombre }),
       });
@@ -195,8 +196,8 @@ const ProductsCategory: React.FC = () => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
+            "Authorization": `Bearer ${getAccessToken()}`,
+          }
         });
         removeCategory(id);
         Swal.fire("Eliminado", "Categoría eliminada correctamente.", "success");

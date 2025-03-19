@@ -16,4 +16,7 @@ export class CreateStockDto {
   @IsOptional()
   @IsString()
   ingredientId?: string;
+
+  @IsString()
+  unitOfMeasureId: string;
 }

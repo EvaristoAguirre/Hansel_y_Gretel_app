@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
   DialogContent,
   TextField,
-  DialogActions,
   Button,
   FormControl,
   MenuItem,
@@ -15,13 +12,11 @@ import {
   IconButton,
   ListItemText,
   Tooltip,
-  PaperProps,
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import { fetchUnits } from "@/api/unitOfMeasure";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
@@ -29,16 +24,13 @@ import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
-// import { Ingredient } from '../../../../backend/src/Ingredient/ingredient.entity';
 
 interface IngredientDialogProps {
-  open: boolean;
-  onClose: () => void;
   onSave: (ingredientsForm: IingredientForm[]) => void;
   form: ProductForm;
 }
 
-const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSave, form }) => {
+const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => {
   const { getAccessToken } = useAuth();
   const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
@@ -62,7 +54,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
         name: ingredient.ingredient.name,
         ingredientId: ingredient.ingredient.id,
-        quantityOfIngredient: ingredient.quantityOfIngredient,
+        quantityOfIngredient: Number(ingredient.quantityOfIngredient),
         unitOfMeasureId: ingredient.unitOfMeasure.id
       }))
       setSelectedIngredients(preparedIngredients);
@@ -79,6 +71,10 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
       !newIngredient.unitOfMeasureId
     );
   }, [newIngredient]);
+
+  useEffect(() => {
+    onSave(selectedIngredients);
+  }, [selectedIngredients]);
 
   const handleAddIngredient = () => {
     if (
@@ -127,10 +123,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
   };
 
   return (
-    <Dialog open={open} onClose={onClose}  >
-      <DialogTitle
-        sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}
-      >Asociar Ingredientes</DialogTitle>
+    <>
       <DialogContent>
         {/* Sección para agregar un nuevo ingrediente */}
         <FormControl margin="dense"
@@ -285,22 +278,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ open, onClose, onSa
           ))}
         </List>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="error">
-          Cancelar
-        </Button>
-        <Button
-          onClick={() => {
-            onSave(selectedIngredients);
-            onClose();
-          }}
-          color="primary"
-          disabled={selectedIngredients.length === 0}
-        >
-          Guardar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </>
   );
 };
 

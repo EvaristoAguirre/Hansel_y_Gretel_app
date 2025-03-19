@@ -18,4 +18,8 @@ export class UpdateStockDto {
   @IsOptional()
   @IsString()
   ingredientId?: string;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasureId?: string;
 }

@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { Ingredient } from './ingredient.entity';
 import { ProductIngredient } from './ingredientProduct.entity';
+import { Stock } from 'src/Stock/stock.entity';
+import { UnitConversion } from './unitConversion.entity';
 
 @Entity({ name: 'units_of_measure' })
 export class UnitOfMeasure {
@@ -45,4 +47,13 @@ export class UnitOfMeasure {
     (productIngredient) => productIngredient.unitOfMeasure,
   )
   productIngredients: ProductIngredient[];
+
+  @OneToMany(() => Stock, (stock) => stock.unitOfMeasure)
+  stock: Stock[];
+
+  @OneToMany(() => UnitConversion, (conversion) => conversion.fromUnit)
+  fromConversions: UnitConversion[];
+
+  @OneToMany(() => UnitConversion, (conversion) => conversion.toUnit)
+  toConversions: UnitConversion[];
 }

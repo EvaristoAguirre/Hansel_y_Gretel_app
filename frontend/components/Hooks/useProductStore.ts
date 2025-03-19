@@ -147,6 +147,8 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct = {
         ...product,
         categories: parseCategories(product.categories),
+        productIngredients: product.productIngredients
+        
       };
       return set((state) => ({ products: [...state.products, parsedProduct] }));
     },
