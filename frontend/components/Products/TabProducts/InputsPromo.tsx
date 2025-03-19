@@ -14,12 +14,15 @@ interface InputsPromoProps {
 
 const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
   const { getAccessToken } = useAuth();
-  // Estado único para los productos seleccionados (fuente de verdad)
+
+  // Estado único para los productos seleccionados
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
+
   // Control de la edición: índice del producto en edición y su cantidad
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editQuantity, setEditQuantity] = useState<number>(1);
-  // 
+
+  // Resultado del buscador de productos
   const [searchProductsResults, setSearchProductsResults] = useState<ProductCreated[]>([]);
 
   useEffect(() => {
@@ -42,8 +45,13 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
     }
   };
 
+  /**
+   * Agrega un producto seleccionado al estado `selectedProducts`, pero solo si no está ya incluido.
+   * Si el producto es nuevo, se agrega con una cantidad de 1 y su precio unitario.
+   *
+   * @param {ProductCreated} product - El producto a agregar
+   */
   const handleSelectProduct = (product: ProductCreated) => {
-    // Evitamos duplicados
     if (selectedProducts.some((p) => p.productId === product.id)) return;
     setSelectedProducts((prev) => [
       ...prev,
@@ -61,6 +69,12 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
     setEditQuantity(selectedProducts[index].quantity);
   };
 
+  /**
+   * Guarda los cambios realizados en la edición de un producto.
+   * Actualiza la cantidad del producto en la lista de productos seleccionados.
+   *
+   * @notes Solo se ejecuta si hay un producto en edición (editIndex !== null)
+   */
   const handleSaveEdit = () => {
     if (editIndex !== null) {
       const updatedProducts = [...selectedProducts];
@@ -74,15 +88,24 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
     setEditIndex(null);
   };
 
+
+  /**
+   * Elimina un producto de la lista de productos seleccionados.
+   * Si el producto eliminado estaba siendo editado, se cancela la edición.
+   *
+   * @param {string} productId - El ID del producto a eliminar
+   */
   const handleDelete = (productId: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== productId));
-    // Si se estaba editando el producto eliminado, cancelamos la edición
     if (editIndex !== null && selectedProducts[editIndex]?.productId === productId) {
       setEditIndex(null);
     }
   };
 
-  // Al guardar, transformamos selectedProducts al formato que espera el backend
+  /**
+    Al guardar, transformamos selectedProducts al formato que espera el backend
+   * 
+   */
   const handleSaveProducts = () => {
     const productsForPromo: ProductForPromo[] = selectedProducts.map((item) => ({
       productId: item.productId,
