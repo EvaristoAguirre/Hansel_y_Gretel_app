@@ -38,8 +38,8 @@ const Order: React.FC<OrderProps> = ({
     setConfirmedProducts,
     handleDeleteOrder,
   } = useOrderContext();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
-  const { addOrder, connectWebSocket, orders, updateOrder } = useOrderStore();
+  const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
+  const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken } = useAuth();
@@ -68,6 +68,7 @@ const Order: React.FC<OrderProps> = ({
       );
 
       setSelectedOrderByTable(ordenPendingPay);
+      setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
       // updateOrder(ordenPendingPay);
     }
@@ -78,8 +79,9 @@ const Order: React.FC<OrderProps> = ({
       token
     );
     if (tableEdited) {
-      // setSelectedMesa(tableEdited);
+      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
       updateTable(tableEdited);
+
     }
     handleCompleteStep();
     handleNextStep();
@@ -161,8 +163,6 @@ const Order: React.FC<OrderProps> = ({
                         WebkitBoxOrient: "vertical",
                         WebkitLineClamp: 1,
                         overflow: "hidden",
-                        minWidth: "5rem",
-                        maxWidth: "5rem",
                       }}
                       primary={item.productName}
                     />
@@ -178,9 +178,6 @@ const Order: React.FC<OrderProps> = ({
                   >
                     {`$ ${item.unitaryPrice * item.quantity}`}
                   </Typography>
-                  {/* <IconButton onClick={() => deleteConfirmProduct(item.productId)}>
-                      <Delete />
-                    </IconButton> */}
                 </ListItem>
               ))}
             </List>
@@ -206,22 +203,24 @@ const Order: React.FC<OrderProps> = ({
             </Typography>
           </div>
           <div>
-            {selectedOrderByTable?.state ===
-            OrderState.PENDING_PAYMENT ? null : (
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{
-                  backgroundColor: "#7e9d8a",
-                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-                }}
-                onClick={() => {
-                  handlePayOrder(selectedMesa);
-                }}
-              >
-                <Print style={{ marginRight: "5px" }} /> Imprimir ticket
-              </Button>
-            )}
+            {
+              ((selectedOrderByTable?.state === OrderState.PENDING_PAYMENT) || (selectedOrderByTable?.state === OrderState.CLOSED)) ? (
+                null
+              ) :
+                <Button
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#7e9d8a",
+                    "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+                  }}
+                  onClick={() => {
+                    handlePayOrder(selectedMesa);
+                  }}
+                >
+                  <Print style={{ marginRight: "5px" }} /> Imprimir ticket
+                </Button>
+            }
 
             {confirmedProducts.length > 0 && (
               <Button

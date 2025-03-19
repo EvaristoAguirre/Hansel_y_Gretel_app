@@ -31,7 +31,7 @@ interface Props {
   handleNextStep: () => void;
   handleCompleteStep: () => void;
 }
-const useOrderDetailsStore = ({
+const OrderEditor = ({
   handleNextStep,
   handleCompleteStep,
 }: Props) => {
@@ -63,6 +63,8 @@ const useOrderDetailsStore = ({
   const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
+    console.log("Confirmando pedido", selectedProducts);
+
     if (selectedOrderByTable) {
       handleEditOrder(
         selectedOrderByTable.id,
@@ -71,6 +73,7 @@ const useOrderDetailsStore = ({
         selectedOrderByTable.comment
       );
       setSelectedProducts([]);
+      console.log("prod sele despues de supuestam limpiarse", selectedProducts);
       handleCompleteStep();
       handleNextStep();
     }
@@ -174,10 +177,7 @@ const useOrderDetailsStore = ({
                   products.filter(
                     (producto) =>
                       producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code
-                        .toString()
-                        .toLowerCase()
-                        .includes(searchTerm)
+                      producto.code?.toString().toLowerCase().includes(searchTerm)
                   )
                 );
               }}
@@ -351,7 +351,7 @@ const useOrderDetailsStore = ({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Tooltip title={item.productName} arrow>
+                    <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
                           color: "black",
@@ -360,6 +360,18 @@ const useOrderDetailsStore = ({
                           WebkitLineClamp: 1,
                           overflow: "hidden",
                           maxWidth: "5rem",
+                        }}
+                        primary={item.quantity}
+                      />
+                    </Tooltip>
+                    <Tooltip title={item.productName} arrow>
+                      <ListItemText
+                        style={{
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 1,
+                          overflow: "hidden",
                         }}
                         primary={item.productName}
                       />
@@ -434,7 +446,7 @@ const useOrderDetailsStore = ({
   );
 };
 
-export default useOrderDetailsStore;
+export default OrderEditor;
 function setInputValue(arg0: string) {
   throw new Error("Function not implemented.");
 }

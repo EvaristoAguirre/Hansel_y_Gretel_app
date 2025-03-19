@@ -9,7 +9,6 @@ import Table from "../Table/Table";
 import { UserRole } from "../Enums/user";
 import { useAuth } from '../../app/context/authContext';
 import RoomModal from "./RoomModal";
-import Typography from "@mui/system/typography";
 
 const Rooms = () => {
   const {
@@ -17,7 +16,6 @@ const Rooms = () => {
     selectedSala,
     handleSelectSala,
     selectedMesa,
-    setSelectedMesa,
     view,
     modalOpen,
     setModalOpen,
@@ -47,13 +45,9 @@ const Rooms = () => {
       <AppBar
         position="sticky"
         sx={{
-          // "& .MuiTabs-root css-19dy00f-MuiTabs-root": {
-          //   height: "100%",
-          // },
           backgroundColor: "#f3d49ab8",
           color: "black",
           gap: 2,
-          // borderBottom: "2px solid #856D5E",
           boxShadow: "none",
           display: "flex",
           flexDirection: "row",
@@ -78,31 +72,7 @@ const Rooms = () => {
             },
             "& .MuiTab-root": {
               fontWeight: "bold !important",
-              // width: "auto",
-              // flex: 1,
-              // height: "50px",
-              // display: "flex",
-              // flexDirection: "row",
-              // alignItems: "center",
-              // justifyContent: "flex-end",
-
-            },
-            "& .MuiTab-root.Mui-selected": {
-              // backgroundColor: "#D9CCBC !important",
-              // borderTopLeftRadius: "12px",
-              // borderTopRightRadius: "12px",
-              // borderLeft: "2px solid #856D5E",
-              // borderRight: "2px solid #856D5E",
-              // borderTop: "2px solid #856D5E",
-              // height: "50px",
-            },
-            // "& .MuiTabs-indicator": {
-            //   display: "none",
-            // },
-            // "& .MuiTabs-flexContainer": {
-            //   height: "100%",
-            //   position: "fixed",
-            // },
+            }
           }}
         >
           {Array.isArray(salas) &&
@@ -177,9 +147,7 @@ const Rooms = () => {
             </MenuItem>
             <MenuItem onClick={handleDeleteSala}>Borrar</MenuItem>
           </Menu>
-
         )
-
       }
 
       {/* Modal de sala */}

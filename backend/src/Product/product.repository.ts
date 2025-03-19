@@ -379,6 +379,7 @@ export class ProductRepository {
     const promotion = queryRunner.manager.create(Product, {
       name,
       code,
+      cost: 0,
       description,
       price,
       type: 'promotion',
@@ -386,20 +387,31 @@ export class ProductRepository {
     });
     const savedPromotion = await queryRunner.manager.save(promotion);
 
-    for (const productDto of products) {
-      const product = await queryRunner.manager.findOne(Product, {
-        where: { id: productDto.productId },
-      });
-
-      if (product) {
-        const promotionProduct = queryRunner.manager.create(PromotionProduct, {
-          promotion: savedPromotion,
-          product,
-          quantity: productDto.quantity,
+    if (products && products.length > 0) {
+      for (const productDto of products) {
+        const product = await queryRunner.manager.findOne(Product, {
+          where: { id: productDto.productId },
         });
 
-        await queryRunner.manager.save(promotionProduct);
+        if (product) {
+          const promotionProduct = queryRunner.manager.create(
+            PromotionProduct,
+            {
+              promotion: savedPromotion,
+              product,
+              quantity: productDto.quantity,
+            },
+          );
+
+          if (product.cost) {
+            savedPromotion.cost += product.cost * productDto.quantity;
+          }
+
+          await queryRunner.manager.save(promotionProduct);
+        }
       }
+
+      await queryRunner.manager.save(Product, savedPromotion);
     }
 
     const promotionWithDetails = await queryRunner.manager.findOne(Product, {
@@ -417,9 +429,7 @@ export class ProductRepository {
       throw new NotFoundException('Promotion not found after creation');
     }
 
-    const promotionCreated = promotionWithDetails;
-
-    return promotionCreated;
+    return promotionWithDetails;
   }
 
   private async createNormalProduct(
@@ -440,6 +450,7 @@ export class ProductRepository {
 
     const product = queryRunner.manager.create(Product, {
       ...productData,
+      cost: 0,
       categories: categoryEntities,
     });
     const savedProduct = await queryRunner.manager.save(product);
@@ -474,10 +485,16 @@ export class ProductRepository {
           },
         );
 
+        if (ingredient.cost) {
+          savedProduct.cost +=
+            ingredient.cost * ingredientDto.quantityOfIngredient;
+        }
+
         return queryRunner.manager.save(productIngredient);
       });
 
       await Promise.all(productIngredients);
+      await queryRunner.manager.save(Product, savedProduct);
     }
 
     const relationsToLoad = ['categories'];
@@ -507,20 +524,31 @@ export class ProductRepository {
     queryRunner: QueryRunner,
     productData: Partial<Product>,
   ): Promise<void> {
-    if (productData.code) {
-      const existingProductByCode = await queryRunner.manager.findOne(Product, {
-        where: { code: productData.code },
-      });
-      if (existingProductByCode) {
-        throw new ConflictException('Product code already exists');
+    try {
+      if (productData.code) {
+        const existingProductByCode = await queryRunner.manager.findOne(
+          Product,
+          {
+            where: { code: productData.code },
+          },
+        );
+        if (existingProductByCode) {
+          throw new ConflictException('Product code already exists');
+        }
       }
-    }
 
-    const existingProductByName = await queryRunner.manager.findOne(Product, {
-      where: { name: productData.name },
-    });
-    if (existingProductByName) {
-      throw new ConflictException('Product name already exists');
+      const existingProductByName = await queryRunner.manager.findOne(Product, {
+        where: { name: productData.name },
+      });
+      if (existingProductByName) {
+        throw new ConflictException('Product name already exists');
+      }
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Failed to check product uniqueness',
+        error,
+      );
     }
   }
 
@@ -548,6 +576,8 @@ export class ProductRepository {
     }
 
     Object.assign(product, otherAttributes);
+
+    product.cost = 0;
 
     if (categories) {
       if (categories.length > 0) {
@@ -634,6 +664,15 @@ export class ProductRepository {
       );
 
       product.productIngredients = updatedIngredients;
+
+      for (const ingredientDto of ingredients) {
+        const ingredient = await queryRunner.manager.findOne(Ingredient, {
+          where: { id: ingredientDto.ingredientId },
+        });
+        if (ingredient && ingredient.cost) {
+          product.cost += ingredient.cost * ingredientDto.quantityOfIngredient;
+        }
+      }
     }
 
     const updatedProduct = await queryRunner.manager.save(product);
@@ -667,6 +706,8 @@ export class ProductRepository {
     }
 
     Object.assign(promotion, otherAttributes);
+
+    promotion.cost = 0;
 
     if (categories) {
       if (categories.length > 0) {
@@ -736,7 +777,17 @@ export class ProductRepository {
       );
 
       promotion.promotionDetails = updatedProducts;
+
+      for (const productDto of products) {
+        const product = await queryRunner.manager.findOne(Product, {
+          where: { id: productDto.productId, isActive: true },
+        });
+        if (product && product.cost) {
+          promotion.cost += product.cost * productDto.quantity;
+        }
+      }
     }
+
     await queryRunner.manager.save(promotion);
     const updatedPromotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true },
@@ -748,11 +799,6 @@ export class ProductRepository {
         'stock.unitOfMeasure',
       ],
     });
-    // const promotionDto = plainToInstance(ProductResponseDto, updatedPromotion, {
-    //   excludeExtraneousValues: true,
-    // });
-
-    // return instanceToPlain(promotionDto) as ProductResponseDto;
     return updatedPromotion;
   }
 }

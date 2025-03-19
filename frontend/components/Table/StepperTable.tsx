@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Stepper from "@mui/material/Stepper";
@@ -15,6 +16,24 @@ import { TableState } from "../Enums/Enums";
 import { useOrderStore } from "../Order/useOrderStore";
 
 const steps = ["Info Mesa", "Editar Pedido", "Confirmación", "Pago"];
+=======
+import * as React from 'react';
+import Box from '@mui/material/Box';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepButton from '@mui/material/StepButton';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import { MesaInterface } from '../Interfaces/Cafe_interfaces';
+import Order from '../Order/Order';
+import { useOrderContext } from '../../app/context/order.context';
+import PayOrder from '../Order/Pay';
+import TableEditor from './TableEditor';
+import { TableState } from '../Enums/Enums';
+import OrderEditor from '../Order/OrderEditor';
+
+const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
+>>>>>>> master
 
 interface Props {
   selectedMesa: MesaInterface;
@@ -109,7 +128,7 @@ export const StepperTable: React.FC<Props> = ({
       case 1:
         return selectedMesa.state === TableState.OPEN ? (
           selectedOrderByTable && (
-            <PedidoEditor
+            <OrderEditor
               handleNextStep={handleNextStep}
               handleCompleteStep={handleCompleteStep}
             />

@@ -173,6 +173,7 @@ const TableEditor = ({
                     handleNextStep();
                    
                   } else {
+<<<<<<< HEAD
                     if (selectedMesa?.orders.length === 0) {
                       handleEditOrder(
                         selectedMesa.orders[0].id,
@@ -180,6 +181,11 @@ const TableEditor = ({
                         cantidadPersonas,
                         comentario
                       );
+=======
+                    if (selectedOrderByTable?.id) {
+
+                      handleEditOrder(selectedOrderByTable.id, selectedProducts, cantidadPersonas, comentario);
+>>>>>>> master
 
                       Swal.fire(
                         "Cambios Guardados",
