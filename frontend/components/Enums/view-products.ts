@@ -14,3 +14,13 @@ export enum StockModalType {
   INGREDIENT = 'ingredient',
   PRODUCT = 'product',
 }
+
+export enum TypeProduct {
+  PRODUCT = 'product',
+  PROMO = 'promotion',
+}
+
+export enum FormType {
+  CREATE = 'create',
+  EDIT = 'edit'
+}

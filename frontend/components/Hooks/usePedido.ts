@@ -1,47 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { URI_ORDER, URI_ORDER_OPEN } from "../URI/URI";
+import { URI_ORDER } from "../URI/URI";
 import { useOrderStore } from "../Order/useOrderStore";
 import Swal from "sweetalert2";
-import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
+// import { ICreacionPedido } from "../Interfaces/Pedido_interfaces";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useProductStore } from "./useProductStore";
-import { useTableStore } from "../Table/useTableStore";
-import { IOrderDetails } from "../Interfaces/IOrderDetails";
-import { SelectedProductsI } from '../Interfaces/IProducts';
-import { useOrderContext } from '../../app/context/order.context';
+// import { useTableStore } from "../Table/useTableStore";
+// import { IOrderDetails } from "../Interfaces/IOrderDetails";
+// import { SelectedProductsI } from '../Interfaces/IProducts';
+// import { useOrderContext } from '../../app/context/order.context';
 import { useAuth } from "@/app/context/authContext";
 
 const usePedido = () => {
   const {
     orders,
     setOrders,
-    addOrder,
-    removeOrder,
-    updateOrder,
+    // addOrder,
+    // removeOrder,
+    // updateOrder,
     connectWebSocket,
   } = useOrderStore();
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
-  const { tables, updateTable } = useTableStore();
+  // const { tables, updateTable } = useTableStore();
 
-  const { selectedProducts, confirmedProducts } = useOrderContext();
+  // const { selectedProducts, confirmedProducts } = useOrderContext();
 
-  const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
-    tableId: "",
-    numberCustomers: 0,
-    comment: "",
-    productsDetails: [],
-  });
+  // const [pedidoForm, setPedidoForm] = useState<ICreacionPedido>({
+  //   tableId: "",
+  //   numberCustomers: 0,
+  //   comment: "",
+  //   productsDetails: [],
+  // });
 
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  // const [mostrarEditorPedido, setMostrarEditorPedido] = useState(false);
+  // const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
-  const [orderDetails, setOrderDetails] = useState<{
-    productId: string;
-    quantity: number;
-  } | null>(null);
+  // const [orderDetails, setOrderDetails] = useState<{
+  //   productId: string;
+  //   quantity: number;
+  // } | null>(null);
   // const [productsDetails, setProductsDetails] = useState<ProductDetailsI[]>([]);
   // const [selectedProducts, setSelectedProducts] = React.useState<SelectedProductsI[]>([]);
 
@@ -278,8 +278,8 @@ const usePedido = () => {
   return {
     orders,
     orderId,
-    pedidoForm,
-    selectedMesa,
+    // pedidoForm,
+    // selectedMesa,
     productosDisponibles,
     // selectedProducts,
     // confirmedProducts,
@@ -292,7 +292,7 @@ const usePedido = () => {
     setProductosDisponibles,
     // setSelectedProducts,
     // setConfirmedProducts,
-    setMostrarEditorPedido,
+    // setMostrarEditorPedido,
     // removeOrder,
     // handleSeleccionarProducto,
     // handleAgregarProductosAlPedido,

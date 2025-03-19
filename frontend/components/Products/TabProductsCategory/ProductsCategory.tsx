@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useCategoryStore } from "../useCategoryStore";
 import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import {
@@ -18,6 +17,8 @@ import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 import { fetchCategories } from "@/api/categories";
 import { useAuth } from "@/app/context/authContext";
+import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
+import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 
 const ProductsCategory: React.FC = () => {
   const {
@@ -116,8 +117,12 @@ const ProductsCategory: React.FC = () => {
     try {
       const response = await fetch(URI_CATEGORY, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAccessToken()}`
+        },
         body: JSON.stringify({ name: nombre }),
+
       });
       const newCategory = await response.json();
       addCategory(newCategory);
@@ -136,7 +141,10 @@ const ProductsCategory: React.FC = () => {
     try {
       const response = await fetch(`${URI_CATEGORY}/${selectedCategoryId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAccessToken()}`
+        },
         body: JSON.stringify({ name: nombre }),
       });
       const updatedCategory = await response.json();
@@ -162,7 +170,13 @@ const ProductsCategory: React.FC = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_CATEGORY}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_CATEGORY}/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${getAccessToken()}`,
+          }
+        });
         removeCategory(id);
         Swal.fire("Eliminado", "Categoría eliminada correctamente.", "success");
       } catch (error) {
@@ -188,7 +202,7 @@ const ProductsCategory: React.FC = () => {
       {/* Tabla */}
       <Box sx={{ height: 450, ml: 2 }}>
         <DataGrid
-          rows={rows}
+          rows={capitalizeFirstLetterTable(rows, ['name'])}
           columns={columns}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         />
