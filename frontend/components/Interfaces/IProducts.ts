@@ -2,6 +2,7 @@ import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { TypeProduct } from "../Enums/view-products";
 import { ICategory } from './ICategories';
 import { IingredientForm, IingredientResponse } from "./Ingredients";
+import { IStockOfProduct } from "./IStock";
 
 interface IProduct {
   id: string;
@@ -36,10 +37,11 @@ export interface ProductTableProps {
 }
 
 export interface ProductCreated extends IProduct {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[] | undefined;
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[] | undefined | IStockOfProduct;
   quantity?: number | null;
   productIngredients: IingredientForm[] | null;
-  promotionDetails: IPromotionDetails[];
+  promotionDetails: IPromotionDetails[] | null;
+  stock: IStockOfProduct | null;
 };
 
 
