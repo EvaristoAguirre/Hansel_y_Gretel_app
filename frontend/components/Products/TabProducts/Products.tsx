@@ -132,16 +132,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
       {/* Product Dialog */}
       {modalOpen && (
-        // <ProductDialog
-        //   open={modalOpen}
-        //   modalType={modalType}
-        //   form={form}
-        //   categories={categories}
-        //   products={products}
-        //   onChange={handleChangeProductInfo}
-        //   onClose={handleCloseModal}
-        //   onSave={handleSave}
-        // />
         <ProductCreationModal
           modalType={modalType}
           form={form}

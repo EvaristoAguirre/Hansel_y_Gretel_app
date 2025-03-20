@@ -45,7 +45,6 @@ const UnitOfMeasure = () => {
                 abbreviation: params.row.abbreviation,
                 equivalenceToBaseUnit: params.row.equivalenceToBaseUnit,
                 baseUnitId: params.row.baseUnitId,
-
               });
               setFormTypeUnit(FormType.EDIT);
               setFormOpenUnit(true);
@@ -70,7 +69,7 @@ const UnitOfMeasure = () => {
     setFormOpenUnit(true);
   }
   return (
-    <Box sx={{ m: 2 }}>
+    <Box sx={{ m: 2, minHeight: '80vh' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         {/* Botón para crear una nueva unidad de medida */}
         <Button

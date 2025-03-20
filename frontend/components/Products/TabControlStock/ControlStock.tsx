@@ -12,6 +12,8 @@ import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { fetchIngredients } from "@/api/ingredients";
 import ModalStock from "./ModalStock";
 import { StockModalType } from "@/components/Enums/view-products";
+import FilterStock from "./filterStock";
+import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 
 
 
@@ -66,10 +68,10 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   const formattedProducts = (selectedProducts.length > 0 ? selectedProducts : searchResults).map((product) => ({
     id: product.id,
     name: product.name,
-    stock: product.stock?.quantityInStock || "N/A",
-    unit: product.stock?.unitOfMeasure?.name || "N/A",
-    min: product.stock?.minimumStock || "N/A",
-    cost: product.cost,
+    stock: product.stock?.quantityInStock || null,
+    unit: product.stock?.unitOfMeasure?.name || null,
+    min: product.stock?.minimumStock || null,
+    cost: product.cost || null,
   }));
 
 
@@ -110,28 +112,111 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     setSelectedItem({ ...item, type });
     setModalOpen(true);
   };
+  const getColorByStock = (stock: number, min: number) => {
+    if (stock <= (min / 2)) {
+      return "#d94d22";
+    } else if (stock <= min) {
+      return "#f9b32d";
+    } else if (stock > min) {
+      return "#21b421";
+    }
+    return "";
+  };
+
 
   const productColumns = [
+    {
+      field: "stock",
+      headerName: "Stock",
+      flex: 1,
+      renderCell: (params: any) => {
+        const stock = params.row.stock;
+        const min = params.row.min;
+        const bgColor = getColorByStock(stock, min);
+        return (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {/* Etiqueta de color*/}
+            <Box
+              sx={{
+                width: "10px",
+                height: "50px",
+                backgroundColor: bgColor,
+                borderRadius: "4px",
+                marginRight: "8px",
+              }}
+            />
+            <Typography>{stock}</Typography>
+          </Box>
+        );
+      }
+    },
     { field: "name", headerName: "Nombre", flex: 1 },
-    { field: "stock", headerName: "Stock", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
+
 
   const ingredientColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
-    { field: "stock", headerName: "Stock", flex: 1 },
+    {
+      field: "stock",
+      headerName: "Stock",
+      flex: 1,
+      renderCell: (params: any) => {
+        const stock = params.row.stock;
+        const min = params.row.min;
+        const bgColor = getColorByStock(stock, min);
+        return (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {/* Etiqueta de color a la izquierda */}
+            <Box
+              sx={{
+                width: "8px", // Grosor de la etiqueta
+                height: "16px", // Altura
+                backgroundColor: bgColor,
+                borderRadius: "4px",
+                marginRight: "8px", // Espacio entre la etiqueta y el número
+              }}
+            />
+            {/* Valor de stock */}
+            <Typography>{stock}</Typography>
+          </Box>
+        );
+      }
+    },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
+
 
   //limpiar el modal
   const handleCloseModal = () => {
     setSelectedItem(null);
     setModalOpen(false);
   };
+
+  const [selectedStockFilter, setSelectedStockFilter] = useState(null);
+
+  const filterByStock = (items) => {
+    return items.filter((item) => {
+      const stockQuantity = item.stock
+      const minStock = item.min
+
+      if (!selectedStockFilter) return true;
+      if (selectedStockFilter === 'low') return stockQuantity <= minStock / 2;
+      if (selectedStockFilter === 'medium') return stockQuantity > minStock / 2 && stockQuantity <= minStock;
+      if (selectedStockFilter === 'high') return stockQuantity > minStock;
+
+      return true;
+    });
+  };
+
+
+  const filteredProducts = filterByStock(formattedProducts);
+  // const filteredIngredients = filterByStock(ingredients);
+
 
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
@@ -147,43 +232,46 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
         ))}
       </Box>
 
-      {/* Buscador de productos */}
+      {/* Buscador de productos
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
         {/* Buscador de productos */}
-        <Autocomplete
-          sx={{ width: '49%' }}
-          options={selectedCategoryId ? searchResults : products}
-          getOptionLabel={(product) =>
-            `${product.name} - (Código: ${product.code})`
+      {/* <Autocomplete
+        sx={{ width: '49%' }}
+        options={selectedCategoryId ? searchResults : products}
+        getOptionLabel={(product) =>
+          `${product.name} - (Código: ${product.code})`
+        }
+        onInputChange={(event, value) => handleSearch(value)}
+        onChange={(event, selectedProduct) => {
+          if (selectedProduct) {
+            handleSelectProduct(selectedProduct);
           }
-          onInputChange={(event, value) => handleSearch(value)}
-          onChange={(event, selectedProduct) => {
-            if (selectedProduct) {
-              handleSelectProduct(selectedProduct);
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Buscar productos por nombre o código"
-              variant="outlined"
-              fullWidth
-            />
-          )}
-          renderOption={(props, product) => (
-            <li {...props} key={String(product.id)}>
-              {`${product.name} - (Código: ${product.code})`}
-            </li>
-          )}
-        />
-        <Button
-          sx={{ flexGrow: 1, border: "2px solid #f9b32d", color: "black" }}
-          variant="outlined"
-          onClick={handleClearSearch}
-        >
-          Limpiar Filtros
-        </Button>
-      </Box>
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Buscar productos por nombre o código"
+            variant="outlined"
+            fullWidth
+          />
+        )}
+        renderOption={(props, product) => (
+          <li {...props} key={String(product.id)}>
+            {`${product.name} - (Código: ${product.code})`}
+          </li>
+        )}
+      />
+      <Button
+        sx={{ flexGrow: 1, border: "2px solid #f9b32d", color: "black" }}
+        variant="outlined"
+        onClick={handleClearSearch}
+      >
+        Limpiar Filtros
+      </Button>
+    </Box>  */}
+
+
+      <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
 
       {/* DataGrids */}
       <Box display="flex" gap={2} sx={{ mt: 3 }}>
@@ -194,7 +282,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             PRODUCTOS
           </Typography>
           <DataGrid
-            rows={formattedProducts}
+            rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
             columns={productColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
@@ -227,16 +315,18 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
         </Box>
       </Box>
       {/* Modal para agregar stock */}
-      {selectedItem && (
-        <ModalStock
-          open={modalOpen}
-          selectedItem={selectedItem}
-          token={token}
-          onClose={() => setModalOpen(false)}
-          onSave={() => { handleCloseModal }}
-        />
-      )}
-    </Box>
+      {
+        selectedItem && (
+          <ModalStock
+            open={modalOpen}
+            selectedItem={selectedItem}
+            token={token}
+            onClose={() => setModalOpen(false)}
+            onSave={() => { handleCloseModal }}
+          />
+        )
+      }
+    </Box >
   );
 }
 export default StockControl;

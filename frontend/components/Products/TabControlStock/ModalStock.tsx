@@ -16,6 +16,7 @@ import {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 export interface ModalStockProps {
   open: boolean;
@@ -38,11 +39,15 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const { fetchAndSetProducts } = useProductos();
 
   useEffect(() => {
-    if (!open) return;
+    console.log("🦋selectedItem", selectedItem);
 
-    const authToken = getAccessToken();
-    if (authToken) {
-      fetchUnits(authToken).then((fetchedUnits) => {
+  }, [selectedItem]);
+
+  useEffect(() => {
+    if (!open) return;
+    const token = getAccessToken();
+    if (token) {
+      fetchUnits(token).then((fetchedUnits) => {
 
         let updatedUnits = [...fetchedUnits];
 
@@ -53,7 +58,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         setFormValues({
           quantityInStock: selectedItem?.stock?.toString() || "",
           minimumStock: selectedItem?.min?.toString() || "",
-          unitOfMeasure: selectedUnit?.id
+          unitOfMeasure: selectedUnit?.id || "",
         });
       });
     }
@@ -110,8 +115,10 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         // Si existe stock en el selectedItem, se edita, de lo contrario se agrega.
         if (selectedItem?.stock) {
           await editStock(idStock, payload, token,);
+          Swal.fire("Éxito", "Stock editado correctamente.", "success");
         } else {
           await addStock(payload, token);
+          Swal.fire("Éxito", "Stock agregado correctamente.", "success");
         }
         fetchAndSetProducts(token);
         onSave();
@@ -128,12 +135,13 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   };
 
   return (
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog open={open} onClose={handleClose}
+      sx={{ "& .MuiDialog-paper": { minWidth: "500px" } }}>
       <DialogTitle
         sx={{
           color: "var(--color-primary)",
           fontWeight: "bold",
-          fontSize: "1rem",
+          fontSize: "1.2rem",
         }}
       >
         {selectedItem?.stock ? `Editar Stock de ${selectedItem?.name}` : `Agregar Stock a ${selectedItem?.name}`}
@@ -159,16 +167,23 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           value={formValues.unitOfMeasure}
           onChange={handleSelectChange}
           displayEmpty
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                maxHeight: 200, // Altura máxima del menú antes de hacer scroll
+                overflow: "auto",
+              },
+            },
+          }}
         >
-          <MenuItem value="" disabled>
-            Selecciona una unidad
-          </MenuItem>
+
           {units.map((u) => (
             <MenuItem key={u.id} value={u.id}>
               {u.name}
             </MenuItem>
           ))}
         </Select>
+
         <TextField
           margin="dense"
           label="Stock Mínimo"
