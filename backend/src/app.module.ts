@@ -15,6 +15,7 @@ import { OrderModule } from './Order/order.module';
 import { RoomModule } from './Room/room.module';
 import { IngredientModule } from './Ingredient/ingredient.module';
 import { StockModule } from './Stock/stock.module';
+import { SeederModule } from './Seeder/seeder.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,6 +40,7 @@ import { StockModule } from './Stock/stock.module';
     RoomModule,
     IngredientModule,
     StockModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],
