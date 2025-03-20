@@ -5,7 +5,7 @@ import {
   UnitOfMeasureResponseDto,
 } from './CategoryIngredientUnit.dto';
 
-export class ProductResponseDto {
+export class UpdteProductResponseDto {
   @Expose()
   id: string;
 

@@ -18,11 +18,12 @@ type RoomContextType = {
   handleSelectSala: (sala: ISala | null) => void;
   handleSaveSala: (sala: { id?: string; name: string }) => void;
   handleDeleteSala: () => void;
-  handleSelectMesa: (mesa: MesaInterface) => void;
+  handleSelectMesa: (mesa: MesaInterface | null) => void;
   handleAbrirPedido: () => void;
   handleVolverAMesaEditor: () => void;
   handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, sala: ISala) => void;
   handleMenuClose: () => void;
+  setOrderSelectedTable: (order: string) => void
 };
 
 const RoomContext = createContext<RoomContextType>({
@@ -45,6 +46,7 @@ const RoomContext = createContext<RoomContextType>({
   handleVolverAMesaEditor: () => { },
   handleMenuOpen: () => { },
   handleMenuClose: () => { },
+  setOrderSelectedTable: () => { }
 });
 
 export const useRoomContext = () => {
@@ -193,13 +195,20 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
    * Se setea la orden de la mesa en `selectedOrderByTable`.
    * Se limpia la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
-  const handleSelectMesa = async (mesa: MesaInterface) => {
+  const handleSelectMesa = async (mesa: MesaInterface | null) => {
     setSelectedMesa(mesa);
+  };
+
+  const setOrderSelectedTable = (order: string) => {
+    const newOrder = [order];
+    setSelectedMesa({
+      ...selectedMesa,
+      orders: newOrder,
+    } as MesaInterface);
   };
 
   const handleAbrirPedido = () => {
     setView("pedidoEditor");
-
   };
 
   const handleVolverAMesaEditor = () => {
@@ -225,6 +234,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       selectedSala,
       selectedMesa,
       setSelectedMesa,
+      setOrderSelectedTable,
       view,
       modalOpen,
       editingSala,

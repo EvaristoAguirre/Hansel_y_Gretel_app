@@ -1,8 +1,6 @@
 // import { create } from "zustand";
 // import { ICategory } from "../Interfaces/ICategories";
 // import { ProductResponse, ProductState } from "../Interfaces/IProducts";
-// import { io } from "socket.io-client";
-
 
 // const parseCategories = (categories: ICategory[]): string[] =>
 //   categories.map((category) => (
@@ -56,7 +54,7 @@
 //     }));
 //   },
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://192.168.1.44:3000");
+//     const socket = new WebSocket("ws://localhost:3000");
 
 //     socket.onmessage = (event) => {
 //       const { action, data } = JSON.parse(event.data);
@@ -95,6 +93,7 @@
 //   },
 // }));
 
+
 import { create } from "zustand";
 import { ICategory } from "../Interfaces/ICategories";
 import { ProductResponse, ProductState } from "../Interfaces/IProducts";
@@ -104,7 +103,7 @@ const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
 
 export const useProductStore = create<ProductState>((set) => {
-  const socket = io("http://192.168.1.44:3000"); // Usa la IP de tu backend
+  const socket = io("http://192.168.100.133:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Products");
@@ -148,6 +147,8 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct = {
         ...product,
         categories: parseCategories(product.categories),
+        productIngredients: product.productIngredients
+        
       };
       return set((state) => ({ products: [...state.products, parsedProduct] }));
     },
@@ -169,4 +170,3 @@ export const useProductStore = create<ProductState>((set) => {
     connectWebSocket: () => {}, // Conexión establecida al cargar el store
   };
 });
-

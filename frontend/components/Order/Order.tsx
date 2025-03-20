@@ -1,10 +1,17 @@
 import { Print } from "@mui/icons-material";
-import { Button, List, ListItem, ListItemText, Tooltip, Typography } from "@mui/material";
+import {
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-import { useOrderContext } from '../../app/context/order.context';
+import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending } from "@/api/order";
-import { SelectedProductsI } from '../Interfaces/IProducts';
+import { SelectedProductsI } from "../Interfaces/IProducts";
 import { useRoomContext } from "@/app/context/room.context";
 import { editTable } from "@/api/tables";
 import { OrderState, TableState } from "../Enums/Enums";
@@ -13,30 +20,29 @@ import { useTableStore } from "../Table/useTableStore";
 import { useAuth } from "@/app/context/authContext";
 
 export interface OrderProps {
-  imprimirComanda: any
-  handleDeleteOrder: any
+  imprimirComanda: any;
+  handleDeleteOrder: any;
   selectedMesa: MesaInterface;
   handleNextStep: () => void;
-  handleCompleteStep: () => void
+  handleCompleteStep: () => void;
 }
 
 const Order: React.FC<OrderProps> = ({
   handleNextStep,
-  handleCompleteStep
+  handleCompleteStep,
 }) => {
   const {
     selectedOrderByTable,
     setSelectedOrderByTable,
     confirmedProducts,
     setConfirmedProducts,
-    handleDeleteOrder
+    handleDeleteOrder,
   } = useOrderContext();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
+  const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken } = useAuth();
-
 
   useEffect(() => {
     const calcularTotal = () => {
@@ -49,7 +55,6 @@ const Order: React.FC<OrderProps> = ({
       }
     };
     calcularTotal();
-
   }, [confirmedProducts]);
 
   const handlePayOrder = async (selectedMesa: MesaInterface) => {
@@ -57,33 +62,48 @@ const Order: React.FC<OrderProps> = ({
     if (!token) return;
 
     if (selectedOrderByTable) {
-      const ordenPendingPay = await orderToPending(selectedOrderByTable.id, token);
+      const ordenPendingPay = await orderToPending(
+        selectedOrderByTable.id,
+        token
+      );
 
       setSelectedOrderByTable(ordenPendingPay);
+      setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
+      // updateOrder(ordenPendingPay);
     }
 
-    const tableEdited = await editTable(selectedMesa.id, { ...selectedMesa, state: TableState.PENDING_PAYMENT }, token);
+    const tableEdited = await editTable(
+      selectedMesa.id,
+      { ...selectedMesa, state: TableState.PENDING_PAYMENT },
+      token
+    );
     if (tableEdited) {
-      // setSelectedMesa(tableEdited);
+      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
       updateTable(tableEdited);
+
     }
     handleCompleteStep();
     handleNextStep();
   };
 
+
   return (
     <>
       {selectedMesa &&
-        (selectedMesa.state === TableState.OPEN ||
-          selectedMesa.state === TableState.PENDING_PAYMENT) ?
-        <div style={{
-          width: "100%", display: "flex",
-          flexDirection: "column", border: "1px solid #d4c0b3",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "1rem",
-          justifyContent: "space-between"
-        }}>
-
+      (selectedMesa.state === TableState.OPEN ||
+        selectedMesa.state === TableState.PENDING_PAYMENT) ? (
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            border: "1px solid #d4c0b3",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "1rem",
+            justifyContent: "space-between",
+          }}
+        >
           <div>
             <div
               style={{
@@ -143,9 +163,6 @@ const Order: React.FC<OrderProps> = ({
                         WebkitBoxOrient: "vertical",
                         WebkitLineClamp: 1,
                         overflow: "hidden",
-                        minWidth: "5rem",
-                        maxWidth: "5rem",
-
                       }}
                       primary={item.productName}
                     />
@@ -161,11 +178,7 @@ const Order: React.FC<OrderProps> = ({
                   >
                     {`$ ${item.unitaryPrice * item.quantity}`}
                   </Typography>
-                  {/* <IconButton onClick={() => deleteConfirmProduct(item.productId)}>
-                      <Delete />
-                    </IconButton> */}
                 </ListItem>
-
               ))}
             </List>
             <Typography
@@ -191,7 +204,7 @@ const Order: React.FC<OrderProps> = ({
           </div>
           <div>
             {
-              selectedOrderByTable?.state === OrderState.PENDING_PAYMENT ? (
+              ((selectedOrderByTable?.state === OrderState.PENDING_PAYMENT) || (selectedOrderByTable?.state === OrderState.CLOSED)) ? (
                 null
               ) :
                 <Button
@@ -209,27 +222,31 @@ const Order: React.FC<OrderProps> = ({
                 </Button>
             }
 
-            {
-              confirmedProducts.length > 0 &&
+            {confirmedProducts.length > 0 && (
               <Button
                 fullWidth
                 color="error"
                 variant="outlined"
-                style={{ marginTop: "1rem", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
-                onClick={() => handleDeleteOrder(selectedOrderByTable?.id || null)}
+                style={{
+                  marginTop: "1rem",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                }}
+                onClick={() =>
+                  handleDeleteOrder(selectedOrderByTable?.id || null)
+                }
               >
                 Anular Pedido
               </Button>
-            }
+            )}
           </div>
-
         </div>
-        : <div className="flex justify-center text-red-500 font-bold my-16">
+      ) : (
+        <div className="flex justify-center text-red-500 font-bold my-16">
           COMPLETAR PASO 1
         </div>
-      }
+      )}
     </>
-  )
+  );
 };
 
 export default Order;

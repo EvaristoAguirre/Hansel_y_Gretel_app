@@ -60,10 +60,10 @@ export const getProductsByCategory = async (id: string, token: string) => {
       body: JSON.stringify({ categories: [id] }),
     });
 
-    if (!response.ok) {
-      // Manejo de errores según el status code
-      return { ok: false, status: response.status, message: await response.text() };
-    }
+    // if (!response.ok) {
+    //   // Manejo de errores según el status code
+    //   return { ok: false, status: response.status, message: await response.text() };
+    // }
 
     const data = await response.json();
     return { ok: true, data };
@@ -96,7 +96,7 @@ export const getProductByCode = async (code: number, token: string) => {
     return { ok: false, status: 500, error: "Error al conectar con el servidor" };
   }
 };
-export const searchProducts = async (searchTerm: string, selectedCategoryId: string | null, token: string) => {
+export const searchProducts = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
   try {
     // Detectamos si es un número
     const isNumeric = !isNaN(Number(searchTerm));
@@ -116,13 +116,16 @@ export const searchProducts = async (searchTerm: string, selectedCategoryId: str
     });
 
     if (!response.ok) {
-      throw new Error(`Error al buscar productos: ${response.statusText}`);
+      return [];
     }
 
     const data = await response.json();
+    console.log("Resultados de la búsqueda en endpoint:", data);
 
-    return data.data;
+
+    return data;
   } catch (error) {
+
     console.error("❌ Error fetching searched products:", error);
     return [];
   }

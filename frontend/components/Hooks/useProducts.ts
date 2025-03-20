@@ -7,6 +7,7 @@ import { editProduct } from '../../api/products';
 import { ProductForm } from '../Interfaces/IProducts';
 import { useAuth } from "@/app/context/authContext";
 import { Ingredient } from '../../../backend/src/Ingredient/ingredient.entity';
+import { TypeProduct } from '../Enums/view-products';
 
 export const useProductos = () => {
   const { getAccessToken } = useAuth();
@@ -20,10 +21,12 @@ export const useProductos = () => {
     code: null,
     name: "",
     description: "",
+    type: TypeProduct.PRODUCT,
     price: null,
     cost: null,
     categories: [],
     ingredients: [],
+    products: [],
     isActive: true,
   });
 
@@ -146,10 +149,12 @@ export const useProductos = () => {
       code: null,
       name: "",
       description: "",
+      type: null,
       price: null,
       cost: null,
       categories: [],
       ingredients: [],
+      products: [],
       isActive: true,
     });
   };

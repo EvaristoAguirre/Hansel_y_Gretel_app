@@ -1,7 +1,7 @@
 'useClient';
 import React, { useEffect } from "react";
 import { useState } from 'react';
-import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box } from "@mui/material";
+import { AppBar, Tabs, Tab, Button, Menu, MenuItem, Box, tabsClasses } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { StepperTable } from "../Table/StepperTable";
 import { useRoomContext } from '../../app/context/room.context';
@@ -16,7 +16,6 @@ const Rooms = () => {
     selectedSala,
     handleSelectSala,
     selectedMesa,
-    setSelectedMesa,
     view,
     modalOpen,
     setModalOpen,
@@ -44,22 +43,18 @@ const Rooms = () => {
     <>
       {/* Barra de navegación con Tabs */}
       <AppBar
-        position="static"
+        position="sticky"
         sx={{
-          "& .MuiTabs-root css-19dy00f-MuiTabs-root": {
-            height: "100%",
-          },
           backgroundColor: "#f3d49ab8",
           color: "black",
-          gap: 4,
-          borderBottom: "2px solid #856D5E",
+          gap: 2,
           boxShadow: "none",
           display: "flex",
           flexDirection: "row",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "space-between",
           height: "4rem",
-          px: 4,
+          pr: 2,
         }}
       >
         <Tabs
@@ -70,32 +65,14 @@ const Rooms = () => {
             handleSelectSala(salaSeleccionada || null);
           }}
           textColor="inherit"
+          variant="scrollable"
           sx={{
+            [`& .${tabsClasses.scrollButtons}`]: {
+              '&.Mui-disabled': { opacity: 0.3 },
+            },
             "& .MuiTab-root": {
               fontWeight: "bold !important",
-              width: "auto",
-              flex: 1,
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-
-            },
-            "& .MuiTab-root.Mui-selected": {
-              backgroundColor: "#D9CCBC !important",
-              borderTopLeftRadius: "20px",
-              borderTopRightRadius: "20px",
-              borderLeft: "2px solid #856D5E",
-              borderRight: "2px solid #856D5E",
-              borderTop: "2px solid #856D5E",
-              height: "100%",
-            },
-            "& .MuiTabs-indicator": {
-              display: "none",
-            },
-            "& .MuiTabs-flexContainer": {
-              height: "100%",
-            },
+            }
           }}
         >
           {Array.isArray(salas) &&
@@ -112,7 +89,9 @@ const Rooms = () => {
                       height: "100%",
                     }}
                   >
-                    {sala.name}
+                    <span className="ml-4">
+                      {sala.name}
+                    </span>
                     <MoreVertIcon
                       sx={{ cursor: "pointer" }}
                       onClick={(e) => handleMenuOpen(e, sala)}
@@ -122,7 +101,6 @@ const Rooms = () => {
                 value={sala.id}
                 sx={{
                   textTransform: "uppercase",
-                  height: "100%",
                 }}
               />
             ))}
@@ -133,8 +111,10 @@ const Rooms = () => {
             <Button
               variant="outlined"
               sx={{
+                fontSize: "12px",
                 border: "1.5px solid #63412c",
-                mx: 4,
+                // marginTop: 10,
+                width: "200px",
                 marginBottom: 1,
                 "&:hover": {
                   backgroundColor: "primary.main",
@@ -147,7 +127,7 @@ const Rooms = () => {
                 setModalOpen(true);
               }}
             >
-              Agregar Sala
+              Nueva Sala
             </Button>
           )
         }
@@ -167,9 +147,7 @@ const Rooms = () => {
             </MenuItem>
             <MenuItem onClick={handleDeleteSala}>Borrar</MenuItem>
           </Menu>
-
         )
-
       }
 
       {/* Modal de sala */}

@@ -6,11 +6,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
+import { UnitConversion } from './unitConversion.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Ingredient, UnitOfMeasure]), UserModule],
+  imports: [
+    TypeOrmModule.forFeature([Ingredient, UnitOfMeasure, UnitConversion]),
+    UserModule,
+  ],
   controllers: [IngredientController],
   providers: [IngredientService, IngredientRepository],
-  exports: [],
+  exports: [IngredientService],
 })
 export class IngredientModule {}

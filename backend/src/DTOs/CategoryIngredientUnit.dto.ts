@@ -22,9 +22,6 @@ export class IngredientResponseDto {
   description: string;
 
   @Expose()
-  price: string;
-
-  @Expose()
   cost: string;
 
   @Expose()

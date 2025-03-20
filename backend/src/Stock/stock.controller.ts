@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { StockService } from './stock.service';
@@ -15,6 +16,7 @@ import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
+import { DeductStockDto } from 'src/DTOs/deduct-stock.dto';
 
 @Controller('stock')
 @UseGuards(RolesGuard)
@@ -35,18 +37,15 @@ export class StockController {
 
   @Get('/product/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByProductId(
-    @Param('productId') productId: string,
-  ): Promise<Stock> {
-    return await this.stockService.getStockByProductId(productId);
+  async getStockByProductId(@Param('id') id: string): Promise<Stock> {
+    console.log(id);
+    return await this.stockService.getStockByProductId(id);
   }
 
   @Get('/ingredient/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByIngredientId(
-    @Param('ingredientId') ingredientId: string,
-  ): Promise<Stock> {
-    return await this.stockService.getStockByIngredientId(ingredientId);
+  async getStockByIngredientId(@Param('id') id: string): Promise<Stock> {
+    return await this.stockService.getStockByIngredientId(id);
   }
 
   @Post()
@@ -69,5 +68,18 @@ export class StockController {
     );
     await this.eventEmitter.emit('stock.updated', updatedStock);
     return updatedStock;
+  }
+
+  @Put('/deduct')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async deductStock(@Body() deductStockDto: DeductStockDto): Promise<void> {
+    const { productId, quantity, unitOfMeasureId } = deductStockDto;
+    return await this.stockService.deductStock(
+      productId,
+      quantity,
+      unitOfMeasureId,
+    );
+    // await this.eventEmitter.emit('stock.updated', updatedStock);
+    // return updatedStock;
   }
 }

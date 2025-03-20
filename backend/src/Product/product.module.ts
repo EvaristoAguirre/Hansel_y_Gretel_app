@@ -9,9 +9,15 @@ import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
+import { PromotionProduct } from './promotionProducts.entity';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Category, UnitOfMeasure]),
+    TypeOrmModule.forFeature([
+      Product,
+      Category,
+      UnitOfMeasure,
+      PromotionProduct,
+    ]),
     forwardRef(() => CategoryModule),
     UserModule,
   ],
@@ -19,4 +25,4 @@ import { UserModule } from 'src/User/user.module';
   providers: [ProductService, ProductRepository, CategoryRepository],
   exports: [ProductService],
 })
-export class ProductModule { }
+export class ProductModule {}

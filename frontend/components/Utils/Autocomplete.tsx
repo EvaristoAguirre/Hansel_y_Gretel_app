@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { ProductCreated } from "../Interfaces/IProducts";
 import { Iingredient } from "../Interfaces/Ingredients";
+import { use } from 'react';
 
 interface AutoCompleteProductProps {
   options: ProductCreated[];
@@ -17,6 +18,7 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
   onSelect,
   label = "Buscar productos por nombre o código",
   sx = { flexGrow: 1, width: "60%", marginRight: 2 }
+
 }) => {
   return (
     <Autocomplete

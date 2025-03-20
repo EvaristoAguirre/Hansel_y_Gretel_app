@@ -1,20 +1,30 @@
 import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import { TypeProduct } from "../Enums/view-products";
 import { ICategory } from './ICategories';
-import { IingredientForm } from "./Ingredients";
+import { IingredientForm, IingredientResponse } from "./Ingredients";
 
-export interface ProductForm {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[];
+interface IProduct {
   id: string;
-  code: null | number;
+  code: number | null;
   name: string;
   description: string;
-  price: null | number;
-  cost: null | number;
+  type: TypeProduct | null;
+  price: number | null;
+  cost: number | null;
+  isActive?: boolean;
+}
+export interface ProductForm extends IProduct {
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | ProductForPromo[];
   categories: string[];
   ingredients: IingredientForm[];
+  products: ProductForPromo[];
   isActive: boolean;
 }
 
+export interface ProductForPromo {
+  productId: string;
+  quantity: number;
+}
 export interface ProductTableProps {
   rows: GridRowsProp;
   columns: GridColDef[];
@@ -25,20 +35,19 @@ export interface ProductTableProps {
 
 }
 
-export interface ProductCreated {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[];
-  id: string;
-  categories: string[];
-  code: number;
-  description: string;
-  isActive: boolean;
-  name: string;
-  price: number;
-  cost: number;
-  productIngredients: IingredientForm[]
-
+export interface ProductCreated extends IProduct {
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[] | undefined;
+  quantity?: number | null;
+  productIngredients: IingredientForm[] | null;
+  promotionDetails: IPromotionDetails[];
 };
 
+
+interface IPromotionDetails {
+  id: string;
+  quantity: number;
+  product: IProduct;
+}
 
 
 export interface ProductResponse {
@@ -46,11 +55,12 @@ export interface ProductResponse {
   code: number;
   cost: number;
   description: string;
+  type: TypeProduct
   id: string;
   isActive: boolean;
   name: string;
   price: number;
-  productIngredients: IingredientForm[]
+  productIngredients: IingredientResponse[]
 }
 
 export interface ProductState {
@@ -74,17 +84,13 @@ export interface SelectedProductsI {
   unitaryPrice: number;
 };
 
+
+
 export interface IConfirmedProducts {
   id: string;
   isActive: boolean;
   orderId: string;
-  product: {
-    id: string;
-    code: number;
-    name: string;
-    description: string;
-    price: string;
-  };
+  product: IProduct
   quantity: number;
   subtotal: number;
   unitaryPrice: string;

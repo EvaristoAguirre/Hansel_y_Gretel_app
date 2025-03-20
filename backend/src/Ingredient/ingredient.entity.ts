@@ -26,10 +26,10 @@ export class Ingredient {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
-  @IsNumber()
-  @Min(0)
-  price: number;
+  // @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  // @IsNumber()
+  // @Min(0)
+  // price: number;
 
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   @IsNumber()
