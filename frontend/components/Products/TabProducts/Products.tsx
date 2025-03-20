@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
-import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./ProductCreationModal";
 

@@ -20,7 +20,6 @@ const costos = ["Costo total productos", "Costo total ingredientes", "Costo tota
 const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,6 +68,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     name: product.name,
     stock: product.stock?.quantityInStock || "N/A",
     unit: product.stock?.unitOfMeasure?.name || "N/A",
+    min: product.stock?.minimumStock || "N/A",
     cost: product.cost,
   }));
 
@@ -99,7 +99,6 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   // Limpiar búsqueda y mostrar todos los productos
   const handleClearSearch = () => {
-    token && fetchAndSetProducts(token);
     setSearchResults(products);
     setSelectedProducts([]);
     onClearSelectedCategory();
@@ -107,6 +106,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   //Edición de Producto
   const handleEditProduct = (item: any, type: StockModalType) => {
+    //llamamos a product para que se actualice la tabla
     setSelectedItem({ ...item, type });
     setModalOpen(true);
   };
@@ -115,6 +115,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "stock", headerName: "Stock", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
+    { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
 
@@ -122,6 +123,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "stock", headerName: "Stock", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
+    { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
 
