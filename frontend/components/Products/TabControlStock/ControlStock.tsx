@@ -64,12 +64,21 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   }, [token]);
 
+  const formattedProducts = (selectedProducts.length > 0 ? selectedProducts : searchResults).map((product) => ({
+    id: product.id,
+    name: product.name,
+    stock: product.stock?.quantityInStock || "N/A",
+    unit: product.stock?.unitOfMeasure?.name || "N/A",
+    cost: product.cost,
+  }));
+
+
   // Manejar búsqueda de productos
   const handleSearch = async (value: string) => {
     const searchTerm = value.trim();
     if (searchTerm.length > 0 && searchTerm !== searchTerm) {
       setSearchTerm(searchTerm);
-      if (token) {
+      if (token && selectedCategoryId) {
         const results = await searchProducts(searchTerm, selectedCategoryId, token);
         setSearchResults(results);
       }
@@ -105,12 +114,14 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   const productColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "stock", headerName: "Stock", flex: 1 },
+    { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
 
   const ingredientColumns = [
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "stock", headerName: "Stock", flex: 1 },
+    { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
 
@@ -181,7 +192,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             PRODUCTOS
           </Typography>
           <DataGrid
-            rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
+            rows={formattedProducts}
             columns={productColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
