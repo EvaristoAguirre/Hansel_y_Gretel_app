@@ -17,9 +17,6 @@ export class CreateUnitOfMeasureDto {
   @IsString()
   abbreviation?: string;
 
-  @IsBoolean()
-  isActive: boolean;
-
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -29,8 +26,9 @@ export class CreateUnitOfMeasureDto {
   @IsString()
   baseUnitId?: string;
 
+  @IsOptional()
   @IsBoolean()
-  isConventional: boolean;
+  isConventional?: boolean;
 
   @IsOptional()
   @IsArray()
