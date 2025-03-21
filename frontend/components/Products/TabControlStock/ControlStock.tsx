@@ -29,6 +29,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [noStock, setNoStock] = useState(false);
 
 
   useEffect(() => {
@@ -215,64 +216,26 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
 
   const filteredProducts = filterByStock(formattedProducts);
+
+  useEffect(() => {
+    const hasNullStock = filteredProducts.some((product) => product.stock === null);
+    if (hasNullStock) {
+      setNoStock(true);
+    }
+  }, [filteredProducts]);
   // const filteredIngredients = filterByStock(ingredients);
 
 
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
-      {/* Sección de Costos */}
-      <Box display="flex" justifyContent="space-between" gap={2}  >
-        {costos.map((text, index) => (
-          <Card key={index} sx={{ flex: 1 }}>
-            <CardContent>
-              <Typography variant="h5" align="center">$200</Typography>
-              <Typography align="center">{text}</Typography>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-
-      {/* Buscador de productos
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
-        {/* Buscador de productos */}
-      {/* <Autocomplete
-        sx={{ width: '49%' }}
-        options={selectedCategoryId ? searchResults : products}
-        getOptionLabel={(product) =>
-          `${product.name} - (Código: ${product.code})`
-        }
-        onInputChange={(event, value) => handleSearch(value)}
-        onChange={(event, selectedProduct) => {
-          if (selectedProduct) {
-            handleSelectProduct(selectedProduct);
-          }
-        }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Buscar productos por nombre o código"
-            variant="outlined"
-            fullWidth
-          />
-        )}
-        renderOption={(props, product) => (
-          <li {...props} key={String(product.id)}>
-            {`${product.name} - (Código: ${product.code})`}
-          </li>
-        )}
-      />
-      <Button
-        sx={{ flexGrow: 1, border: "2px solid #f9b32d", color: "black" }}
-        variant="outlined"
-        onClick={handleClearSearch}
-      >
-        Limpiar Filtros
-      </Button>
-    </Box>  */}
-
 
       <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
-
+      {noStock &&
+        <Typography variant="h6" sx={{ mt: 2 }} color="error">
+          ❗️Hay productos sin stock asignado.
+          Seleccione el produto en la tabla para agregar stock.
+        </Typography>
+      }
       {/* DataGrids */}
       <Box display="flex" gap={2} sx={{ mt: 3 }}>
 
@@ -290,7 +253,15 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
               sorting: { sortModel: [{ field: "name", sort: "asc" }] },
             }}
             pageSizeOptions={[5, 7, 10]}
-            sx={{ height: "100%" }}
+            sx={{
+              height: "100%",
+              "& .MuiDataGrid-row": {
+                cursor: "pointer",
+              },
+              "& .MuiDataGrid-row:hover": {
+                backgroundColor: "#f3d49a66", // Color amarillo claro de ejemplo
+              },
+            }}
             onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
           />
         </Box>
