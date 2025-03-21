@@ -61,7 +61,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   const { getAccessToken } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
-  const { addOrder, updateOrder, removeOrder } = useOrderStore();
+  const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
   const { selectedMesa, handleSelectMesa } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
   const [confirmedProducts, setConfirmedProducts] = useState<SelectedProductsI[]>([]);
