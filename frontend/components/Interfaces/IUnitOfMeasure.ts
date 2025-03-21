@@ -8,7 +8,9 @@ export interface IUnitOfMeasure {
   equivalenceToBaseUnit: number | null;
   baseUnitId: string;
   isConventional: boolean;
-  baseUnit?: string | null
+  baseUnit?: string | null;
+  fromConversions?: any[];
+  toConversions?: any[];
 }
 
 export interface IUnitOfMeasureStandard {
