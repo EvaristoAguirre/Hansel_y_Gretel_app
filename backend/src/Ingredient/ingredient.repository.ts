@@ -155,62 +155,6 @@ export class IngredientRepository {
   }
 
   // ---------------- Unit Of Measure ---------- //
-  // async createUnitOfMeasure(
-  //   createData: CreateUnitOfMeasureDto,
-  // ): Promise<UnitOfMeasure> {
-  //   const { name, abbreviation, equivalenceToBaseUnit, baseUnitId } =
-  //     createData;
-
-  //   if (!name) {
-  //     throw new BadRequestException('Name must be provided');
-  //   }
-
-  //   const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-  //     where: { name: name },
-  //   });
-
-  //   if (existingUnitOfMeasure) {
-  //     throw new ConflictException('Unit of measure name already exists');
-  //   }
-
-  //   if (abbreviation) {
-  //     const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-  //       where: { abbreviation: abbreviation },
-  //     });
-  //     if (existingUnitOfMeasure) {
-  //       throw new ConflictException(
-  //         'Unit of measure abbreviation already exists',
-  //       );
-  //     }
-  //   }
-
-  //   if (equivalenceToBaseUnit && baseUnitId) {
-  //     const baseUnit = await this.unitOfMeasureRepository.findOne({
-  //       where: { id: baseUnitId },
-  //     });
-
-  //     if (!baseUnit) {
-  //       throw new BadRequestException('Base unit does not exist');
-  //     }
-  //   }
-
-  //   try {
-  //     const unitOfMeasure = this.unitOfMeasureRepository.create(createData);
-  //     return await this.unitOfMeasureRepository.save(unitOfMeasure);
-  //   } catch (error) {
-  //     if (
-  //       error instanceof BadRequestException ||
-  //       error instanceof ConflictException
-  //     ) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException(
-  //       'Error creating the unit of measure',
-  //       error.message,
-  //     );
-  //   }
-  // }
-
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,
   ): Promise<UnitOfMeasure> {
@@ -222,12 +166,10 @@ export class IngredientRepository {
       conversions,
     } = createData;
 
-    // Validación del nombre
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
 
-    // Verificar si ya existe una unidad con el mismo nombre
     const existingUnitByName = await this.unitOfMeasureRepository.findOne({
       where: { name },
     });
@@ -236,7 +178,6 @@ export class IngredientRepository {
       throw new ConflictException('Unit of measure name already exists');
     }
 
-    // Verificar si ya existe una unidad con la misma abreviatura
     if (abbreviation) {
       const existingUnitByAbbreviation =
         await this.unitOfMeasureRepository.findOne({
@@ -279,13 +220,11 @@ export class IngredientRepository {
       }
     }
 
-    // Crear la unidad de medida
     const unitOfMeasure = this.unitOfMeasureRepository.create({
       ...createData,
-      baseUnit, // Asignar la unidad base
+      baseUnit,
     });
 
-    // Guardar la unidad de medida
     const savedUnitOfMeasure =
       await this.unitOfMeasureRepository.save(unitOfMeasure);
 
@@ -294,7 +233,6 @@ export class IngredientRepository {
       for (const conversion of conversions) {
         const { toUnitId, conversionFactor } = conversion;
 
-        // Verificar que la unidad de destino exista
         const toUnit = await this.unitOfMeasureRepository.findOne({
           where: { id: toUnitId },
         });
@@ -303,7 +241,6 @@ export class IngredientRepository {
           throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
         }
 
-        // Crear la conversión
         const unitConversion = this.unitConversionRepository.create({
           fromUnit: savedUnitOfMeasure,
           toUnit,
@@ -357,11 +294,16 @@ export class IngredientRepository {
         where: { isConventional: true, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
-        relations: ['baseUnit'],
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      console.error('Error fetching units of measure:', error);
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -473,7 +415,6 @@ export class IngredientRepository {
       return quantity;
     }
 
-    // Buscar una conversión directa en la tabla de conversiones
     const directConversion = await this.unitConversionRepository.findOne({
       where: { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
     });
@@ -482,7 +423,6 @@ export class IngredientRepository {
       return quantity * directConversion.conversionFactor;
     }
 
-    // Si no hay conversión directa, usar la unidad base
     const fromUnit = await this.unitOfMeasureRepository.findOne({
       where: { id: fromUnitId },
       relations: ['baseUnit'],
@@ -497,13 +437,11 @@ export class IngredientRepository {
       throw new NotFoundException('One or both units not found.');
     }
 
-    // Convertir desde la unidad original a la unidad base
     let convertedQuantity = quantity;
     if (fromUnit.baseUnit && fromUnit.equivalenceToBaseUnit) {
       convertedQuantity *= fromUnit.equivalenceToBaseUnit;
     }
 
-    // Convertir desde la unidad base a la unidad destino
     if (toUnit.baseUnit && toUnit.equivalenceToBaseUnit) {
       convertedQuantity /= toUnit.equivalenceToBaseUnit;
     }

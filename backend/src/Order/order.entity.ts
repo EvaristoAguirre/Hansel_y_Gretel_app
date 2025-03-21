@@ -45,6 +45,6 @@ export class Order {
     cascade: true,
     eager: false,
   })
-  @JoinColumn({name: 'orders_orderDetails'})
+  @JoinColumn({ name: 'orders_orderDetails' })
   orderDetails: OrderDetails[];
 }

@@ -12,7 +12,7 @@ export class UnitConversion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 4 })
+  @Column({ type: 'decimal', precision: 20, scale: 10 })
   conversionFactor: number;
 
   //---------------- Relaciones
