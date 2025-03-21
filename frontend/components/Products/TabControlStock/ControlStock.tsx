@@ -14,6 +14,7 @@ import ModalStock from "./ModalStock";
 import { StockModalType } from "@/components/Enums/view-products";
 import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
+import { SelectedItem } from "@/components/Interfaces/IStock";
 
 
 
@@ -200,10 +201,10 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
   const [selectedStockFilter, setSelectedStockFilter] = useState(null);
 
-  const filterByStock = (items) => {
-    return items.filter((item) => {
-      const stockQuantity = item.stock
-      const minStock = item.min
+  const filterByStock = (items: SelectedItem[]) => {
+    return items.filter((item: SelectedItem) => {
+      const stockQuantity = item?.stock ?? 0;
+      const minStock = item?.min ?? 0;
 
       if (!selectedStockFilter) return true;
       if (selectedStockFilter === 'low') return stockQuantity <= minStock / 2;
