@@ -28,7 +28,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
   useEffect(() => {
     if (form.products) {
       const preparedProducts = form.products.map((item) => ({
-        productId: item.product.id,
+        productId: item.productId,
         productName: item.product.name,
         quantity: item.quantity,
         unitaryPrice: Number(item.product.price),

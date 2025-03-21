@@ -60,7 +60,8 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
-  productIngredients: IingredientResponse[]
+  productIngredients: IingredientResponse[],
+  promotionDetails?: any[]; // Add this line
 }
 
 export interface ProductState {

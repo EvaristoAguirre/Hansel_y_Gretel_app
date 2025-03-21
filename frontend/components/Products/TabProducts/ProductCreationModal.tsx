@@ -1,20 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip } from '@mui/material';
-import { ProductCreated, ProductForm, ProductForPromo } from '@/components/Interfaces/IProducts';
-import { ICategory } from '@/components/Interfaces/ICategories';
-import { FormType, TypeProduct } from '@/components/Enums/view-products';
-import { getProductByCode } from '@/api/products';
-import { useAuth } from '@/app/context/authContext';
-import { IingredientForm } from '@/components/Interfaces/Ingredients';
-import IngredientDialog from './IngredientDialog';
-import InputsPromo from './InputsPromo';
+import React, { useEffect, useState } from "react";
+import {
+  Modal,
+  Box,
+  Tabs,
+  Tab,
+  TextField,
+  Button,
+  FormControl,
+  Autocomplete,
+  Chip,
+} from "@mui/material";
+import {
+  ProductCreated,
+  ProductForm,
+  ProductForPromo,
+} from "@/components/Interfaces/IProducts";
+import { ICategory } from "@/components/Interfaces/ICategories";
+import { FormType, TypeProduct } from "@/components/Enums/view-products";
+import { getProductByCode } from "@/api/products";
+import { useAuth } from "@/app/context/authContext";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
+import IngredientDialog from "./IngredientDialog";
+import InputsPromo from "./InputsPromo";
 
 interface ProductCreationModalProps {
   open: boolean;
   form: ProductForm;
   categories: ICategory[];
   onClose: () => void;
-  onChange: (field: keyof ProductForm, value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]) => void;
+  onChange: (
+    field: keyof ProductForm,
+    value:
+      | string
+      | number
+      | null
+      | string[]
+      | IingredientForm[]
+      | ProductForPromo[]
+  ) => void;
   onSave: () => void;
   modalType: "create" | "edit";
   products: ProductCreated[];
@@ -32,17 +55,19 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   onChange,
   onSave,
   modalType,
-  products
+  products,
 }) => {
   /**
- * Estado que almacena el valor actual de la pestaña seleccionada.
- * Se inicializa en función del tipo de formulario y la modalidad de edición.
- * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
- *
- * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
- */
+   * Estado que almacena el valor actual de la pestaña seleccionada.
+   * Se inicializa en función del tipo de formulario y la modalidad de edición.
+   * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
+   *
+   * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
+   */
   const [tabValue, setTabValue] = useState<number>(() => {
-    return modalType === FormType.EDIT && form.type === TypeProduct.PROMO ? 2 : 0;
+    return modalType === FormType.EDIT && form.type === TypeProduct.PROMO
+      ? 2
+      : 0;
   });
 
   const [errors, setErrors] = useState<Errors>({
@@ -56,7 +81,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
-
   const { getAccessToken } = useAuth();
 
   useEffect(() => {
@@ -65,11 +89,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setToken(token);
   }, [getAccessToken]);
 
-
   useEffect(() => {
     console.log("📝formulario", form);
-
-  })
+  });
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
     name: "Nombre",
@@ -81,7 +103,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     isActive: "Inactivo",
     id: "ID",
   };
-
 
   const validateField = async (field: string, value: any) => {
     let error = "";
@@ -97,7 +118,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         setIsCheckingCode(true);
         try {
           if (token) {
-            const result = await getProductByCode(value, token)
+            const result = await getProductByCode(value, token);
             if (result.ok) {
               error = "El código ya está en uso";
             } else if (result.status === 404) {
@@ -106,14 +127,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               error = result.error || "Error al validar el código";
             }
           }
-
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
         } finally {
           setIsCheckingCode(false);
         }
-
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
       }
@@ -122,11 +141,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
   };
 
-
   const validateForm = () => {
     const hasErrors = Object.values(errors).some((error) => error);
     const hasEmptyFields =
-      ["code", "name", "price", "cost"].some((field) => !form[field as keyof ProductForm]) ||
+      ["code", "name", "price", "cost"].some(
+        (field) => !form[field as keyof ProductForm]
+      ) ||
       !Array.isArray(form.categories) ||
       form.categories.length === 0;
 
@@ -154,7 +174,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   };
   const handleProductsPromo = (productsForm: ProductForPromo[]) => {
     onChange("products", productsForm);
-  }
+  };
 
   const handleSaveProduct = () => {
     onSave();
@@ -163,7 +183,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   return (
     <Modal open={open} onClose={onClose}>
-      <Box sx={{ width: 600, bgcolor: 'background.paper', p: 4, mx: 'auto', mt: 5 }}>
+      <Box
+        sx={{
+          width: 600,
+          bgcolor: "background.paper",
+          p: 4,
+          mx: "auto",
+          mt: 5,
+        }}
+      >
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="Producto simple" />
           <Tab label="Producto con ingredientes" />
@@ -177,7 +205,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             margin="dense"
             label={fieldLabels[field]}
             type={["code", "price", "cost"].includes(field) ? "number" : "text"}
-            inputProps={["price", "cost"].includes(field) ? { step: "0.50" } : undefined}
+            inputProps={
+              ["price", "cost"].includes(field) ? { step: "0.50" } : undefined
+            }
             value={form[field] ?? ""}
             onChange={(e) => {
               const value = ["price", "cost"].includes(field)
@@ -185,10 +215,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                  ? e.target.value === ""
-                    ? null
-                    : parseInt(e.target.value, 10)
-                  : e.target.value;
+                ? e.target.value === ""
+                  ? null
+                  : parseInt(e.target.value, 10)
+                : e.target.value;
               onChange(field as keyof ProductForm, value);
               if (field !== "code") {
                 validateField(field, value);
@@ -214,12 +244,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           fullWidth
           margin="dense"
           //  error={!!errors.categories}
-          variant="outlined">
+          variant="outlined"
+        >
           <Autocomplete
             multiple
             options={categories}
             getOptionLabel={(option) => option.name}
-            value={categories.filter((category) => form.categories.includes(category.id))}
+            value={categories.filter((category) =>
+              form.categories.includes(category.id)
+            )}
             onChange={(_, newValue) => {
               const selectedIds = newValue.map((category) => category.id);
               onChange("categories", selectedIds);
@@ -241,7 +274,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   {...getTagProps({ index })}
                   key={option.id}
                   label={option.name}
-                  sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }}
+                  sx={{
+                    backgroundColor: "#f3d49ab8",
+                    color: "black",
+                    fontWeight: "bold",
+                  }}
                 />
               ))
             }
@@ -257,11 +294,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         {/* Campos para promos */}
         {tabValue === 2 && (
           <InputsPromo onSave={handleProductsPromo} form={form} />
-
         )}
 
         <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
-          Crear producto
+          {form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo"}
         </Button>
       </Box>
     </Modal>
