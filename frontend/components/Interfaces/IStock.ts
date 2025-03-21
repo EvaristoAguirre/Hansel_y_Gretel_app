@@ -1,17 +1,34 @@
 import { StockModalType } from "../Enums/view-products";
+import { IUnitOfMeasure } from "./IUnitOfMeasure";
 
 export interface IStock {
   quantityInStock: number
   minimumStock: number
-  productId: string
+  unitOfMeasureId: string
+  productId?: string
+  ingredientId?: string
 }
 
-export interface SelectedItem {
-  type: StockModalType;
+
+export interface IStockOfProduct {
   id: string;
-  name?: string;
-  stock?: number;
+  quantityInStock: number;
+  minimumStock: number;
+  unitOfMeasure: IUnitOfMeasure;
+
 }
+
+
+export interface SelectedItem {
+  type?: StockModalType;
+  id?: string;
+  name?: string;
+  stock?: number | null;
+  min: number | null;
+  unit: string | null;
+}
+
+
 
 export interface ProductItem extends SelectedItem {
   type: StockModalType.PRODUCT;

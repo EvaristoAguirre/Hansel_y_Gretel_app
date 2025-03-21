@@ -1,3 +1,4 @@
+import { IStockOfProduct } from "./IStock"
 
 export interface Iingredient {
   id?: string,
@@ -5,7 +6,8 @@ export interface Iingredient {
   isActive?: boolean,
   description: string,
   // price: number | null,
-  cost: number | null
+  cost: number | null,
+  stock?: IStockOfProduct,
 
 }
 
