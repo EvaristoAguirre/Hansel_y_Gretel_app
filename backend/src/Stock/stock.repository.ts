@@ -391,10 +391,6 @@ export class StockRepository {
           product.productIngredients &&
           product.productIngredients.length > 0
         ) {
-          console.log(
-            'productIngredients..........',
-            product.productIngredients,
-          );
           for (const productIngredient of product.productIngredients) {
             await this.deductIngredientStock(
               productIngredient.ingredient.id,

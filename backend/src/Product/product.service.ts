@@ -26,6 +26,10 @@ export class ProductService {
     return await this.productRepository.getProductByCode(code);
   }
 
+  async getProductByName(name: string) {
+    return this.productRepository.getProductByName(name);
+  }
+
   async getProductsByCategories(
     categories: string[],
   ): Promise<ProductResponseDto[]> {
