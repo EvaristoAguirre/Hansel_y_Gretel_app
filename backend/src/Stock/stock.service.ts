@@ -4,6 +4,7 @@ import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
 import { StockRepository } from './stock.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 
 @Injectable()
 export class StockService {
@@ -12,15 +13,22 @@ export class StockService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async getAllStocks(page: number, limit: number): Promise<Stock[]> {
+  async getAllStocks(
+    page: number,
+    limit: number,
+  ): Promise<StockSummaryResponseDTO[]> {
     return await this.stockRepository.getAllStocks(page, limit);
   }
 
-  async getStockByProductId(productId: string): Promise<Stock> {
+  async getStockByProductId(
+    productId: string,
+  ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByProductId(productId);
   }
 
-  async getStockByIngredientId(ingredientId: string): Promise<Stock> {
+  async getStockByIngredientId(
+    ingredientId: string,
+  ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByIngredientId(ingredientId);
   }
 

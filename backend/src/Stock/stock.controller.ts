@@ -17,6 +17,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { DeductStockDto } from 'src/DTOs/deduct-stock.dto';
+import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 
 @Controller('stock')
 @UseGuards(RolesGuard)
@@ -31,20 +32,24 @@ export class StockController {
   async getAllStock(
     @Param('page') page: number = 1,
     @Param('limit') limit: number = 10,
-  ): Promise<Stock[]> {
+  ): Promise<StockSummaryResponseDTO[]> {
     return await this.stockService.getAllStocks(page, limit);
   }
 
   @Get('/product/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByProductId(@Param('id') id: string): Promise<Stock> {
+  async getStockByProductId(
+    @Param('id') id: string,
+  ): Promise<StockSummaryResponseDTO> {
     console.log(id);
     return await this.stockService.getStockByProductId(id);
   }
 
   @Get('/ingredient/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async getStockByIngredientId(@Param('id') id: string): Promise<Stock> {
+  async getStockByIngredientId(
+    @Param('id') id: string,
+  ): Promise<StockSummaryResponseDTO> {
     return await this.stockService.getStockByIngredientId(id);
   }
 
