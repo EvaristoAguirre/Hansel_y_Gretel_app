@@ -1,6 +1,7 @@
 import { addStock, editStock, getIdStockFromProduct } from "@/api/stock"; // Se agrega editStock
 import { fetchUnits } from "@/api/unitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
+import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
@@ -37,6 +38,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
   const { getAccessToken } = useAuth();
   const { fetchAndSetProducts } = useProductos();
+  const { addIngredient } = useIngredientsContext();
 
   useEffect(() => {
     console.log("🦋selectedItem", selectedItem);
@@ -92,7 +94,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
 
     let idStock: string = ""
     try {
-      token && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
+      token && selectedItem.id && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
         idStock = id
       })
     } catch (error) {
@@ -114,13 +116,15 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
       try {
         // Si existe stock en el selectedItem, se edita, de lo contrario se agrega.
         if (selectedItem?.stock) {
-          await editStock(idStock, payload, token,);
+          const editedStock = await editStock(idStock, payload, token);
+          addIngredient(editedStock);
           Swal.fire("Éxito", "Stock editado correctamente.", "success");
         } else {
           await addStock(payload, token);
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
         }
         fetchAndSetProducts(token);
+
         onSave();
         handleClose();
       } catch (error) {
@@ -164,13 +168,14 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           margin="dense"
           variant="standard"
           name="unitOfMeasure"
+          label="Unidad de Medida"
           value={formValues.unitOfMeasure}
           onChange={handleSelectChange}
           displayEmpty
           MenuProps={{
             PaperProps: {
               sx: {
-                maxHeight: 200, // Altura máxima del menú antes de hacer scroll
+                maxHeight: 200,
                 overflow: "auto",
               },
             },

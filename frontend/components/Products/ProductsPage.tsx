@@ -96,12 +96,14 @@ const ProductsPage: React.FC = () => {
         }
         {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
         {selectedTab === Tab.CONTROL_DE_STOCK && (
-          <Box flex={1} overflow="auto">
-            <StockControl
-              selectedCategoryId={selectedCategoryId}
-              onClearSelectedCategory={clearSelectedCategory}
-            />
-          </Box>
+          <IngredientsProvider>
+            <Box flex={1} overflow="auto">
+              <StockControl
+                selectedCategoryId={selectedCategoryId}
+                onClearSelectedCategory={clearSelectedCategory}
+              />
+            </Box>
+          </IngredientsProvider>
         )}
         {selectedTab === Tab.UNIDADES_MEDIDA &&
           <UnitProvider>

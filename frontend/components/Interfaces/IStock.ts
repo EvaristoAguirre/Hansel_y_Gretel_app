@@ -20,8 +20,8 @@ export interface IStockOfProduct {
 
 
 export interface SelectedItem {
-  // type: StockModalType;
-  id: string;
+  type?: StockModalType;
+  id?: string;
   name?: string;
   stock?: number | null;
   min: number | null;

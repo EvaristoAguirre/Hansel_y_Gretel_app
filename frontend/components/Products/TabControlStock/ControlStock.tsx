@@ -2,44 +2,38 @@
 import { Box, Typography, Card, CardContent, TextField, Autocomplete, Button } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
-import { useProductos } from "../../Hooks/useProducts";
 import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { searchProducts } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
-import { Iingredient } from "@/components/Interfaces/Ingredients";
-import { fetchIngredients } from "@/api/ingredients";
 import ModalStock from "./ModalStock";
 import { StockModalType } from "@/components/Enums/view-products";
 import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
+import { useIngredientsContext } from "@/app/context/ingredientsContext";
 
 
 
 const costos = ["Costo total productos", "Costo total ingredientes", "Costo total"];
 
-const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
+const StockControl: React.FC<ProductsProps> = () => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const [searchResults, setSearchResults] = useState(products); // Productos filtrados
-  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState(products);
+  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]);
   const [token, setToken] = useState<string | null>(null);
-  const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [noStock, setNoStock] = useState(false);
 
+  const { ingredients } = useIngredientsContext();
 
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
-
-  useEffect(() => {
-    setSearchResults(products);
-  }, [products]);
 
   // Actualizar los productos seleccionados al cambiar `products`
   useEffect(() => {
@@ -57,17 +51,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
   }, []);
 
 
-  useEffect(() => {
-    if (token) {
-      fetchIngredients(token).then((data) => {
-        setIngredients(data);
-        console.log(data);
-      });
-    }
-
-  }, [token]);
-
-  const formattedProducts = (selectedProducts.length > 0 ? selectedProducts : searchResults).map((product) => ({
+  const formattedProducts = products.map((product) => ({
     id: product.id,
     name: product.name,
     stock: product.stock?.quantityInStock || null,
@@ -76,41 +60,17 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
     cost: product.cost || null,
   }));
 
-
-  // Manejar búsqueda de productos
-  const handleSearch = async (value: string) => {
-    const searchTerm = value.trim();
-    if (searchTerm.length > 0 && searchTerm !== searchTerm) {
-      setSearchTerm(searchTerm);
-      if (token && selectedCategoryId) {
-        const results = await searchProducts(searchTerm, selectedCategoryId, token);
-        setSearchResults(results);
-      }
-    } else if (searchTerm.length === 0) {
-      setSearchResults(products);
-    }
-  };
-
-  // Manejar selección de un producto
-  const handleSelectProduct = (product: ProductCreated) => {
-    if (!selectedProducts.find((p) => p.id === product.id)) {
-      setSelectedProducts([...selectedProducts, product]);
-    }
-    else {
-      setSelectedProducts(selectedProducts.filter((p) => p.id !== product.id));
-    };
-  };
-
-  // Limpiar búsqueda y mostrar todos los productos
-  const handleClearSearch = () => {
-    setSearchResults(products);
-    setSelectedProducts([]);
-    onClearSelectedCategory();
-  };
+  const formattedIngredients = ingredients.map((ingredient) => ({
+    id: ingredient.id,
+    name: ingredient.name,
+    stock: ingredient.stock?.quantityInStock || null,
+    unit: ingredient.stock?.unitOfMeasure?.name || null,
+    min: ingredient.stock?.minimumStock || null,
+    cost: ingredient.cost || null,
+  }));
 
   //Edición de Producto
   const handleEditProduct = (item: any, type: StockModalType) => {
-    //llamamos a product para que se actualice la tabla
     setSelectedItem({ ...item, type });
     setModalOpen(true);
   };
@@ -160,7 +120,6 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
 
   const ingredientColumns = [
-    { field: "name", headerName: "Nombre", flex: 1 },
     {
       field: "stock",
       headerName: "Stock",
@@ -174,11 +133,11 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             {/* Etiqueta de color a la izquierda */}
             <Box
               sx={{
-                width: "8px", // Grosor de la etiqueta
-                height: "16px", // Altura
+                width: "10px",
+                height: "50px",
                 backgroundColor: bgColor,
                 borderRadius: "4px",
-                marginRight: "8px", // Espacio entre la etiqueta y el número
+                marginRight: "8px",
               }}
             />
             {/* Valor de stock */}
@@ -187,11 +146,14 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
         );
       }
     },
+    { field: "name", headerName: "Nombre", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
-
+  useEffect(() => {
+    setSearchResults(products);
+  }, [products]);
 
   //limpiar el modal
   const handleCloseModal = () => {
@@ -217,14 +179,14 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
 
 
   const filteredProducts = filterByStock(formattedProducts);
+  const filteredIngredients = filterByStock(formattedIngredients);
 
   useEffect(() => {
-    const hasNullStock = filteredProducts.some((product) => product.stock === null);
+    const hasNullStock = filteredProducts.some((product) => (product.stock === null || product.stock === undefined || product.stock === 0));
     if (hasNullStock) {
       setNoStock(true);
     }
   }, [filteredProducts]);
-  // const filteredIngredients = filterByStock(ingredients);
 
 
   return (
@@ -260,7 +222,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
                 cursor: "pointer",
               },
               "& .MuiDataGrid-row:hover": {
-                backgroundColor: "#f3d49a66", // Color amarillo claro de ejemplo
+                backgroundColor: "#f3d49a66",
               },
             }}
             onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
@@ -273,7 +235,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             INGREDIENTES
           </Typography>
           <DataGrid
-            rows={ingredients}
+            rows={filteredIngredients}
             columns={ingredientColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
@@ -294,7 +256,7 @@ const StockControl: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSele
             selectedItem={selectedItem}
             token={token}
             onClose={() => setModalOpen(false)}
-            onSave={() => { handleCloseModal }}
+            onSave={handleCloseModal}
           />
         )
       }
