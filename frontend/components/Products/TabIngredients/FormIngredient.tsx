@@ -58,6 +58,7 @@ export const FormIngredient = ({
     name: "Nombre",
     description: "Descripción",
     cost: "Costo",
+    stock: "Stock",
   };
 
   return (

@@ -25,6 +25,9 @@ export interface ProductForm extends IProduct {
 export interface ProductForPromo {
   productId: string;
   quantity: number;
+  id?: string;
+  name?: string;
+  price?: number;
 }
 export interface ProductTableProps {
   rows: GridRowsProp;
@@ -83,7 +86,7 @@ export interface SelectedProductsI {
   productId: string;
   productName: string;
   quantity: number;
-  unitaryPrice: number;
+  unitaryPrice: number | null;
 };
 
 

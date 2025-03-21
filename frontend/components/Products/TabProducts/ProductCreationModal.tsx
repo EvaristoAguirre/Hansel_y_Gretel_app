@@ -8,6 +8,7 @@ import { useAuth } from '@/app/context/authContext';
 import { IingredientForm } from '@/components/Interfaces/Ingredients';
 import IngredientDialog from './IngredientDialog';
 import InputsPromo from './InputsPromo';
+import { log } from 'console';
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -68,6 +69,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   useEffect(() => {
     console.log("📝formulario", form);
+    console.log("👀estado iniciar del tipo de formulario", form.type);
 
   })
   const fieldLabels: Record<keyof ProductForm, string> = {
@@ -139,15 +141,16 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    // Actualizamos el tipo según la pestaña seleccionada
-    if (newValue === 0) {
-      onChange("type", TypeProduct.PRODUCT);
-    } else if (newValue === 1) {
-      onChange("type", TypeProduct.PRODUCT);
-    } else if (newValue === 2) {
+    if (newValue === 2 && form.type !== TypeProduct.PROMO) {
       onChange("type", TypeProduct.PROMO);
+      console.log("💚Se ha cambiado a la pestaña promo", form.type);
+
+    } else if (newValue !== 2 && form.type === TypeProduct.PROMO) {
+      onChange("type", TypeProduct.PRODUCT);
+      console.log("🤎Se ha cambiado a la pestaña de tipo product", form.type);
     }
   };
+
 
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
     onChange("ingredients", ingredientsForm);
