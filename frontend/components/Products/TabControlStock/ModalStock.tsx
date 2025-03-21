@@ -1,8 +1,11 @@
-import { addStock, editStock, getIdStockFromProduct } from "@/api/stock"; // Se agrega editStock
+import { ingredientsById } from "@/api/ingredients";
+import { addStock, editStock, getIdStockFromIngredient, getIdStockFromProduct, getStockByIngredient } from "@/api/stock"; // Se agrega editStock
 import { fetchUnits } from "@/api/unitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import { StockModalType } from "@/components/Enums/view-products";
 import { useProductos } from "@/components/Hooks/useProducts";
+import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
 import {
@@ -16,6 +19,7 @@ import {
   SelectChangeEvent,
   TextField,
 } from "@mui/material";
+import { group } from "console";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
@@ -38,7 +42,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
   const { getAccessToken } = useAuth();
   const { fetchAndSetProducts } = useProductos();
-  const { addIngredient } = useIngredientsContext();
+  const { updateIngredient } = useIngredientsContext();
 
   useEffect(() => {
     console.log("🦋selectedItem", selectedItem);
@@ -88,27 +92,21 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
    * Recupero el Id del stock de un producto
    * getIdStockFromProduct devuelve el id del stock
    * que luego paso por props a editStock
+   * También lo se hace es hacer un fetch a igredient/id y actualizarlo en el context.
    */
   const handleSubmit = async () => {
+
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
 
-    let idStock: string = ""
-    try {
-      token && selectedItem.id && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
-        idStock = id
-      })
-    } catch (error) {
-      console.error("Error al obtener las unidades de medida:", error);
-    }
     const payload: IStock = {
       quantityInStock: parseInt(quantityInStock, 10),
       minimumStock: parseInt(minimumStock, 10),
       unitOfMeasureId: unitOfMeasure,
     };
 
-    if (selectedItem.type === "product") {
+    if (selectedItem.type === StockModalType.PRODUCT) {
       payload.productId = selectedItem.id;
-    } else if (selectedItem.type === "ingredient") {
+    } else if (selectedItem.type === StockModalType.INGREDIENT) {
       payload.ingredientId = selectedItem.id;
     }
 
@@ -116,8 +114,32 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
       try {
         // Si existe stock en el selectedItem, se edita, de lo contrario se agrega.
         if (selectedItem?.stock) {
-          const editedStock = await editStock(idStock, payload, token);
-          addIngredient(editedStock);
+          let idStock: string = ""
+          if (selectedItem.type === StockModalType.PRODUCT) {
+            try {
+              token && selectedItem.id && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
+                idStock = id
+              })
+            } catch (error) {
+              console.error("Error al obtener el id del stock:", error);
+            }
+          } else if (selectedItem.type === StockModalType.INGREDIENT) {
+            try {
+              token && selectedItem.id && await getIdStockFromIngredient(selectedItem.id, token).then((id) => {
+                idStock = id
+              })
+            } catch (error) {
+              console.error("Error al obtener el id del stock:", error);
+            }
+          }
+          await editStock(idStock, payload, token);
+          const updateIngred: Iingredient[] = [];
+
+          token && selectedItem.id && await ingredientsById(selectedItem.id, token).then((stock: Iingredient) => {
+            updateIngred[0] = stock
+          })
+          updateIngredient(updateIngred[0]);
+
           Swal.fire("Éxito", "Stock editado correctamente.", "success");
         } else {
           await addStock(payload, token);
@@ -181,7 +203,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
             },
           }}
         >
-
           {units.map((u) => (
             <MenuItem key={u.id} value={u.id}>
               {u.name}

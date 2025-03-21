@@ -14,10 +14,7 @@ import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 
 
-
-const costos = ["Costo total productos", "Costo total ingredientes", "Costo total"];
-
-const StockControl: React.FC<ProductsProps> = () => {
+const StockControl = () => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
   const [searchResults, setSearchResults] = useState(products);
@@ -50,22 +47,22 @@ const StockControl: React.FC<ProductsProps> = () => {
     setToken(token);
   }, []);
 
-
   const formattedProducts = products.map((product) => ({
     id: product.id,
     name: product.name,
-    stock: product.stock?.quantityInStock || null,
+    stock: Number(product.stock?.quantityInStock) || null,
     unit: product.stock?.unitOfMeasure?.name || null,
-    min: product.stock?.minimumStock || null,
+    min: Number(product.stock?.minimumStock) || null,
     cost: product.cost || null,
   }));
 
   const formattedIngredients = ingredients.map((ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
-    stock: ingredient.stock?.quantityInStock || null,
+    stock: Number(ingredient.stock?.quantityInStock) || null,
     unit: ingredient.stock?.unitOfMeasure?.name || null,
-    min: ingredient.stock?.minimumStock || null,
+    min: Number(ingredient.stock?.minimumStock) || null,
+
     cost: ingredient.cost || null,
   }));
 
@@ -183,7 +180,8 @@ const StockControl: React.FC<ProductsProps> = () => {
 
   useEffect(() => {
     const hasNullStock = filteredProducts.some((product) => (product.stock === null || product.stock === undefined || product.stock === 0));
-    if (hasNullStock) {
+    const hasNullStockIngredients = filteredIngredients.some((ingredient) => (ingredient.stock === null || ingredient.stock === undefined || ingredient.stock === 0));
+    if (hasNullStock || hasNullStockIngredients) {
       setNoStock(true);
     }
   }, [filteredProducts]);
@@ -195,8 +193,8 @@ const StockControl: React.FC<ProductsProps> = () => {
       <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
       {noStock &&
         <Typography variant="h6" sx={{ mt: 2 }} color="error">
-          ❗️Hay productos sin stock asignado.
-          Seleccione el produto en la tabla para agregar stock.
+          ❗️Hay productos o ingredientes sin stock asignado.
+          Seleccione la fila correspondiente en la tabla para agregar stock.
         </Typography>
       }
       {/* DataGrids */}

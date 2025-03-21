@@ -20,7 +20,7 @@ type IngredientsContextType = {
   handleCreateIngredient: () => Promise<void>;
   handleEditIngredient: () => Promise<void>;
   handleCloseForm: () => void;
-  addIngredient: (ingredient: Iingredient) => void;
+  updateIngredient: (ingredient: Iingredient) => void;
 }
 
 const IngredientsContext = createContext<IngredientsContextType>({
@@ -40,7 +40,7 @@ const IngredientsContext = createContext<IngredientsContextType>({
   handleEditIngredient: async () => { },
   handleCloseForm: () => { },
   ingredients: [],
-  addIngredient: () => { },
+  updateIngredient: () => { },
 
 });
 
@@ -70,11 +70,18 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     });
   }, []);
 
+  useEffect(() => {
+    console.log(" 💹 ✅ ingredients", ingredients);
+
+  }, [ingredients]);
+
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
   };
 
   const updateIngredient = (ingredient: Iingredient) => {
+    console.log("🍝🍝🍝🍝🍝", ingredient);
+
     setIngredients((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
         prevIngredient.id === ingredient.id ? ingredient : prevIngredient
@@ -175,7 +182,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         formOpen,
         formType,
         ingredients,
-        addIngredient,
+        updateIngredient,
         setFormIngredients,
         setFormOpen,
         setFormType,

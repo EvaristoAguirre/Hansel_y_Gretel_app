@@ -57,6 +57,17 @@ export const deleteIngredient = async (id: string, token: string) => {
 
 };
 
+export const ingredientsById = async (id: string, token: string) => {
+  const response = await fetch(`${URI_INGREDIENT}/${id}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
 
 
 

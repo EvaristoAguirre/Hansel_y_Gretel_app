@@ -44,3 +44,19 @@ export const getIdStockFromProduct = async (id: string, token: string) => {
   const idStock = await getStockByProduct(id, token);
   return idStock.id;
 };
+
+export const getStockByIngredient = async (id: string, token: string) => {
+  const response = await fetch(`${URI_STOCK}/ingredient/${id}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const getIdStockFromIngredient = async (id: string, token: string) => {
+  const idStock = await getStockByIngredient(id, token);
+  return idStock.id;
+};
