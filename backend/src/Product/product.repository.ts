@@ -102,12 +102,39 @@ export class ProductRepository {
 
     try {
       const product = await this.productRepository.findOne({
-        where: { code: code, isActive: true },
+        where: { code: code },
         relations: ['categories'],
       });
 
       if (!product) {
         throw new NotFoundException(`Product not found with  code: ${code}`);
+      }
+      return product;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error fetching the product',
+        error.message,
+      );
+    }
+  }
+
+  async getProductByName(name: string): Promise<Product> {
+    if (!name) {
+      throw new BadRequestException('Either name must be provided.');
+    }
+
+    try {
+      const product = await this.productRepository.findOne({
+        where: { name: name },
+        relations: ['categories'],
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product not found with  code: ${name}`);
       }
       return product;
     } catch (error) {

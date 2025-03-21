@@ -37,6 +37,7 @@ export class IngredientRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['stock', 'stock.unitOfMeasure'],
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
@@ -57,6 +58,32 @@ export class IngredientRepository {
       });
       if (!ingredient) {
         throw new NotFoundException(`Ingredient with ID: ${id} not found`);
+      }
+      return ingredient;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the unit of mesure',
+        error.message,
+      );
+    }
+  }
+
+  async getIngredientByName(name: string): Promise<Ingredient> {
+    if (!name) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    try {
+      const ingredient = await this.ingredientRepository.findOne({
+        where: { name },
+      });
+      if (!ingredient) {
+        throw new NotFoundException(`Ingredient with ID: ${name} not found`);
       }
       return ingredient;
     } catch (error) {

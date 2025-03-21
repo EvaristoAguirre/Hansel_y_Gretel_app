@@ -69,6 +69,12 @@ export class ProductController {
     return this.productService.getProductByCode(+code);
   }
 
+  @Get('by-name/:name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getProductByName(@Param('name') name: string): Promise<Product> {
+    return this.productService.getProductByName(name);
+  }
+
   @Post('by-categories')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductsByCategories(
