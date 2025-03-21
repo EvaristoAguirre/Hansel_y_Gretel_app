@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ICategory } from "../Interfaces/ICategories";
-import { ProductResponse, ProductState } from "../Interfaces/IProducts";
+import { ProductCreated, ProductResponse, ProductState } from "../Interfaces/IProducts";
 
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => (
@@ -9,32 +9,26 @@ const parseCategories = (categories: ICategory[]): string[] =>
 
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
-  //TODO: Métodos originales. Usar si se reciben solo los IDs de las categorías.
-  // setProducts: (products) => set({ products }),
-  // addProduct: (product) =>
-  //   set((state) => ({ products: [...state.products, product] })),
-  // updateProduct: (updatedProduct) =>
-  //   set((state) => ({
-  //     products: state.products.map((product) =>
-  //       product.id === updatedProduct.id ? updatedProduct : product
-  //     ),
-  //   })),
   setProducts: (products) => {
     // Se parsean las categorías para setear solo el ID
     const parsedProduct = products.map((product: any) => ({
       ...product,
       categories: parseCategories(product.categories)
-
     }));
-
 
     return set({ products: parsedProduct });
   },
   addProduct: (product) => {
-    const parsedProduct = {
+    const parsedProduct: ProductCreated = {
       ...product,
       categories: parseCategories(product.categories),
-      productIngredients: product.productIngredients
+      productIngredients: product.productIngredients.map((ingredient) => ({
+        name: ingredient.ingredient.name,
+        ingredientId: ingredient.id,
+        unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
+        quantityOfIngredient: ingredient.quantityOfIngredient,
+      })),
+      promotionDetails: product.promotionDetails
     };
 
     return set((state) => ({ products: [...state.products, parsedProduct] }));
@@ -44,9 +38,16 @@ export const useProductStore = create<ProductState>((set) => ({
       products: state.products.filter((product) => product.id !== id),
     })),
   updateProduct: (updatedProduct) => {
-    const parsedProduct = {
+    const parsedProduct: ProductCreated = {
       ...updatedProduct,
-      categories: parseCategories(updatedProduct.categories)
+      categories: parseCategories(updatedProduct.categories),
+      productIngredients: updatedProduct.productIngredients.map((ingredient) => ({
+        name: ingredient.ingredient.name,
+        ingredientId: ingredient.id,
+        unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
+        quantityOfIngredient: ingredient.quantityOfIngredient,
+      })),
+      promotionDetails: updatedProduct.promotionDetails
     };
 
     return set((state) => ({
