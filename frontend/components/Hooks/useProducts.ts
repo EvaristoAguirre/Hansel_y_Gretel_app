@@ -149,7 +149,7 @@ export const useProductos = () => {
       code: null,
       name: "",
       description: "",
-      type: null,
+      type: TypeProduct.PRODUCT,
       price: null,
       cost: null,
       categories: [],

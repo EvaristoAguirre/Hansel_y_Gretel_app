@@ -19,6 +19,9 @@ export class IngredientService {
     return await this.ingredientRepository.getIngredientById(id);
   }
 
+  async getIngredientByName(name: string): Promise<Ingredient> {
+    return await this.ingredientRepository.getIngredientByName(name);
+  }
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
     return this.ingredientRepository.createIngredient(createData);
   }

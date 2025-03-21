@@ -37,7 +37,7 @@ export const FormIngredient = ({
 
     if (!value) {
       error = "Este campo es obligatorio";
-    } else if ((field === "price" || field === "cost") && value <= 0) {
+    } else if ((field === "cost") && value <= 0) {
       error = "Debe ser un número positivo";
     }
 
@@ -46,7 +46,7 @@ export const FormIngredient = ({
 
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields = ["name", "price", "cost"].some(
+    const hasEmptyFields = ["name", "cost"].some(
       (field) => !formIngredients[field as keyof Iingredient]
     );
     setIsFormValid(!hasErrors && !hasEmptyFields);
@@ -57,23 +57,23 @@ export const FormIngredient = ({
     isActive: "Activo",
     name: "Nombre",
     description: "Descripción",
-    price: "Precio",
     cost: "Costo",
+    stock: "Stock",
   };
 
   return (
     <Dialog open={formOpen} onClose={handleCloseForm}>
       <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
-        {formType === FormType.CREATE ? "Crear Producto" : "Editar Producto"}
+        {formType === FormType.CREATE ? "Crear Ingrediente" : "Editar Ingrediente"}
       </DialogTitle>
       <DialogContent>
-        {["name", "description", "price", "cost"].map((field) => (
+        {["name", "description", "cost"].map((field) => (
           <TextField
             key={field}
             margin="dense"
             label={fieldLabels[field as keyof Iingredient]}
-            type={["price", "cost"].includes(field) ? "number" : "text"}
-            inputProps={["price", "cost"].includes(field) ? { step: "0.50" } : undefined}
+            type={["cost"].includes(field) ? "number" : "text"}
+            inputProps={["cost"].includes(field) ? { step: "0.50" } : undefined}
             value={formIngredients[field as keyof Iingredient] ?? ""}
             onChange={(e) => {
               const value = e.target.value;

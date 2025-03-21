@@ -20,6 +20,7 @@ type IngredientsContextType = {
   handleCreateIngredient: () => Promise<void>;
   handleEditIngredient: () => Promise<void>;
   handleCloseForm: () => void;
+  updateIngredient: (ingredient: Iingredient) => void;
 }
 
 const IngredientsContext = createContext<IngredientsContextType>({
@@ -27,7 +28,6 @@ const IngredientsContext = createContext<IngredientsContextType>({
     id: "",
     name: "",
     description: "",
-    price: null,
     cost: null
   },
   setFormIngredients: () => { },
@@ -39,7 +39,8 @@ const IngredientsContext = createContext<IngredientsContextType>({
   handleCreateIngredient: async () => { },
   handleEditIngredient: async () => { },
   handleCloseForm: () => { },
-  ingredients: []
+  ingredients: [],
+  updateIngredient: () => { },
 
 });
 
@@ -54,7 +55,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   const [formIngredients, setFormIngredients] = useState<Iingredient>({
     name: "",
     description: "",
-    price: null,
     cost: null
   });
   const [formOpen, setFormOpen] = useState(false);
@@ -70,11 +70,18 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     });
   }, []);
 
+  useEffect(() => {
+    console.log(" 💹 ✅ ingredients", ingredients);
+
+  }, [ingredients]);
+
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
   };
 
   const updateIngredient = (ingredient: Iingredient) => {
+    console.log("🍝🍝🍝🍝🍝", ingredient);
+
     setIngredients((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
         prevIngredient.id === ingredient.id ? ingredient : prevIngredient
@@ -94,7 +101,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     try {
       const preparedForm = {
         ...formIngredients,
-        price: parseFloat(formIngredients.price as any),
         cost: parseFloat(formIngredients.cost as any),
       };
       const newIngredient = await createIngredient(preparedForm, token);
@@ -116,7 +122,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     try {
       const preparedForm = {
         ...formIngredients,
-        price: parseFloat(formIngredients.price as any),
         cost: parseFloat(formIngredients.cost as any),
         id: formIngredients.id,
       };
@@ -166,7 +171,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       id: "",
       name: "",
       description: "",
-      price: null,
       cost: null,
     });
   };
@@ -178,6 +182,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         formOpen,
         formType,
         ingredients,
+        updateIngredient,
         setFormIngredients,
         setFormOpen,
         setFormType,

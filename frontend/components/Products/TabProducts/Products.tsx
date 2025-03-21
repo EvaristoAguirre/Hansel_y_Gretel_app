@@ -9,7 +9,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
-import { ProductDialog } from "./ProductDialog";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
@@ -134,16 +133,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
       {/* Product Dialog */}
       {modalOpen && (
-        // <ProductDialog
-        //   open={modalOpen}
-        //   modalType={modalType}
-        //   form={form}
-        //   categories={categories}
-        //   products={products}
-        //   onChange={handleChangeProductInfo}
-        //   onClose={handleCloseModal}
-        //   onSave={handleSave}
-        // />
         <ProductCreationModal
           modalType={modalType}
           form={form}

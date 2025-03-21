@@ -24,14 +24,13 @@ const Ingredients = () => {
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
-    { field: "price", headerName: "Precio", width: 100 },
     { field: "cost", headerName: "Costo", width: 100 },
     {
       field: "actions",
       headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
-        <div>
+        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
           <Button
             variant="contained"
             className="bg-[--color-primary] text-bold mt-2 mr-2"
@@ -41,7 +40,6 @@ const Ingredients = () => {
                 id: params.row.id,
                 name: params.row.name,
                 description: params.row.description,
-                price: params.row.price,
                 cost: params.row.cost
               });
               setFormType(FormType.EDIT);

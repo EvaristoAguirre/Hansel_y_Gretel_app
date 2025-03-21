@@ -25,17 +25,14 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
   // Resultado del buscador de productos
   const [searchProductsResults, setSearchProductsResults] = useState<ProductCreated[]>([]);
 
-  useEffect(() => {
-    if (form.products) {
-      const preparedProducts = form.products.map((item) => ({
-        productId: item.productId,
-        productName: item.product.name,
-        quantity: item.quantity,
-        unitaryPrice: Number(item.product.price),
-      }));
-      setSelectedProducts(preparedProducts);
-    }
-  }, []);
+  const preparedProducts = form.products
+    .filter((item) => item.id !== undefined && item.name !== undefined)
+    .map((item) => ({
+      productId: item.id,
+      productName: item.name,
+      quantity: item.quantity,
+      unitaryPrice: Number(item.price),
+    }));
 
 
   // Auto-actualización: cada vez que cambie selectedProducts, actualizamos el formulario del padre.
@@ -168,7 +165,9 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
               <Tooltip title={item.productName} arrow>
                 <ListItemText primary={capitalizeFirstLetter(item.productName)} />
               </Tooltip>
-              <Typography>${(item.unitaryPrice * item.quantity).toFixed(2)}</Typography>
+              {item.unitaryPrice !== null && (
+                <Typography>${(item.unitaryPrice * item.quantity).toFixed(2)}</Typography>
+              )}
 
               {editIndex === index ? (
                 <>
