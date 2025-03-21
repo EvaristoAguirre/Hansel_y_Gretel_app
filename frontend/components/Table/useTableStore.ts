@@ -106,7 +106,7 @@ interface TableStateZustand {
 }
 
 export const useTableStore = create<TableStateZustand>((set) => {
-  const socket = io("http://192.168.100.133:3000"); // Usa la IP de tu backend
+  const socket = io("http://192.168.1.44:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket");

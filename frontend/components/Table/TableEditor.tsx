@@ -11,7 +11,6 @@ import { useAuth } from "@/app/context/authContext";
 import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
 
-const socket = io('http://192.168.100.133:3000');
 
 
 
