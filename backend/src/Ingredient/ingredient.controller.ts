@@ -26,7 +26,7 @@ export class IngredientController {
   constructor(private readonly ingredientService: IngredientService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getAllIngredients(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -35,9 +35,15 @@ export class IngredientController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getIngredientById(@Param('id') id: string): Promise<Ingredient> {
     return await this.ingredientService.getIngredientById(id);
+  }
+
+  @Get('by-name/:name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getIngredientByName(@Param('name') name: string): Promise<Ingredient> {
+    return await this.ingredientService.getIngredientByName(name);
   }
 
   @Post()
