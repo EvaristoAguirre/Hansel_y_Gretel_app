@@ -7,10 +7,14 @@ import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class IngredientService {
-  constructor(private readonly ingredientRepository: IngredientRepository) {}
+  constructor(
+    private readonly ingredientRepository: IngredientRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async getAllIngredients(
     page: number,
@@ -27,15 +31,32 @@ export class IngredientService {
     return await this.ingredientRepository.getIngredientByName(name);
   }
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
-    return this.ingredientRepository.createIngredient(createData);
+    const ingredientCreated =
+      await this.ingredientRepository.createIngredient(createData);
+    await this.eventEmitter.emit('ingredient.created', {
+      ingredient: ingredientCreated,
+    });
+    return ingredientCreated;
   }
 
   async updateIngredient(id: string, updateData: UpdateIngredientDto) {
-    return this.ingredientRepository.updateIngredient(id, updateData);
+    const ingredientUpdated = await this.ingredientRepository.updateIngredient(
+      id,
+      updateData,
+    );
+    await this.eventEmitter.emit('ingredient.updated', {
+      ingredient: ingredientUpdated,
+    });
+    return ingredientUpdated;
   }
 
   async deleteIngredient(id: string) {
-    return await this.ingredientRepository.deleteIngredient(id);
+    const ingredientDeleted =
+      await this.ingredientRepository.deleteIngredient(id);
+    await this.eventEmitter.emit('ingredient.deleted', {
+      ingredient: ingredientDeleted,
+    });
+    return ingredientDeleted;
   }
 
   // ---------------- Unit Of Mesure ---------- //
