@@ -87,7 +87,7 @@ interface OrderStateZustand {
 
 export const useOrderStore = create<OrderStateZustand>((set, get) => {
 
-  const socket = io("http://192.168.100.133:3000");
+  const socket = io("http://localhost:3000");
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Order");
