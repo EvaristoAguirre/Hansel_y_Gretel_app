@@ -8,7 +8,11 @@ const stockFilters = [
   { label: 'Stock Alto', value: 'high', color: '#21b421' },
 ];
 
-const FilterStock = ({ currentFilter, onFilterChange }) => {
+interface FilterStockProps {
+  currentFilter: string | null;
+  onFilterChange: (filter: string | null) => void;
+}
+const FilterStock: React.FC<FilterStockProps> = ({ currentFilter, onFilterChange }) => {
   return (
     <div className="flex gap-2">
       {stockFilters.map((filter) => (

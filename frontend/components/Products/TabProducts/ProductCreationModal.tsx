@@ -76,11 +76,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setToken(token);
   }, [getAccessToken]);
 
-  useEffect(() => {
-    console.log("📝formulario", form);
-    console.log("👀estado iniciar del tipo de formulario", form.type);
-
-  })
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
     name: "Nombre",
@@ -150,11 +145,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setTabValue(newValue);
     if (newValue === 2 && form.type !== TypeProduct.PROMO) {
       onChange("type", TypeProduct.PROMO);
-      console.log("💚Se ha cambiado a la pestaña promo", form.type);
 
     } else if (newValue !== 2 && form.type === TypeProduct.PROMO) {
       onChange("type", TypeProduct.PRODUCT);
-      console.log("🤎Se ha cambiado a la pestaña de tipo product", form.type);
     }
   };
 
@@ -205,10 +198,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseInt(e.target.value, 10)
-                : e.target.value;
+                  ? e.target.value === ""
+                    ? null
+                    : parseInt(e.target.value, 10)
+                  : e.target.value;
               onChange(field as keyof ProductForm, value);
               if (field !== "code") {
                 validateField(field, value);

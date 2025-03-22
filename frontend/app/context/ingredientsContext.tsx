@@ -70,17 +70,13 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     });
   }, []);
 
-  useEffect(() => {
-    console.log(" 💹 ✅ ingredients", ingredients);
 
-  }, [ingredients]);
 
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
   };
 
   const updateIngredient = (ingredient: Iingredient) => {
-    console.log("🍝🍝🍝🍝🍝", ingredient);
 
     setIngredients((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
