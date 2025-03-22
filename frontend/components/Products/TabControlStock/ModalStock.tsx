@@ -5,7 +5,6 @@ import { useAuth } from "@/app/context/authContext";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { StockModalType } from "@/components/Enums/view-products";
 import { useProductos } from "@/components/Hooks/useProducts";
-import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
 import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
 import {
@@ -21,7 +20,6 @@ import {
   SelectChangeEvent,
   TextField,
 } from "@mui/material";
-import { group, log } from 'console';
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
@@ -45,11 +43,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const { getAccessToken } = useAuth();
   const { fetchAndSetProducts } = useProductos();
   const { updateIngredient } = useIngredientsContext();
-
-  useEffect(() => {
-    console.log("🦋selectedItem", selectedItem);
-
-  }, [selectedItem]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,17 +83,12 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
     }));
   };
   /**
-   * Manejo del envio del formulario
-   * Recupero el Id del stock de un producto
-   * getIdStockFromProduct devuelve el id del stock
-   * que luego paso por props a editStock
-   * También lo se hace es hacer un fetch a igredient/id y actualizarlo en el context.
+   * Función que se ejecuta cuando se hace clic en el boton "Guardar"
+   * Previamente se valida que los campos sean correctos
+   * y mas adelante explico como se hace las llamadas
    */
   const handleSubmit = async () => {
-    console.group("🦋handleSubmit a ingredientes");
-
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
-
     const payload: IStock = {
       quantityInStock: parseInt(quantityInStock, 10),
       minimumStock: parseInt(minimumStock, 10),
