@@ -11,6 +11,7 @@ import { TableState } from "../Enums/Enums";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
+import { UserRole } from "../Enums/user";
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -21,9 +22,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
   const { updateTable } = useTableStore();
-  const { updateOrder, orders, connectWebSocket } = useOrderStore();
-  const { getAccessToken } = useAuth();
-  const [total, setTotal] = useState(0);
+  const { updateOrder } = useOrderStore();
+  const { getAccessToken, userRoleFromToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,11 +84,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     closed: "text-green-500",
   };
 
-  
-
-  // useEffect(() => {
-  //   console.log("Cambio en selectedOrderByTable (desde PayOrder):", selectedOrderByTable);
-  // }, [selectedOrderByTable]);
 
   return (
     <div
@@ -154,7 +149,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             <p
               className={
                 orderStyles[
-                  selectedOrderByTable?.state as keyof typeof orderStates
+                selectedOrderByTable?.state as keyof typeof orderStates
                 ]
               }
             >
@@ -171,8 +166,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         </div>
       </div>
 
-      <div>
-        {
+      {
+        (userRoleFromToken() === UserRole.ADMIN || userRoleFromToken() === UserRole.ENCARGADO) &&
+        <div>
           <>
             {selectedOrderByTable &&
               selectedOrderByTable.state === "pending_payment" && (
@@ -192,10 +188,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 </Button>
               )}
             {(selectedMesa && selectedMesa.state === TableState.CLOSED) ||
-            (selectedMesa &&
-              orderStates[
+              (selectedMesa &&
+                orderStates[
                 selectedOrderByTable?.state as keyof typeof orderStates
-              ] === "ORDEN PAGADA") ? (
+                ] === "ORDEN PAGADA") ? (
               <Button
                 fullWidth
                 variant="outlined"
@@ -215,8 +211,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               </Button>
             ) : null}
           </>
-        }
-      </div>
+        </div>
+      }
     </div>
   );
 };
