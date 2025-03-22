@@ -95,6 +95,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
    * También lo se hace es hacer un fetch a igredient/id y actualizarlo en el context.
    */
   const handleSubmit = async () => {
+    console.group("🦋handleSubmit a ingredientes");
 
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
 
@@ -133,10 +134,15 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
             }
           }
           await editStock(idStock, payload, token);
+
           const updateIngred: Iingredient[] = [];
 
           token && selectedItem.id && await ingredientsById(selectedItem.id, token).then((stock: Iingredient) => {
             updateIngred[0] = stock
+            console.log("🤍 stock de ingrediente por id", stock);
+
+            console.log("🟢💚", updateIngred[0]);
+
           })
           updateIngredient(updateIngred[0]);
 
