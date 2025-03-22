@@ -13,7 +13,7 @@ const filters: Filter[] = [
   { label: 'Disponibles', value: TableState.AVAILABLE, color: '#21b421' },
   { label: 'Ocupadas', value: TableState.OPEN, color: '#d94d22' },
   { label: 'Pendientes de pago', value: TableState.PENDING_PAYMENT, color: '#f9b32d' },
-  { label: 'Cerradas', value: TableState.CLOSED, color: '#21b492' },
+  { label: 'Cerradas', value: TableState.CLOSED, color: '#1f7cad' },
 ];
 
 interface FilterChipProps {
