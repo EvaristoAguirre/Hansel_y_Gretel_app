@@ -68,7 +68,7 @@ export const useProductos = () => {
       };
       if (token) {
         const newProduct = await createProduct(preparedForm, token!);
-        addProduct(newProduct);
+        // addProduct(newProduct);
         handleCloseModal();
 
       } else {

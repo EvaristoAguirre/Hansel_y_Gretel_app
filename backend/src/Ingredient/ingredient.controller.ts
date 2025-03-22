@@ -19,6 +19,7 @@ import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
+import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 
 @Controller('ingredient')
 @UseGuards(RolesGuard)
@@ -30,13 +31,15 @@ export class IngredientController {
   async getAllIngredients(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
-  ): Promise<Ingredient[]> {
+  ): Promise<IngredientResponseDTO[]> {
     return await this.ingredientService.getAllIngredients(page, limit);
   }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getIngredientById(@Param('id') id: string): Promise<Ingredient> {
+  async getIngredientById(
+    @Param('id') id: string,
+  ): Promise<IngredientResponseDTO> {
     return await this.ingredientService.getIngredientById(id);
   }
 

@@ -15,6 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 
 @Injectable()
 export class StockRepository {
@@ -32,51 +33,52 @@ export class StockRepository {
     private readonly ingredientService: IngredientService,
   ) {}
 
-  async getAllStocks(page: number, limit: number): Promise<Stock[]> {
+  async getAllStocks(
+    page: number,
+    limit: number,
+  ): Promise<StockSummaryResponseDTO[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
+
     try {
-      return await this.stockRepository.find({
+      const stocks = await this.stockRepository.find({
         skip: (page - 1) * limit,
         take: limit,
-        relations: ['ingredient', 'product'],
+        relations: ['ingredient', 'product', 'unitOfMeasure'],
       });
+
+      return this.adaptStocksResponse(stocks);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching orders',
+        'Error fetching stocks',
         error.message,
       );
     }
   }
 
-  async getStockByProductId(productId: string): Promise<Stock> {
+  async getStockByProductId(
+    productId: string,
+  ): Promise<StockSummaryResponseDTO> {
     if (!productId) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
       const stock = await this.stockRepository.findOne({
-        where: { product: { id: productId } },
-        relations: ['product'],
+        where: { id: productId },
+        relations: ['product', 'unitOfMeasure'], // Asegúrate de incluir las relaciones necesarias
       });
 
       if (!stock) {
-        throw new NotFoundException(
-          `Stock not found for product with ID ${productId}`,
-        );
+        throw new NotFoundException('Stock not found');
       }
 
-      return stock;
+      return this.adaptStockResponse(stock); // Usar la función para un solo stock
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
         'Error fetching stock',
         error.message,
@@ -84,30 +86,25 @@ export class StockRepository {
     }
   }
 
-  async getStockByIngredientId(ingredientId: string): Promise<Stock> {
+  async getStockByIngredientId(
+    ingredientId: string,
+  ): Promise<StockSummaryResponseDTO> {
     if (!ingredientId) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
       const stock = await this.stockRepository.findOne({
-        where: { ingredient: { id: ingredientId } },
-        relations: ['ingredient'],
+        where: { id: ingredientId },
+        relations: ['ingredient', 'unitOfMeasure'],
       });
 
       if (!stock) {
-        throw new NotFoundException(
-          `Stock not found for product with ID ${ingredientId}`,
-        );
+        throw new NotFoundException('Stock not found');
       }
 
-      return stock;
+      return this.adaptStockResponse(stock);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
         'Error fetching stock',
         error.message,
@@ -454,5 +451,36 @@ export class StockRepository {
         error.message,
       );
     }
+  }
+
+  private adaptStockResponse(stock: any): StockSummaryResponseDTO {
+    return {
+      id: stock.id,
+      quantityInStock: stock.quantityInStock,
+      minimumStock: stock.minimumStock,
+      ingredient: stock.ingredient
+        ? {
+            id: stock.ingredient.id,
+            name: stock.ingredient.name,
+            cost: stock.ingredient.cost,
+          }
+        : null,
+      product: stock.product
+        ? {
+            id: stock.product.id,
+            name: stock.product.name,
+            cost: stock.product.cost,
+          }
+        : null,
+      unitOfMeasure: {
+        id: stock.unitOfMeasure.id,
+        name: stock.unitOfMeasure.name,
+        abbreviation: stock.unitOfMeasure.abbreviation,
+      },
+    };
+  }
+
+  private adaptStocksResponse(stocks: any[]): StockSummaryResponseDTO[] {
+    return stocks.map(this.adaptStockResponse);
   }
 }

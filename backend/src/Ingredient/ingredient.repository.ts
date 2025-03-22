@@ -14,6 +14,7 @@ import { UnitOfMeasure } from './unitOfMesure.entity';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitConversion } from './unitConversion.entity';
+import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 
 @Injectable()
 export class IngredientRepository {
@@ -26,40 +27,49 @@ export class IngredientRepository {
     private readonly unitConversionRepository: Repository<UnitConversion>,
   ) {}
 
-  async getAllIngredients(page: number, limit: number): Promise<Ingredient[]> {
+  // ------- con envio de stock estandarizado
+  async getAllIngredients(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
+
     try {
-      return await this.ingredientRepository.find({
+      const ingredients = await this.ingredientRepository.find({
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['stock', 'stock.unitOfMeasure'],
       });
+
+      return await this.adaptIngredientsResponse(ingredients);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching orders',
+        'Error fetching ingredients',
         error.message,
       );
     }
   }
 
-  async getIngredientById(id: string): Promise<Ingredient> {
+  // ------- con envio de stock estandarizado
+  async getIngredientById(id: string): Promise<IngredientResponseDTO> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { id, isActive: true },
+        relations: ['stock', 'stock.unitOfMeasure'],
       });
       if (!ingredient) {
         throw new NotFoundException(`Ingredient with ID: ${id} not found`);
       }
-      return ingredient;
+      return await this.adaptIngredientResponse(ingredient);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -474,5 +484,33 @@ export class IngredientRepository {
     }
 
     return convertedQuantity;
+  }
+
+  private adaptIngredientResponse(ingredient: any): IngredientResponseDTO {
+    return {
+      id: ingredient.id,
+      name: ingredient.name,
+      isActive: ingredient.isActive,
+      description: ingredient.description,
+      cost: ingredient.cost,
+      stock: ingredient.stock
+        ? {
+            id: ingredient.stock.id,
+            quantityInStock: ingredient.stock.quantityInStock,
+            minimumStock: ingredient.stock.minimumStock,
+            unitOfMeasure: {
+              id: ingredient.stock.unitOfMeasure.id,
+              name: ingredient.stock.unitOfMeasure.name,
+              abbreviation: ingredient.stock.unitOfMeasure.abbreviation,
+            },
+          }
+        : null,
+    };
+  }
+
+  private adaptIngredientsResponse(
+    ingredients: any[],
+  ): IngredientResponseDTO[] {
+    return ingredients.map(this.adaptIngredientResponse);
   }
 }
