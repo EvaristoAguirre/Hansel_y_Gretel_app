@@ -111,18 +111,36 @@ export class IngredientRepository {
   }
 
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
-    const { name } = createData;
+    const { name, unitOfMeasureId } = createData;
+
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
+
     const existingIngredient = await this.ingredientRepository.findOne({
       where: { name: name },
     });
     if (existingIngredient) {
-      throw new ConflictException('Ingredient name already exist');
+      throw new ConflictException('Ingredient name already exists');
     }
+
+    if (unitOfMeasureId) {
+      const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
+        where: { id: unitOfMeasureId },
+      });
+      if (!unitOfMeasure) {
+        throw new BadRequestException('Unit of measure not found');
+      }
+    }
+
     try {
-      return await this.ingredientRepository.save(createData);
+      const ingredient = this.ingredientRepository.create(createData);
+      if (unitOfMeasureId) {
+        ingredient.unitOfMeasure = await this.unitOfMeasureRepository.findOne({
+          where: { id: unitOfMeasureId },
+        });
+      }
+      return await this.ingredientRepository.save(ingredient);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -130,17 +148,20 @@ export class IngredientRepository {
       ) {
         throw error;
       }
-
       throw new InternalServerErrorException(
-        'An error occurred while creating the order. Please try again later.',
+        'An error occurred while creating the ingredient. Please try again later.',
       );
     }
   }
 
-  async updateIngredient(id: string, updateData: UpdateIngredientDto) {
+  async updateIngredient(
+    id: string,
+    updateData: UpdateIngredientDto,
+  ): Promise<Ingredient> {
     if (!id) {
       throw new BadRequestException('ID must be provided');
     }
+
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { id: id, isActive: true },
@@ -148,7 +169,21 @@ export class IngredientRepository {
       if (!ingredient) {
         throw new NotFoundException('Ingredient not found');
       }
+
+      if (updateData.unitOfMeasureId) {
+        const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
+          where: { id: updateData.unitOfMeasureId },
+        });
+        if (!unitOfMeasure) {
+          throw new BadRequestException('Unit of measure not found');
+        }
+
+        ingredient.unitOfMeasure = unitOfMeasure;
+        delete updateData.unitOfMeasureId;
+      }
+
       Object.assign(ingredient, updateData);
+
       return await this.ingredientRepository.save(ingredient);
     } catch (error) {
       if (
@@ -451,6 +486,10 @@ export class IngredientRepository {
     if (fromUnitId === toUnitId) {
       return quantity;
     }
+
+    console.log('pasando a convertir unidad como FROM to', fromUnitId);
+    console.log('pasando a convertir unidad como  to Unit', toUnitId);
+    console.log('pasando a convertir unidad como  quantity', quantity);
 
     const directConversion = await this.unitConversionRepository.findOne({
       where: { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },

@@ -15,6 +15,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
+import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -87,4 +88,9 @@ export class Product {
     (promotionProduct) => promotionProduct.product,
   )
   componentDetails: PromotionProduct[];
+
+  @ManyToOne(() => UnitOfMeasure, (unitOfMeasure) => unitOfMeasure.products, {
+    nullable: true,
+  })
+  unitOfMeasure: UnitOfMeasure;
 }

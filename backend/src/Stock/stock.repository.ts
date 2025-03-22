@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   HttpException,
@@ -69,14 +70,14 @@ export class StockRepository {
     try {
       const stock = await this.stockRepository.findOne({
         where: { id: productId },
-        relations: ['product', 'unitOfMeasure'], // Asegúrate de incluir las relaciones necesarias
+        relations: ['product', 'unitOfMeasure'],
       });
 
       if (!stock) {
         throw new NotFoundException('Stock not found');
       }
 
-      return this.adaptStockResponse(stock); // Usar la función para un solo stock
+      return this.adaptStockResponse(stock);
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
@@ -341,7 +342,6 @@ export class StockRepository {
   private async deductProductStock(
     productId: string,
     quantity: number,
-    unitOfMeasureId: string,
   ): Promise<void> {
     try {
       const product = await this.productRepository.findOne({
@@ -358,6 +358,11 @@ export class StockRepository {
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found.`);
       }
+
+      const unidad = await this.unitOfMeasureRepository.findOne({
+        where: { name: 'Unidad' },
+      });
+      const unitOfMeasureId = unidad.id;
 
       if (product.type === 'product') {
         if (product.productIngredients.length === 0) {
@@ -389,6 +394,12 @@ export class StockRepository {
           product.productIngredients.length > 0
         ) {
           for (const productIngredient of product.productIngredients) {
+            console.log(
+              'producto compuesto, descontando ingrediente....',
+              productIngredient.ingredient.id,
+              productIngredient.quantityOfIngredient,
+              productIngredient.unitOfMeasure.id,
+            );
             await this.deductIngredientStock(
               productIngredient.ingredient.id,
               productIngredient.quantityOfIngredient * quantity,
@@ -407,7 +418,6 @@ export class StockRepository {
           await this.deductProductStock(
             promotionProduct.product.id,
             promotionProduct.quantity * quantity,
-            unitOfMeasureId,
           );
         }
       }
@@ -420,11 +430,8 @@ export class StockRepository {
     }
   }
 
-  async deductStock(
-    productId: string,
-    quantity: number,
-    unitOfMeasureId: string,
-  ): Promise<void> {
+  async deductStock(productId: string, quantity: number): Promise<string> {
+    console.log('pasando para descontar stock', productId, quantity);
     try {
       const product = await this.productRepository.findOne({
         where: { id: productId },
@@ -434,16 +441,8 @@ export class StockRepository {
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found.`);
       }
-
-      if (product.type === 'promotion') {
-        // Si es una promoción, descontar los productos que la componen
-        await this.deductProductStock(productId, quantity, unitOfMeasureId);
-      } else if (product.type === 'product') {
-        // Si es un producto, descontar directamente
-        await this.deductProductStock(productId, quantity, unitOfMeasureId);
-      } else {
-        throw new BadRequestException('Invalid product type.');
-      }
+      await this.deductProductStock(productId, quantity);
+      return 'Stock deducted successfully.';
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(

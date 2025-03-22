@@ -219,12 +219,25 @@ export class ProductRepository {
       }
 
       if (type === 'product') {
-        const product = await this.createNormalProduct(
-          queryRunner,
-          productToCreate,
-        );
-        await queryRunner.commitTransaction();
-        return product;
+        if (
+          productToCreate.ingredients &&
+          productToCreate.ingredients.length > 0
+        ) {
+          const product = await this.createCompositeProduct(
+            queryRunner,
+            productToCreate,
+          );
+          await queryRunner.commitTransaction();
+          return product;
+        }
+        if (!productToCreate.ingredients) {
+          const product = await this.createSimpleProduct(
+            queryRunner,
+            productToCreate,
+          );
+          await queryRunner.commitTransaction();
+          return product;
+        }
       }
 
       throw new BadRequestException('Invalid product type');
@@ -390,8 +403,7 @@ export class ProductRepository {
     queryRunner: QueryRunner,
     createPromotionDto: CreatePromotionDto,
   ): Promise<ProductResponseDto> {
-    const { name, code, description, price, categories, products } =
-      createPromotionDto;
+    const { categories, products, ...promotionData } = createPromotionDto;
 
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
@@ -403,14 +415,16 @@ export class ProductRepository {
       }
     }
 
+    const unitPromotion = await queryRunner.manager.findOne(UnitOfMeasure, {
+      where: { name: 'Unidad' },
+    });
+
     const promotion = queryRunner.manager.create(Product, {
-      name,
-      code,
+      ...promotionData,
       cost: 0,
-      description,
-      price,
       type: 'promotion',
       categories: categoryEntities,
+      unitOfMeasure: unitPromotion,
     });
     const savedPromotion = await queryRunner.manager.save(promotion);
 
@@ -459,7 +473,7 @@ export class ProductRepository {
     return promotionWithDetails;
   }
 
-  private async createNormalProduct(
+  private async createCompositeProduct(
     queryRunner: QueryRunner,
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
@@ -475,10 +489,18 @@ export class ProductRepository {
       }
     }
 
+    const unitToCompositeProduct = await queryRunner.manager.findOne(
+      UnitOfMeasure,
+      {
+        where: { name: 'Unidad' },
+      },
+    );
+
     const product = queryRunner.manager.create(Product, {
       ...productData,
       cost: 0,
       categories: categoryEntities,
+      unitOfMeasure: unitToCompositeProduct,
     });
     const savedProduct = await queryRunner.manager.save(product);
 
@@ -532,12 +554,60 @@ export class ProductRepository {
         'productIngredients.unitOfMeasure',
         'stock',
         'stock.unitOfMeasure',
+        'unitOfMeasure',
       );
     }
 
     const productWithRelations = await queryRunner.manager.findOne(Product, {
       where: { id: savedProduct.id },
       relations: relationsToLoad,
+    });
+
+    if (!productWithRelations) {
+      throw new NotFoundException('Product not found after creation');
+    }
+
+    return productWithRelations;
+  }
+
+  private async createSimpleProduct(
+    queryRunner,
+    productToCreate,
+  ): Promise<ProductResponseDto> {
+    const { categories, ...productData } = productToCreate;
+
+    let categoryEntities: Category[] = [];
+    if (categories && categories.length > 0) {
+      categoryEntities = await queryRunner.manager.find(Category, {
+        where: { id: In(categories), isActive: true },
+      });
+      if (categoryEntities.length !== categories.length) {
+        throw new BadRequestException('Some categories do not exist');
+      }
+    }
+
+    const unitToCompositeProduct = await queryRunner.manager.findOne(
+      UnitOfMeasure,
+      {
+        where: { name: 'Unidad' },
+      },
+    );
+
+    const product = queryRunner.manager.create(Product, {
+      ...productData,
+      categories: categoryEntities,
+      unitOfMeasure: unitToCompositeProduct,
+    });
+    const savedProduct = await queryRunner.manager.save(product);
+
+    const productWithRelations = await queryRunner.manager.findOne(Product, {
+      where: { id: savedProduct.id },
+      relations: [
+        'categories',
+        'stock',
+        'stock.unitOfMeasure',
+        'unitOfMeasure',
+      ],
     });
 
     if (!productWithRelations) {
