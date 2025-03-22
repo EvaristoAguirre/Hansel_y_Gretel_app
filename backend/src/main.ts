@@ -7,6 +7,7 @@ import { WsAdapter } from '@nestjs/platform-ws';
 import { JwtExceptionFilter } from './Filters/token.filters';
 import { ValidationExceptionFilter } from './Filters/validation.filters';
 import { DatabaseExceptionFilter } from './Filters/database.filters';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 // import { GlobalExceptionFilter } from './Filters/globalException.filters';
 
 async function bootstrap() {
@@ -35,7 +36,9 @@ async function bootstrap() {
     credentials: true,
   });
   app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(3000);
+  app.useWebSocketAdapter(new IoAdapter(app));
+  await app.listen(3000, '0.0.0.0');
+ 
   const port = app.getHttpServer().address().port;
   console.log(`Server listening on http://localhost:${port}`);
 }

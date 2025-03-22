@@ -108,7 +108,7 @@ export const useMesa = (salaId: string) => {
       }
 
       const newTable = await response.json();
-      addTable(newTable);
+      // addTable(newTable);
 
       Swal.fire("Éxito", "Mesa creada correctamente.", "success");
 
