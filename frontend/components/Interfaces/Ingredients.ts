@@ -1,4 +1,5 @@
 import { IStockOfProduct } from "./IStock"
+import { IUnitOfMeasure } from "./IUnitOfMeasure"
 
 export interface Iingredient {
   id?: string,
@@ -12,7 +13,6 @@ export interface Iingredient {
 }
 
 export interface IingredientForm {
-
   name: string,
   ingredientId: string,
   quantityOfIngredient: number | null,
@@ -22,14 +22,6 @@ export interface IingredientForm {
 export interface IingredientResponse {
   id: string,
   quantityOfIngredient: number,
-  ingredient: Iingredient
-  unitOfMeasure: {
-    id: string,
-    name: string,
-    abbreviation: string,
-    isActive: boolean,
-    equivalenceToBaseUnit: number | null,
-    baseUnitId: string,
-    isConventional: boolean
-  }
+  ingredient: Iingredient,
+  unitOfMeasure: IUnitOfMeasure
 }

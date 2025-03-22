@@ -14,6 +14,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -184,31 +186,32 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           value={formValues.quantityInStock}
           onChange={handleInputChange}
         />
-        <Select
-          fullWidth
-          sx={{ mt: 2 }}
-          margin="dense"
-          variant="standard"
-          name="unitOfMeasure"
-          label="Unidad de Medida"
-          value={formValues.unitOfMeasure}
-          onChange={handleSelectChange}
-          displayEmpty
-          MenuProps={{
-            PaperProps: {
-              sx: {
-                maxHeight: 200,
-                overflow: "auto",
+        <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
+          <InputLabel id="unitOfMeasure-label">Unidad de Medida</InputLabel>
+          <Select
+            labelId="unitOfMeasure-label"
+            id="unitOfMeasure"
+            name="unitOfMeasure"
+            value={formValues.unitOfMeasure}
+            onChange={handleSelectChange}
+            displayEmpty
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  maxHeight: 200,
+                  overflow: "auto",
+                },
               },
-            },
-          }}
-        >
-          {units.map((u) => (
-            <MenuItem key={u.id} value={u.id}>
-              {u.name}
-            </MenuItem>
-          ))}
-        </Select>
+            }}
+          >
+            {units.map((u) => (
+              <MenuItem key={u.id} value={u.id}>
+                {u.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
 
         <TextField
           margin="dense"

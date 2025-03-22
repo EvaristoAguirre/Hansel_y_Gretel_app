@@ -65,8 +65,9 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
-  productIngredients: IingredientResponse[],
-  promotionDetails?: any[]; // Add this line
+  productIngredients: IingredientResponse[]
+  promotionDetails: IPromotionDetails[]
+  stock: IStockOfProduct
 }
 
 export interface ProductState {
@@ -89,8 +90,6 @@ export interface SelectedProductsI {
   quantity: number;
   unitaryPrice: number | null;
 };
-
-
 
 export interface IConfirmedProducts {
   id: string;
