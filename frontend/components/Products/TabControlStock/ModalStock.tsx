@@ -21,7 +21,7 @@ import {
   SelectChangeEvent,
   TextField,
 } from "@mui/material";
-import { group } from "console";
+import { group, log } from 'console';
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
@@ -123,38 +123,41 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
               token && selectedItem.id && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
                 idStock = id
               })
-            } catch (error) {
-              console.error("Error al obtener el id del stock:", error);
-            }
-          } else if (selectedItem.type === StockModalType.INGREDIENT) {
-            try {
-              token && selectedItem.id && await getIdStockFromIngredient(selectedItem.id, token).then((id) => {
-                idStock = id
-              })
+              fetchAndSetProducts(token);
+              Swal.fire("Éxito", "Stock editado correctamente.", "success");
             } catch (error) {
               console.error("Error al obtener el id del stock:", error);
             }
           }
-          await editStock(idStock, payload, token);
+          if (selectedItem.type === StockModalType.INGREDIENT) {
+            if (selectedItem.id) {
+              /**
+               * Recupero el id del stock del ingrediente
+               * Luego lo paso por props a editStock
+               * Por ultimo lo q se hace, es hacer un fetch a igredient/id y actualizarlo en el context
+               */
+              try {
+                const ingredientData = await ingredientsById(selectedItem.id, token);
+                if (ingredientData?.stock) {
 
-          const updateIngred: Iingredient[] = [];
+                  const idStock = ingredientData.stock.id;
+                  await editStock(idStock, payload, token);
+                  const updatedIngredient = await ingredientsById(selectedItem.id, token);
+                  updateIngredient(updatedIngredient);
 
-          token && selectedItem.id && await ingredientsById(selectedItem.id, token).then((stock: Iingredient) => {
-            updateIngred[0] = stock
-            console.log("🤍 stock de ingrediente por id", stock);
-
-            console.log("🟢💚", updateIngred[0]);
-
-          })
-          updateIngredient(updateIngred[0]);
-
-          Swal.fire("Éxito", "Stock editado correctamente.", "success");
+                  Swal.fire("Éxito", "Stock editado correctamente.", "success");
+                } else {
+                  console.error("No se encontró stock para el ingrediente");
+                }
+              } catch (error) {
+                console.error("Error al obtener el id del stock:", error);
+              }
+            }
+          }
         } else {
           await addStock(payload, token);
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
         }
-        fetchAndSetProducts(token);
-
         onSave();
         handleClose();
       } catch (error) {
