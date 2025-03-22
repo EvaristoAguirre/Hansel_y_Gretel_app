@@ -29,7 +29,7 @@ export class TableController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   updateTable(
     @Param('id') id: string,
     @Body() updateData: UpdateTableDto,
