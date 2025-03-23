@@ -73,6 +73,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     setToken(token);
 
     async function fetchSalas() {
+      
       try {
         const response = await fetch(URI_ROOM, {
           method: "GET",
@@ -83,6 +84,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         const data = await response.json();
         setSalas(data);
       } catch (error) {
+        if (salas.length === 0) return;
         Swal.fire("Error", "No se pudieron cargar las salas.", "error");
       }
     }
