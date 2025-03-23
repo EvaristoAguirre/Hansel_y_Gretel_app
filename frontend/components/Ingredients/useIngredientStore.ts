@@ -21,7 +21,7 @@ interface Ingredient {
 }
 
 export const useIngredientStore = create<IngredientState>((set) => {
-  const socket = io("http://localhost:3000"); // Cambia la URL según tu backend
+  const socket = io("http://192.168.100.133:3000"); // Cambia la URL según tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Ingredients");
