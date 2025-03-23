@@ -17,7 +17,7 @@ import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { URI_CATEGORY } from "../../URI/URI";
 import { fetchCategories } from "@/api/categories";
 import { useAuth } from "@/app/context/authContext";
-import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
+import { useCategoryStore } from "../../Categories/useCategoryStore";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 
 const ProductsCategory: React.FC = () => {
@@ -113,6 +113,23 @@ const ProductsCategory: React.FC = () => {
   };
 
   // Crear categoría
+  // const handleCreate = async () => {
+  //   try {
+  //     const response = await fetch(URI_CATEGORY, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ name: nombre }),
+  //     });
+  //     const newCategory = await response.json();
+  //     addCategory(newCategory);
+  //     Swal.fire("Éxito", "Categoría creada correctamente.", "success");
+  //     handleCloseModal();
+  //   } catch (error) {
+  //     Swal.fire("Error", "No se pudo crear la categoría.", "error");
+  //     console.error(error);
+  //   }
+  // };
+
   const handleCreate = async () => {
     try {
       const response = await fetch(URI_CATEGORY, {
@@ -124,8 +141,13 @@ const ProductsCategory: React.FC = () => {
         body: JSON.stringify({ name: nombre }),
 
       });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
       const newCategory = await response.json();
-      addCategory(newCategory);
+      // addCategory(newCategory);
       Swal.fire("Éxito", "Categoría creada correctamente.", "success");
       handleCloseModal();
     } catch (error) {
@@ -188,7 +210,7 @@ const ProductsCategory: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: "flex" }}>
         <Button
           variant="contained"
           color="primary"
@@ -202,7 +224,7 @@ const ProductsCategory: React.FC = () => {
       {/* Tabla */}
       <Box sx={{ height: 450, ml: 2 }}>
         <DataGrid
-          rows={capitalizeFirstLetterTable(rows, ['name'])}
+          rows={capitalizeFirstLetterTable(rows, ["name"])}
           columns={columns}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         />

@@ -17,7 +17,7 @@ const TableCard: React.FC<MesaCardProps> = ({
     available: "#21b421",
     open: "#d94d22",
     pending_payment: "#f9b32d",
-    closed: "#21b492",
+    closed: "#1f7cad",
   };
   const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
   const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
@@ -41,7 +41,6 @@ const TableCard: React.FC<MesaCardProps> = ({
         width: "30%",
         height: "5rem",
         backgroundColor: "#fff3de",
-        // border: `2px solid ${borderColor}`,
         boxShadow: `0px 4px 10px rgba(0, 0, 0, 0.10`,
         display: "flex",
         flexDirection: "column",

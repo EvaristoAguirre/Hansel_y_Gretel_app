@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
-import OrderProvider from '../../app/context/order.context';
+import OrderProvider, {
+  useOrderContext,
+} from "../../app/context/order.context";
 import RoomProvider from "@/app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import Rooms from "../Rooms/Rooms";
@@ -11,7 +13,7 @@ const Cafe = () => {
   const [token, setToken] = useState<string | null>(null);
   const { fetchAndSetProducts } = useProductos();
   const [navbarHeight, setNavbarHeight] = useState(0);
-
+  const { selectedOrderByTable } = useOrderContext();
 
   useEffect(() => {
     const token = getAccessToken();
@@ -26,12 +28,15 @@ const Cafe = () => {
     }
   }, []);
 
-
   return (
-    <div className="cafe" style={{
-      display: "flex",
-      backgroundColor: "#D9CCBC", paddingTop: `${navbarHeight}px`
-    }}>
+    <div
+      className="cafe"
+      style={{
+        display: "flex",
+        backgroundColor: "#D9CCBC",
+        paddingTop: `${navbarHeight}px`,
+      }}
+    >
       <div style={{ width: "100%" }}>
         <RoomProvider>
           <OrderProvider>
