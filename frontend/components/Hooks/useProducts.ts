@@ -49,6 +49,7 @@ export const useProductos = () => {
       const fetchedProducts = await fetchProducts("1", "50", token);
 
       setProducts(fetchedProducts);
+      console.log("Tipo: ", fetchedProducts.length[0].type);
     } catch (error) {
       console.error("Error al cargar los productos:", error);
     } finally {
