@@ -25,6 +25,7 @@ const Ingredients = () => {
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
     { field: "cost", headerName: "Costo", width: 100 },
+    // { field: "unitOfMeasure", headerName: "Unidad de Medida", width: 150 },
     {
       field: "actions",
       headerName: "Acciones",

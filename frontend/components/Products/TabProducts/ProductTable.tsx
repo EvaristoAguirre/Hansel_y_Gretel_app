@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Button, Box } from "@mui/material";
+import { Button, Box, Typography } from "@mui/material";
 import { getProductsByCategory, searchProducts } from "@/api/products";
-import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProducts";
+import {
+  ProductCreated,
+  ProductTableProps,
+} from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProductos } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
-import DataGridComponent from '../../Utils/ProductTable';
+import DataGridComponent from "../../Utils/ProductTable";
 import { useAuth } from "@/app/context/authContext";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -18,9 +22,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
-  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
+  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>(
+    []
+  ); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
   const [token, setToken] = useState<string | null>(null);
+  const { categories } = useCategoryStore();
 
   // Actualizar los resultados de búsqueda cuando `products` cambie
   useEffect(() => {
@@ -29,8 +36,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Actualizar los productos seleccionados al cambiar `products`
   useEffect(() => {
-    const updatedSelectedProducts = selectedProducts.map((selectedProduct) =>
-      products.find((product) => product.id === selectedProduct.id) || selectedProduct
+    const updatedSelectedProducts = selectedProducts.map(
+      (selectedProduct) =>
+        products.find((product) => product.id === selectedProduct.id) ||
+        selectedProduct
     );
     setSelectedProducts(updatedSelectedProducts);
   }, [products]);
@@ -44,7 +53,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         const response = await getProductsByCategory(selectedCategoryId, token);
 
         if (!response.ok) {
-          console.warn("No se encontraron productos o hubo un error:", response.message);
+          console.warn(
+            "No se encontraron productos o hubo un error:",
+            response.message
+          );
           setProducts([]);
           return;
         }
@@ -64,7 +76,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   }, [selectedCategoryId]);
 
 
-  // búsqueda de productos con endpoint 
+  // búsqueda de productos con endpoint
   const handleSearch = async (value: string, token: string) => {
     const searchTerm = value.trim();
     if (searchTerm.length > 0) {
@@ -73,7 +85,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       if (token) {
         console.log("Buscando productos... con token");
 
-        const results = await searchProducts(searchTerm, selectedCategoryId!, token);
+        const results = await searchProducts(
+          searchTerm,
+          selectedCategoryId!,
+          token
+        );
         setSearchResults(results);
       }
     } else if (searchTerm.length === 0) {
@@ -83,15 +99,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-
   // Manejar selección de un producto
   const handleSelectProduct = (product: any) => {
     if (!selectedProducts.find((p) => p.id === product.id)) {
       setSelectedProducts([...selectedProducts, product]);
-    }
-    else {
+    } else {
       setSelectedProducts(selectedProducts.filter((p) => p.id !== product.id));
-    };
+    }
   };
 
   // Limpiar búsqueda y mostrar todos los productos
@@ -104,17 +118,68 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    // <Box>
+    //   <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+    //     {/* Botón para crear nuevo producto */}
+    //     <Button
+    //       disabled={
+    //         categories.length === 0 &&
+    //         categories.filter((c) => c.isActive === true).length === 0
+    //       }
+    //       variant="contained"
+    //       color="primary"
+    //       sx={{ marginRight: 2, width: "20%" }}
+    //       onClick={onCreate}
+    //     >
+    //       + Nuevo
+    //     </Button>
+
+    //     {/* Buscador de productos */}
+    //     <AutoCompleteProduct
+    //       options={selectedCategoryId ? searchResults : products}
+    //       onSearch={(value) => handleSearch(value, token!)}
+    //       onSelect={handleSelectProduct}
+    //     />
+
+    //     {/* Botón para limpiar búsqueda */}
+    //     <Button
+    //       sx={{ flexGrow: 1, width: "20%" }}
+    //       variant="outlined"
+    //       color="primary"
+    //       onClick={handleClearSearch}
+    //     >
+    //       Limpiar Filtros
+    //     </Button>
+    //   </Box>
+    //   {/* Tabla de productos */}
+    //   <DataGridComponent
+    //     rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
+    //     columns={columns}
+    //   />
+    // </Box>
+
+     <Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         {/* Botón para crear nuevo producto */}
         <Button
+          disabled={
+            categories.length === 0 &&
+            categories.filter((c) => c.isActive === true).length === 0
+          }
           variant="contained"
           color="primary"
-          sx={{ marginRight: 2, width: '20%' }}
+          sx={{ marginRight: 2, width: "20%" }}
           onClick={onCreate}
         >
           + Nuevo
         </Button>
+
+          {categories.length === 0 &&
+          categories.filter((c) => c.isActive === true).length === 0 ? (
+            <Typography variant="caption" color="textSecondary">
+              Crear categoría/s
+            </Typography>
+          ) : null}
 
         {/* Buscador de productos */}
         <AutoCompleteProduct
@@ -125,7 +190,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
         {/* Botón para limpiar búsqueda */}
         <Button
-          sx={{ flexGrow: 1, width: '20%' }}
+          sx={{ flexGrow: 1, width: "20%" }}
           variant="outlined"
           color="primary"
           onClick={handleClearSearch}
@@ -134,7 +199,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
       </Box>
       {/* Tabla de productos */}
-      <DataGridComponent rows={selectedProducts.length > 0 ? selectedProducts : searchResults} columns={columns} />
+      <DataGridComponent
+        rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
+        columns={columns}
+      />
     </Box>
   );
 };

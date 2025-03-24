@@ -294,7 +294,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         )}
 
         <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
-          {form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo"}
+          {modalType === "edit"
+            ? "Guardar cambios"
+            : form.type === TypeProduct.PRODUCT && modalType === "create"
+            ? "Crear producto"
+            : "Crear promo"}
         </Button>
       </Box>
     </Modal>
