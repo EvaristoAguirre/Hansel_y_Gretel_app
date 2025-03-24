@@ -20,6 +20,7 @@ import { Category } from 'src/Category/category.entity';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
       PromotionProduct,
     ]),
     UserModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [OrderController],
   providers: [

@@ -277,41 +277,167 @@ export class UnitOfMeasureRepository {
     toUnitId: string,
     quantity: number,
   ): Promise<number> {
+    console.log(
+      `Iniciando conversión: ${fromUnitId} -> ${toUnitId}, cantidad: ${quantity}`,
+    );
+
     if (fromUnitId === toUnitId) {
+      console.log('Las unidades son iguales, retornando cantidad original');
       return quantity;
     }
 
+    // 1. Buscar conversión directa
+    console.log('Buscando conversión directa...');
     const directConversion = await this.unitConversionRepository.findOne({
-      where: { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
+      where: [
+        { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
+        { fromUnit: { id: toUnitId }, toUnit: { id: fromUnitId } },
+      ],
+      relations: ['fromUnit', 'toUnit'],
     });
-
     if (directConversion) {
-      return quantity * directConversion.conversionFactor;
+      console.log('Conversión directa encontrada:', directConversion);
+      const result =
+        directConversion.fromUnit.id === fromUnitId
+          ? quantity * directConversion.conversionFactor
+          : quantity / directConversion.conversionFactor;
+      console.log(`Resultado conversión directa: ${result}`);
+      return result;
     }
 
-    const fromUnit = await this.unitOfMeasureRepository.findOne({
-      where: { id: fromUnitId },
-      relations: ['baseUnit'],
-    });
-
-    const toUnit = await this.unitOfMeasureRepository.findOne({
-      where: { id: toUnitId },
-      relations: ['baseUnit'],
-    });
+    // 2. Obtener información de las unidades
+    const [fromUnit, toUnit] = await Promise.all([
+      this.getUnitWithRelations(fromUnitId),
+      this.getUnitWithRelations(toUnitId),
+    ]);
 
     if (!fromUnit || !toUnit) {
       throw new NotFoundException('One or both units not found.');
     }
 
-    let convertedQuantity = quantity;
-    if (fromUnit.baseUnit && fromUnit.equivalenceToBaseUnit) {
-      convertedQuantity *= fromUnit.equivalenceToBaseUnit;
+    console.log('Unidad origen:', fromUnit);
+    console.log('Unidad destino:', toUnit);
+
+    // 3. Verificar misma unidad base
+    if (this.haveSameBaseUnit(fromUnit, toUnit)) {
+      try {
+        const result = this.convertViaBaseUnit(fromUnit, toUnit, quantity);
+        return result;
+      } catch (e) {
+        console.error('Error en conversión por base:', e.message);
+        throw e;
+      }
     }
 
-    if (toUnit.baseUnit && toUnit.equivalenceToBaseUnit) {
-      convertedQuantity /= toUnit.equivalenceToBaseUnit;
+    // 4. Intentar conversión a través de unidades base
+    try {
+      if (fromUnit.baseUnit) {
+        console.log(
+          `Convirtiendo a través de base unit (${fromUnit.baseUnit.id})`,
+        );
+        return await this.convertViaIntermediateUnit(
+          fromUnitId,
+          toUnitId,
+          quantity,
+          fromUnit.baseUnit.id,
+        );
+      }
+
+      if (toUnit.baseUnit) {
+        console.log(
+          `Convirtiendo a través de base unit destino (${toUnit.baseUnit.id})`,
+        );
+        return await this.convertViaIntermediateUnit(
+          fromUnitId,
+          toUnitId,
+          quantity,
+          toUnit.baseUnit.id,
+          true,
+        );
+      }
+    } catch (e) {
+      console.error('Error en conversión intermedia:', e.message);
+      // Continuar con el siguiente enfoque
     }
 
-    return convertedQuantity;
+    // 5. Último intento
+    console.log('No se encontró ruta de conversión directa');
+    throw new BadRequestException(
+      `No conversion path found between ${fromUnit.name} and ${toUnit.name}`,
+    );
+  }
+
+  // Métodos auxiliares (podrían estar en el mismo servicio):
+
+  private async findDirectConversion(fromUnitId: string, toUnitId: string) {
+    return this.unitConversionRepository.findOne({
+      where: [
+        { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
+        { fromUnit: { id: toUnitId }, toUnit: { id: fromUnitId } },
+      ],
+    });
+  }
+
+  private async getUnitWithRelations(unitId: string) {
+    return this.unitOfMeasureRepository.findOne({
+      where: { id: unitId },
+      relations: ['baseUnit'],
+    });
+  }
+
+  private haveSameBaseUnit(fromUnit: UnitOfMeasure, toUnit: UnitOfMeasure) {
+    return (
+      fromUnit.baseUnit?.id === toUnit.baseUnit?.id &&
+      fromUnit.baseUnit &&
+      toUnit.baseUnit &&
+      fromUnit.equivalenceToBaseUnit &&
+      toUnit.equivalenceToBaseUnit
+    );
+  }
+
+  private convertViaBaseUnit(
+    fromUnit: UnitOfMeasure,
+    toUnit: UnitOfMeasure,
+    quantity: number,
+  ) {
+    if (!fromUnit.equivalenceToBaseUnit || !toUnit.equivalenceToBaseUnit) {
+      throw new BadRequestException(
+        'Both units must have equivalence to base unit defined',
+      );
+    }
+    return (
+      (quantity * fromUnit.equivalenceToBaseUnit) / toUnit.equivalenceToBaseUnit
+    );
+  }
+
+  private async convertViaIntermediateUnit(
+    fromUnitId: string,
+    toUnitId: string,
+    quantity: number,
+    intermediateUnitId: string,
+    inverse = false,
+  ) {
+    if (inverse) {
+      const toIntermediate = await this.convertUnit(
+        toUnitId,
+        intermediateUnitId,
+        1,
+      );
+      return (
+        (await this.convertUnit(fromUnitId, intermediateUnitId, quantity)) /
+        toIntermediate
+      );
+    }
+    const toBase = await this.convertUnit(
+      fromUnitId,
+      intermediateUnitId,
+      quantity,
+    );
+    return this.convertUnit(intermediateUnitId, toUnitId, toBase);
+  }
+
+  private async findConversionPath(fromUnitId: string, toUnitId: string) {
+    console.log('fromUnitId', fromUnitId);
+    console.log('toUnitId', toUnitId);
   }
 }
