@@ -13,10 +13,11 @@ import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 
 @Injectable()
 export class StockRepository {
@@ -32,6 +33,7 @@ export class StockRepository {
     @InjectRepository(PromotionProduct)
     private readonly promotionProductRepository: Repository<PromotionProduct>,
     private readonly ingredientService: IngredientService,
+    private readonly unitOfMeasureService: UnitOfMeasureService,
   ) {}
 
   async getAllStocks(
@@ -316,7 +318,7 @@ export class StockRepository {
 
       // Convertir la cantidad a la unidad de medida del stock
       const stockUnitId = ingredient.stock.unitOfMeasure.id;
-      const quantityToDeduct = await this.ingredientService.convertUnit(
+      const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
         unitOfMeasureId,
         stockUnitId,
         quantity,
@@ -373,7 +375,7 @@ export class StockRepository {
             );
           }
           const stockUnitId = product.stock.unitOfMeasure.id;
-          const quantityToDeduct = await this.ingredientService.convertUnit(
+          const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
             unitOfMeasureId,
             stockUnitId,
             quantity,

@@ -14,11 +14,12 @@ import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { Category } from 'src/Category/category.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { PromotionProduct } from './promotionProducts.entity';
 import { CreatePromotionDto } from 'src/DTOs/create-promotion.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Injectable()
 export class ProductRepository {
@@ -29,8 +30,6 @@ export class ProductRepository {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(PromotionProduct)
     private readonly promotionProductRepository: Repository<PromotionProduct>,
-    @InjectRepository(UnitOfMeasure)
-    private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     private readonly dataSource: DataSource,
   ) {}
 

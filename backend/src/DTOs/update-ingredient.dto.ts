@@ -8,9 +8,10 @@ import {
 } from 'class-validator';
 
 export class UpdateIngredientDto {
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name?: string;
 
   @IsString()
   @IsOptional()

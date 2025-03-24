@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UnitConversion } from 'src/Ingredient/unitConversion.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

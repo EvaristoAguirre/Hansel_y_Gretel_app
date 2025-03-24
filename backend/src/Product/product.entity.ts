@@ -15,7 +15,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Entity({ name: 'products' })
 export class Product {
