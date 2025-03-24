@@ -6,10 +6,11 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Ingredient } from './ingredient.entity';
-import { ProductIngredient } from './ingredientProduct.entity';
 import { Stock } from 'src/Stock/stock.entity';
 import { UnitConversion } from './unitConversion.entity';
+import { Product } from 'src/Product/product.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 
 @Entity({ name: 'units_of_measure' })
 export class UnitOfMeasure {
@@ -60,4 +61,7 @@ export class UnitOfMeasure {
     eager: true,
   })
   toConversions: UnitConversion[];
+
+  @OneToMany(() => Product, (product) => product.unitOfMeasure)
+  products: Product[];
 }

@@ -4,17 +4,24 @@ import { IngredientService } from './ingredient.service';
 import { IngredientRepository } from './ingredient.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
-import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
-import { UnitConversion } from './unitConversion.entity';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ingredient, UnitOfMeasure, UnitConversion]),
+    TypeOrmModule.forFeature([Ingredient, UnitConversion, UnitOfMeasure]),
     UserModule,
   ],
   controllers: [IngredientController],
-  providers: [IngredientService, IngredientRepository],
+  providers: [
+    IngredientService,
+    IngredientRepository,
+    UnitOfMeasureService,
+    UnitOfMeasureRepository,
+  ],
   exports: [IngredientService],
 })
 export class IngredientModule {}

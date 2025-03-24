@@ -50,17 +50,9 @@ export class StockService {
     return updatedStock;
   }
 
-  async deductStock(
-    productId: string,
-    quantity: number,
-    unitOfMeasureId: string,
-  ) {
+  async deductStock(productId: string, quantity: number) {
     // await this.eventEmitter.emit('stock.updated', { productId });
 
-    return await this.stockRepository.deductStock(
-      productId,
-      quantity,
-      unitOfMeasureId,
-    );
+    return await this.stockRepository.deductStock(productId, quantity);
   }
 }

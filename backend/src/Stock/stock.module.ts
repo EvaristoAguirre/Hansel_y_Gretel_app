@@ -11,12 +11,13 @@ import { StockRepository } from './stock.repository';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
-import { UnitConversion } from 'src/Ingredient/unitConversion.entity';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Module({
   imports: [
@@ -25,10 +26,10 @@ import { UnitConversion } from 'src/Ingredient/unitConversion.entity';
       Product,
       Ingredient,
       Category,
-      UnitOfMeasure,
       PromotionProduct,
       ProductIngredient,
       UnitConversion,
+      UnitOfMeasure,
     ]),
     forwardRef(() => CategoryModule),
     UserModule,
@@ -41,6 +42,7 @@ import { UnitConversion } from 'src/Ingredient/unitConversion.entity';
     IngredientRepository,
     CategoryRepository,
     IngredientService,
+    UnitOfMeasureService,
   ],
   exports: [],
 })

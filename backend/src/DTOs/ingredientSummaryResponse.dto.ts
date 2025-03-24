@@ -1,4 +1,7 @@
-import { StockResponseDTO } from './stockResponse.dto';
+import {
+  StockResponseDTO,
+  UnitOfMeasureResponseDTO,
+} from './stockResponse.dto';
 
 export class IngredientResponseDTO {
   id: string;
@@ -7,4 +10,5 @@ export class IngredientResponseDTO {
   description: string;
   cost: number;
   stock: StockResponseDTO | null;
+  unitOfMeasure: UnitOfMeasureResponseDTO | null;
 }

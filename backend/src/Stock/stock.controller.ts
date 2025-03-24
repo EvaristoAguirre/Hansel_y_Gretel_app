@@ -77,13 +77,9 @@ export class StockController {
 
   @Put('/deduct')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async deductStock(@Body() deductStockDto: DeductStockDto): Promise<void> {
-    const { productId, quantity, unitOfMeasureId } = deductStockDto;
-    return await this.stockService.deductStock(
-      productId,
-      quantity,
-      unitOfMeasureId,
-    );
+  async deductStock(@Body() deductStockDto: DeductStockDto): Promise<string> {
+    const { productId, quantity } = deductStockDto;
+    return await this.stockService.deductStock(productId, quantity);
     // await this.eventEmitter.emit('stock.updated', updatedStock);
     // return updatedStock;
   }

@@ -1,7 +1,7 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UnitConversion } from 'src/Ingredient/unitConversion.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
+import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Kilogramo',
           abbreviation: 'kg',
           isConventional: true,
-          baseUnit: null, // No tiene unidad base
+          baseUnit: null,
           conversions: [
             { toUnitName: 'Gramo', conversionFactor: 1000 },
             { toUnitName: 'Miligramo', conversionFactor: 1e6 },
@@ -35,7 +35,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Gramo',
           abbreviation: 'g',
           isConventional: true,
-          baseUnit: 'Kilogramo', // Unidad base es el kilogramo
+          baseUnit: 'Kilogramo',
           conversions: [
             { toUnitName: 'Kilogramo', conversionFactor: 0.001 },
             { toUnitName: 'Miligramo', conversionFactor: 1000 },
@@ -45,7 +45,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Miligramo',
           abbreviation: 'mg',
           isConventional: true,
-          baseUnit: 'Kilogramo', // Unidad base es el kilogramo
+          baseUnit: 'Kilogramo',
           conversions: [
             { toUnitName: 'Kilogramo', conversionFactor: 0.000001 },
             { toUnitName: 'Gramo', conversionFactor: 0.001 },
@@ -55,7 +55,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Litro',
           abbreviation: 'L',
           isConventional: true,
-          baseUnit: null, // No tiene unidad base
+          baseUnit: null,
           conversions: [
             { toUnitName: 'Mililitro', conversionFactor: 1000 },
             { toUnitName: 'Centímetro cúbico', conversionFactor: 1000 },
@@ -66,7 +66,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Mililitro',
           abbreviation: 'ml',
           isConventional: true,
-          baseUnit: 'Litro', // Unidad base es el litro
+          baseUnit: 'Litro',
           conversions: [
             { toUnitName: 'Litro', conversionFactor: 0.001 },
             { toUnitName: 'Centímetro cúbico', conversionFactor: 1 },
@@ -77,7 +77,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Centímetro cúbico',
           abbreviation: 'cm³',
           isConventional: true,
-          baseUnit: 'Litro', // Unidad base es el litro
+          baseUnit: 'Litro',
           conversions: [
             { toUnitName: 'Litro', conversionFactor: 0.001 },
             { toUnitName: 'Mililitro', conversionFactor: 1 },
@@ -88,7 +88,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Decímetro cúbico',
           abbreviation: 'dm³',
           isConventional: true,
-          baseUnit: 'Litro', // Unidad base es el litro
+          baseUnit: 'Litro',
           conversions: [
             { toUnitName: 'Litro', conversionFactor: 1 },
             { toUnitName: 'Mililitro', conversionFactor: 1000 },
@@ -99,22 +99,20 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Unidad',
           abbreviation: 'u',
           isConventional: true,
-          baseUnit: null, // No tiene unidad base
-          conversions: [], // No tiene conversiones
+          baseUnit: null,
+          conversions: [],
         },
       ];
 
-      // Paso 1: Guardar las unidades de medida sin baseUnitId
       const savedUnits = await this.unitOfMeasureRepository.save(
         defaultUnits.map((unit) => ({
           name: unit.name,
           abbreviation: unit.abbreviation,
           isConventional: unit.isConventional,
-          baseUnitId: null, // Inicialmente no tiene unidad base
+          baseUnitId: null,
         })),
       );
 
-      // Paso 2: Asignar baseUnitId usando los IDs generados
       for (const unit of savedUnits) {
         const unitData = defaultUnits.find((u) => u.name === unit.name);
 
@@ -126,7 +124,6 @@ export class SeederService implements OnApplicationBootstrap {
           }
         }
 
-        // Paso 3: Guardar las conversiones
         for (const conversion of unitData.conversions) {
           const toUnit = savedUnits.find(
             (u) => u.name === conversion.toUnitName,

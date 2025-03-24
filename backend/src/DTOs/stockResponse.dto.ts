@@ -8,3 +8,9 @@ export class StockResponseDTO {
     abbreviation: string;
   };
 }
+
+export class UnitOfMeasureResponseDTO {
+  id: string;
+  name: string;
+  abbreviation: string;
+}
