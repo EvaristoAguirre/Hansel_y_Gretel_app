@@ -7,22 +7,30 @@ import { ProductRepository } from './product.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from './promotionProducts.entity';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Product,
       Category,
-      UnitOfMeasure,
       PromotionProduct,
+      UnitConversion,
+      UnitOfMeasure,
     ]),
     forwardRef(() => CategoryModule),
     UserModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, CategoryRepository],
+  providers: [
+    ProductService,
+    ProductRepository,
+    CategoryRepository,
+    UnitOfMeasureService,
+  ],
   exports: [ProductService],
 })
 export class ProductModule {}

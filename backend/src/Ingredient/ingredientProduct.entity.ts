@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Ingredient } from './ingredient.entity';
-import { UnitOfMeasure } from './unitOfMesure.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Entity({ name: 'product_ingredients' })
 export class ProductIngredient {

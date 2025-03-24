@@ -5,6 +5,4 @@ export class DeductStockDto {
   productId: string;
   @IsNumber()
   quantity: number;
-  @IsString()
-  unitOfMeasureId: string;
 }

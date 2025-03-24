@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, Min } from 'class-validator';
-import { UnitOfMeasure } from './unitOfMesure.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {

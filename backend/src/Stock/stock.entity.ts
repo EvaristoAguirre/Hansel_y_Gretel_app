@@ -1,6 +1,6 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { UnitOfMeasure } from 'src/Ingredient/unitOfMesure.entity';
 import { Product } from 'src/Product/product.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import {
   Column,
   Entity,

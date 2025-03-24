@@ -78,5 +78,5 @@ export class PromotionProductResponseDto {
 
   @Expose()
   @Type(() => PromotionResponse)
-  promotion: PromotionResponse; // O usa PromotionResponse si es diferente
+  promotion: PromotionResponse;
 }

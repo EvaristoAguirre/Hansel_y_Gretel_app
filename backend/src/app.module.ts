@@ -16,6 +16,7 @@ import { RoomModule } from './Room/room.module';
 import { IngredientModule } from './Ingredient/ingredient.module';
 import { StockModule } from './Stock/stock.module';
 import { SeederModule } from './Seeder/seeder.module';
+import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -41,6 +42,7 @@ import { SeederModule } from './Seeder/seeder.module';
     IngredientModule,
     StockModule,
     SeederModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
