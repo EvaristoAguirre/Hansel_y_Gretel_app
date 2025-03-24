@@ -1,17 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { UnitConversion } from './unitConversion.entity';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitOfMeasureRepository } from './unitOfMeasure.repository';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UnitOfMeasureService {
-  constructor(
-    @InjectRepository(UnitConversion)
-    private unitOfMeasureRepository: UnitOfMeasureRepository,
-  ) {}
+  constructor(private unitOfMeasureRepository: UnitOfMeasureRepository) {}
 
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,

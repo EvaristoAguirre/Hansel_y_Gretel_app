@@ -37,9 +37,9 @@ export class IngredientRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
-        relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
-
+      console.log(ingredients);
       return await this.adaptIngredientsResponse(ingredients);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;

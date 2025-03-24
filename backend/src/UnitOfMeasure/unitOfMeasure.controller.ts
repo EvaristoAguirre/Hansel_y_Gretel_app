@@ -18,7 +18,7 @@ import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 export class UnitOfMeasureController {
   constructor(private readonly unitOfMeasureService: UnitOfMeasureService) {}
 
-  @Post('unitofmeasure')
+  @Post()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createUnitOfMeasure(
     @Body() createData: CreateUnitOfMeasureDto,
@@ -26,7 +26,7 @@ export class UnitOfMeasureController {
     return await this.unitOfMeasureService.createUnitOfMeasure(createData);
   }
 
-  @Get('unitofmeasure/all')
+  @Get('all')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getAllUnitOfMeasure(
     @Query('page') page: string = '1',
@@ -34,13 +34,13 @@ export class UnitOfMeasureController {
   ): Promise<UnitOfMeasure[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
-    return await this.unitOfMeasureService.getAllUnitOfMeasure(
+    return this.unitOfMeasureService.getAllUnitOfMeasure(
       pageNumber,
       limitNumber,
     );
   }
 
-  @Get('unitofmeasure/conventional')
+  @Get('conventional')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getConventionalUnitOfMeasure(
     @Query('page') page: string = '1',
@@ -54,13 +54,13 @@ export class UnitOfMeasureController {
     );
   }
 
-  @Get('unitofmeasure/:id')
+  @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getUnitOfMeasureById(@Param('id') id: string): Promise<UnitOfMeasure> {
     return await this.unitOfMeasureService.getUnitOfMeasureById(id);
   }
 
-  @Patch('unitofmeasure/:id')
+  @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateUnitOfMeasure(
     @Param('id') id: string,
