@@ -46,6 +46,6 @@ import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.reposit
     UnitOfMeasureService,
     UnitOfMeasureRepository,
   ],
-  exports: [],
+  exports: [StockService],
 })
 export class StockModule {}

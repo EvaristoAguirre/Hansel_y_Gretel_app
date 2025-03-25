@@ -134,11 +134,9 @@ export class UnitOfMeasureRepository {
         where: { isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
-        relations: ['baseUnit'],
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      console.error('Error fetching units of measure:', error);
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -160,13 +158,29 @@ export class UnitOfMeasureRepository {
         where: { isConventional: true, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
-        relations: [
-          'baseUnit',
-          'fromConversions',
-          'toConversions',
-          'fromConversions.toUnit',
-          'toConversions.fromUnit',
-        ],
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching orders',
+        error.message,
+      );
+    }
+  }
+  async getNotConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasure[]> {
+    if (pageNumber <= 0 || limitNumber <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    try {
+      return await this.unitOfMeasureRepository.find({
+        where: { isConventional: false, isActive: true },
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
@@ -184,7 +198,6 @@ export class UnitOfMeasureRepository {
     try {
       const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
         where: { id: id, isActive: true },
-        relations: ['baseUnit'],
       });
       if (!unitOfMeasure) {
         throw new NotFoundException(`Unit of mesure with ID: ${id} not found`);
@@ -277,17 +290,10 @@ export class UnitOfMeasureRepository {
     toUnitId: string,
     quantity: number,
   ): Promise<number> {
-    console.log(
-      `Iniciando conversión: ${fromUnitId} -> ${toUnitId}, cantidad: ${quantity}`,
-    );
-
     if (fromUnitId === toUnitId) {
-      console.log('Las unidades son iguales, retornando cantidad original');
       return quantity;
     }
 
-    // 1. Buscar conversión directa
-    console.log('Buscando conversión directa...');
     const directConversion = await this.unitConversionRepository.findOne({
       where: [
         { fromUnit: { id: fromUnitId }, toUnit: { id: toUnitId } },
@@ -296,16 +302,13 @@ export class UnitOfMeasureRepository {
       relations: ['fromUnit', 'toUnit'],
     });
     if (directConversion) {
-      console.log('Conversión directa encontrada:', directConversion);
       const result =
         directConversion.fromUnit.id === fromUnitId
           ? quantity * directConversion.conversionFactor
           : quantity / directConversion.conversionFactor;
-      console.log(`Resultado conversión directa: ${result}`);
       return result;
     }
 
-    // 2. Obtener información de las unidades
     const [fromUnit, toUnit] = await Promise.all([
       this.getUnitWithRelations(fromUnitId),
       this.getUnitWithRelations(toUnitId),
@@ -315,10 +318,6 @@ export class UnitOfMeasureRepository {
       throw new NotFoundException('One or both units not found.');
     }
 
-    console.log('Unidad origen:', fromUnit);
-    console.log('Unidad destino:', toUnit);
-
-    // 3. Verificar misma unidad base
     if (this.haveSameBaseUnit(fromUnit, toUnit)) {
       try {
         const result = this.convertViaBaseUnit(fromUnit, toUnit, quantity);
@@ -329,12 +328,8 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    // 4. Intentar conversión a través de unidades base
     try {
       if (fromUnit.baseUnit) {
-        console.log(
-          `Convirtiendo a través de base unit (${fromUnit.baseUnit.id})`,
-        );
         return await this.convertViaIntermediateUnit(
           fromUnitId,
           toUnitId,
@@ -344,9 +339,6 @@ export class UnitOfMeasureRepository {
       }
 
       if (toUnit.baseUnit) {
-        console.log(
-          `Convirtiendo a través de base unit destino (${toUnit.baseUnit.id})`,
-        );
         return await this.convertViaIntermediateUnit(
           fromUnitId,
           toUnitId,
@@ -357,7 +349,6 @@ export class UnitOfMeasureRepository {
       }
     } catch (e) {
       console.error('Error en conversión intermedia:', e.message);
-      // Continuar con el siguiente enfoque
     }
 
     // 5. Último intento
@@ -366,8 +357,6 @@ export class UnitOfMeasureRepository {
       `No conversion path found between ${fromUnit.name} and ${toUnit.name}`,
     );
   }
-
-  // Métodos auxiliares (podrían estar en el mismo servicio):
 
   private async findDirectConversion(fromUnitId: string, toUnitId: string) {
     return this.unitConversionRepository.findOne({
@@ -434,10 +423,5 @@ export class UnitOfMeasureRepository {
       quantity,
     );
     return this.convertUnit(intermediateUnitId, toUnitId, toBase);
-  }
-
-  private async findConversionPath(fromUnitId: string, toUnitId: string) {
-    console.log('fromUnitId', fromUnitId);
-    console.log('toUnitId', toUnitId);
   }
 }

@@ -14,7 +14,7 @@ import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
 
-@Controller('unitOfMeasure')
+@Controller('unitofmeasure')
 export class UnitOfMeasureController {
   constructor(private readonly unitOfMeasureService: UnitOfMeasureService) {}
 
@@ -49,6 +49,20 @@ export class UnitOfMeasureController {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     return await this.unitOfMeasureService.getConventionalUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
+  }
+
+  @Get('not-conventional')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getNotConventionalUnitOfMeasure(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ): Promise<UnitOfMeasure[]> {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    return await this.unitOfMeasureService.getNotConventionalUnitOfMeasure(
       pageNumber,
       limitNumber,
     );
