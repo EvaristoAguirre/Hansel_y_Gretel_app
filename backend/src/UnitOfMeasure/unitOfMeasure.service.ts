@@ -48,6 +48,16 @@ export class UnitOfMeasureService {
     );
   }
 
+  async getNotConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasure[]> {
+    return await this.unitOfMeasureRepository.getNotConventionalUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
+  }
+
   async convertUnit(fromUnitId: string, toUnitId: string, quantity: number) {
     return await this.unitOfMeasureRepository.convertUnit(
       fromUnitId,

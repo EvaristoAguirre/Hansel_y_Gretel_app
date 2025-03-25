@@ -43,6 +43,12 @@ export class CategoryController {
     return this.categoryService.getCategoryById(id);
   }
 
+  @Get(':name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getCategoryByName(@Param('name') name: string): Promise<Category> {
+    return await this.categoryService.getCategoryByName(name);
+  }
+
   @Put(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   updateCategory(

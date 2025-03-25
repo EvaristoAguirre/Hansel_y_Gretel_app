@@ -16,6 +16,7 @@ import { Product } from 'src/Product/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductSummary } from 'src/DTOs/productSummary.dto';
+import { StockService } from 'src/Stock/stock.service';
 
 @Injectable()
 export class OrderRepository {
@@ -29,6 +30,7 @@ export class OrderRepository {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     private readonly dataSource: DataSource,
+    private readonly stockService: StockService,
   ) {}
 
   async openOrder(
@@ -158,6 +160,14 @@ export class OrderRepository {
             );
           }
 
+          //------descuento de stock ---------
+          console.log(
+            'ajusto antes del descuento de stock',
+            productId,
+            quantity,
+          );
+          await this.stockService.deductStock(product.id, quantity);
+
           const newDetail = queryRunner.manager.create(OrderDetails, {
             quantity,
             unitaryPrice: product.price,
@@ -261,7 +271,6 @@ export class OrderRepository {
   }
 
   async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
-    console.log('repoitory', id);
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
