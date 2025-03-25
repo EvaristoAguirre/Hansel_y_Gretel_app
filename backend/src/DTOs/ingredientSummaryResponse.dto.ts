@@ -9,6 +9,6 @@ export class IngredientResponseDTO {
   isActive: boolean;
   description: string;
   cost: number;
-  stock: StockResponseDTO | null;
-  unitOfMeasure: UnitOfMeasureResponseDTO | null;
+  stock?: StockResponseDTO | null;
+  unitOfMeasure?: UnitOfMeasureResponseDTO | null;
 }

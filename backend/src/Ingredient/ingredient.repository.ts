@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -39,10 +40,9 @@ export class IngredientRepository {
         take: limit,
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
-      console.log(ingredients);
       return await this.adaptIngredientsResponse(ingredients);
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error fetching ingredients',
         error.message,
@@ -226,21 +226,25 @@ export class IngredientRepository {
       isActive: ingredient.isActive,
       description: ingredient.description,
       cost: ingredient.cost,
-      unitOfMeasure: {
-        id: ingredient.unitOfMeasure.id,
-        name: ingredient.unitOfMeasure.name,
-        abbreviation: ingredient.unitOfMeasure.abbreviation,
-      },
+      unitOfMeasure: ingredient.unitOfMeasure
+        ? {
+            id: ingredient.unitOfMeasure.id,
+            name: ingredient.unitOfMeasure.name,
+            abbreviation: ingredient.unitOfMeasure.abbreviation,
+          }
+        : null,
       stock: ingredient.stock
         ? {
             id: ingredient.stock.id,
             quantityInStock: ingredient.stock.quantityInStock,
             minimumStock: ingredient.stock.minimumStock,
-            unitOfMeasure: {
-              id: ingredient.stock.unitOfMeasure.id,
-              name: ingredient.stock.unitOfMeasure.name,
-              abbreviation: ingredient.stock.unitOfMeasure.abbreviation,
-            },
+            unitOfMeasure: ingredient.stock.unitOfMeasure
+              ? {
+                  id: ingredient.stock.unitOfMeasure.id,
+                  name: ingredient.stock.unitOfMeasure.name,
+                  abbreviation: ingredient.stock.unitOfMeasure.abbreviation,
+                }
+              : null,
           }
         : null,
     };
