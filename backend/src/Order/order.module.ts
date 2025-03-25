@@ -21,6 +21,12 @@ import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
+import { StockService } from 'src/Stock/stock.service';
+import { StockRepository } from 'src/Stock/stock.repository';
+import { Stock } from 'src/Stock/stock.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
+import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 
 @Module({
   imports: [
@@ -35,6 +41,8 @@ import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
       Category,
       UnitOfMeasure,
       PromotionProduct,
+      Stock,
+      Ingredient,
     ]),
     UserModule,
     UnitOfMeasurenModule,
@@ -49,6 +57,10 @@ import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
     NotificationService,
     RoomRepository,
     CategoryRepository,
+    StockService,
+    StockRepository,
+    IngredientService,
+    IngredientRepository,
   ],
 })
 export class OrderModule {}
