@@ -507,6 +507,7 @@ export class ProductRepository {
       const productIngredients = ingredients.map(async (ingredientDto) => {
         const ingredient = await queryRunner.manager.findOne(Ingredient, {
           where: { id: ingredientDto.ingredientId },
+          relations: ['unitOfMeasure'],
         });
         if (!ingredient) {
           throw new BadRequestException(

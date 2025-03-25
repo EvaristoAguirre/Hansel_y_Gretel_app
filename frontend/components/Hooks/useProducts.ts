@@ -49,7 +49,6 @@ export const useProductos = () => {
       const fetchedProducts = await fetchProducts("1", "50", token);
 
       setProducts(fetchedProducts);
-      console.log("Tipo: ", fetchedProducts.length[0].type);
     } catch (error) {
       console.error("Error al cargar los productos:", error);
     } finally {
@@ -86,6 +85,34 @@ export const useProductos = () => {
     }
   };
 
+  // const handleCreateProduct = async (token: string) => {
+  //   try {
+  //     const preparedForm = {
+  //       ...form,
+  //       code: form.code ? parseInt(form.code as any, 10) : undefined,
+  //       price: form.price ? parseFloat(form.price as any) : 0,
+  //       cost: form.cost ? parseFloat(form.cost as any) : 0,
+  //       type: form.type === 'promotion' ? 'promotion' : 'product', // Validar type
+  //       categories: form.categories, 
+  //     };
+  
+  //     if (!token) throw new Error("Token no disponible");
+  
+  //     const newProduct = await createProduct(preparedForm, token);
+      
+  //     if (!newProduct || newProduct.error) {
+  //       throw new Error(newProduct?.message || "Error al crear el producto");
+  //     }
+  
+  //     handleCloseModal();
+  //     Swal.fire("Éxito", "Producto creado correctamente.", "success");
+      
+  //   } catch (error) {
+  //     Swal.fire("Error", "No se pudo crear el producto.", "error");
+  //     console.error(error);
+  //   }
+  // };
+  
   const handleEdit = async (token: string) => {
     try {
       const preparedForm = {
