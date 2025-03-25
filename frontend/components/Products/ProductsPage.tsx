@@ -1,6 +1,6 @@
 "use client";
 import { Box } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/api/categories";
@@ -15,6 +15,7 @@ import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
 import { useAuth } from "@/app/context/authContext";
 import ProductsCategory from "./TabProductsCategory/ProductsCategory";
+import LoadingLottie from "../Loader/Loading";
 
 
 const ProductsPage: React.FC = () => {
@@ -77,43 +78,45 @@ const ProductsPage: React.FC = () => {
 
 
   return (
-    <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
-      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
-      <Box display="flex" flex={1} overflow="hidden">
-        {
-          (selectedTab === Tab.PRODUCTOS ||
-            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
-          <Sidebar
-            onCategorySelected={handleCategorySelected}
-            selectedCategoryId={selectedCategoryId}
-          />
-        }
-        {selectedTab === Tab.PRODUCTOS &&
-          <Products
-            selectedCategoryId={selectedCategoryId}
-            onClearSelectedCategory={clearSelectedCategory}
-          />
-        }
-        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
-        {selectedTab === Tab.CONTROL_DE_STOCK && (
-          <IngredientsProvider>
-            <Box flex={1} overflow="auto">
-              <StockControl />
-            </Box>
-          </IngredientsProvider>
-        )}
-        {selectedTab === Tab.UNIDADES_MEDIDA &&
-          <UnitProvider>
-            <UnitOfMeasure />
-          </UnitProvider>
-        }
-        {selectedTab === Tab.INGREDIENTES &&
-          <IngredientsProvider>
-            <Ingredients />
-          </IngredientsProvider>
-        }
+    <Suspense fallback={<LoadingLottie />}>
+      <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
+        <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
+        <Box display="flex" flex={1} overflow="hidden">
+          {
+            (selectedTab === Tab.PRODUCTOS ||
+              selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+            <Sidebar
+              onCategorySelected={handleCategorySelected}
+              selectedCategoryId={selectedCategoryId}
+            />
+          }
+          {selectedTab === Tab.PRODUCTOS &&
+            <Products
+              selectedCategoryId={selectedCategoryId}
+              onClearSelectedCategory={clearSelectedCategory}
+            />
+          }
+          {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
+          {selectedTab === Tab.CONTROL_DE_STOCK && (
+            <IngredientsProvider>
+              <Box flex={1} overflow="auto">
+                <StockControl />
+              </Box>
+            </IngredientsProvider>
+          )}
+          {selectedTab === Tab.UNIDADES_MEDIDA &&
+            <UnitProvider>
+              <UnitOfMeasure />
+            </UnitProvider>
+          }
+          {selectedTab === Tab.INGREDIENTES &&
+            <IngredientsProvider>
+              <Ingredients />
+            </IngredientsProvider>
+          }
+        </Box>
       </Box>
-    </Box>
+    </Suspense>
   );
 };
 

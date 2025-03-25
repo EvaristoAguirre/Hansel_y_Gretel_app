@@ -3,7 +3,7 @@ import { FormType } from '@/components/Enums/Ingredients';
 import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional } from '../../api/unitOfMeasure';
+import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
 
 
@@ -20,7 +20,7 @@ type UnitContextType = {
   handleEditUnit: () => Promise<void>;
   handleCloseFormUnit: () => void;
   conventionalUnits: IUnitOfMeasureResponse[]
-
+  noConventionalUnits: IUnitOfMeasureResponse[]
 }
 
 const UnitContext = createContext<UnitContextType>({
@@ -39,7 +39,8 @@ const UnitContext = createContext<UnitContextType>({
   handleCreateUnit: async () => { },
   handleEditUnit: async () => { },
   handleCloseFormUnit: () => { },
-  conventionalUnits: []
+  conventionalUnits: [],
+  noConventionalUnits: []
 });
 
 export const useUnitContext = () => {
@@ -62,6 +63,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [formTypeUnit, setFormTypeUnit] = useState<FormType>(FormType.CREATE);
   const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
   const [conventionalUnits, setConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
+  const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -72,6 +74,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     });
     allUnitsConventional(token).then(dataUnit => {
       if (dataUnit) setConventionalUnits(dataUnit);
+    })
+    fetchUnitsNoConventional(token).then(dataUnit => {
+      if (dataUnit) setNoConventionalUnits(dataUnit);
     })
   }, []);
   const addUnit = (unit: IUnitOfMeasureForm) => {
@@ -158,6 +163,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         units,
         formUnit,
         conventionalUnits,
+        noConventionalUnits,
         formOpenUnit,
         setFormUnit,
         formTypeUnit,
