@@ -15,7 +15,7 @@ export const URI_INGREDIENT = "http://localhost:3000/ingredient";
 
 // UNITS OF MEASURE
 
-export const URI_UNIT_OF_MEASURE = "http://localhost:3000/ingredient/unitofmeasure";
+export const URI_UNIT_OF_MEASURE = "http://localhost:3000/unitofmeasure";
 
 //ROOMS
 
