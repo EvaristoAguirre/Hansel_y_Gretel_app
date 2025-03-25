@@ -1,16 +1,23 @@
 
-
-export interface IUnitOfMeasure {
+export interface IUnitOfMeasureForm {
   id?: string;
   name: string;
   abbreviation: string;
+  conversions: {
+    toUnitId: string;
+    conversionFactor: number;
+  }[];
+}
+export interface IUnitOfMeasureResponse {
+  id: string;
+  name: string;
+  abbreviation: string;
   isActive: boolean;
-  equivalenceToBaseUnit: number | null;
-  baseUnitId: string;
   isConventional: boolean;
-  baseUnit?: string | null;
-  fromConversions?: any[];
-  toConversions?: any[];
+  isBase: boolean;
+  baseUnit: any;
+  fromConversions: { id: string, conversionFactor: number }[];
+  toConversions: { id: string, conversionFactor: number }[];
 }
 
 export interface IUnitOfMeasureStandard {
