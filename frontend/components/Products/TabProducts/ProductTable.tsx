@@ -103,7 +103,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           sx={{ marginRight: 2, width: '20%' }}
           onClick={onCreate}
         >
-          + Nuevo
+          + Nuevo Producto
         </Button>
 
         {/* Buscador de productos */}
