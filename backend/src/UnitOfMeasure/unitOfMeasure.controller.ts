@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -28,7 +29,7 @@ export class UnitOfMeasureController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createUnitOfMeasure(
     @Body() createData: CreateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureService.createUnitOfMeasure(createData);
   }
 
@@ -85,7 +86,13 @@ export class UnitOfMeasureController {
   async updateUnitOfMeasure(
     @Param('id') id: string,
     @Body() updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureService.updateUnitOfMeasure(id, updateData);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async deleteUnitOfMeasure(@Param('id') id: string) {
+    return await this.unitOfMeasureService.deleteUnitOfMeasure(id);
   }
 }
