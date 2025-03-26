@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -23,12 +24,20 @@ export class UpdateOrderDto {
   isActive?: boolean;
 
   @IsOptional()
-  @IsEnum({ enum: OrderState })
+  @IsEnum(OrderState)
   state?: OrderState;
 
   @IsOptional()
   @IsString()
   table?: string;
+
+  @IsOptional()
+  @IsNumber()
+  numberCustomers?: number;
+
+  @IsOptional()
+  @IsString()
+  comment?: string;
 
   @IsOptional()
   @IsArray()

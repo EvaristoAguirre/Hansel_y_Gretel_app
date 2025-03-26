@@ -6,9 +6,14 @@ import {
   IsString,
   IsArray,
   IsUUID,
-  IsDecimal,
   IsNumber,
+  IsBoolean,
+  ValidateNested,
+  IsEnum,
 } from 'class-validator';
+import { ProductIngredientDto } from './productIngredient.dto';
+import { Type } from 'class-transformer';
+import { PromotionProductDto } from './create-promotion.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -38,9 +43,29 @@ export class UpdateProductDto {
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  categoriesIds?: string[];
+  categories?: string[];
 
   @IsOptional()
   @IsString()
   providerId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductIngredientDto)
+  ingredients?: ProductIngredientDto[];
+
+  @IsOptional()
+  @IsEnum(['product', 'promotion'])
+  type?: 'product' | 'promotion';
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => PromotionProductDto)
+  products?: PromotionProductDto[];
 }

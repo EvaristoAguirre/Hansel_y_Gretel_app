@@ -1,6 +1,6 @@
 import { OrderState, TableState } from "../Enums/Enums";
-import { TableCreated } from "../Mesa/useTableStore";
-import { OrderDetailsCreated } from "../Pedido/useOrderDetailsStore";
+import { TableCreated } from "../Table/useTableStore";
+// import { OrderDetailsCreated } from "../Order/useOrderDetailsStore";
 
 export interface PedidoInterface {
   id: string;
@@ -14,24 +14,28 @@ export interface MozoInterface {
   nombre: string;
 }
 
+export interface IOrder {
+  id: string;
+  // state: OrderState;
+}
+
 export interface MesaInterface {
   id: string;
   name: string;
-  number: number;
+  number: number | null;
   coment: string;
-  // cantidadPersonas: number;
-  // cliente: string | null;
-  state: TableState; // Estados posibles de la mesa
-  room: ISala; // ID de la sala a la que pertenece
-  // mozo: MozoInterface | null;
-  orderId?: string | null; // Lista de pedidos asociados
+  state?: TableState;
+  room: ISala;
+  orders?: string[] | null;
 }
 
+
 export interface MesaForm {
+  id?: string;
   name: string;
-  number: number;
+  number: null | number;
   coment: string;
-  // state: TableState;
+  state?: TableState;
 }
 
 export interface MesaCardProps {
@@ -46,12 +50,17 @@ export interface MesaModalProps {
   type: "create" | "edit";
   form: MesaForm;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (data: MesaForm) => void;
   onChange: (field: keyof MesaForm, value: any) => void;
 }
 
+// export interface MesaProps {
+//   salaId: string;
+//   onSelectMesa: (mesa: MesaInterface) => void;
+// }
 export interface MesaProps {
   salaId: string;
+  // onSelectMesa: (mesaId: string) => void;
   onSelectMesa: (mesa: MesaInterface) => void;
 }
 
@@ -75,7 +84,7 @@ export interface IOrder {
   state: OrderState;
   isActive: boolean;
   table: MesaInterface;
-  orderDetails: OrderDetailsCreated[];
+  // orderDetails: OrderDetailsCreated[];
 }
 
 //---------------------------------------------------------------------

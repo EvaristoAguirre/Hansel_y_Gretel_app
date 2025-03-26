@@ -30,7 +30,7 @@ export class TableService {
   async deleteTable(id: string): Promise<string> {
     const tableDelete = await this.tableRepository.deleteTable(id);
     await this.eventEmitter.emit('table.deleted', {
-      table: tableDelete,
+      tableId: id,
     });
     return tableDelete;
   }
@@ -41,5 +41,13 @@ export class TableService {
 
   async getTableById(id: string): Promise<Table> {
     return await this.tableRepository.getTableById(id);
+  }
+
+  async getTableByName(name: string): Promise<Table> {
+    return this.tableRepository.getTableByName(name);
+  }
+
+  async getTableByNumber(number: string): Promise<Table> {
+    return this.tableRepository.getTableByNumber(number);
   }
 }

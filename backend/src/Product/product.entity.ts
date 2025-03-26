@@ -1,7 +1,9 @@
-import { IsInt, IsOptional, Max, Min, IsNumber } from 'class-validator';
+import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
+import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { OrderDetails } from 'src/Order/order_details.entity';
 import { Provider } from 'src/Provider/provider.entity';
+import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,7 +12,10 @@ import {
   JoinTable,
   ManyToOne,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
+import { PromotionProduct } from './promotionProducts.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -19,7 +24,7 @@ export class Product {
 
   @Column({ type: 'int', nullable: true, unique: true })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   @Max(9999)
   code?: number;
@@ -43,6 +48,9 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'enum', enum: ['product', 'promotion'] })
+  type: 'product' | 'promotion';
+
   // ---------       Relaciones   -----------
 
   @ManyToMany(() => Category, (category) => category.products, {
@@ -58,4 +66,31 @@ export class Product {
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.product)
   orderDetails: OrderDetails[];
+
+  @OneToOne(() => Stock, (stock) => stock.product)
+  stock: Stock;
+
+  @OneToMany(
+    () => ProductIngredient,
+    (productIngredient) => productIngredient.product,
+  )
+  productIngredients: ProductIngredient[];
+
+  @OneToMany(
+    () => PromotionProduct,
+    (promotionProduct) => promotionProduct.promotion,
+  )
+  promotionDetails: PromotionProduct[];
+
+  // Relación para productos que forman parte de una promoción
+  @OneToMany(
+    () => PromotionProduct,
+    (promotionProduct) => promotionProduct.product,
+  )
+  componentDetails: PromotionProduct[];
+
+  @ManyToOne(() => UnitOfMeasure, (unitOfMeasure) => unitOfMeasure.products, {
+    nullable: true,
+  })
+  unitOfMeasure: UnitOfMeasure;
 }

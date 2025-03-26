@@ -1,82 +1,63 @@
 import {
   Injectable,
-  NotFoundException,
+  ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './user.entity';
-import * as bcrypt from 'bcrypt';
-// import { v4 as uuid } from 'uuid';
+import { User } from './user.entity';
+import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @Injectable()
-export class UserService {
+export class AuthService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private userRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
   async register(
     username: string,
     password: string,
-    role: UserRole = UserRole.MOZO,
+    role: UserRole,
   ): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { username },
     });
     if (existingUser) {
-      throw new Error('El usuario ya existe');
+      throw new ConflictException('Username already exists');
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({ username, passwordHash, role });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = this.userRepository.create({
+      username,
+      password: hashedPassword,
+      role,
+    });
+
     return this.userRepository.save(user);
   }
 
-  async validateUser(username: string, password: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { username } });
-    if (!user) throw new UnauthorizedException('Credenciales inválidas');
-
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid)
-      throw new UnauthorizedException('Credenciales inválidas');
-
-    return user;
-  }
-
-  async generateRecoveryCode(username: string): Promise<string> {
-    const user = await this.userRepository.findOne({ where: { username } });
-    if (!user) throw new NotFoundException('Usuario no encontrado');
-
-    const recoveryCode = Math.floor(100000 + Math.random() * 900000).toString();
-    user.recoveryCode = recoveryCode;
-    user.recoveryCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-
-    await this.userRepository.save(user);
-    return recoveryCode;
-  }
-
-  async resetPassword(
+  async login(
     username: string,
-    recoveryCode: string,
-    newPassword: string,
-  ): Promise<void> {
+    password: string,
+  ): Promise<{ accessToken: string }> {
     const user = await this.userRepository.findOne({ where: { username } });
-    if (!user) throw new NotFoundException('Usuario no encontrado');
-
-    if (
-      user.recoveryCode !== recoveryCode ||
-      new Date() > user.recoveryCodeExpires
-    ) {
-      throw new UnauthorizedException(
-        'Código de recuperación inválido o expirado',
-      );
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
-    user.recoveryCode = null;
-    user.recoveryCodeExpires = null;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-    await this.userRepository.save(user);
+    const payload = { username: user.username, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
   }
 }
