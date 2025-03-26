@@ -13,7 +13,6 @@ interface ProductTableProps {
   capitalize: string[];
 }
 const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capitalize = [] }) => {
-  console.log("Array de capitalize🌈", capitalize);
 
 
   return (

@@ -68,7 +68,7 @@ const ProductsPage: React.FC = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
-  const handleCategorySelected = (categoryId: string) => {
+  const handleCategorySelected = (categoryId: string | null) => {
     setSelectedCategoryId(categoryId);
   };
 
@@ -119,7 +119,7 @@ const ProductsPage: React.FC = () => {
           </IngredientsProvider>
         }
       </Box>
-  
+    </Box>
   );
 };
 
