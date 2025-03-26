@@ -13,8 +13,17 @@ export class ArchivedOrder {
   @Column({ type: 'enum', enum: OrderState })
   state: OrderState;
 
-  @Column({ default: false })
-  isActive: boolean;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  total: number;
+
+  @Column({ nullable: true })
+  numberCustomers: number;
+
+  @Column({ nullable: true })
+  comment: string;
+
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  commandNumber: string;
 
   @Column()
   tableId: string;

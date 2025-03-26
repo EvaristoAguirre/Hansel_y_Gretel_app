@@ -1,10 +1,20 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export class UpdateUnitOfMeasureDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  name: string;
+  name?: string;
 
   @IsString()
   @IsOptional()
@@ -17,4 +27,19 @@ export class UpdateUnitOfMeasureDto {
   @IsString()
   @IsOptional()
   baseUnitId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateUnitConversionDto)
+  conversions?: CreateUnitConversionDto[];
+}
+
+export class CreateUnitConversionDto {
+  @IsUUID()
+  toUnitId: string;
+
+  @IsNumber()
+  @Min(0.0001)
+  conversionFactor: number;
 }

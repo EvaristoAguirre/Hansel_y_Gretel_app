@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { DataSource } from 'typeorm';
 import { NotificationService } from './notification.service';
+import { Order } from './order.entity';
+import { DataSource, LessThan } from 'typeorm';
+import { ArchivedOrder } from './archived_order.entity';
+import { Cron } from '@nestjs/schedule';
+import { OrderState } from 'src/Enums/states.enum';
+import { ArchivedOrderDetails } from './archived_order_details.entity';
 
 @Injectable()
 export class ArchiveService {
@@ -12,14 +16,10 @@ export class ArchiveService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  private async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  @Cron('0 0 * * 0') // Ejecutar todos los domingos a medianoche.
+  @Cron('0 23 * * 0')
   async archiveOrders() {
     const maxAttempts = 3;
-    const delayBetweenAttempts = 60000; // 60 segundos entre intentos.
+    const delayBetweenAttempts = 60000;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -27,45 +27,71 @@ export class ArchiveService {
         attempts++;
 
         await this.dataSource.transaction(async (manager) => {
-          // 1. Insertar órdenes en la tabla de archivado.
-          await manager.query(`
-            INSERT INTO archived_orders (id, date, state, is_active, table_id)
-            SELECT id, date, state, is_active, table_id
-            FROM orders
-            WHERE state = 'COMPLETED' AND date < NOW() - INTERVAL '30 days';
-          `);
+          const ordersToArchive = await manager.find(Order, {
+            where: {
+              state:
+                OrderState.CLOSED ||
+                OrderState.CANCELLED ||
+                OrderState.PENDING_PAYMENT,
+              date: LessThan(this.getLastSunday()),
+            },
+            relations: ['orderDetails'],
+          });
 
-          // 2. Eliminar órdenes archivadas de la tabla original.
-          await manager.query(`
-            DELETE FROM orders
-            WHERE state = 'COMPLETED' AND date < NOW() - INTERVAL '30 days';
-          `);
+          const archivedOrders = ordersToArchive.map((order) => {
+            const archived = new ArchivedOrder();
+            archived.id = order.id;
+            archived.date = order.date;
+            archived.state = order.state;
+            archived.total = order.total;
+            archived.numberCustomers = order.numberCustomers;
+            archived.comment = order.comment;
+            archived.commandNumber = order.commandNumber;
+            archived.tableId = order.table?.id;
 
-          this.logger.log('Órdenes archivadas exitosamente.');
+            archived.orderDetails = order.orderDetails?.map((detail) => {
+              const archivedDetail = new ArchivedOrderDetails();
+              archivedDetail.id = detail.id;
+              archivedDetail.quantity = detail.quantity;
+              archivedDetail.productId = detail.product?.id;
+              archivedDetail.unitaryPrice = detail.unitaryPrice;
+              archivedDetail.subtotal = detail.subtotal;
+              return archivedDetail;
+            });
+
+            return archived;
+          });
+
+          // 3. Guardar en tabla de archivado
+          await manager.save(ArchivedOrder, archivedOrders);
+
+          // 4. Eliminar órdenes originales
+          await manager.remove(Order, ordersToArchive);
+
+          this.logger.log(`Archivadas ${archivedOrders.length} órdenes`);
         });
 
-        // Si todo fue exitoso, salimos del bucle.
         break;
       } catch (error) {
-        this.logger.warn(`Intento ${attempts} fallido: ${error.message}`);
+        this.logger.error(`Intento ${attempts} fallido: ${error.message}`);
 
         if (attempts === maxAttempts) {
-          this.logger.error(
-            'El proceso de archivado falló después de 3 intentos.',
-          );
-
-          // Notificar el error.
           await this.notificationService.notifyError(
-            'Error en el proceso de archivado',
-            `El proceso de archivado falló después de ${maxAttempts} intentos. Error: ${error.message}`,
+            'Error en archivado',
+            `Falló después de ${maxAttempts} intentos. Error: ${error.message}`,
           );
         } else {
-          this.logger.warn(
-            `Esperando ${delayBetweenAttempts / 1000} segundos antes del próximo intento.`,
+          await new Promise((resolve) =>
+            setTimeout(resolve, delayBetweenAttempts),
           );
-          await this.sleep(delayBetweenAttempts); // Espera antes del próximo intento.
         }
       }
     }
+  }
+
+  private getLastSunday(): Date {
+    const date = new Date();
+    date.setDate(date.getDate() - date.getDay());
+    return date;
   }
 }

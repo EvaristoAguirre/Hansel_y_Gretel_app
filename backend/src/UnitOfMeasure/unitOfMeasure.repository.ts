@@ -1,6 +1,6 @@
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { UnitConversion } from './unitConversion.entity';
 import {
   BadRequestException,
@@ -23,19 +23,19 @@ export class UnitOfMeasureRepository {
     private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     @InjectRepository(UnitConversion)
     private readonly unitConversionRepository: Repository<UnitConversion>,
+    private readonly dataSource: DataSource,
   ) {}
 
+  // ---------------   estandarizada con el nuevo dto
   async createUnitOfMeasure(
     createData: CreateEspecialUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     const { name, abbreviation, conversions } = createData;
 
-    // Validaciones básicas
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
 
-    // Verificar si la unidad ya existe por nombre
     const existingUnitByName = await this.unitOfMeasureRepository.findOne({
       where: { name },
     });
@@ -44,7 +44,6 @@ export class UnitOfMeasureRepository {
       throw new ConflictException('Unit of measure name already exists');
     }
 
-    // Verificar si la abreviatura ya existe
     if (abbreviation) {
       const existingUnitByAbbreviation =
         await this.unitOfMeasureRepository.findOne({
@@ -58,22 +57,31 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    // Crear la nueva unidad de medida
     const unitOfMeasure = this.unitOfMeasureRepository.create({
       name,
       abbreviation,
-      isConventional: false, // Las unidades especiales no son convencionales
+      isConventional: false,
     });
 
     const savedUnitOfMeasure =
       await this.unitOfMeasureRepository.save(unitOfMeasure);
 
-    // Manejar las conversiones si se proporcionaron
     if (conversions && conversions.length > 0) {
       await this.handleConversions(savedUnitOfMeasure, conversions);
     }
 
-    return savedUnitOfMeasure;
+    const unitWithConversions = await this.unitOfMeasureRepository.findOne({
+      where: { id: savedUnitOfMeasure.id },
+      relations: [
+        'baseUnit',
+        'fromConversions',
+        'toConversions',
+        'fromConversions.toUnit',
+        'toConversions.fromUnit',
+      ],
+    });
+
+    return this.mapUnitWithConversions(unitWithConversions);
   }
 
   // ---------------   estandarizada con el nuevo dto
@@ -207,23 +215,27 @@ export class UnitOfMeasureRepository {
     }
   }
 
+  // ---------------   estandarizada con el nuevo dto
   async updateUnitOfMeasure(
     id: string,
     updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
-    const { name, abbreviation, baseUnitId } = updateData;
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
+    const { name, abbreviation, conversions } = updateData;
 
-    const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-      where: { id: id },
+    // 1. Verificar existencia de la unidad
+    const existingUnit = await this.unitOfMeasureRepository.findOne({
+      where: { id },
+      relations: ['fromConversions', 'toConversions'],
     });
 
-    if (!existingUnitOfMeasure) {
+    if (!existingUnit) {
       throw new NotFoundException('Unit of measure not found');
     }
 
-    if (name && name !== existingUnitOfMeasure.name) {
+    // 2. Validar nombre único si se está modificando
+    if (name && name !== existingUnit.name) {
       const unitWithSameName = await this.unitOfMeasureRepository.findOne({
-        where: { name: name },
+        where: { name },
       });
 
       if (unitWithSameName) {
@@ -231,10 +243,11 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    if (abbreviation && abbreviation !== existingUnitOfMeasure.abbreviation) {
+    // 3. Validar abreviatura única si se está modificando
+    if (abbreviation && abbreviation !== existingUnit.abbreviation) {
       const unitWithSameAbbreviation =
         await this.unitOfMeasureRepository.findOne({
-          where: { abbreviation: abbreviation },
+          where: { abbreviation },
         });
 
       if (unitWithSameAbbreviation) {
@@ -244,23 +257,53 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    if (baseUnitId) {
-      const baseUnit = await this.unitOfMeasureRepository.findOne({
-        where: { id: baseUnitId },
-      });
+    // 4. Actualizar propiedades básicas
+    if (name) existingUnit.name = name;
+    if (abbreviation) existingUnit.abbreviation = abbreviation;
 
-      if (!baseUnit) {
-        throw new BadRequestException('Base unit does not exist');
-      }
-    }
+    // 5. Manejar transacción para actualizaciones atómicas
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      const updatedUnitOfMeasure = this.unitOfMeasureRepository.merge(
-        existingUnitOfMeasure,
-        updateData,
-      );
-      return await this.unitOfMeasureRepository.save(updatedUnitOfMeasure);
+      // 6. Guardar cambios en la unidad
+      const updatedUnit = await queryRunner.manager.save(existingUnit);
+
+      // 7. Manejar conversiones si se proporcionan
+      if (conversions) {
+        // Eliminar conversiones existentes
+        await queryRunner.manager.delete(UnitConversion, [
+          ...(existingUnit.fromConversions?.map((c) => c.id) || []),
+          ...(existingUnit.toConversions?.map((c) => c.id) || []),
+        ]);
+
+        // Crear nuevas conversiones
+        await this.handleConversionsManager(
+          updatedUnit,
+          conversions,
+          queryRunner.manager,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+
+      // 8. Obtener la unidad actualizada con todas sus relaciones
+      const unitWithRelations = await this.unitOfMeasureRepository.findOne({
+        where: { id: updatedUnit.id },
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+      });
+
+      return this.mapUnitWithConversions(unitWithRelations);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+
       if (
         error instanceof BadRequestException ||
         error instanceof ConflictException ||
@@ -270,8 +313,9 @@ export class UnitOfMeasureRepository {
       }
       throw new InternalServerErrorException(
         'Error updating the unit of measure',
-        error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -549,5 +593,59 @@ export class UnitOfMeasureRepository {
           }
         : null,
     };
+  }
+
+  private async handleConversionsManager(
+    fromUnit: UnitOfMeasure,
+    conversions: CreateUnitConversionDto[],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    for (const conversion of conversions) {
+      const { toUnitId, conversionFactor } = conversion;
+
+      // Validar factor de conversión
+      if (conversionFactor <= 0) {
+        throw new BadRequestException(
+          'Conversion factor must be greater than 0',
+        );
+      }
+
+      // Verificar que la unidad de destino exista
+      const toUnit = await entityManager.findOne(UnitOfMeasure, {
+        where: { id: toUnitId },
+      });
+
+      if (!toUnit) {
+        throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
+      }
+      // Crear conversión en ambas direcciones
+      const unitConversion = entityManager.create(UnitConversion, {
+        fromUnit,
+        toUnit,
+        conversionFactor,
+      });
+
+      const inverseConversion = entityManager.create(UnitConversion, {
+        fromUnit: toUnit,
+        toUnit: fromUnit,
+        conversionFactor: 1 / conversionFactor,
+      });
+
+      await entityManager.save([unitConversion, inverseConversion]);
+    }
+  }
+
+  async deleteUnitOfMeasure(id: string) {
+    const unit = await this.unitOfMeasureRepository.findOne({
+      where: { id },
+    });
+
+    if (!unit) {
+      throw new NotFoundException('Unit of measure not found');
+    }
+
+    await this.unitOfMeasureRepository.update(id, { isActive: false });
+
+    return 'Unit of measure successfully deleted';
   }
 }
