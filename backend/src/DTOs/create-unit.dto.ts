@@ -5,7 +5,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -38,10 +40,26 @@ export class CreateUnitOfMeasureDto {
 }
 
 export class CreateUnitConversionDto {
-  @IsString()
+  @IsUUID()
   toUnitId: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0.0001)
   conversionFactor: number;
+}
+
+export class CreateEspecialUnitOfMeasureDto {
+  @IsString()
+  @MinLength(1)
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  abbreviation?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateUnitConversionDto)
+  @IsOptional()
+  conversions?: CreateUnitConversionDto[];
 }
