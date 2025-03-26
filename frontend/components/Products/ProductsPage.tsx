@@ -54,7 +54,7 @@ const ProductsPage: React.FC = () => {
       if (!token) return;
       try {
         const data = await fetchCategories(token);
-        setCategories(data);
+        data && setCategories(data);
         connectWebSocket();
       } catch (error) {
         console.error(error);
@@ -88,12 +88,17 @@ const ProductsPage: React.FC = () => {
             selectedCategoryId={selectedCategoryId}
           />
         }
-        {selectedTab === Tab.PRODUCTOS &&
-          <Products
-            selectedCategoryId={selectedCategoryId}
-            onClearSelectedCategory={clearSelectedCategory}
-          />
-        }
+        {selectedTab === Tab.PRODUCTOS && (
+          categories.length > 0 ? (
+            <Products
+              selectedCategoryId={selectedCategoryId}
+              onClearSelectedCategory={clearSelectedCategory}
+            />
+          ) : (
+            <p>No hay productos en esta categoría.</p>
+          )
+        )}
+
         {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
         {selectedTab === Tab.CONTROL_DE_STOCK && (
           <IngredientsProvider>

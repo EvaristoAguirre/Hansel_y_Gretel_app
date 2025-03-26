@@ -60,13 +60,15 @@ export const getProductsByCategory = async (id: string, token: string) => {
       body: JSON.stringify({ categories: [id] }),
     });
 
-    // if (!response.ok) {
-    //   // Manejo de errores según el status code
-    //   return { ok: false, status: response.status, message: await response.text() };
-    // }
+    if (response.status === 404) {
+      console.log("No se encontraron productos para la categoría seleccionada.👀");
+      return [];
+    }
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${await response.text()}`);
+    }
 
-    const data = await response.json();
-    return { ok: true, data };
+    return await response.json();
   } catch (error) {
     console.error("Error en getProductsByCategory:", error);
     return { ok: false, message: "Error de conexión con el servidor" };
