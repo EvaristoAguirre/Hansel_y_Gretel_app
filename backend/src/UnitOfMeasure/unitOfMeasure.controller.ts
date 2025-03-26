@@ -13,10 +13,16 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Controller('unitofmeasure')
 export class UnitOfMeasureController {
   constructor(private readonly unitOfMeasureService: UnitOfMeasureService) {}
+
+  @Get('conversion')
+  async findConversionUnit() {
+    return await this.unitOfMeasureService.findConversionUnit();
+  }
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
@@ -31,7 +37,7 @@ export class UnitOfMeasureController {
   async getAllUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     return this.unitOfMeasureService.getAllUnitOfMeasure(
@@ -45,7 +51,7 @@ export class UnitOfMeasureController {
   async getConventionalUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     return await this.unitOfMeasureService.getConventionalUnitOfMeasure(
@@ -59,7 +65,7 @@ export class UnitOfMeasureController {
   async getNotConventionalUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     return await this.unitOfMeasureService.getNotConventionalUnitOfMeasure(

@@ -3,6 +3,7 @@ import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitOfMeasureRepository } from './unitOfMeasure.repository';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Injectable()
 export class UnitOfMeasureService {
@@ -17,7 +18,7 @@ export class UnitOfMeasureService {
   async getAllUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     return await this.unitOfMeasureRepository.getAllUnitOfMeasure(
       pageNumber,
       limitNumber,
@@ -41,7 +42,7 @@ export class UnitOfMeasureService {
   async getConventionalUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     return await this.unitOfMeasureRepository.getConventionalUnitOfMeasure(
       pageNumber,
       limitNumber,
@@ -51,7 +52,7 @@ export class UnitOfMeasureService {
   async getNotConventionalUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     return await this.unitOfMeasureRepository.getNotConventionalUnitOfMeasure(
       pageNumber,
       limitNumber,
@@ -64,5 +65,9 @@ export class UnitOfMeasureService {
       toUnitId,
       quantity,
     );
+  }
+
+  async findConversionUnit() {
+    return await this.unitOfMeasureRepository.findConversionUnit();
   }
 }

@@ -9,8 +9,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import {
+  CreateEspecialUnitOfMeasureDto,
+  CreateUnitConversionDto,
+} from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Injectable()
 export class UnitOfMeasureRepository {
@@ -22,20 +26,16 @@ export class UnitOfMeasureRepository {
   ) {}
 
   async createUnitOfMeasure(
-    createData: CreateUnitOfMeasureDto,
+    createData: CreateEspecialUnitOfMeasureDto,
   ): Promise<UnitOfMeasure> {
-    const {
-      name,
-      abbreviation,
-      equivalenceToBaseUnit,
-      baseUnitId,
-      conversions,
-    } = createData;
+    const { name, abbreviation, conversions } = createData;
 
+    // Validaciones básicas
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
 
+    // Verificar si la unidad ya existe por nombre
     const existingUnitByName = await this.unitOfMeasureRepository.findOne({
       where: { name },
     });
@@ -44,6 +44,7 @@ export class UnitOfMeasureRepository {
       throw new ConflictException('Unit of measure name already exists');
     }
 
+    // Verificar si la abreviatura ya existe
     if (abbreviation) {
       const existingUnitByAbbreviation =
         await this.unitOfMeasureRepository.findOne({
@@ -57,84 +58,85 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    // Validación de equivalenceToBaseUnit y baseUnitId
-    if (equivalenceToBaseUnit && !baseUnitId) {
-      throw new BadRequestException(
-        'baseUnitId must be provided when equivalenceToBaseUnit is defined',
-      );
-    }
-
-    if (baseUnitId && !equivalenceToBaseUnit) {
-      throw new BadRequestException(
-        'equivalenceToBaseUnit must be provided when baseUnitId is defined',
-      );
-    }
-
-    // Validar que la unidad base exista y sea convencional
-    let baseUnit: UnitOfMeasure | null = null;
-    if (baseUnitId) {
-      baseUnit = await this.unitOfMeasureRepository.findOne({
-        where: { id: baseUnitId },
-      });
-
-      if (!baseUnit) {
-        throw new BadRequestException('Base unit does not exist');
-      }
-
-      if (!baseUnit.isConventional) {
-        throw new BadRequestException('Base unit must be conventional');
-      }
-    }
-
+    // Crear la nueva unidad de medida
     const unitOfMeasure = this.unitOfMeasureRepository.create({
-      ...createData,
-      baseUnit,
+      name,
+      abbreviation,
+      isConventional: false, // Las unidades especiales no son convencionales
     });
 
     const savedUnitOfMeasure =
       await this.unitOfMeasureRepository.save(unitOfMeasure);
 
-    // Crear las conversiones si se proporcionaron
+    // Manejar las conversiones si se proporcionaron
     if (conversions && conversions.length > 0) {
-      for (const conversion of conversions) {
-        const { toUnitId, conversionFactor } = conversion;
-
-        const toUnit = await this.unitOfMeasureRepository.findOne({
-          where: { id: toUnitId },
-        });
-
-        if (!toUnit) {
-          throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
-        }
-
-        const unitConversion = this.unitConversionRepository.create({
-          fromUnit: savedUnitOfMeasure,
-          toUnit,
-          conversionFactor,
-        });
-
-        await this.unitConversionRepository.save(unitConversion);
-      }
+      await this.handleConversions(savedUnitOfMeasure, conversions);
     }
 
     return savedUnitOfMeasure;
   }
 
+  // ---------------   estandarizada con el nuevo dto
   async getAllUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
+    if (pageNumber <= 0 || limitNumber <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+
+    try {
+      const units = await this.unitOfMeasureRepository.find({
+        where: { isActive: true },
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
+      });
+
+      return units.map((unit) => this.mapUnitWithConversions(unit));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching units',
+        error.message,
+      );
+    }
+  }
+
+  // ---------------   estandarizada con el nuevo dto
+  async getConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     if (pageNumber <= 0 || limitNumber <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
     try {
-      return await this.unitOfMeasureRepository.find({
-        where: { isActive: true },
+      const units = await this.unitOfMeasureRepository.find({
+        where: { isConventional: true, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
       });
+      return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -144,44 +146,32 @@ export class UnitOfMeasureRepository {
     }
   }
 
-  async getConventionalUnitOfMeasure(
-    pageNumber: number,
-    limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
-    if (pageNumber <= 0 || limitNumber <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.unitOfMeasureRepository.find({
-        where: { isConventional: true, isActive: true },
-        skip: (pageNumber - 1) * limitNumber,
-        take: limitNumber,
-      });
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
-    }
-  }
+  // ---------------   estandarizada con el nuevo dto
   async getNotConventionalUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     if (pageNumber <= 0 || limitNumber <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
     try {
-      return await this.unitOfMeasureRepository.find({
+      const units = await this.unitOfMeasureRepository.find({
         where: { isConventional: false, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
       });
+
+      return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -423,5 +413,141 @@ export class UnitOfMeasureRepository {
       quantity,
     );
     return this.convertUnit(intermediateUnitId, toUnitId, toBase);
+  }
+
+  async findConversionUnit() {
+    const allConversion = await this.unitConversionRepository.find();
+    return allConversion;
+  }
+
+  private async handleConversions(
+    fromUnit: UnitOfMeasure,
+    conversions: CreateUnitConversionDto[],
+  ): Promise<void> {
+    for (const conversion of conversions) {
+      const { toUnitId, conversionFactor } = conversion;
+
+      // Validar el factor de conversión
+      if (conversionFactor <= 0) {
+        throw new BadRequestException(
+          'Conversion factor must be greater than 0',
+        );
+      }
+
+      // Verificar que la unidad de destino exista
+      const toUnit = await this.unitOfMeasureRepository.findOne({
+        where: { id: toUnitId },
+      });
+
+      if (!toUnit) {
+        throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
+      }
+
+      // Verificar que no exista ya una conversión entre estas unidades
+      const existingConversion = await this.unitConversionRepository.findOne({
+        where: [
+          { fromUnit: { id: fromUnit.id }, toUnit: { id: toUnit.id } },
+          { fromUnit: { id: toUnit.id }, toUnit: { id: fromUnit.id } },
+        ],
+      });
+
+      if (existingConversion) {
+        throw new ConflictException(
+          `Conversion between these units already exists`,
+        );
+      }
+
+      // Crear la conversión en ambas direcciones
+      const unitConversion = this.unitConversionRepository.create({
+        fromUnit,
+        toUnit,
+        conversionFactor,
+      });
+
+      const inverseConversion = this.unitConversionRepository.create({
+        fromUnit: toUnit,
+        toUnit: fromUnit,
+        conversionFactor: 1 / conversionFactor,
+      });
+
+      await this.unitConversionRepository.save([
+        unitConversion,
+        inverseConversion,
+      ]);
+    }
+  }
+
+  private mapUnitWithConversions(
+    unit: UnitOfMeasure,
+  ): UnitOfMeasureSummaryResponseDto {
+    // Obtener todas las conversiones relacionadas
+    const allConversions = [
+      ...(unit.fromConversions || []).map((c) => ({
+        direction: 'from',
+        unit: c.toUnit,
+        factor: c.conversionFactor,
+      })),
+      ...(unit.toConversions || []).map((c) => ({
+        direction: 'to',
+        unit: c.fromUnit,
+        factor: c.conversionFactor,
+      })),
+    ];
+
+    // Encontrar la unidad base relacionada (ya sea directa o a través de conversiones)
+    let relatedBaseUnit = unit.baseUnit;
+    // eslint-disable-next-line prefer-const
+    let conversionPath = [];
+
+    if (!relatedBaseUnit && !unit.isConventional) {
+      // Para unidades especiales, buscar conexión con unidades convencionales
+      const conventionalConversion = allConversions.find(
+        (c) => c.unit.isConventional,
+      );
+
+      if (conventionalConversion) {
+        relatedBaseUnit = conventionalConversion.unit;
+        conversionPath.push({
+          unit: conventionalConversion.unit.name,
+          factor:
+            conventionalConversion.direction === 'from'
+              ? conventionalConversion.factor
+              : 1 / conventionalConversion.factor,
+        });
+      }
+    }
+
+    return {
+      id: unit.id,
+      name: unit.name,
+      abbreviation: unit.abbreviation,
+      isActive: unit.isActive,
+      isConventional: unit.isConventional,
+      isBase: unit.isBase,
+      baseUnit: relatedBaseUnit
+        ? {
+            id: relatedBaseUnit.id,
+            name: relatedBaseUnit.name,
+            abbreviation: relatedBaseUnit.abbreviation,
+          }
+        : null,
+      conversions: allConversions.map((c) => ({
+        toUnitId: c.unit.id,
+        unitName: c.unit.name,
+        unitAbbreviation: c.unit.abbreviation,
+        conversionFactor: c.direction === 'from' ? c.factor : 1 / c.factor,
+        direction: c.direction,
+      })),
+      toBaseConversion: relatedBaseUnit
+        ? {
+            unitId: relatedBaseUnit.id,
+            unitName: relatedBaseUnit.name,
+            factor: conversionPath.reduce(
+              (total, step) => total * parseFloat(step.factor.toString()),
+              1,
+            ),
+          }
+        : null,
+    };
   }
 }

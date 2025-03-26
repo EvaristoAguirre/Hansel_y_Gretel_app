@@ -5,15 +5,15 @@ import { useCategoryStore } from "../Categories/useCategoryStore";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 export const Sidebar: React.FC<{
-  onCategorySelected: (categoryId: string) => void;
+  onCategorySelected: (categoryId: string | null) => void;
   selectedCategoryId: string | null;
 
 }> = ({ onCategorySelected, selectedCategoryId }) => {
 
-  const { categories } = useCategoryStore();
+  const { categories, setCategories } = useCategoryStore();
 
-  const handleCategoryClick = (category: ICategory) => {
-    onCategorySelected(category.id);
+  const handleCategoryClick = (category: ICategory | null) => {
+    onCategorySelected(category?.id ?? null)
   };
 
   return (
@@ -33,6 +33,20 @@ export const Sidebar: React.FC<{
       }}
     >
       <List>
+        <ListItem disablePadding>
+          <ListItemButton
+            aria-label="Mostrar todos los productos"
+            onClick={() => handleCategoryClick(null)}
+            sx={{
+              backgroundColor: selectedCategoryId === null ? "#f3d49ab8" : "transparent",
+              "& .MuiTypography-root": {
+                color: selectedCategoryId === null ? "black" : "white",
+              },
+            }}
+          >
+            <ListItemText primary="Todos los productos" />
+          </ListItemButton>
+        </ListItem>
         {categories && categories.length > 0 ? (
           categories.map((category: ICategory) => {
             const isSelected = selectedCategoryId === category.id;

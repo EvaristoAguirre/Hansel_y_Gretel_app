@@ -55,7 +55,7 @@ const ProductsPage: React.FC = () => {
       if (!token) return;
       try {
         const data = await fetchCategories(token);
-        setCategories(data);
+        data && setCategories(data);
         connectWebSocket();
       } catch (error) {
         console.error(error);
@@ -78,45 +78,48 @@ const ProductsPage: React.FC = () => {
 
 
   return (
-    <Suspense fallback={<LoadingLottie />}>
-      <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
-        <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
-        <Box display="flex" flex={1} overflow="hidden">
-          {
-            (selectedTab === Tab.PRODUCTOS ||
-              selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
-            <Sidebar
-              onCategorySelected={handleCategorySelected}
-              selectedCategoryId={selectedCategoryId}
-            />
-          }
-          {selectedTab === Tab.PRODUCTOS &&
+    <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
+      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
+      <Box display="flex" flex={1} overflow="hidden">
+        {
+          (selectedTab === Tab.PRODUCTOS ||
+            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+          <Sidebar
+            onCategorySelected={handleCategorySelected}
+            selectedCategoryId={selectedCategoryId}
+          />
+        }
+        {selectedTab === Tab.PRODUCTOS && (
+          categories.length > 0 ? (
             <Products
               selectedCategoryId={selectedCategoryId}
               onClearSelectedCategory={clearSelectedCategory}
             />
-          }
-          {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
-          {selectedTab === Tab.CONTROL_DE_STOCK && (
-            <IngredientsProvider>
-              <Box flex={1} overflow="auto">
-                <StockControl />
-              </Box>
-            </IngredientsProvider>
-          )}
-          {selectedTab === Tab.UNIDADES_MEDIDA &&
-            <UnitProvider>
-              <UnitOfMeasure />
-            </UnitProvider>
-          }
-          {selectedTab === Tab.INGREDIENTES &&
-            <IngredientsProvider>
-              <Ingredients />
-            </IngredientsProvider>
-          }
-        </Box>
+          ) : (
+            <p>No hay productos en esta categoría.</p>
+          )
+        )}
+
+        {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
+        {selectedTab === Tab.CONTROL_DE_STOCK && (
+          <IngredientsProvider>
+            <Box flex={1} overflow="auto">
+              <StockControl />
+            </Box>
+          </IngredientsProvider>
+        )}
+        {selectedTab === Tab.UNIDADES_MEDIDA &&
+          <UnitProvider>
+            <UnitOfMeasure />
+          </UnitProvider>
+        }
+        {selectedTab === Tab.INGREDIENTES &&
+          <IngredientsProvider>
+            <Ingredients />
+          </IngredientsProvider>
+        }
       </Box>
-    </Suspense>
+  
   );
 };
 
