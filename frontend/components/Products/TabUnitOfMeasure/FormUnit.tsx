@@ -13,6 +13,9 @@ import {
   ListItemText,
   IconButton,
   Divider,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import { FormType } from "@/components/Enums/Ingredients";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
@@ -28,6 +31,7 @@ export const FormUnit = ({
   onSave: (unit: IUnitOfMeasureForm) => void;
 }) => {
   const {
+    units,
     conventionalUnits,
     formUnit,
     setFormUnit,
@@ -203,30 +207,44 @@ export const FormUnit = ({
           </Button>
         </Stack>
 
-        <List sx={{ width: "100%", display: "flex", flexDirection: "row", flexWrap: "wrap" }}>
+        <List
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 2
+          }}
+        >
           {formUnit.conversions.map((conversion, index) => (
-            <>
-              <ListItem key={index} sx={{ width: "33%", }} secondaryAction={
-                <>
-                  <IconButton edge="end" aria-label="edit" onClick={() => handleEditConversion(index)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveConversion(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              }>
-                <ListItemText
-                  primary={`Cantidad: ${conversion.conversionFactor}`}
-                  secondary={`Unidad: ${conventionalUnits.find((unit) => unit.id === conversion.toUnitId)?.abbreviation ||
-                    "Desconocida"
-                    }`}
-                />
-
-              </ListItem>
-              <Divider orientation="vertical" flexItem sx={{ borderRightWidth: 2 }} />
-            </>
-
+            <Card key={index} variant="outlined" sx={{ width: 250, display: "flex", flexDirection: "row" }}>
+              <CardContent>
+                <ListItem disableGutters>
+                  <ListItemText
+                    primary={`Cantidad: ${Number(conversion.conversionFactor).toFixed(2)}`}
+                    secondary={`Unidad: ${units.find((unit) => unit.id === conversion.id)
+                      ?.abbreviation || "Desconocida"
+                      }`}
+                  />
+                </ListItem>
+              </CardContent>
+              <CardActions >
+                <IconButton
+                  edge="end"
+                  aria-label="edit"
+                  onClick={() => handleEditConversion(index)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleRemoveConversion(index)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </CardActions>
+            </Card>
           ))}
         </List>
       </DialogContent>
