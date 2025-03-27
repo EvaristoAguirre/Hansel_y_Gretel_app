@@ -16,6 +16,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Box,
 } from "@mui/material";
 import { FormType } from "@/components/Enums/Ingredients";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
@@ -207,46 +208,56 @@ export const FormUnit = ({
           </Button>
         </Stack>
 
-        <List
+
+        <Box
           sx={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 2
+            maxHeight: "230px",
+            overflowY: "auto",
           }}
         >
-          {formUnit.conversions.map((conversion, index) => (
-            <Card key={index} variant="outlined" sx={{ width: 250, display: "flex", flexDirection: "row" }}>
-              <CardContent>
-                <ListItem disableGutters>
-                  <ListItemText
-                    primary={`Cantidad: ${Number(conversion.conversionFactor).toFixed(2)}`}
-                    secondary={`Unidad: ${units.find((unit) => unit.id === conversion.toUnitId)
-                      ?.abbreviation || "Desconocida"
-                      }`}
-                  />
-                </ListItem>
-              </CardContent>
-              <CardActions >
-                <IconButton
-                  edge="end"
-                  aria-label="edit"
-                  onClick={() => handleEditConversion(index)}
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  aria-label="delete"
-                  onClick={() => handleRemoveConversion(index)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </CardActions>
-            </Card>
-          ))}
-        </List>
+          <List
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 2
+            }}
+          >
+            {formUnit.conversions.map((conversion, index) => (
+              <Card key={index} variant="outlined" sx={{ width: 250, display: "flex", flexDirection: "row" }}>
+                <CardContent sx={{ padding: 0, justifyContent: "space-around" }}>
+                  <ListItem disableGutters >
+                    <ListItemText
+                      primary={`Cantidad: ${Number(conversion.conversionFactor).toFixed(2)}`}
+                      secondary={`Unidad: ${units.find((unit) => unit.id === conversion.toUnitId)
+                        ?.abbreviation || "Desconocida"
+                        }`}
+                    />
+                  </ListItem>
+                </CardContent>
+                <CardActions >
+                  <IconButton
+                    edge="end"
+                    aria-label="edit"
+                    onClick={() => handleEditConversion(index)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={() => handleRemoveConversion(index)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            ))}
+          </List>
+        </Box>
+
+
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseFormUnit} color="secondary">

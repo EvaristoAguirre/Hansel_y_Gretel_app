@@ -74,6 +74,7 @@ const UnitOfMeasure = () => {
     <Suspense fallback={<LoadingLottie />}>
       <Box sx={{ m: 2, minHeight: '80vh' }}>
         {/* Botón para crear una nueva unidad de medida */}
+
         <Button
           variant="contained"
           color="primary"
@@ -81,6 +82,7 @@ const UnitOfMeasure = () => {
           onClick={() => {
             handleOpenCreateModal();
           }}
+          disabled={conventionalUnits.length === 0}
         >
           + Nueva unidad
         </Button>
