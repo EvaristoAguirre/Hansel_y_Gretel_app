@@ -92,27 +92,23 @@ const UnitOfMeasure = () => {
         <Box sx={{ display: 'flex', mb: 2, gap: 6, mt: 2 }}>
           <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
           >
-            {
-              noConventionalUnits.length === 0 ? (
-                <LoadingLottie />
-              ) :
-                <>
-                  <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
-                  <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
-                </>
-            }
+
+
+            <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
+            <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
+
+
           </div>
           <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}>
+
+            <Typography variant="h4" color={"primary"}>Unidades de medida convencionales/fijas</Typography>
             {
               conventionalUnits.length === 0 ? (
                 <LoadingLottie />
-              ) : (
-                <>
-                  <Typography variant="h4" color={"primary"}>Unidades de medida convencionales/fijas</Typography>
-                  <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
-                </>
-              )
+              ) :
+                <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
             }
+
           </div>
         </Box>
 

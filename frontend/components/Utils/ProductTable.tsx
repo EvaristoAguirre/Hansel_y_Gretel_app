@@ -16,26 +16,24 @@ const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capital
 
 
   return (
+
     <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-      {
-        rows.length === 0 ? (
-          <LoadingLottie />
-        ) :
-          <DataGrid
-            rows={capitalizeFirstLetterTable(rows, ['name', 'description'])}
-            columns={columns}
-            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-            initialState={{
-              pagination: {
-                paginationModel: { page: 1, pageSize: 15 },
-              },
-              sorting: {
-                sortModel: [{ field: "name", sort: "asc" }],
-              },
-            }}
-            pageSizeOptions={[2, 5, 7, 9, 15]}
-          />
-      }
+
+      <DataGrid
+        rows={capitalizeFirstLetterTable(rows, ['name', 'description'])}
+        columns={columns}
+        localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+        initialState={{
+          pagination: {
+            paginationModel: { page: 1, pageSize: 15 },
+          },
+          sorting: {
+            sortModel: [{ field: "name", sort: "asc" }],
+          },
+        }}
+        pageSizeOptions={[2, 5, 7, 9, 15]}
+      />
+
     </Box>
   );
 };
