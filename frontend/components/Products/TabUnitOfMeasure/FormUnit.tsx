@@ -222,7 +222,7 @@ export const FormUnit = ({
                 <ListItem disableGutters>
                   <ListItemText
                     primary={`Cantidad: ${Number(conversion.conversionFactor).toFixed(2)}`}
-                    secondary={`Unidad: ${units.find((unit) => unit.id === conversion.id)
+                    secondary={`Unidad: ${units.find((unit) => unit.id === conversion.toUnitId)
                       ?.abbreviation || "Desconocida"
                       }`}
                   />

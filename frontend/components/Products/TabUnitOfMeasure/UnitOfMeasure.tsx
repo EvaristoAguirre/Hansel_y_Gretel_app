@@ -42,7 +42,7 @@ const UnitOfMeasure = () => {
               setFormUnit({
                 name: params.row.name,
                 abbreviation: params.row.abbreviation,
-                conversions: params.row.fromConversions
+                conversions: params.row.conversions
               });
               setFormTypeUnit(FormType.EDIT);
               setFormOpenUnit(true);
@@ -85,6 +85,11 @@ const UnitOfMeasure = () => {
         </Button>
 
         <Box sx={{ display: 'flex', mb: 2, gap: 6, mt: 2 }}>
+          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
+          >
+            <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
+            <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
+          </div>
 
           <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
           >
@@ -92,11 +97,6 @@ const UnitOfMeasure = () => {
             <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
           </div>
 
-          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
-          >
-            <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
-            <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
-          </div>
         </Box>
 
         {formOpenUnit && (

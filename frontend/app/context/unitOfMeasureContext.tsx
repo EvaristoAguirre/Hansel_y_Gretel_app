@@ -20,7 +20,7 @@ type UnitContextType = {
   handleEditUnit: () => Promise<void>;
   handleCloseFormUnit: () => void;
   conventionalUnits: IUnitOfMeasureResponse[]
-  noConventionalUnits: IUnitOfMeasureResponse[]
+  noConventionalUnits: IUnitOfMeasureForm[]
 }
 
 const UnitContext = createContext<UnitContextType>({
@@ -63,7 +63,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [formTypeUnit, setFormTypeUnit] = useState<FormType>(FormType.CREATE);
   const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
   const [conventionalUnits, setConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
-  const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
+  const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureForm[]>([]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -80,7 +80,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     })
   }, []);
   const addUnit = (unit: IUnitOfMeasureForm) => {
-    setUnits([...units, unit]);
+    setNoConventionalUnits([...units, unit]);
   }
 
   const updateUnit = (unit: IUnitOfMeasureForm) => {
@@ -90,7 +90,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       }
       return u;
     });
-    setUnits(updatedUnits);
+    setNoConventionalUnits(updatedUnits);
   }
 
   const removeUnit = (id: string) => {
