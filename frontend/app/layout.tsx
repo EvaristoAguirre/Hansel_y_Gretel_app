@@ -18,17 +18,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className=""
-      >
-        <AuthProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Navbar />
-            {children}
-            <Footer />
-          </ThemeProvider>
-        </AuthProvider>
+      <body>
+        <div id="__next">
+          <AuthProvider>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <Navbar />
+              <main>{children}</main>
+              <Footer />
+            </ThemeProvider>
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );
