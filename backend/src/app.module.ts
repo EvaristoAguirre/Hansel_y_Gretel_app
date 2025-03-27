@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -17,6 +17,8 @@ import { IngredientModule } from './Ingredient/ingredient.module';
 import { StockModule } from './Stock/stock.module';
 import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
+import { PrinterModule } from './Printer/printer.module';
+import { PrinterService } from './Printer/printer.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,8 +45,9 @@ import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
     StockModule,
     SeederModule,
     UnitOfMeasurenModule,
+    PrinterModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, PrinterService],
 })
 export class AppModule {}

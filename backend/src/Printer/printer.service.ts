@@ -1,69 +1,80 @@
-import { Injectable } from '@nestjs/common';
-// import Printer from 'node-thermal-printer';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ThermalPrinter = require('node-thermal-printer').printer;
+import { Injectable, Logger } from '@nestjs/common';
+import * as escpos from 'escpos';
+import * as escposUSB from 'escpos-usb';
+import { RPT008_CONFIG } from './printer.constants';
+import { PrintOptions } from './printer.interface';
+
+// Configuración del plugin USB
+escpos.USB = escposUSB;
+
 @Injectable()
 export class PrinterService {
+  private readonly logger = new Logger(PrinterService.name);
   private printer: any;
+  private device: any;
+
   constructor() {
-    // Configurar la impresora
-    this.printer = new ThermalPrinter({
-      type: 'epson', // Tipo de impresora
-      interface: 'usb://192.168.123.146', // Dirección IP de la impresora
-      characterSet: 'Slovenia', // Configuración de caracteres (ajusta según tu modelo)
-    });
-    // Verificar conexión con la impresora
-    this.printer
-      .isPrinterConnected()
-      .then((connected) => {
-        console.log('Printer connected:', connected);
-      })
-      .catch((err) => {
-        console.error('Printer connection failed:', err);
-      });
+    this.initializePrinter();
   }
-  async printerOrder(): Promise<void> {
+
+  private async initializePrinter() {
     try {
-      this.printer.clear();
-      // Encabezado
-      this.printer.alignCenter();
-      this.printer.bold(true);
-      this.printer.println('Hansel & Gretel');
-      this.printer.println('--- COMANDA ---');
-      this.printer.newLine();
-      this.printer.newLine();
-      this.printer.newLine();
-      this.printer.newLine();
-      this.printer.bold(false);
-
-      // ---------------- Probando impresora -----------
-      this.printer.alignCenter();
-      this.printer.bold(true);
-      this.printer.println('Se vienen cositas...!!');
-      this.printer.newLine();
-      this.printer.newLine();
-      this.printer.bold(false);
-      this.printer.cut();
-      // Información del pedido
-      // this.printer.alignLeft();
-      // this.printer.println(`Mesa: ${order.table}`);
-      // this.printer.println(`Fecha: ${new Date().toLocaleString()}`);
-      // this.printer.newLine();
-
-      // Detalles del pedido
-      // this.printer.println('Detalles:');
-      // order.items.forEach((item) => {
-      //   this.printer.println(`- ${item.quantity} x ${item.name}`);
-      // });
-      // this.printer.newLine();
-      // this.printer.println('Gracias por su pedido.');
-      // this.printer.cut();
-
-      // Enviar a la impresora
-      await this.printer.execute();
-      console.log('Comanda impresa exitosamente.');
-    } catch (err) {
-      console.error('Error al imprimir la comanda:', err);
+      // Configuración específica para 3nStar RPT008
+      this.device = new escpos.USB(
+        RPT008_CONFIG.vendorId, 
+        RPT008_CONFIG.productId
+      );
+      
+      this.printer = new escpos.Printer(this.device, {
+        encoding: RPT008_CONFIG.encoding,
+        width: RPT008_CONFIG.width
+      });
+      
+      this.logger.log('Impresora 3nStar RPT008 inicializada');
+    } catch (error) {
+      this.logger.error('Error al inicializar impresora:', error.message);
+      throw error;
     }
+  }
+
+  async printText(text: string, options?: PrintOptions): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.device.open((error: any) => {
+        if (error) return reject(error);
+
+        try {
+          this.printer
+            .font(options?.font || 'A')
+            .align(options?.align || 'LT')
+            .style(options?.style || 'NORMAL')
+            .size(options?.width || 1, options?.height || 1)
+            .text(text)
+            .cut(options?.cut ? true : false)
+            .close(() => resolve(true));
+        } catch (printError) {
+          reject(printError);
+        }
+      });
+    });
+  }
+
+  async printTestPage(): Promise<boolean> {
+    const testText = `
+==============================
+       PRUEBA IMPRESORA
+        3nStar RPT008
+==============================
+Fecha: ${new Date().toLocaleString()}
+------------------------------
+Este es un texto de prueba
+para verificar la conexión
+------------------------------
+    `;
+
+    return this.printText(testText, {
+      align: 'CT',
+      font: 'B',
+      cut: true
+    });
   }
 }
