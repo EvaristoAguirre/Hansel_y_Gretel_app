@@ -116,15 +116,21 @@ export class CategoryRepository {
   }
   async getCategoryByName(name: string): Promise<Category> {
     try {
-      const categoryFinded = await this.categoryRepository.findOne({
-        where: { name: name },
-      });
-      if (categoryFinded.isActive === false) {
-        throw new ConflictException(`Category with ID ${name} is disabled`);
-      }
+      const categoryFinded = await this.categoryRepository
+        .createQueryBuilder('category')
+        .where('LOWER(category.name) = LOWER(:name)', { name })
+        .getOne();
+
+      // 1. Primero verificar si existe
       if (!categoryFinded) {
-        throw new NotFoundException(`Category with ID ${name} not found`);
+        throw new NotFoundException(`Category with name "${name}" not found`);
       }
+
+      // 2. Luego verificar si está activa
+      if (categoryFinded.isActive === false) {
+        throw new ConflictException(`Category with name "${name}" is disabled`);
+      }
+
       return categoryFinded;
     } catch (error) {
       if (error instanceof HttpException) {

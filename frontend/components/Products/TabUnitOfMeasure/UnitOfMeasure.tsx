@@ -1,19 +1,19 @@
-import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { FormType } from "@/components/Enums/Ingredients";
-import { IUnitOfMeasure, IUnitOfMeasureStandard } from "@/components/Interfaces/IUnitOfMeasure";
+import LoadingLottie from "@/components/Loader/Loading";
 import DataGridComponent from "@/components/Utils/ProductTable";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { GridCellParams } from "@mui/x-data-grid";
+import { Suspense } from "react";
 import { FormUnit } from "./FormUnit";
 
 const UnitOfMeasure = () => {
   const {
-    units,
-    formUnit,
+    conventionalUnits,
+    noConventionalUnits,
     setFormUnit,
     formTypeUnit,
     setFormTypeUnit,
@@ -21,7 +21,6 @@ const UnitOfMeasure = () => {
     handleDeleteUnit,
     handleCreateUnit,
     handleEditUnit,
-    handleCloseFormUnit,
     formOpenUnit,
 
   } = useUnitContext();
@@ -32,19 +31,21 @@ const UnitOfMeasure = () => {
     {
       field: "actions",
       headerName: "Acciones",
-      width: 150,
+      width: 250,
       renderCell: (params: GridCellParams) => (
-        <div>
+
+        <div className="flex justify-center gap-2 align-center mt-3">
           <Button
             variant="contained"
             className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
+            disabled={conventionalUnits.length === 0}
             onClick={() => {
               setFormUnit({
+                id: params.row.id,
                 name: params.row.name,
                 abbreviation: params.row.abbreviation,
-                equivalenceToBaseUnit: params.row.equivalenceToBaseUnit,
-                baseUnitId: params.row.baseUnitId,
+                conversions: params.row.conversions
               });
               setFormTypeUnit(FormType.EDIT);
               setFormOpenUnit(true);
@@ -63,15 +64,19 @@ const UnitOfMeasure = () => {
         </div>
       ),
     },
+  ]; const columnsConventional = [
+    { field: "name", headerName: "Nombre" },
+    { field: "abbreviation", headerName: "Abreviatura" },
   ];
   const handleOpenCreateModal = () => {
     setFormTypeUnit(FormType.CREATE);
     setFormOpenUnit(true);
   }
   return (
-    <Box sx={{ m: 2, minHeight: '80vh' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Suspense fallback={<LoadingLottie />}>
+      <Box sx={{ m: 2, minHeight: '80vh' }}>
         {/* Botón para crear una nueva unidad de medida */}
+
         <Button
           variant="contained"
           color="primary"
@@ -79,21 +84,42 @@ const UnitOfMeasure = () => {
           onClick={() => {
             handleOpenCreateModal();
           }}
+          disabled={conventionalUnits.length === 0}
         >
           + Nueva unidad
         </Button>
-      </Box>
-      {/* Tabla de productos */}
-      <DataGridComponent rows={units} columns={columns} />
 
-      {/* Form para crear/editar Ingrediente */}
-      {formOpenUnit && (
-        <FormUnit
-          formType={formTypeUnit}
-          onSave={formTypeUnit === FormType.CREATE ? handleCreateUnit : handleEditUnit}
-        />
-      )}
-    </Box>
+        <Box sx={{ display: 'flex', mb: 2, gap: 6, mt: 2 }}>
+          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
+          >
+
+
+            <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
+            <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
+
+
+          </div>
+          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}>
+
+            <Typography variant="h4" color={"primary"}>Unidades de medida convencionales/fijas</Typography>
+            {
+              conventionalUnits.length === 0 ? (
+                <LoadingLottie />
+              ) :
+                <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
+            }
+
+          </div>
+        </Box>
+
+        {formOpenUnit && (
+          <FormUnit
+            formType={formTypeUnit}
+            onSave={formTypeUnit === FormType.CREATE ? handleCreateUnit : handleEditUnit}
+          />
+        )}
+      </Box>
+    </Suspense>
   )
 }
 

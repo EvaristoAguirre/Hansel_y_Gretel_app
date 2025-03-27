@@ -1,16 +1,21 @@
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, Raw, Repository } from 'typeorm';
 import { UnitConversion } from './unitConversion.entity';
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import {
+  CreateEspecialUnitOfMeasureDto,
+  CreateUnitConversionDto,
+} from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Injectable()
 export class UnitOfMeasureRepository {
@@ -19,25 +24,21 @@ export class UnitOfMeasureRepository {
     private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     @InjectRepository(UnitConversion)
     private readonly unitConversionRepository: Repository<UnitConversion>,
+    private readonly dataSource: DataSource,
   ) {}
 
+  // ---------------   estandarizada con el nuevo dto
   async createUnitOfMeasure(
-    createData: CreateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
-    const {
-      name,
-      abbreviation,
-      equivalenceToBaseUnit,
-      baseUnitId,
-      conversions,
-    } = createData;
+    createData: CreateEspecialUnitOfMeasureDto,
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
+    const { name, abbreviation, conversions } = createData;
 
     if (!name) {
       throw new BadRequestException('Name must be provided');
     }
 
     const existingUnitByName = await this.unitOfMeasureRepository.findOne({
-      where: { name },
+      where: { name: name },
     });
 
     if (existingUnitByName) {
@@ -47,7 +48,7 @@ export class UnitOfMeasureRepository {
     if (abbreviation) {
       const existingUnitByAbbreviation =
         await this.unitOfMeasureRepository.findOne({
-          where: { abbreviation },
+          where: { abbreviation: abbreviation },
         });
 
       if (existingUnitByAbbreviation) {
@@ -57,84 +58,95 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    // Validación de equivalenceToBaseUnit y baseUnitId
-    if (equivalenceToBaseUnit && !baseUnitId) {
-      throw new BadRequestException(
-        'baseUnitId must be provided when equivalenceToBaseUnit is defined',
-      );
-    }
-
-    if (baseUnitId && !equivalenceToBaseUnit) {
-      throw new BadRequestException(
-        'equivalenceToBaseUnit must be provided when baseUnitId is defined',
-      );
-    }
-
-    // Validar que la unidad base exista y sea convencional
-    let baseUnit: UnitOfMeasure | null = null;
-    if (baseUnitId) {
-      baseUnit = await this.unitOfMeasureRepository.findOne({
-        where: { id: baseUnitId },
-      });
-
-      if (!baseUnit) {
-        throw new BadRequestException('Base unit does not exist');
-      }
-
-      if (!baseUnit.isConventional) {
-        throw new BadRequestException('Base unit must be conventional');
-      }
-    }
-
     const unitOfMeasure = this.unitOfMeasureRepository.create({
-      ...createData,
-      baseUnit,
+      name,
+      abbreviation,
+      isConventional: false,
+      isActive: true,
     });
 
     const savedUnitOfMeasure =
       await this.unitOfMeasureRepository.save(unitOfMeasure);
 
-    // Crear las conversiones si se proporcionaron
     if (conversions && conversions.length > 0) {
-      for (const conversion of conversions) {
-        const { toUnitId, conversionFactor } = conversion;
-
-        const toUnit = await this.unitOfMeasureRepository.findOne({
-          where: { id: toUnitId },
-        });
-
-        if (!toUnit) {
-          throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
-        }
-
-        const unitConversion = this.unitConversionRepository.create({
-          fromUnit: savedUnitOfMeasure,
-          toUnit,
-          conversionFactor,
-        });
-
-        await this.unitConversionRepository.save(unitConversion);
-      }
+      await this.handleConversions(savedUnitOfMeasure, conversions);
     }
 
-    return savedUnitOfMeasure;
+    const unitWithConversions = await this.unitOfMeasureRepository.findOne({
+      where: { id: savedUnitOfMeasure.id },
+      relations: [
+        'baseUnit',
+        'fromConversions',
+        'toConversions',
+        'fromConversions.toUnit',
+        'toConversions.fromUnit',
+      ],
+    });
+
+    return this.mapUnitWithConversions(unitWithConversions);
   }
 
+  // ---------------   estandarizada con el nuevo dto
   async getAllUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
+    if (pageNumber <= 0 || limitNumber <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+
+    try {
+      const units = await this.unitOfMeasureRepository.find({
+        where: { isActive: true },
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
+      });
+
+      return units.map((unit) => this.mapUnitWithConversions(unit));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching units',
+        error.message,
+      );
+    }
+  }
+
+  // ---------------   estandarizada con el nuevo dto
+  async getConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     if (pageNumber <= 0 || limitNumber <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
     try {
-      return await this.unitOfMeasureRepository.find({
-        where: { isActive: true },
+      const units = await this.unitOfMeasureRepository.find({
+        where: { isConventional: true, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
       });
+      return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -144,44 +156,32 @@ export class UnitOfMeasureRepository {
     }
   }
 
-  async getConventionalUnitOfMeasure(
-    pageNumber: number,
-    limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
-    if (pageNumber <= 0 || limitNumber <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.unitOfMeasureRepository.find({
-        where: { isConventional: true, isActive: true },
-        skip: (pageNumber - 1) * limitNumber,
-        take: limitNumber,
-      });
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
-    }
-  }
+  // ---------------   estandarizada con el nuevo dto
   async getNotConventionalUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     if (pageNumber <= 0 || limitNumber <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
       );
     }
     try {
-      return await this.unitOfMeasureRepository.find({
+      const units = await this.unitOfMeasureRepository.find({
         where: { isConventional: false, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+        order: { isConventional: 'DESC', name: 'ASC' },
       });
+
+      return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -217,23 +217,27 @@ export class UnitOfMeasureRepository {
     }
   }
 
+  // ---------------   estandarizada con el nuevo dto
   async updateUnitOfMeasure(
     id: string,
     updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
-    const { name, abbreviation, baseUnitId } = updateData;
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
+    const { name, abbreviation, conversions } = updateData;
 
-    const existingUnitOfMeasure = await this.unitOfMeasureRepository.findOne({
-      where: { id: id },
+    // 1. Verificar existencia de la unidad
+    const existingUnit = await this.unitOfMeasureRepository.findOne({
+      where: { id },
+      relations: ['fromConversions', 'toConversions'],
     });
 
-    if (!existingUnitOfMeasure) {
+    if (!existingUnit) {
       throw new NotFoundException('Unit of measure not found');
     }
 
-    if (name && name !== existingUnitOfMeasure.name) {
+    // 2. Validar nombre único si se está modificando
+    if (name && name !== existingUnit.name) {
       const unitWithSameName = await this.unitOfMeasureRepository.findOne({
-        where: { name: name },
+        where: { name },
       });
 
       if (unitWithSameName) {
@@ -241,10 +245,11 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    if (abbreviation && abbreviation !== existingUnitOfMeasure.abbreviation) {
+    // 3. Validar abreviatura única si se está modificando
+    if (abbreviation && abbreviation !== existingUnit.abbreviation) {
       const unitWithSameAbbreviation =
         await this.unitOfMeasureRepository.findOne({
-          where: { abbreviation: abbreviation },
+          where: { abbreviation },
         });
 
       if (unitWithSameAbbreviation) {
@@ -254,23 +259,53 @@ export class UnitOfMeasureRepository {
       }
     }
 
-    if (baseUnitId) {
-      const baseUnit = await this.unitOfMeasureRepository.findOne({
-        where: { id: baseUnitId },
-      });
+    // 4. Actualizar propiedades básicas
+    if (name) existingUnit.name = name;
+    if (abbreviation) existingUnit.abbreviation = abbreviation;
 
-      if (!baseUnit) {
-        throw new BadRequestException('Base unit does not exist');
-      }
-    }
+    // 5. Manejar transacción para actualizaciones atómicas
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      const updatedUnitOfMeasure = this.unitOfMeasureRepository.merge(
-        existingUnitOfMeasure,
-        updateData,
-      );
-      return await this.unitOfMeasureRepository.save(updatedUnitOfMeasure);
+      // 6. Guardar cambios en la unidad
+      const updatedUnit = await queryRunner.manager.save(existingUnit);
+
+      // 7. Manejar conversiones si se proporcionan
+      if (conversions) {
+        // Eliminar conversiones existentes
+        await queryRunner.manager.delete(UnitConversion, [
+          ...(existingUnit.fromConversions?.map((c) => c.id) || []),
+          ...(existingUnit.toConversions?.map((c) => c.id) || []),
+        ]);
+
+        // Crear nuevas conversiones
+        await this.handleConversionsManager(
+          updatedUnit,
+          conversions,
+          queryRunner.manager,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+
+      // 8. Obtener la unidad actualizada con todas sus relaciones
+      const unitWithRelations = await this.unitOfMeasureRepository.findOne({
+        where: { id: updatedUnit.id },
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+      });
+
+      return this.mapUnitWithConversions(unitWithRelations);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+
       if (
         error instanceof BadRequestException ||
         error instanceof ConflictException ||
@@ -280,8 +315,9 @@ export class UnitOfMeasureRepository {
       }
       throw new InternalServerErrorException(
         'Error updating the unit of measure',
-        error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -423,5 +459,234 @@ export class UnitOfMeasureRepository {
       quantity,
     );
     return this.convertUnit(intermediateUnitId, toUnitId, toBase);
+  }
+
+  async findConversionUnit() {
+    const allConversion = await this.unitConversionRepository.find();
+    return allConversion;
+  }
+
+  private async handleConversions(
+    fromUnit: UnitOfMeasure,
+    conversions: CreateUnitConversionDto[],
+  ): Promise<void> {
+    for (const conversion of conversions) {
+      const { toUnitId, conversionFactor } = conversion;
+
+      // Validar el factor de conversión
+      if (conversionFactor <= 0) {
+        throw new BadRequestException(
+          'Conversion factor must be greater than 0',
+        );
+      }
+
+      // Verificar que la unidad de destino exista
+      const toUnit = await this.unitOfMeasureRepository.findOne({
+        where: { id: toUnitId },
+      });
+
+      if (!toUnit) {
+        throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
+      }
+
+      // Verificar que no exista ya una conversión entre estas unidades
+      const existingConversion = await this.unitConversionRepository.findOne({
+        where: [
+          { fromUnit: { id: fromUnit.id }, toUnit: { id: toUnit.id } },
+          { fromUnit: { id: toUnit.id }, toUnit: { id: fromUnit.id } },
+        ],
+      });
+
+      if (existingConversion) {
+        throw new ConflictException(
+          `Conversion between these units already exists`,
+        );
+      }
+
+      // Crear la conversión en ambas direcciones
+      const unitConversion = this.unitConversionRepository.create({
+        fromUnit,
+        toUnit,
+        conversionFactor,
+      });
+
+      const inverseConversion = this.unitConversionRepository.create({
+        fromUnit: toUnit,
+        toUnit: fromUnit,
+        conversionFactor: 1 / conversionFactor,
+      });
+
+      await this.unitConversionRepository.save([
+        unitConversion,
+        inverseConversion,
+      ]);
+    }
+  }
+
+  private mapUnitWithConversions(
+    unit: UnitOfMeasure,
+  ): UnitOfMeasureSummaryResponseDto {
+    // Obtener todas las conversiones relacionadas
+    const allConversions = [
+      ...(unit.fromConversions || []).map((c) => ({
+        direction: 'from',
+        unit: c.toUnit,
+        factor: c.conversionFactor,
+      })),
+    ];
+
+    // Encontrar la unidad base relacionada (ya sea directa o a través de conversiones)
+    let relatedBaseUnit = unit.baseUnit;
+    // eslint-disable-next-line prefer-const
+    let conversionPath = [];
+
+    if (!relatedBaseUnit && !unit.isConventional) {
+      // Para unidades especiales, buscar conexión con unidades convencionales
+      const conventionalConversion = allConversions.find(
+        (c) => c.unit.isConventional,
+      );
+
+      if (conventionalConversion) {
+        relatedBaseUnit = conventionalConversion.unit;
+        conversionPath.push({
+          unit: conventionalConversion.unit.name,
+          factor:
+            conventionalConversion.direction === 'from'
+              ? conventionalConversion.factor
+              : 1 / conventionalConversion.factor,
+        });
+      }
+    }
+
+    return {
+      id: unit.id,
+      name: unit.name,
+      abbreviation: unit.abbreviation,
+      isActive: unit.isActive,
+      isConventional: unit.isConventional,
+      isBase: unit.isBase,
+      baseUnit: relatedBaseUnit
+        ? {
+            id: relatedBaseUnit.id,
+            name: relatedBaseUnit.name,
+            abbreviation: relatedBaseUnit.abbreviation,
+          }
+        : null,
+      conversions: allConversions.map((c) => ({
+        toUnitId: c.unit.id,
+        unitName: c.unit.name,
+        unitAbbreviation: c.unit.abbreviation,
+        conversionFactor: c.direction === 'from' ? c.factor : 1 / c.factor,
+        direction: c.direction,
+      })),
+      toBaseConversion: relatedBaseUnit
+        ? {
+            unitId: relatedBaseUnit.id,
+            unitName: relatedBaseUnit.name,
+            factor: conversionPath.reduce(
+              (total, step) => total * parseFloat(step.factor.toString()),
+              1,
+            ),
+          }
+        : null,
+    };
+  }
+
+  private async handleConversionsManager(
+    fromUnit: UnitOfMeasure,
+    conversions: CreateUnitConversionDto[],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    for (const conversion of conversions) {
+      const { toUnitId, conversionFactor } = conversion;
+
+      // Validar factor de conversión
+      if (conversionFactor <= 0) {
+        throw new BadRequestException(
+          'Conversion factor must be greater than 0',
+        );
+      }
+
+      // Verificar que la unidad de destino exista
+      const toUnit = await entityManager.findOne(UnitOfMeasure, {
+        where: { id: toUnitId },
+      });
+
+      if (!toUnit) {
+        throw new BadRequestException(`Unit with ID ${toUnitId} not found`);
+      }
+      // Crear conversión en ambas direcciones
+      const unitConversion = entityManager.create(UnitConversion, {
+        fromUnit,
+        toUnit,
+        conversionFactor,
+      });
+
+      const inverseConversion = entityManager.create(UnitConversion, {
+        fromUnit: toUnit,
+        toUnit: fromUnit,
+        conversionFactor: 1 / conversionFactor,
+      });
+
+      await entityManager.save([unitConversion, inverseConversion]);
+    }
+  }
+
+  async deleteUnitOfMeasure(id: string) {
+    const unit = await this.unitOfMeasureRepository.findOne({
+      where: { id },
+    });
+
+    if (!unit) {
+      throw new NotFoundException('Unit of measure not found');
+    }
+
+    await this.unitOfMeasureRepository.update(id, { isActive: false });
+
+    return 'Unit of measure successfully deleted';
+  }
+
+  async searchUnit(
+    name?: string,
+    abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    try {
+      if (!name && !abbreviation) {
+        throw new BadRequestException(
+          'At least a name or a code must be provided for search.',
+        );
+      }
+
+      const whereConditions: any = {};
+      if (name) {
+        whereConditions.name = ILike(`%${name}%`);
+      } else if (abbreviation) {
+        whereConditions.abbreviation = Raw(
+          (alias) => `CAST(${alias} AS TEXT) ILIKE :abbreviation`,
+          {
+            abbreviation: `%${abbreviation}%`,
+          },
+        );
+      }
+
+      const [units] = await this.unitOfMeasureRepository.findAndCount({
+        where: whereConditions,
+      });
+
+      if (units.length === 0) {
+        const searchCriteria = name ? `name: ${name}` : `code: ${abbreviation}`;
+        throw new NotFoundException(`No units found with ${searchCriteria}`);
+      }
+
+      return units;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the products',
+        error.message,
+      );
+    }
   }
 }

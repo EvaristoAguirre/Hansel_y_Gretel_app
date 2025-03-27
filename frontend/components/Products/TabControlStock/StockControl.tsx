@@ -12,6 +12,7 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import LoadingLottie from "@/components/Loader/Loading";
 
 
 const StockControl = () => {
@@ -205,26 +206,31 @@ const StockControl = () => {
           <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#856d5e59", p: 1 }}>
             PRODUCTOS
           </Typography>
-          <DataGrid
-            rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
-            columns={productColumns}
-            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-            initialState={{
-              pagination: { paginationModel: { page: 1, pageSize: 5 } },
-              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
-            }}
-            pageSizeOptions={[5, 7, 10]}
-            sx={{
-              height: "100%",
-              "& .MuiDataGrid-row": {
-                cursor: "pointer",
-              },
-              "& .MuiDataGrid-row:hover": {
-                backgroundColor: "#f3d49a66",
-              },
-            }}
-            onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
-          />
+          {
+            filteredProducts.length === 0 ? (
+              <LoadingLottie />
+            ) :
+              <DataGrid
+                rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
+                columns={productColumns}
+                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                initialState={{
+                  pagination: { paginationModel: { page: 1, pageSize: 5 } },
+                  sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+                }}
+                pageSizeOptions={[5, 7, 10]}
+                sx={{
+                  height: "100%",
+                  "& .MuiDataGrid-row": {
+                    cursor: "pointer",
+                  },
+                  "& .MuiDataGrid-row:hover": {
+                    backgroundColor: "#f3d49a66",
+                  },
+                }}
+                onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
+              />
+          }
         </Box>
 
         {/* DataGrid de Ingredientes */}
@@ -232,18 +238,23 @@ const StockControl = () => {
           <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#f3d49a66", p: 1 }}>
             INGREDIENTES
           </Typography>
-          <DataGrid
-            rows={filteredIngredients}
-            columns={ingredientColumns}
-            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-            initialState={{
-              pagination: { paginationModel: { page: 1, pageSize: 5 } },
-              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
-            }}
-            pageSizeOptions={[5, 7, 10]}
-            sx={{ height: "100%" }}
-            onRowClick={(params) => handleEditProduct(params.row, StockModalType.INGREDIENT)}
-          />
+          {
+            filteredIngredients.length === 0 ? (
+              <LoadingLottie />
+            ) :
+              <DataGrid
+                rows={filteredIngredients}
+                columns={ingredientColumns}
+                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+                initialState={{
+                  pagination: { paginationModel: { page: 1, pageSize: 5 } },
+                  sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+                }}
+                pageSizeOptions={[5, 7, 10]}
+                sx={{ height: "100%" }}
+                onRowClick={(params) => handleEditProduct(params.row, StockModalType.INGREDIENT)}
+              />
+          }
         </Box>
       </Box>
       {/* Modal para agregar stock */}

@@ -8,7 +8,6 @@ import { useAuth } from '@/app/context/authContext';
 import { IingredientForm } from '@/components/Interfaces/Ingredients';
 import IngredientDialog from './IngredientDialog';
 import InputsPromo from './InputsPromo';
-import { log } from 'console';
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -234,11 +233,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             options={categories}
             getOptionLabel={(option) => option.name}
             value={categories.filter((category) =>
-              form.categories.includes(category.id)
+              category.id && form.categories.includes(category.id)
             )}
             onChange={(_, newValue) => {
               const selectedIds = newValue.map((category) => category.id);
-              onChange("categories", selectedIds);
+              onChange("categories", selectedIds.map((id) => id || ''));
               validateField("categories", selectedIds);
             }}
             renderInput={(params) => (
