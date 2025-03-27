@@ -9,7 +9,7 @@ export class ConversionDto {
   unitName: string;
   unitAbbreviation: string;
   conversionFactor: number;
-  direction: 'from' | 'to' | string;
+  direction: 'from' | string;
 }
 
 export class BaseConversionDto {

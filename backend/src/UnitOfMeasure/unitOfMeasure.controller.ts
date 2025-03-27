@@ -81,6 +81,15 @@ export class UnitOfMeasureController {
     return await this.unitOfMeasureService.getUnitOfMeasureById(id);
   }
 
+  @Post('search')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async searchUnit(
+    @Query('name') name?: string,
+    @Query('abbreviation') abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    return this.unitOfMeasureService.searchUnit(name, abbreviation);
+  }
+
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateUnitOfMeasure(

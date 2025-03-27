@@ -37,16 +37,16 @@ export class CategoryController {
     return this.categoryService.getAllCategorys(page, limit);
   }
 
+  @Get('by-name/:name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getCategoryByName(@Param('name') name: string): Promise<Category> {
+    return await this.categoryService.getCategoryByName(name);
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getCategoryById(@Param('id') id: string): Promise<Category> {
     return this.categoryService.getCategoryById(id);
-  }
-
-  @Get(':name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getCategoryByName(@Param('name') name: string): Promise<Category> {
-    return await this.categoryService.getCategoryByName(name);
   }
 
   @Put(':id')

@@ -74,4 +74,11 @@ export class UnitOfMeasureService {
   async deleteUnitOfMeasure(id: string) {
     return await this.unitOfMeasureRepository.deleteUnitOfMeasure(id);
   }
+
+  async searchUnit(
+    name?: string,
+    abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    return this.unitOfMeasureRepository.searchUnit(name, abbreviation);
+  }
 }

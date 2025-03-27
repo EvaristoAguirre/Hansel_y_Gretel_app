@@ -9,7 +9,7 @@ export class NotificationService {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'tu-correo@gmail.com', // Configura el correo.
+        user: 'hanselygretel.chocolateria@gmail.com',
         pass: 'tu-contraseña-app', // Usa una contraseña de aplicación o similar.
       },
     });
