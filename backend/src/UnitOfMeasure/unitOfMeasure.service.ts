@@ -11,7 +11,7 @@ export class UnitOfMeasureService {
 
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureRepository.createUnitOfMeasure(createData);
   }
 
@@ -32,7 +32,7 @@ export class UnitOfMeasureService {
   async updateUnitOfMeasure(
     id: string,
     updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureRepository.updateUnitOfMeasure(
       id,
       updateData,
@@ -69,5 +69,9 @@ export class UnitOfMeasureService {
 
   async findConversionUnit() {
     return await this.unitOfMeasureRepository.findConversionUnit();
+  }
+
+  async deleteUnitOfMeasure(id: string) {
+    return await this.unitOfMeasureRepository.deleteUnitOfMeasure(id);
   }
 }
