@@ -69,12 +69,15 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
+
     fetchUnits(token).then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
     });
+
     allUnitsConventional(token).then(dataUnit => {
       if (dataUnit) setConventionalUnits(dataUnit);
     })
+
     fetchUnitsNoConventional(token).then(dataUnit => {
       if (dataUnit) setNoConventionalUnits(dataUnit);
     })
@@ -110,8 +113,19 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
 
   const handleEditUnit = async () => {
+    /**
+     * Estamos editando la unidad de medida, por lo tanto, debemos
+     * convertir los factores de conversión a dos decimales y asignarlos al objeto
+     */
+    const updatedFormUnit = {
+      ...formUnit,
+      conversions: formUnit.conversions.map((conversion) => ({
+        ...conversion,
+        conversionFactor: parseFloat(Number(conversion.conversionFactor).toFixed(4)),
+      })),
+    };
     try {
-      const updatedUnit = await editUnit(formUnit, token as string);
+      const updatedUnit = await editUnit(updatedFormUnit, token as string);
 
       updateUnit(updatedUnit);
 

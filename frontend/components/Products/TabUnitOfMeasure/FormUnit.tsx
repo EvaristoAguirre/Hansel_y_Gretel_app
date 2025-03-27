@@ -23,6 +23,9 @@ import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import { searchUnits } from "@/api/unitOfMeasure";
+import { useAuth } from "@/app/context/authContext";
+import { FieldUnitType } from "@/components/Enums/unitOfMeasure";
 
 export const FormUnit = ({
   formType,
@@ -39,6 +42,8 @@ export const FormUnit = ({
     formOpenUnit,
     handleCloseFormUnit,
   } = useUnitContext();
+
+  const { getAccessToken } = useAuth();
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -64,8 +69,15 @@ export const FormUnit = ({
     if (field === "toUnitId" && !value) {
       error = "Seleccione una unidad";
     }
-    setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+
+    setErrors((prevErrors) => {
+      const newErrors = { ...prevErrors, [field]: error };
+      // Si no hay error, eliminamos la clave del objeto
+      if (!error) delete newErrors[field];
+      return newErrors;
+    });
   };
+
 
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error);
@@ -76,36 +88,33 @@ export const FormUnit = ({
   }, [errors, formUnit]);
 
   const handleAddOrEditConversion = () => {
-    // Validamos campos de la nueva conversión
     validateField("conversionFactor", newConversion.conversionFactor);
     validateField("toUnitId", newConversion.toUnitId);
-    if (
-      !newConversion.toUnitId ||
-      !newConversion.conversionFactor ||
-      Number(newConversion.conversionFactor) <= 0
-    )
-      return;
 
-    const conversion = {
-      toUnitId: newConversion.toUnitId,
-      conversionFactor: Number(newConversion.conversionFactor),
-    };
+    // Esperar un render antes de comprobar errores
+    setTimeout(() => {
+      if (errors.conversionFactor || errors.toUnitId) return;
 
-    setFormUnit((prev: IUnitOfMeasureForm) => {
-      let updatedConversions = [...prev.conversions];
-      if (editIndex !== null) {
-        // Si estamos editando, reemplazamos la conversión
-        updatedConversions[editIndex] = conversion;
-      } else {
-        // Si es nueva, la agregamos al final
-        updatedConversions.push(conversion);
-      }
-      return { ...prev, conversions: updatedConversions };
-    });
-    // Reiniciamos el estado del input
-    setNewConversion({ toUnitId: "", conversionFactor: "" });
-    setEditIndex(null);
+      const conversion = {
+        toUnitId: newConversion.toUnitId,
+        conversionFactor: Number(newConversion.conversionFactor),
+      };
+
+      setFormUnit((prev: IUnitOfMeasureForm) => {
+        let updatedConversions = [...prev.conversions];
+        if (editIndex !== null) {
+          updatedConversions[editIndex] = conversion;
+        } else {
+          updatedConversions.push(conversion);
+        }
+        return { ...prev, conversions: updatedConversions };
+      });
+
+      setNewConversion({ toUnitId: "", conversionFactor: "" });
+      setEditIndex(null);
+    }, 0);
   };
+
 
   const handleEditConversion = (index: number) => {
     const conversion = formUnit.conversions[index];
@@ -127,21 +136,45 @@ export const FormUnit = ({
       setEditIndex(null);
     }
   };
+  const checkNameAvailability = async (name: string) => {
+    const token = getAccessToken();
+    const result = token && await searchUnits(name, token, FieldUnitType.NAME);
+    if (result && result.length > 0) {
+      setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
+    } else {
+      setErrors((prev) => ({ ...prev, name: "" }));
+    }
+  };
+
+  const checkAbbreviationAvailability = async (abbreviation: string) => {
+    const token = getAccessToken();
+    const result = token && await searchUnits(abbreviation, token, FieldUnitType.ABBREVIATION);
+    if (result && result.length > 0) {
+      setErrors((prev) => ({ ...prev, abbreviation: "La abreviatura ya está en uso" }));
+    } else {
+      setErrors((prev) => ({ ...prev, abbreviation: "" }));
+    }
+  };
 
   return (
     <Dialog open={formOpenUnit} onClose={handleCloseFormUnit} fullWidth maxWidth="sm">
       <DialogTitle sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}>
-        {formType === FormType.CREATE ? "Crear Unidad de Medida" : "Editar Unidad de Medida"}
+        {formType === FormType.CREATE ? "Crear Unidad de Medida Personalizada" : "Editar Unidad de Medida Personalizada"}
       </DialogTitle>
       <DialogContent>
         <Stack direction="row" spacing={2} sx={{ my: 1 }}>
           <TextField
-            label="Nombre de la nueva unidad"
+            label="Nombre de la unidad"
             value={formUnit.name ?? ""}
             onChange={(e) => {
               const value = e.target.value;
               setFormUnit((prev) => ({ ...prev, name: value }));
               validateField("name", value);
+            }}
+            onBlur={() => {
+              if (formUnit.name?.trim()) {
+                checkNameAvailability(formUnit.name);
+              }
             }}
             error={!!errors.name}
             helperText={errors.name}
@@ -156,18 +189,25 @@ export const FormUnit = ({
               setFormUnit((prev) => ({ ...prev, abbreviation: value }));
               validateField("abbreviation", value);
             }}
+            onBlur={() => {
+              if (formUnit.abbreviation?.trim()) {
+                checkAbbreviationAvailability(formUnit.abbreviation);
+              }
+            }}
             error={!!errors.abbreviation}
             helperText={errors.abbreviation}
             sx={{ width: "50%" }}
             variant="outlined"
           />
+
+
         </Stack>
         <Divider sx={{ borderBottomWidth: 2, bgcolor: "primary.main", opacity: 0.5, my: 2 }} />
         <Stack direction="row" spacing={2} sx={{ my: 2 }}>
           <TextField
             label="Equivale a la cantidad de"
             type="number"
-            inputProps={{ step: "0.50", min: "0" }}
+            inputProps={{ step: "0.01", min: "0" }}
             value={newConversion.conversionFactor}
             onChange={(e) => {
               const value = e.target.value;
@@ -225,8 +265,11 @@ export const FormUnit = ({
             }}
           >
             {formUnit.conversions.map((conversion, index) => (
-              <Card key={index} variant="outlined" sx={{ width: 250, display: "flex", flexDirection: "row" }}>
-                <CardContent sx={{ padding: 0, justifyContent: "space-around" }}>
+              <Card
+                key={index}
+                variant="outlined"
+                sx={{ width: 250, display: "flex", flexDirection: "row", padding: 0, justifyContent: "space-around" }}>
+                <CardContent sx={{ padding: 0 }}>
                   <ListItem disableGutters >
                     <ListItemText
                       primary={`Cantidad: ${Number(conversion.conversionFactor).toFixed(2)}`}

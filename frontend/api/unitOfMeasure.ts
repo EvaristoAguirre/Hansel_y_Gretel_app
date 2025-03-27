@@ -82,5 +82,36 @@ export const deleteUnit = async (id: string, token: string) => {
 };
 
 
+export const searchUnits = async (
+  searchTerm: string,
+  token: string,
+  field: "name" | "abbreviation" = "name"
+) => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append(field, searchTerm);
+
+    const response = await fetch(
+      `${URI_UNIT_OF_MEASURE}/search?${queryParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("❌ Error fetching searched units:", error);
+    return [];
+  }
+};
 
 

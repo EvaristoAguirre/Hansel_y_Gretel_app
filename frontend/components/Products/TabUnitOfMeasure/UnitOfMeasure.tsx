@@ -33,11 +33,13 @@ const UnitOfMeasure = () => {
       headerName: "Acciones",
       width: 250,
       renderCell: (params: GridCellParams) => (
+
         <div className="flex justify-center gap-2 align-center mt-3">
           <Button
             variant="contained"
             className="bg-[--color-primary] text-bold mt-2 mr-2"
             size="small"
+            disabled={conventionalUnits.length === 0}
             onClick={() => {
               setFormUnit({
                 id: params.row.id,
@@ -56,6 +58,8 @@ const UnitOfMeasure = () => {
             variant="contained"
             size="small"
             onClick={() => handleDeleteUnit(params.row.id)}
+            disabled={conventionalUnits.length === 0}
+
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>

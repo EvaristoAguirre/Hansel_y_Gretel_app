@@ -27,7 +27,7 @@ const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capital
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
               pagination: {
-                paginationModel: { page: 1, pageSize: 5 },
+                paginationModel: { page: 1, pageSize: 15 },
               },
               sorting: {
                 sortModel: [{ field: "name", sort: "asc" }],
