@@ -124,7 +124,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
       </Box>
       {/* Tabla de productos */}
-      <DataGridComponent rows={selectedProducts.length > 0 ? selectedProducts : searchResults} columns={columns} />
+      <DataGridComponent rows={selectedProducts.length > 0 ? selectedProducts : searchResults} columns={columns} capitalize={["name", "description"]} />
     </Box>
   );
 };

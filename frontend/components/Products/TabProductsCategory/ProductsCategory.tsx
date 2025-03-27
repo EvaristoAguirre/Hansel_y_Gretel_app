@@ -14,8 +14,7 @@ import {
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
-import { URI_CATEGORY } from "../../URI/URI";
-import { fetchCategories } from "@/api/categories";
+import { createCategory, deleteCategory, editCategory, fetchCategories, fetchCategoriesByName } from "@/api/categories";
 import { useAuth } from "@/app/context/authContext";
 import { useCategoryStore } from "../../Categories/useCategoryStore";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
@@ -36,8 +35,42 @@ const ProductsCategory: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null
   );
-  const [nombre, setNombre] = useState("");
   const { getAccessToken } = useAuth();
+  const [nombre, setNombre] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+
+  const token = getAccessToken();
+  // Validar si el nombre ya existe mientras se escribe
+  useEffect(() => {
+    const validarNombre = async () => {
+      if (!nombre.trim()) {
+        setErrorNombre("El nombre no puede estar vacío.");
+        return;
+      }
+
+      const token = getAccessToken();
+      if (!token) return;
+
+      const checkResponse = await fetchCategoriesByName(token, nombre);
+      if (checkResponse?.ok && checkResponse.data.length > 0) {
+        setErrorNombre("Este nombre ya está en uso.");
+      } else {
+        setErrorNombre("");
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      validarNombre();
+    }, 1000);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [nombre, getAccessToken]);
+
+  // Manejo del campo de entrada
+  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNombre(e.target.value);
+  };
+
 
   // Obtener categorías al cargar el componente
   useEffect(() => {
@@ -113,42 +146,12 @@ const ProductsCategory: React.FC = () => {
     setModalOpen(false);
   };
 
-  // Crear categoría
-  // const handleCreate = async () => {
-  //   try {
-  //     const response = await fetch(URI_CATEGORY, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ name: nombre }),
-  //     });
-  //     const newCategory = await response.json();
-  //     addCategory(newCategory);
-  //     Swal.fire("Éxito", "Categoría creada correctamente.", "success");
-  //     handleCloseModal();
-  //   } catch (error) {
-  //     Swal.fire("Error", "No se pudo crear la categoría.", "error");
-  //     console.error(error);
-  //   }
-  // };
 
   const handleCreate = async () => {
+    if (!token) return;
     try {
-      const response = await fetch(URI_CATEGORY, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAccessToken()}`
-        },
-        body: JSON.stringify({ name: nombre }),
-
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const newCategory = await response.json();
-      // addCategory(newCategory);
+      const createdCategory = await createCategory(nombre, token);
+      // addCategory(createdCategory);
       Swal.fire("Éxito", "Categoría creada correctamente.", "success");
       handleCloseModal();
     } catch (error) {
@@ -160,17 +163,9 @@ const ProductsCategory: React.FC = () => {
   // Editar categoría
   const handleEdit = async () => {
     if (!selectedCategoryId) return;
-
+    if (!token) return;
     try {
-      const response = await fetch(`${URI_CATEGORY}/${selectedCategoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAccessToken()}`
-        },
-        body: JSON.stringify({ name: nombre }),
-      });
-      const updatedCategory = await response.json();
+      const updatedCategory = await editCategory(selectedCategoryId, nombre, token);
       updateCategory(updatedCategory);
       Swal.fire("Éxito", "Categoría actualizada correctamente.", "success");
       handleCloseModal();
@@ -193,13 +188,7 @@ const ProductsCategory: React.FC = () => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_CATEGORY}/${id}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${getAccessToken()}`,
-          }
-        });
+        const deletedCategory = await deleteCategory(id, token as string);
         removeCategory(id);
         Swal.fire("Eliminado", "Categoría eliminada correctamente.", "success");
       } catch (error) {
@@ -246,11 +235,14 @@ const ProductsCategory: React.FC = () => {
             autoFocus
             margin="dense"
             label="Nombre de la categoría"
-            onChange={(e) => setNombre(e.target.value)}
             value={nombre}
+            onChange={handleNombreChange}
             fullWidth
             variant="outlined"
+            error={!!errorNombre}
+            helperText={errorNombre}
           />
+
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseModal} color="primary">
@@ -259,6 +251,7 @@ const ProductsCategory: React.FC = () => {
           <Button
             onClick={modalType === "create" ? handleCreate : handleEdit}
             color="primary"
+            disabled={!!errorNombre}
           >
             Guardar
           </Button>

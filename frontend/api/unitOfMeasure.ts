@@ -1,5 +1,5 @@
 
-import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { URI_UNIT_OF_MEASURE } from "@/components/URI/URI";
 
 export const fetchUnits = async (token: string) => {
@@ -14,7 +14,32 @@ export const fetchUnits = async (token: string) => {
   return data;
 };
 
-export const createUnit = async (form: IUnitOfMeasure, token: string) => {
+export const fetchUnitsNoConventional = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/not-conventional`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+
+export const allUnitsConventional = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/conventional`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const createUnit = async (form: IUnitOfMeasureForm, token: string) => {
   const response = await fetch(URI_UNIT_OF_MEASURE, {
     method: "POST",
     headers: {
@@ -27,7 +52,7 @@ export const createUnit = async (form: IUnitOfMeasure, token: string) => {
   return await response.json();
 };
 
-export const editUnit = async (form: IUnitOfMeasure, token: string) => {
+export const editUnit = async (form: IUnitOfMeasureForm, token: string) => {
   const response = await fetch(`${URI_UNIT_OF_MEASURE}/${form.id}`, {
     method: "PATCH",
     headers: {
@@ -57,5 +82,36 @@ export const deleteUnit = async (id: string, token: string) => {
 };
 
 
+export const searchUnits = async (
+  searchTerm: string,
+  token: string,
+  field: "name" | "abbreviation" = "name"
+) => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append(field, searchTerm);
+
+    const response = await fetch(
+      `${URI_UNIT_OF_MEASURE}/search?${queryParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("❌ Error fetching searched units:", error);
+    return [];
+  }
+};
 
 

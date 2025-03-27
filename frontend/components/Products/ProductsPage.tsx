@@ -1,6 +1,6 @@
 "use client";
 import { Box } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TabsNavigation } from "./TabsNavigations";
 import { fetchCategories } from "@/api/categories";
@@ -15,6 +15,7 @@ import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
 import { useAuth } from "@/app/context/authContext";
 import ProductsCategory from "./TabProductsCategory/ProductsCategory";
+import LoadingLottie from "../Loader/Loading";
 
 
 const ProductsPage: React.FC = () => {
@@ -67,7 +68,7 @@ const ProductsPage: React.FC = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
-  const handleCategorySelected = (categoryId: string) => {
+  const handleCategorySelected = (categoryId: string | null) => {
     setSelectedCategoryId(categoryId);
   };
 
@@ -108,9 +109,11 @@ const ProductsPage: React.FC = () => {
           </IngredientsProvider>
         )}
         {selectedTab === Tab.UNIDADES_MEDIDA &&
-          <UnitProvider>
-            <UnitOfMeasure />
-          </UnitProvider>
+          <Suspense fallback={<LoadingLottie />}>
+            <UnitProvider>
+              <UnitOfMeasure />
+            </UnitProvider>
+          </Suspense>
         }
         {selectedTab === Tab.INGREDIENTES &&
           <IngredientsProvider>

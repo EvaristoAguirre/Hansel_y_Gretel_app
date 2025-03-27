@@ -8,7 +8,6 @@ import { useAuth } from '@/app/context/authContext';
 import { IingredientForm } from '@/components/Interfaces/Ingredients';
 import IngredientDialog from './IngredientDialog';
 import InputsPromo from './InputsPromo';
-import { log } from 'console';
 
 interface ProductCreationModalProps {
   open: boolean;
