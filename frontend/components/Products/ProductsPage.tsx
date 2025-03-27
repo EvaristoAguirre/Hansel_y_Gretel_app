@@ -109,9 +109,11 @@ const ProductsPage: React.FC = () => {
           </IngredientsProvider>
         )}
         {selectedTab === Tab.UNIDADES_MEDIDA &&
-          <UnitProvider>
-            <UnitOfMeasure />
-          </UnitProvider>
+          <Suspense fallback={<LoadingLottie />}>
+            <UnitProvider>
+              <UnitOfMeasure />
+            </UnitProvider>
+          </Suspense>
         }
         {selectedTab === Tab.INGREDIENTES &&
           <IngredientsProvider>

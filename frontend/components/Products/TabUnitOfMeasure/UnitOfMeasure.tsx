@@ -87,16 +87,28 @@ const UnitOfMeasure = () => {
         <Box sx={{ display: 'flex', mb: 2, gap: 6, mt: 2 }}>
           <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
           >
-            <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
-            <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
+            {
+              noConventionalUnits.length === 0 ? (
+                <LoadingLottie />
+              ) :
+                <>
+                  <Typography variant="h4" color={"primary"}>Unidades de medida personalizadas</Typography>
+                  <DataGridComponent rows={noConventionalUnits} columns={columns} capitalize={["name", "abbreviation"]} />
+                </>
+            }
           </div>
-
-          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}
-          >
-            <Typography variant="h4" color={"primary"}>Unidades de medida convencionales/fijas</Typography>
-            <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
+          <div className="w-1/2" style={{ display: 'flex', flexDirection: 'column' }}>
+            {
+              conventionalUnits.length === 0 ? (
+                <LoadingLottie />
+              ) : (
+                <>
+                  <Typography variant="h4" color={"primary"}>Unidades de medida convencionales/fijas</Typography>
+                  <DataGridComponent rows={conventionalUnits} columns={columnsConventional} capitalize={["name", "abbreviation"]} />
+                </>
+              )
+            }
           </div>
-
         </Box>
 
         {formOpenUnit && (
