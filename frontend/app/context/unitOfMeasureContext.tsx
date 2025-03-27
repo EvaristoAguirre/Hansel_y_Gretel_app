@@ -80,11 +80,11 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     })
   }, []);
   const addUnit = (unit: IUnitOfMeasureForm) => {
-    setNoConventionalUnits([...units, unit]);
+    setNoConventionalUnits([...noConventionalUnits, unit]);
   }
 
   const updateUnit = (unit: IUnitOfMeasureForm) => {
-    const updatedUnits = units.map((u) => {
+    const updatedUnits = noConventionalUnits.map((u) => {
       if (u.id === unit.id) {
         return unit;
       }
@@ -94,7 +94,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   }
 
   const removeUnit = (id: string) => {
-    setUnits(units.filter((unit) => unit.id !== id));
+    setNoConventionalUnits(noConventionalUnits.filter((unit) => unit.id !== id));
   }
   const handleCreateUnit = async () => {
     try {
@@ -137,8 +137,8 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
     if (confirm.isConfirmed) {
       try {
-        const deletedIngredient = await deleteUnit(id, token as string);
-        if (deletedIngredient) {
+        const deletedUnit = await deleteUnit(id, token as string);
+        if (deletedUnit) {
           removeUnit(id);
         }
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");

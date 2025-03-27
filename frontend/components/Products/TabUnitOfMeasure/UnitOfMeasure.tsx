@@ -40,6 +40,7 @@ const UnitOfMeasure = () => {
             size="small"
             onClick={() => {
               setFormUnit({
+                id: params.row.id,
                 name: params.row.name,
                 abbreviation: params.row.abbreviation,
                 conversions: params.row.conversions
