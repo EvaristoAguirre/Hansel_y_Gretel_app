@@ -1,4 +1,5 @@
 
+import { FieldUnitType } from "@/components/Enums/unitOfMeasure";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { URI_UNIT_OF_MEASURE } from "@/components/URI/URI";
 
@@ -85,7 +86,7 @@ export const deleteUnit = async (id: string, token: string) => {
 export const searchUnits = async (
   searchTerm: string,
   token: string,
-  field: "name" | "abbreviation" = "name"
+  field: FieldUnitType.NAME | FieldUnitType.ABBREVIATION = FieldUnitType.NAME
 ) => {
   try {
     const queryParams = new URLSearchParams();
