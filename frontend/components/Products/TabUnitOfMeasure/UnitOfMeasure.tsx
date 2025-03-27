@@ -58,8 +58,6 @@ const UnitOfMeasure = () => {
             variant="contained"
             size="small"
             onClick={() => handleDeleteUnit(params.row.id)}
-            disabled={conventionalUnits.length === 0}
-
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
