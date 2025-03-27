@@ -1,10 +1,11 @@
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, Raw, Repository } from 'typeorm';
 import { UnitConversion } from './unitConversion.entity';
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -37,7 +38,7 @@ export class UnitOfMeasureRepository {
     }
 
     const existingUnitByName = await this.unitOfMeasureRepository.findOne({
-      where: { name },
+      where: { name: name },
     });
 
     if (existingUnitByName) {
@@ -47,7 +48,7 @@ export class UnitOfMeasureRepository {
     if (abbreviation) {
       const existingUnitByAbbreviation =
         await this.unitOfMeasureRepository.findOne({
-          where: { abbreviation },
+          where: { abbreviation: abbreviation },
         });
 
       if (existingUnitByAbbreviation) {
@@ -61,6 +62,7 @@ export class UnitOfMeasureRepository {
       name,
       abbreviation,
       isConventional: false,
+      isActive: true,
     });
 
     const savedUnitOfMeasure =
@@ -531,11 +533,6 @@ export class UnitOfMeasureRepository {
         unit: c.toUnit,
         factor: c.conversionFactor,
       })),
-      ...(unit.toConversions || []).map((c) => ({
-        direction: 'to',
-        unit: c.fromUnit,
-        factor: c.conversionFactor,
-      })),
     ];
 
     // Encontrar la unidad base relacionada (ya sea directa o a través de conversiones)
@@ -647,5 +644,49 @@ export class UnitOfMeasureRepository {
     await this.unitOfMeasureRepository.update(id, { isActive: false });
 
     return 'Unit of measure successfully deleted';
+  }
+
+  async searchUnit(
+    name?: string,
+    abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    try {
+      if (!name && !abbreviation) {
+        throw new BadRequestException(
+          'At least a name or a code must be provided for search.',
+        );
+      }
+
+      const whereConditions: any = {};
+      if (name) {
+        whereConditions.name = ILike(`%${name}%`);
+      } else if (abbreviation) {
+        whereConditions.abbreviation = Raw(
+          (alias) => `CAST(${alias} AS TEXT) ILIKE :abbreviation`,
+          {
+            abbreviation: `%${abbreviation}%`,
+          },
+        );
+      }
+
+      const [units] = await this.unitOfMeasureRepository.findAndCount({
+        where: whereConditions,
+      });
+
+      if (units.length === 0) {
+        const searchCriteria = name ? `name: ${name}` : `code: ${abbreviation}`;
+        throw new NotFoundException(`No units found with ${searchCriteria}`);
+      }
+
+      return units;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the products',
+        error.message,
+      );
+    }
   }
 }
