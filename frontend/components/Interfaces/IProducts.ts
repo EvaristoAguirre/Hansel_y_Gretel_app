@@ -48,7 +48,7 @@ export interface ProductCreated extends IProduct {
 };
 
 
-interface IPromotionDetails {
+export interface IPromotionDetails {
   id: string;
   quantity: number;
   product: IProduct;

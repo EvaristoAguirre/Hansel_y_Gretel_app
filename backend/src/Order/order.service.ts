@@ -48,7 +48,6 @@ export class OrderService {
   }
 
   async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
-    console.log('service', id);
     return await this.orderRepository.getOrderById(id);
   }
 

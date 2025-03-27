@@ -48,4 +48,8 @@ export class CategoryService {
   async getCategoryById(id: string): Promise<Category> {
     return await this.categoryRepository.getCategoryById(id);
   }
+
+  async getCategoryByName(name: string): Promise<Category> {
+    return await this.categoryRepository.getCategoryByName(name);
+  }
 }

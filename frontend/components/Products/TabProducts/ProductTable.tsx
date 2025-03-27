@@ -10,7 +10,7 @@ import { useProductos } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from "../../Utils/ProductTable";
 import { useAuth } from "@/app/context/authContext";
-import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { log } from "console";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
@@ -48,33 +48,17 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
+
     if (selectedCategoryId) {
       const fetchProductsByCategory = async () => {
-        const response = await getProductsByCategory(selectedCategoryId, token);
-
-        if (!response.ok) {
-          console.warn(
-            "No se encontraron productos o hubo un error:",
-            response.message
-          );
-          setProducts([]);
-          return;
-        }
-
-        const productsWithCategories = response.data.map((product: any) => ({
-          ...product,
-          categories: [selectedCategoryId],
-        }));
-
-        setProducts(productsWithCategories);
+        const data = await getProductsByCategory(selectedCategoryId, token);
+        setProducts(data);
       };
-
       fetchProductsByCategory();
     } else {
       fetchAndSetProducts(token);
     }
   }, [selectedCategoryId]);
-
 
   // búsqueda de productos con endpoint
   const handleSearch = async (value: string, token: string) => {
@@ -158,7 +142,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     //   />
     // </Box>
 
-     <Box>
+    <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         {/* Botón para crear nuevo producto */}
         <Button
@@ -171,15 +155,15 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           sx={{ marginRight: 2, width: "20%" }}
           onClick={onCreate}
         >
-          + Nuevo
+          + Nuevo Producto
         </Button>
 
-          {categories.length === 0 &&
-          categories.filter((c) => c.isActive === true).length === 0 ? (
-            <Typography variant="caption" color="textSecondary">
-              Crear categoría/s
-            </Typography>
-          ) : null}
+        {categories.length === 0 &&
+        categories.filter((c) => c.isActive === true).length === 0 ? (
+          <Typography variant="caption" color="textSecondary">
+            Crear categoría/s
+          </Typography>
+        ) : null}
 
         {/* Buscador de productos */}
         <AutoCompleteProduct
@@ -202,6 +186,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       <DataGridComponent
         rows={selectedProducts.length > 0 ? selectedProducts : searchResults}
         columns={columns}
+        capitalize={["name", "description"]}
       />
     </Box>
   );

@@ -1,11 +1,20 @@
-'use client';
+"use client";
 import { MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import Swal from "sweetalert2";
-import { ProductResponse, SelectedProductsI } from '../../components/Interfaces/IProducts';
-import { useOrderStore } from '../../components/Order/useOrderStore';
-import { useRoomContext } from './room.context';
+import {
+  ProductResponse,
+  SelectedProductsI,
+} from "../../components/Interfaces/IProducts";
+import { useOrderStore } from "../../components/Order/useOrderStore";
+import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
@@ -23,33 +32,40 @@ type OrderContextType = {
   decreaseProductNumber: (productId: string) => void;
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
-  handleCreateOrder: (mesa: MesaInterface, cantidadPersonas: number, comentario: string) => Promise<void>;
-  handleEditOrder: (id: string, selectedProducts: SelectedProductsI[], numberCustomers: number, comment: string) => Promise<void>
+  handleCreateOrder: (
+    mesa: MesaInterface,
+    cantidadPersonas: number,
+    comentario: string
+  ) => Promise<void>;
+  handleEditOrder: (
+    id: string,
+    selectedProducts: SelectedProductsI[],
+    numberCustomers: number,
+    comment: string
+  ) => Promise<void>;
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
   fetchOrderBySelectedTable: () => void;
-
-}
+};
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
-  setSelectedProducts: () => { },
+  setSelectedProducts: () => {},
   confirmedProducts: [],
-  setConfirmedProducts: () => { },
+  setConfirmedProducts: () => {},
   selectedOrderByTable: null,
-  setSelectedOrderByTable: () => { },
-  handleSelectedProducts: () => { },
-  handleDeleteSelectedProduct: () => { },
-  increaseProductNumber: () => { },
-  decreaseProductNumber: () => { },
-  clearSelectedProducts: () => { },
-  deleteConfirmProduct: () => { },
-  handleCreateOrder: async () => { },
-  handleEditOrder: async () => { },
-  handleDeleteOrder: async () => { },
-  handleResetSelectedOrder: () => { },
-  fetchOrderBySelectedTable: () => { },
-
+  setSelectedOrderByTable: () => {},
+  handleSelectedProducts: () => {},
+  handleDeleteSelectedProduct: () => {},
+  increaseProductNumber: () => {},
+  decreaseProductNumber: () => {},
+  clearSelectedProducts: () => {},
+  deleteConfirmProduct: () => {},
+  handleCreateOrder: async () => {},
+  handleEditOrder: async () => {},
+  handleDeleteOrder: async () => {},
+  handleResetSelectedOrder: () => {},
+  fetchOrderBySelectedTable: () => {},
 });
 
 export const useOrderContext = () => {
@@ -57,16 +73,23 @@ export const useOrderContext = () => {
   return context;
 };
 
-const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+const OrderProvider = ({
+  children,
+}: Readonly<{ children: React.ReactNode }>) => {
   const { getAccessToken } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
   const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
   const { selectedMesa, handleSelectMesa } = useRoomContext();
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>([]);
-  const [confirmedProducts, setConfirmedProducts] = useState<SelectedProductsI[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
+    []
+  );
+  const [confirmedProducts, setConfirmedProducts] = useState<
+    SelectedProductsI[]
+  >([]);
 
-  const [selectedOrderByTable, setSelectedOrderByTable] = useState<IOrderDetails | null>(null);
+  const [selectedOrderByTable, setSelectedOrderByTable] =
+    useState<IOrderDetails | null>(null);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -76,7 +99,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   }, [getAccessToken]);
 
   /**
-   * 
+   *
    * Al cambiar la Mesa o la Sala seleccionada se limpia
    *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
@@ -91,20 +114,21 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-
     if (selectedMesa?.state === TableState.AVAILABLE) {
       return setSelectedOrderByTable(null);
     }
     if (selectedMesa && selectedMesa.orders) {
-
       try {
         if (selectedMesa?.orders.length > 0) {
-          const response = await fetch(`${URI_ORDER}/${selectedMesa.orders[0]}`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
+          const response = await fetch(
+            `${URI_ORDER}/${selectedMesa.orders[0]}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
             }
-          });
+          );
           const data = await response.json();
 
           setSelectedOrderByTable(data);
@@ -112,20 +136,16 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
           const productsByOrder = data.products;
 
           handleSetProductsByOrder(productsByOrder);
-
         }
       } catch (error) {
         console.error("Error al obtener el pedido:", error);
       }
     }
-
   }, [selectedMesa]);
 
   useEffect(() => {
     fetchOrderBySelectedTable();
-  }, [fetchOrderBySelectedTable, selectedOrderByTable])
-
-  
+  }, [fetchOrderBySelectedTable]);
 
   const handleSelectedProducts = (product: ProductResponse) => {
     const foundProduct = selectedProducts.find(
@@ -201,7 +221,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(pedido),
       });
@@ -221,11 +241,9 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
       const updatedTable = {
         ...newOrder.table,
         room: selectedMesa.room,
-        orders: [newOrder.id]
+        orders: [newOrder.id],
       };
       handleSelectMesa(updatedTable);
-
-
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");
     }
@@ -237,7 +255,6 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
     numberCustomers: number,
     comment: string
   ) => {
-
     if (!id) {
       return;
     }
@@ -246,12 +263,12 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,
-          comment: comment
+          comment: comment,
         }),
       });
 
@@ -263,25 +280,24 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
       const updatedOrder = await response.json();
 
-      const productsByOrder = updatedOrder.products
+      const productsByOrder = updatedOrder.products;
 
       handleSetProductsByOrder(productsByOrder);
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
 
       return updatedOrder;
-
     } catch (error) {
       console.error(error);
     }
 
-    console.groupEnd()
+    console.groupEnd();
   };
 
   const handleDeleteOrder = async (id: string | null) => {
     if (!id) {
       return;
-    };
+    }
 
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
@@ -306,7 +322,7 @@ const OrderProvider = ({ children }: Readonly<{ children: React.ReactNode }>) =>
 
   useEffect(() => {
     if (selectedMesa) {
-      const order = orders.find(o => o.table.id === selectedMesa.id);
+      const order = orders.find((o) => o.table.id === selectedMesa.id);
       setSelectedOrderByTable(order || null);
     }
   }, [orders, selectedMesa]);

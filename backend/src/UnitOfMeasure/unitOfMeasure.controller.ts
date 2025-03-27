@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -13,39 +14,45 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
-@Controller('unitOfMeasure')
+@Controller('unitofmeasure')
 export class UnitOfMeasureController {
   constructor(private readonly unitOfMeasureService: UnitOfMeasureService) {}
 
-  @Post('unitofmeasure')
+  @Get('conversion')
+  async findConversionUnit() {
+    return await this.unitOfMeasureService.findConversionUnit();
+  }
+
+  @Post()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createUnitOfMeasure(
     @Body() createData: CreateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureService.createUnitOfMeasure(createData);
   }
 
-  @Get('unitofmeasure/all')
+  @Get('all')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getAllUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
-    return await this.unitOfMeasureService.getAllUnitOfMeasure(
+    return this.unitOfMeasureService.getAllUnitOfMeasure(
       pageNumber,
       limitNumber,
     );
   }
 
-  @Get('unitofmeasure/conventional')
+  @Get('conventional')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getConventionalUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     return await this.unitOfMeasureService.getConventionalUnitOfMeasure(
@@ -54,18 +61,47 @@ export class UnitOfMeasureController {
     );
   }
 
-  @Get('unitofmeasure/:id')
+  @Get('not-conventional')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getNotConventionalUnitOfMeasure(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    return await this.unitOfMeasureService.getNotConventionalUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
+  }
+
+  @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getUnitOfMeasureById(@Param('id') id: string): Promise<UnitOfMeasure> {
     return await this.unitOfMeasureService.getUnitOfMeasureById(id);
   }
 
-  @Patch('unitofmeasure/:id')
+  @Post('search')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async searchUnit(
+    @Query('name') name?: string,
+    @Query('abbreviation') abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    return this.unitOfMeasureService.searchUnit(name, abbreviation);
+  }
+
+  @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateUnitOfMeasure(
     @Param('id') id: string,
     @Body() updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureService.updateUnitOfMeasure(id, updateData);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async deleteUnitOfMeasure(@Param('id') id: string) {
+    return await this.unitOfMeasureService.deleteUnitOfMeasure(id);
   }
 }

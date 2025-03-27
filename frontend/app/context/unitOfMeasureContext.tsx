@@ -1,16 +1,16 @@
 'use client';
 import { FormType } from '@/components/Enums/Ingredients';
-import { IUnitOfMeasure } from '@/components/Interfaces/IUnitOfMeasure';
+import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { createUnit, editUnit, deleteUnit, fetchUnits } from '../../api/unitOfMeasure';
+import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
 
 
 type UnitContextType = {
-  units: IUnitOfMeasure[];
-  formUnit: IUnitOfMeasure;
-  setFormUnit: React.Dispatch<React.SetStateAction<IUnitOfMeasure>>;
+  units: IUnitOfMeasureForm[];
+  formUnit: IUnitOfMeasureForm;
+  setFormUnit: React.Dispatch<React.SetStateAction<IUnitOfMeasureForm>>;
   formOpenUnit: boolean;
   setFormOpenUnit: React.Dispatch<React.SetStateAction<boolean>>;
   formTypeUnit: FormType;
@@ -19,7 +19,8 @@ type UnitContextType = {
   handleCreateUnit: () => Promise<void>;
   handleEditUnit: () => Promise<void>;
   handleCloseFormUnit: () => void;
-
+  conventionalUnits: IUnitOfMeasureResponse[]
+  noConventionalUnits: IUnitOfMeasureForm[]
 }
 
 const UnitContext = createContext<UnitContextType>({
@@ -27,8 +28,7 @@ const UnitContext = createContext<UnitContextType>({
   formUnit: {
     name: "",
     abbreviation: "",
-    equivalenceToBaseUnit: null,
-    baseUnitId: "",
+    conversions: []
   },
   setFormUnit: () => { },
   formOpenUnit: false,
@@ -39,6 +39,8 @@ const UnitContext = createContext<UnitContextType>({
   handleCreateUnit: async () => { },
   handleEditUnit: async () => { },
   handleCloseFormUnit: () => { },
+  conventionalUnits: [],
+  noConventionalUnits: []
 });
 
 export const useUnitContext = () => {
@@ -51,68 +53,79 @@ export const useUnitContext = () => {
 const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
-  const [formUnit, setFormUnit] = useState<IUnitOfMeasure>({
+  const [formUnit, setFormUnit] = useState<IUnitOfMeasureForm>({
     name: "",
     abbreviation: "",
-    equivalenceToBaseUnit: null,
-    baseUnitId: "",
+    conversions: []
   });
+
   const [formOpenUnit, setFormOpenUnit] = useState(false);
   const [formTypeUnit, setFormTypeUnit] = useState<FormType>(FormType.CREATE);
-  const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
+  const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
+  const [conventionalUnits, setConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
+  const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureForm[]>([]);
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
+
     fetchUnits(token).then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
     });
+
+    allUnitsConventional(token).then(dataUnit => {
+      if (dataUnit) setConventionalUnits(dataUnit);
+    })
+
+    fetchUnitsNoConventional(token).then(dataUnit => {
+      if (dataUnit) setNoConventionalUnits(dataUnit);
+    })
   }, []);
-  const addUnit = (unit: IUnitOfMeasure) => {
-    setUnits([...units, unit]);
+  const addUnit = (unit: IUnitOfMeasureForm) => {
+    setNoConventionalUnits([...noConventionalUnits, unit]);
   }
 
-  const updateUnit = (unit: IUnitOfMeasure) => {
-    const updatedUnits = units.map((u) => {
+  const updateUnit = (unit: IUnitOfMeasureForm) => {
+    const updatedUnits = noConventionalUnits.map((u) => {
       if (u.id === unit.id) {
         return unit;
       }
       return u;
     });
-    setUnits(updatedUnits);
+    setNoConventionalUnits(updatedUnits);
   }
 
   const removeUnit = (id: string) => {
-    setUnits(units.filter((unit) => unit.id !== id));
+    setNoConventionalUnits(noConventionalUnits.filter((unit) => unit.id !== id));
   }
   const handleCreateUnit = async () => {
     try {
-      const preparedForm = {
-        ...formUnit,
-        equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
-      };
-      const newUnit = await createUnit(preparedForm, token as string);
+      const newUnit = await createUnit(formUnit, token as string);
       addUnit(newUnit);
-
       handleCloseFormUnit();
-
-      Swal.fire("Éxito", "Ingrediente creado correctamente.", "success");
-
+      Swal.fire("Éxito", "Unidad de medida creada correctamente.", "success");
     } catch (error) {
-      Swal.fire("Error", "No se pudo crear el ingrediente.", "error");
+      Swal.fire("Error", "No se pudo crear la unidad de medida.", "error");
       console.error(error);
     }
   };
 
+
   const handleEditUnit = async () => {
+    /**
+     * Estamos editando la unidad de medida, por lo tanto, debemos
+     * convertir los factores de conversión a dos decimales y asignarlos al objeto
+     */
+    const updatedFormUnit = {
+      ...formUnit,
+      conversions: formUnit.conversions.map((conversion) => ({
+        ...conversion,
+        conversionFactor: parseFloat(Number(conversion.conversionFactor).toFixed(4)),
+      })),
+    };
     try {
-      const preparedForm = {
-        ...formUnit,
-        equivalenceToBaseUnit: parseFloat(formUnit.equivalenceToBaseUnit as any),
-        id: formUnit.id,
-      };
-      const updatedUnit = await editUnit(preparedForm, token as string);
+      const updatedUnit = await editUnit(updatedFormUnit, token as string);
 
       updateUnit(updatedUnit);
 
@@ -138,8 +151,8 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
     if (confirm.isConfirmed) {
       try {
-        const deletedIngredient = await deleteUnit(id, token as string);
-        if (deletedIngredient) {
+        const deletedUnit = await deleteUnit(id, token as string);
+        if (deletedUnit) {
           removeUnit(id);
         }
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
@@ -154,8 +167,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     setFormUnit({
       name: "",
       abbreviation: "",
-      equivalenceToBaseUnit: null,
-      baseUnitId: "",
+      conversions: []
     });
   };
 
@@ -164,16 +176,17 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       value={{
         units,
         formUnit,
-        setFormUnit,
+        conventionalUnits,
+        noConventionalUnits,
         formOpenUnit,
-        setFormOpenUnit,
+        setFormUnit,
         formTypeUnit,
+        setFormOpenUnit,
         setFormTypeUnit,
         handleDeleteUnit,
         handleCreateUnit,
         handleEditUnit,
         handleCloseFormUnit,
-
 
       }}
     >

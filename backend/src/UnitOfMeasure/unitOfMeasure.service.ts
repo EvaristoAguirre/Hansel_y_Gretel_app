@@ -1,28 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { UnitConversion } from './unitConversion.entity';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitOfMeasureRepository } from './unitOfMeasure.repository';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
-import { InjectRepository } from '@nestjs/typeorm';
+import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Injectable()
 export class UnitOfMeasureService {
-  constructor(
-    @InjectRepository(UnitConversion)
-    private unitOfMeasureRepository: UnitOfMeasureRepository,
-  ) {}
+  constructor(private unitOfMeasureRepository: UnitOfMeasureRepository) {}
 
   async createUnitOfMeasure(
     createData: CreateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureRepository.createUnitOfMeasure(createData);
   }
 
   async getAllUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     return await this.unitOfMeasureRepository.getAllUnitOfMeasure(
       pageNumber,
       limitNumber,
@@ -36,7 +32,7 @@ export class UnitOfMeasureService {
   async updateUnitOfMeasure(
     id: string,
     updateData: UpdateUnitOfMeasureDto,
-  ): Promise<UnitOfMeasure> {
+  ): Promise<UnitOfMeasureSummaryResponseDto> {
     return await this.unitOfMeasureRepository.updateUnitOfMeasure(
       id,
       updateData,
@@ -46,8 +42,18 @@ export class UnitOfMeasureService {
   async getConventionalUnitOfMeasure(
     pageNumber: number,
     limitNumber: number,
-  ): Promise<UnitOfMeasure[]> {
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
     return await this.unitOfMeasureRepository.getConventionalUnitOfMeasure(
+      pageNumber,
+      limitNumber,
+    );
+  }
+
+  async getNotConventionalUnitOfMeasure(
+    pageNumber: number,
+    limitNumber: number,
+  ): Promise<UnitOfMeasureSummaryResponseDto[]> {
+    return await this.unitOfMeasureRepository.getNotConventionalUnitOfMeasure(
       pageNumber,
       limitNumber,
     );
@@ -59,5 +65,20 @@ export class UnitOfMeasureService {
       toUnitId,
       quantity,
     );
+  }
+
+  async findConversionUnit() {
+    return await this.unitOfMeasureRepository.findConversionUnit();
+  }
+
+  async deleteUnitOfMeasure(id: string) {
+    return await this.unitOfMeasureRepository.deleteUnitOfMeasure(id);
+  }
+
+  async searchUnit(
+    name?: string,
+    abbreviation?: string,
+  ): Promise<UnitOfMeasure[]> {
+    return this.unitOfMeasureRepository.searchUnit(name, abbreviation);
   }
 }

@@ -12,6 +12,8 @@ import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
+import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -23,6 +25,7 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
     ]),
     forwardRef(() => CategoryModule),
     UserModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [ProductController],
   providers: [
@@ -30,6 +33,7 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
     ProductRepository,
     CategoryRepository,
     UnitOfMeasureService,
+    UnitOfMeasureRepository,
   ],
   exports: [ProductService],
 })

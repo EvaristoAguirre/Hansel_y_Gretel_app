@@ -20,6 +20,7 @@ import { PromotionProduct } from './promotionProducts.entity';
 import { CreatePromotionDto } from 'src/DTOs/create-promotion.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 
 @Injectable()
 export class ProductRepository {
@@ -31,6 +32,7 @@ export class ProductRepository {
     @InjectRepository(PromotionProduct)
     private readonly promotionProductRepository: Repository<PromotionProduct>,
     private readonly dataSource: DataSource,
+    private readonly unitOfMeasureService: UnitOfMeasureService,
   ) {}
 
   //---- Estandarizado  -------- con el dto nuevo
@@ -477,7 +479,6 @@ export class ProductRepository {
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const { categories, ingredients, ...productData } = productToCreate;
-
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
       categoryEntities = await queryRunner.manager.find(Category, {
@@ -523,20 +524,25 @@ export class ProductRepository {
             `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
           );
         }
-
+        // ---- la conversion de unidad
+        const convertedQuantity = await this.unitOfMeasureService.convertUnit(
+          ingredientDto.unitOfMeasureId,
+          ingredient.unitOfMeasure.id,
+          ingredientDto.quantityOfIngredient,
+        );
+        console.log('resultado de la conversion........', convertedQuantity);
         const productIngredient = queryRunner.manager.create(
           ProductIngredient,
           {
             product: savedProduct,
             ingredient,
-            quantityOfIngredient: ingredientDto.quantityOfIngredient,
-            unitOfMeasure,
+            quantityOfIngredient: convertedQuantity,
+            unitOfMeasure: ingredient.unitOfMeasure,
           },
         );
 
         if (ingredient.cost) {
-          savedProduct.cost +=
-            ingredient.cost * ingredientDto.quantityOfIngredient;
+          savedProduct.cost += ingredient.cost * convertedQuantity;
         }
 
         return queryRunner.manager.save(productIngredient);

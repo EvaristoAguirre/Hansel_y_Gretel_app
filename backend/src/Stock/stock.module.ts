@@ -18,6 +18,7 @@ import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
     CategoryRepository,
     IngredientService,
     UnitOfMeasureService,
+    UnitOfMeasureRepository,
   ],
-  exports: [],
+  exports: [StockService],
 })
 export class StockModule {}

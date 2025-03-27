@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useProductos } from "../Hooks/useProducts";
 import OrderProvider, {
   useOrderContext,
@@ -7,6 +7,7 @@ import OrderProvider, {
 import RoomProvider from "@/app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import Rooms from "../Rooms/Rooms";
+import LoadingLottie from "../Loader/Loading";
 
 const Cafe = () => {
   const { getAccessToken } = useAuth();
@@ -38,11 +39,13 @@ const Cafe = () => {
       }}
     >
       <div style={{ width: "100%" }}>
-        <RoomProvider>
-          <OrderProvider>
-            <Rooms />
-          </OrderProvider>
-        </RoomProvider>
+        <Suspense fallback={<LoadingLottie />}>
+          <RoomProvider>
+            <OrderProvider>
+              <Rooms />
+            </OrderProvider>
+          </RoomProvider>
+        </Suspense>
       </div>
     </div>
   );

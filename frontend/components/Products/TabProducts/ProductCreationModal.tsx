@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from "react";
 import {
   Modal,
@@ -23,6 +24,18 @@ import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
 import { log } from "console";
+=======
+import React, { useEffect, useState } from 'react';
+import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip } from '@mui/material';
+import { ProductCreated, ProductForm, ProductForPromo } from '@/components/Interfaces/IProducts';
+import { ICategory } from '@/components/Interfaces/ICategories';
+import { FormType, TypeProduct } from '@/components/Enums/view-products';
+import { getProductByCode } from '@/api/products';
+import { useAuth } from '@/app/context/authContext';
+import { IingredientForm } from '@/components/Interfaces/Ingredients';
+import IngredientDialog from './IngredientDialog';
+import InputsPromo from './InputsPromo';
+>>>>>>> master
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -248,11 +261,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             options={categories}
             getOptionLabel={(option) => option.name}
             value={categories.filter((category) =>
-              form.categories.includes(category.id)
+              category.id && form.categories.includes(category.id)
             )}
             onChange={(_, newValue) => {
               const selectedIds = newValue.map((category) => category.id);
-              onChange("categories", selectedIds);
+              onChange("categories", selectedIds.map((id) => id || ''));
               validateField("categories", selectedIds);
             }}
             renderInput={(params) => (
