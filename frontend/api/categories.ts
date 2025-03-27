@@ -82,7 +82,7 @@ export const deleteCategory = async (id: string, token: string) => {
 }
 export const fetchCategoriesByName = async (token: string, name: string) => {
   try {
-    const response = await fetch(`${URI_CATEGORY}/${name}`, {
+    const response = await fetch(`${URI_CATEGORY}/by-name/${name}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -94,7 +94,6 @@ export const fetchCategoriesByName = async (token: string, name: string) => {
     }
 
     const data = await response.json();
-    console.log("Categoria por nombre👀", data)
     return { ok: true, data };
   } catch (error) {
     console.error(error);

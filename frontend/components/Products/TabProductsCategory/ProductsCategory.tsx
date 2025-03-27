@@ -52,7 +52,8 @@ const ProductsCategory: React.FC = () => {
       if (!token) return;
 
       const checkResponse = await fetchCategoriesByName(token, nombre);
-      if (checkResponse?.ok && checkResponse.data.length > 0) {
+
+      if (checkResponse?.ok && checkResponse.data.name) {
         setErrorNombre("Este nombre ya está en uso.");
       } else {
         setErrorNombre("");
@@ -79,7 +80,7 @@ const ProductsCategory: React.FC = () => {
       if (!token) return;
       try {
         const data = await fetchCategories(token);
-        setCategories(data);
+        data && setCategories(data);
         connectWebSocket();
       } catch (error) {
         console.error(error);
@@ -226,8 +227,9 @@ const ProductsCategory: React.FC = () => {
       </Box>
 
       {/* Modal */}
-      <Dialog open={modalOpen} onClose={handleCloseModal}>
-        <DialogTitle>
+      <Dialog open={modalOpen} onClose={handleCloseModal}
+        sx={{ "& .MuiDialog-paper": { minWidth: "400px" } }}>
+        <DialogTitle sx={{ fontSize: "18px" }}>
           {modalType === "create" ? "Crear Categoría" : "Editar Categoría"}
         </DialogTitle>
         <DialogContent>
