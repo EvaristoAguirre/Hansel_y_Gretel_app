@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { Order } from './order.entity';
-import { DataSource, LessThan } from 'typeorm';
+import { DataSource, In, LessThan } from 'typeorm';
 import { ArchivedOrder } from './archived_order.entity';
 import { Cron } from '@nestjs/schedule';
 import { OrderState } from 'src/Enums/states.enum';
@@ -16,7 +16,7 @@ export class ArchiveService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron('0 23 * * 0')
+  @Cron('30 16 * * 3')
   async archiveOrders() {
     const maxAttempts = 3;
     const delayBetweenAttempts = 60000;
@@ -29,10 +29,11 @@ export class ArchiveService {
         await this.dataSource.transaction(async (manager) => {
           const ordersToArchive = await manager.find(Order, {
             where: {
-              state:
-                OrderState.CLOSED ||
-                OrderState.CANCELLED ||
+              state: In([
+                OrderState.CLOSED,
+                OrderState.CANCELLED,
                 OrderState.PENDING_PAYMENT,
+              ]),
               date: LessThan(this.getLastSunday()),
             },
             relations: ['orderDetails'],
@@ -91,7 +92,8 @@ export class ArchiveService {
 
   private getLastSunday(): Date {
     const date = new Date();
-    date.setDate(date.getDate() - date.getDay());
+    date.setDate(date.getDate() - (date.getDay() || 7)); // Si es domingo, resta 7 días
+    date.setHours(0, 0, 0, 0); // Normalizar a inicio del día
     return date;
   }
 }

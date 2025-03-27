@@ -7,9 +7,7 @@ const ViewCafe = () => {
 
   return (
     <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO]}>
-      <Suspense fallback={<LoadingLottie />}>
-        <Cafe />
-      </Suspense>
+      <Cafe />
     </ProtectedRoute>
   );
 }

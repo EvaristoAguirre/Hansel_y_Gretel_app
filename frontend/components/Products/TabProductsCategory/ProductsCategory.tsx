@@ -18,6 +18,7 @@ import { createCategory, deleteCategory, editCategory, fetchCategories, fetchCat
 import { useAuth } from "@/app/context/authContext";
 import { useCategoryStore } from "../../Categories/useCategoryStore";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
+import LoadingLottie from "@/components/Loader/Loading";
 
 const ProductsCategory: React.FC = () => {
   const {
@@ -212,11 +213,16 @@ const ProductsCategory: React.FC = () => {
 
       {/* Tabla */}
       <Box sx={{ height: 450, ml: 2 }}>
-        <DataGrid
-          rows={capitalizeFirstLetterTable(rows, ["name"])}
-          columns={columns}
-          localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-        />
+        {
+          rows.length === 0 ? (
+            <LoadingLottie />
+          ) :
+            <DataGrid
+              rows={capitalizeFirstLetterTable(rows, ["name"])}
+              columns={columns}
+              localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            />
+        }
       </Box>
 
       {/* Modal */}
