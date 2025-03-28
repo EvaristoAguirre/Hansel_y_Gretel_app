@@ -1,13 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Box, Tabs, Tab, TextField, Button, FormControl, Autocomplete, Chip } from '@mui/material';
-import { ProductCreated, ProductForm, ProductForPromo } from '@/components/Interfaces/IProducts';
-import { ICategory } from '@/components/Interfaces/ICategories';
-import { FormType, TypeProduct } from '@/components/Enums/view-products';
-import { getProductByCode } from '@/api/products';
-import { useAuth } from '@/app/context/authContext';
-import { IingredientForm } from '@/components/Interfaces/Ingredients';
-import IngredientDialog from './IngredientDialog';
-import InputsPromo from './InputsPromo';
+import React, { useEffect, useState } from "react";
+import {
+  Modal,
+  Box,
+  Tabs,
+  Tab,
+  TextField,
+  Button,
+  FormControl,
+  Autocomplete,
+  Chip,
+} from "@mui/material";
+import {
+  ProductCreated,
+  ProductForm,
+  ProductForPromo,
+} from "@/components/Interfaces/IProducts";
+import { ICategory } from "@/components/Interfaces/ICategories";
+import { FormType, TypeProduct } from "@/components/Enums/view-products";
+import { getProductByCode } from "@/api/products";
+import { useAuth } from "@/app/context/authContext";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
+import IngredientDialog from "./IngredientDialog";
+import InputsPromo from "./InputsPromo";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -144,12 +158,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setTabValue(newValue);
     if (newValue === 2 && form.type !== TypeProduct.PROMO) {
       onChange("type", TypeProduct.PROMO);
-
     } else if (newValue !== 2 && form.type === TypeProduct.PROMO) {
       onChange("type", TypeProduct.PRODUCT);
     }
   };
-
 
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
     onChange("ingredients", ingredientsForm);
@@ -172,6 +184,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           p: 4,
           mx: "auto",
           mt: 5,
+          overflowY: "auto", // Habilita el scroll vertical
+          "&::-webkit-scrollbar": {
+            // Personaliza la barra de scroll (opcional)
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#888",
+            borderRadius: "4px",
+          },
         }}
       >
         <Tabs value={tabValue} onChange={handleTabChange}>
@@ -197,10 +218,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                  ? e.target.value === ""
-                    ? null
-                    : parseInt(e.target.value, 10)
-                  : e.target.value;
+                ? e.target.value === ""
+                  ? null
+                  : parseInt(e.target.value, 10)
+                : e.target.value;
               onChange(field as keyof ProductForm, value);
               if (field !== "code") {
                 validateField(field, value);
@@ -232,12 +253,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             multiple
             options={categories}
             getOptionLabel={(option) => option.name}
-            value={categories.filter((category) =>
-              category.id && form.categories.includes(category.id)
+            value={categories.filter(
+              (category) => category.id && form.categories.includes(category.id)
             )}
             onChange={(_, newValue) => {
               const selectedIds = newValue.map((category) => category.id);
-              onChange("categories", selectedIds.map((id) => id || ''));
+              onChange(
+                "categories",
+                selectedIds.map((id) => id || "")
+              );
               validateField("categories", selectedIds);
             }}
             renderInput={(params) => (
