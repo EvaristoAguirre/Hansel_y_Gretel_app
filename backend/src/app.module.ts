@@ -18,7 +18,7 @@ import { StockModule } from './Stock/stock.module';
 import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 import { PrinterModule } from './Printer/printer.module';
-import { PrinterService } from './Printer/printer.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,6 +48,6 @@ import { PrinterService } from './Printer/printer.service';
     PrinterModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrinterService],
+  providers: [AppService],
 })
 export class AppModule {}

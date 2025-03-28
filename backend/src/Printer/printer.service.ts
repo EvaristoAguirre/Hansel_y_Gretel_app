@@ -1,80 +1,98 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as escpos from 'escpos';
-import * as escposUSB from 'escpos-usb';
-import { RPT008_CONFIG } from './printer.constants';
-import { PrintOptions } from './printer.interface';
+import { Injectable } from '@nestjs/common';
+import { ThermalPrinter, PrinterTypes, CharacterSet, BreakLine  } from "node-thermal-printer";
 
-// Configuración del plugin USB
-escpos.USB = escposUSB;
 
 @Injectable()
 export class PrinterService {
-  private readonly logger = new Logger(PrinterService.name);
-  private printer: any;
-  private device: any;
-
-  constructor() {
-    this.initializePrinter();
+  
+  private printer: ThermalPrinter;
+  constructor(
+  ) {
+    this.printer = this.createPrinter();
   }
 
-  private async initializePrinter() {
+
+
+  private createPrinter(): ThermalPrinter {
+    const printer = new ThermalPrinter({
+    type: PrinterTypes.STAR,
+      // interface: 'COM3',
+      interface: 'tcp://192.168.1.49',
+      // driver: {
+      //   vid: 0x067B,
+      //   pid: 0x2305
+      // },
+      characterSet: CharacterSet.PC850_MULTILINGUAL,
+      removeSpecialCharacters: false,
+      lineCharacter: '=',
+      breakLine: BreakLine.WORD,
+      options: {
+        timeout: 4000
+      }
+    });
+    return printer;
+  }
+
+  async isConnect(): Promise<string> {
+    console.log("arrancaaaa.....", this.printer);
+    await this.printer.isPrinterConnected();
+    return "Impresora conectada testeo";
+  }
+
+
+  // async printTest(): Promise<string> {
+  //   let execute = await this.printer.execute()
+  //   console.log("execute: ", execute);
+  //   // let raw = await this.printer.raw(Buffer.from("Hello world"));
+  //   this.printer.print("Hola");
+  //   return "execute";
+  // }
+
+  async printTest(): Promise<string> {
     try {
-      // Configuración específica para 3nStar RPT008
-      this.device = new escpos.USB(
-        RPT008_CONFIG.vendorId, 
-        RPT008_CONFIG.productId
-      );
+      // 1. Verificar conexión primero
+      const isConnected = await this.printer.isPrinterConnected();
+      if (!isConnected) {
+        throw new Error('La impresora no está conectada');
+      }   
+
+      // 2. Configurar la impresión
+      this.printer.clear(); // Limpiar buffer previo
+      this.printer.setCharacterSet(CharacterSet.PC850_MULTILINGUAL);
+      this.printer.alignCenter();
       
-      this.printer = new escpos.Printer(this.device, {
-        encoding: RPT008_CONFIG.encoding,
-        width: RPT008_CONFIG.width
-      });
+      // 3. Añadir contenido
+      this.printer.bold(true);
+      this.printer.println('=== PRUEBA ===');
+      this.printer.bold(false);
+      this.printer.println('Hola mundo!');
+      this.printer.println(new Date().toLocaleString());
+      this.printer.println('--------------');
+      this.printer.alignLeft();
+      this.printer.println('Este es un ticket de prueba');
+      this.printer.partialCut(); // Cortar papel (importante!)
+  
+      // 4. Ejecutar la impresión (esto debe ir AL FINAL)
+      await this.printer.execute();
+      console.log("Buffer a imprimir:", this.printer.getText());
       
-      this.logger.log('Impresora 3nStar RPT008 inicializada');
+      return "Ticket impreso correctamente";
     } catch (error) {
-      this.logger.error('Error al inicializar impresora:', error.message);
-      throw error;
+      console.error('Error al imprimir:', error);
+      throw new Error(`Error al imprimir: ${error.message}`);
     }
   }
 
-  async printText(text: string, options?: PrintOptions): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.device.open((error: any) => {
-        if (error) return reject(error);
-
-        try {
-          this.printer
-            .font(options?.font || 'A')
-            .align(options?.align || 'LT')
-            .style(options?.style || 'NORMAL')
-            .size(options?.width || 1, options?.height || 1)
-            .text(text)
-            .cut(options?.cut ? true : false)
-            .close(() => resolve(true));
-        } catch (printError) {
-          reject(printError);
-        }
-      });
-    });
+  async printRawTest(): Promise<string> {
+    const buffer = Buffer.from([
+      ...Buffer.from('=== PRUEBA ===\n'),
+      ...Buffer.from('Hola mundo!\n'),
+      ...Buffer.from('\x1B\x69') // Comando para cortar (depende del modelo)
+    ]);
+    
+    await this.printer.raw(buffer);
+    return "Impresión RAW enviada";
   }
 
-  async printTestPage(): Promise<boolean> {
-    const testText = `
-==============================
-       PRUEBA IMPRESORA
-        3nStar RPT008
-==============================
-Fecha: ${new Date().toLocaleString()}
-------------------------------
-Este es un texto de prueba
-para verificar la conexión
-------------------------------
-    `;
-
-    return this.printText(testText, {
-      align: 'CT',
-      font: 'B',
-      cut: true
-    });
-  }
 }
+  
