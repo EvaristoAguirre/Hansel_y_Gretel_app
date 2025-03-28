@@ -144,7 +144,6 @@ export class UnitOfMeasureRepository {
           'fromConversions.toUnit',
           'toConversions.fromUnit',
         ],
-        order: { isConventional: 'DESC', name: 'ASC' },
       });
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
@@ -171,14 +170,7 @@ export class UnitOfMeasureRepository {
         where: { isConventional: false, isActive: true },
         skip: (pageNumber - 1) * limitNumber,
         take: limitNumber,
-        relations: [
-          'baseUnit',
-          'fromConversions',
-          'toConversions',
-          'fromConversions.toUnit',
-          'toConversions.fromUnit',
-        ],
-        order: { isConventional: 'DESC', name: 'ASC' },
+        relations: ['baseUnit', 'fromConversions', 'fromConversions.toUnit'],
       });
 
       return units.map((unit) => this.mapUnitWithConversions(unit));
