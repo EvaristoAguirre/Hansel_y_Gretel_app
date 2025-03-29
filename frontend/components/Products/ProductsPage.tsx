@@ -86,8 +86,7 @@ const ProductsPage: React.FC = () => {
       <TabsNavigation tabIndex={tabIndex} tabs={tabs} onChange={handleTabChange} />
       <Box display="flex" flex={1} overflow="hidden">
         {
-          (selectedTab === Tab.PRODUCTOS ||
-            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+          (selectedTab === Tab.PRODUCTOS) &&
           <Sidebar
             onCategorySelected={handleCategorySelected}
             selectedCategoryId={selectedCategoryId}
