@@ -16,12 +16,13 @@ import {
   ProductForPromo,
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
-import { FormType, TypeProduct } from "@/components/Enums/view-products";
+import { FormTypeProduct, TypeProduct } from "@/components/Enums/view-products";
 import { getProductByCode } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -39,8 +40,9 @@ interface ProductCreationModalProps {
       | ProductForPromo[]
   ) => void;
   onSave: () => void;
-  modalType: "create" | "edit";
+  modalType: FormTypeProduct;
   products: ProductCreated[];
+  units: IUnitOfMeasureForm[]
 }
 
 interface Errors {
@@ -56,6 +58,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   onSave,
   modalType,
   products,
+  units
 }) => {
   /**
    * Estado que almacena el valor actual de la pestaña seleccionada.
@@ -64,11 +67,19 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
    *
    * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
    */
-  const [tabValue, setTabValue] = useState<number>(() => {
-    return modalType === FormType.EDIT && form.type === TypeProduct.PROMO
-      ? 2
-      : 0;
-  });
+  const [tabValue, setTabValue] = useState<number>(0);
+
+  useEffect(() => {
+    if (modalType === FormTypeProduct.EDIT) {
+      if (form.type === TypeProduct.PROMO) {
+        setTabValue(2);
+      } else if (form.type === TypeProduct.PRODUCT && form.ingredients.length > 0) {
+        setTabValue(1);
+      } else {
+        setTabValue(0);
+      }
+    }
+  }, [modalType, form.type, form.ingredients]);
 
   const [errors, setErrors] = useState<Errors>({
     code: "",
@@ -218,10 +229,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   ? null
                   : parseFloat(e.target.value)
                 : ["code"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseInt(e.target.value, 10)
-                : e.target.value;
+                  ? e.target.value === ""
+                    ? null
+                    : parseInt(e.target.value, 10)
+                  : e.target.value;
               onChange(field as keyof ProductForm, value);
               if (field !== "code") {
                 validateField(field, value);
@@ -294,7 +305,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
         {/* Campos para ingredientes */}
         {tabValue === 1 && (
-          <IngredientDialog onSave={handleSaveIngredients} form={form} />
+          <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} />
         )}
 
         {/* Campos para promos */}

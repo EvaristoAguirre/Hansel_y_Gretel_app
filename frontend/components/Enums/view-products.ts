@@ -20,7 +20,7 @@ export enum TypeProduct {
   PROMO = 'promotion',
 }
 
-export enum FormType {
+export enum FormTypeProduct {
   CREATE = 'create',
   EDIT = 'edit'
 }

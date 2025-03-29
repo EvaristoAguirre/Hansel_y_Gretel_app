@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   DialogContent,
   TextField,
@@ -19,20 +19,20 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
 import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import { fetchUnits } from "@/api/unitOfMeasure";
-import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
 import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 
 interface IngredientDialogProps {
   onSave: (ingredientsForm: IingredientForm[]) => void;
   form: ProductForm;
+  units: IUnitOfMeasureForm[]
 }
 
-const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => {
+const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units }) => {
   const { getAccessToken } = useAuth();
-  const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<IingredientForm[]>([]);
   const [newIngredient, setNewIngredient] = useState<IingredientForm>({
@@ -47,19 +47,20 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
   const [editIngredient, setEditIngredient] = useState<IingredientForm | null>(null);
   const [isAddButtonDisabled, setIsAddButtonDisabled] = useState(true);
 
+
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
     if (form.ingredients) {
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
-        name: ingredient.ingredient.name,
-        ingredientId: ingredient.ingredient.id,
+        name: ingredient.name,
+        ingredientId: ingredient.ingredientId,
         quantityOfIngredient: Number(ingredient.quantityOfIngredient),
-        unitOfMeasureId: ingredient.unitOfMeasure.id
+        unitOfMeasureId: ingredient.unitOfMeasureId
       }))
       setSelectedIngredients(preparedIngredients);
     }
-    fetchUnits(token).then(units => setUnit(units));
+
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
 
@@ -72,9 +73,16 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
     );
   }, [newIngredient]);
 
+  const prevIngredientsRef = useRef<IingredientForm[]>([]);
+
   useEffect(() => {
-    onSave(selectedIngredients);
+    if (JSON.stringify(prevIngredientsRef.current) !== JSON.stringify(selectedIngredients)) {
+      onSave(selectedIngredients);
+      prevIngredientsRef.current = selectedIngredients;
+    }
+
   }, [selectedIngredients]);
+
 
   const handleAddIngredient = () => {
     if (
@@ -167,7 +175,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                 setNewIngredient({ ...newIngredient, unitOfMeasureId: e.target.value })
               }
             >
-              {unit.map((u) => (
+              {units.map((u) => (
                 <MenuItem key={u.id} value={u.id}>
                   {u.name}
                 </MenuItem>
@@ -257,7 +265,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                         })
                       }
                     >
-                      {unit.map((u) => (
+                      {units.map((u) => (
                         <MenuItem key={u.id} value={u.id}>
                           {u.name}
                         </MenuItem>
@@ -270,7 +278,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                 // Vista del ingrediente agregado
 
                 <ListItemText
-                  primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${unit.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ingredient.unitOfMeasureId}`}
+                  primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${units.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ""}`}
                 />
 
               )}

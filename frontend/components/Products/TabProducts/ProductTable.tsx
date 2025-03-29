@@ -8,9 +8,11 @@ import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from '../../Utils/ProductTable';
 import { useAuth } from "@/app/context/authContext";
 import { log } from 'console';
+import LoadingLottie from "@/components/Loader/Loading";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
+  loading,
   onCreate,
   selectedCategoryId,
   onClearSelectedCategory,
@@ -102,8 +104,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           color="primary"
           sx={{ marginRight: 2, width: '20%' }}
           onClick={onCreate}
+          disabled={loading}
         >
-          + Nuevo Producto
+          {loading ? <LoadingLottie /> : '+ Nuevo Producto'}
         </Button>
 
         {/* Buscador de productos */}

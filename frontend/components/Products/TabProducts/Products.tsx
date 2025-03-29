@@ -12,12 +12,17 @@ import React, { useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { fetchUnits } from "@/api/unitOfMeasure";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
+import { FormTypeProduct } from "@/components/Enums/view-products";
+import LoadingLottie from '@/components/Loader/Loading';
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
 
   const {
     loading,
+    setLoading,
     modalOpen,
     modalType,
     form,
@@ -36,20 +41,25 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     categories,
   } = useCategoryStore();
 
-  const [token, setToken] = useState<string | null>(null);
+  const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
+
 
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
 
   const { getAccessToken } = useAuth();
+  const token = getAccessToken();
 
   useEffect(() => {
-    const accessToken = getAccessToken();
-    if (accessToken) {
-      setToken(accessToken);
+    if (token) {
+      setLoading(true);
+      fetchUnits(token).then(units => {
+        setUnits(units);
+        setLoading(false);
+      });
     }
-  }, [getAccessToken]);
+  }, [token]);
 
   const handleSave = () => {
     if (token) {
@@ -97,9 +107,10 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 products: params.row.promotionDetails,
                 isActive: true,
               });
-              setModalType("edit");
+              setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);
             }}
+            disabled={units.length === 0}
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -119,6 +130,13 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
   return (
     <Box flex={1} p={2} overflow="auto">
       {/* Product Table */}
+      {/* {
+        units.length === 0 ? (
+          <div className="p-[20%] flex flex-col justify-center items-center">
+            <LoadingLottie />
+            <p>Por favor, espere mientras se cargan las unidades de medida</p>
+          </div>
+        ) : */}
       <ProductTable
         loading={loading}
         rows={products}
@@ -126,16 +144,18 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
         columns={columns}
         onClearSelectedCategory={onClearSelectedCategory}
         onCreate={() => {
-          setModalType("create");
+          setModalType(FormTypeProduct.CREATE);
           setModalOpen(true);
         }}
       />
+      {/* } */}
 
       {/* Product Dialog */}
       {modalOpen && (
         <ProductCreationModal
           modalType={modalType}
           form={form}
+          units={units}
           open={modalOpen}
           onClose={handleCloseModal}
           onChange={handleChangeProductInfo}

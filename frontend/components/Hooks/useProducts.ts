@@ -7,7 +7,7 @@ import { editProduct } from "../../api/products";
 import { ProductForm } from "../Interfaces/IProducts";
 import { useAuth } from "@/app/context/authContext";
 import { Ingredient } from "../../../backend/src/Ingredient/ingredient.entity";
-import { TypeProduct } from "../Enums/view-products";
+import { FormTypeProduct, TypeProduct } from "../Enums/view-products";
 
 export const useProductos = () => {
   const { getAccessToken } = useAuth();
@@ -21,7 +21,7 @@ export const useProductos = () => {
     connectWebSocket,
   } = useProductStore();
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [modalType, setModalType] = useState<FormTypeProduct>(FormTypeProduct.CREATE);
   const [loading, setLoading] = useState<boolean>(true);
   const [form, setForm] = useState<ProductForm>({
     id: "",
@@ -157,6 +157,7 @@ export const useProductos = () => {
 
   return {
     loading,
+    setLoading,
     modalOpen,
     modalType,
     form,
