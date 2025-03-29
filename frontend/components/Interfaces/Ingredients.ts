@@ -9,10 +9,8 @@ export interface Iingredient {
   // price: number | null,
   cost: number | null,
   stock?: IStockOfProduct,
-  unitOfMeasureId?: string | null | IUnitOfMeasureStandard
-
+  unitOfMeasureId?: (IUnitOfMeasureStandard | string) | null
 }
-
 export interface IingredientForm {
   name: string,
   ingredientId: string,

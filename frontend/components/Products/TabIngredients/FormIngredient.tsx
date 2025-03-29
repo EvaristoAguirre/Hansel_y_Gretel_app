@@ -73,16 +73,12 @@ export const FormIngredient = ({
     const result = token && await ingredientsByName(name, token);
     console.log({ result });
 
-    if (result && typeof result === 'object' && 'status' in result) {
-      if (result.status === 200) {
-        setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
-      } else {
-        setErrors((prev) => ({ ...prev, name: "" }));
-      }
+    if (result && result.ok) {
+      setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
     } else {
-      // Handle the case where result is not an object with a status property
-      console.error('Invalid response from ingredientsByName');
+      setErrors((prev) => ({ ...prev, name: "" }));
     }
+
   };
 
   return (
@@ -108,7 +104,7 @@ export const FormIngredient = ({
               validateField(field, value);
             }}
             onBlur={() => {
-              if (formIngredients.name?.trim()) {
+              if (formType === FormType.CREATE && formIngredients.name?.trim()) {
                 checkNameAvailability(formIngredients.name);
               }
             }}
