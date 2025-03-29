@@ -16,6 +16,8 @@ import { FormType } from "@/components/Enums/Ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
 import LoadingLottie from '@/components/Loader/Loading';
+import { useAuth } from "@/app/context/authContext";
+import { ingredientsByName } from "@/api/ingredients";
 
 interface Errors {
   [key: string]: string;
@@ -32,7 +34,7 @@ export const FormIngredient = ({
 }) => {
   const { formIngredients, setFormIngredients, formOpen, handleCloseForm } =
     useIngredientsContext();
-
+  const { getAccessToken } = useAuth();
   const [errors, setErrors] = useState<Errors>({});
   const [isFormValid, setIsFormValid] = useState(false);
 
@@ -66,6 +68,19 @@ export const FormIngredient = ({
     unitOfMeasureId: "Unidad de Medida",
   };
 
+  const checkNameAvailability = async (name: string) => {
+    const token = getAccessToken();
+    const result = token && await ingredientsByName(name, token);
+    console.log({ result });
+
+    if (result && result.ok) {
+      setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
+    } else {
+      setErrors((prev) => ({ ...prev, name: "" }));
+    }
+
+  };
+
   return (
     <Dialog open={formOpen} onClose={handleCloseForm}>
       <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
@@ -87,6 +102,11 @@ export const FormIngredient = ({
                 [field]: value,
               }));
               validateField(field, value);
+            }}
+            onBlur={() => {
+              if (formType === FormType.CREATE && formIngredients.name?.trim()) {
+                checkNameAvailability(formIngredients.name);
+              }
             }}
             error={!!errors[field]}
             helperText={errors[field]}

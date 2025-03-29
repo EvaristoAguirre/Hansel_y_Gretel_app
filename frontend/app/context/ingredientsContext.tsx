@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { createIngredient, deleteIngredient, editIngredient, fetchIngredients } from '../../api/ingredients';
 import { useEffect } from 'react';
 import { useAuth } from './authContext';
+import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
 
 
 type IngredientsContextType = {
@@ -120,7 +121,10 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         ...formIngredients,
         cost: parseFloat(formIngredients.cost as any),
         id: formIngredients.id,
+        unitOfMeasureId: (formIngredients.unitOfMeasureId as IUnitOfMeasureStandard)?.id ?? formIngredients.unitOfMeasureId
       };
+
+
       const updatedIngredient = await editIngredient(preparedForm, token);
 
       updateIngredient(updatedIngredient);
