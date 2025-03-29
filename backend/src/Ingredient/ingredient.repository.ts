@@ -177,7 +177,12 @@ export class IngredientRepository {
 
       Object.assign(ingredient, updateData);
 
-      return await this.ingredientRepository.save(ingredient);
+      await this.ingredientRepository.save(ingredient);
+      const updatedIngredient = await this.ingredientRepository.findOne({
+        where: { id: id, isActive: true },
+        relations: ['unitOfMeasure'],
+      });
+      return updatedIngredient;
     } catch (error) {
       if (
         error instanceof BadRequestException ||

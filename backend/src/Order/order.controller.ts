@@ -95,4 +95,10 @@ export class OrderController {
     console.log(id);
     return this.orderService.getOrderById(id);
   }
+
+  // @Post('print')
+  // async printerOrder(@Body() orderToPrint: PrinterOrderDto) {
+  //   await this.printerService.printerOrder(orderToPrint);
+  //   return 'Order printed successfully';
+  // }
 }
