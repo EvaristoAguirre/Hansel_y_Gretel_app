@@ -28,7 +28,8 @@ const IngredientsContext = createContext<IngredientsContextType>({
     id: "",
     name: "",
     description: "",
-    cost: null
+    cost: null,
+    unitOfMeasureId: ""
   },
   setFormIngredients: () => { },
   formOpen: false,
@@ -55,7 +56,8 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   const [formIngredients, setFormIngredients] = useState<Iingredient>({
     name: "",
     description: "",
-    cost: null
+    cost: null,
+    unitOfMeasureId: "",
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
@@ -69,8 +71,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       if (dataIngredients) setIngredients(dataIngredients);
     });
   }, []);
-
-
 
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
@@ -168,6 +168,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       name: "",
       description: "",
       cost: null,
+      unitOfMeasureId: ""
     });
   };
 

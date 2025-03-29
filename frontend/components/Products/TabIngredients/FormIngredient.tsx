@@ -6,10 +6,16 @@ import {
   TextField,
   DialogActions,
   Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
-import { Iingredient } from "@/components/Interfaces/Ingredients"; // Usar solo una importación de `Iingredient`
+import { Iingredient } from "@/components/Interfaces/Ingredients";
+import { IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
+import LoadingLottie from '@/components/Loader/Loading';
 
 interface Errors {
   [key: string]: string;
@@ -18,16 +24,14 @@ interface Errors {
 export const FormIngredient = ({
   formType,
   onSave,
+  units
 }: {
   formType: FormType;
   onSave: () => void;
+  units: IUnitOfMeasureResponse[]
 }) => {
-  const {
-    formIngredients,
-    setFormIngredients,
-    formOpen,
-    handleCloseForm,
-  } = useIngredientsContext();
+  const { formIngredients, setFormIngredients, formOpen, handleCloseForm } =
+    useIngredientsContext();
 
   const [errors, setErrors] = useState<Errors>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -37,7 +41,7 @@ export const FormIngredient = ({
 
     if (!value) {
       error = "Este campo es obligatorio";
-    } else if ((field === "cost") && value <= 0) {
+    } else if (field === "cost" && value <= 0) {
       error = "Debe ser un número positivo";
     }
 
@@ -59,6 +63,7 @@ export const FormIngredient = ({
     description: "Descripción",
     cost: "Costo",
     stock: "Stock",
+    unitOfMeasureId: "Unidad de Medida",
   };
 
   return (
@@ -72,8 +77,8 @@ export const FormIngredient = ({
             key={field}
             margin="dense"
             label={fieldLabels[field as keyof Iingredient]}
-            type={["cost"].includes(field) ? "number" : "text"}
-            inputProps={["cost"].includes(field) ? { step: "0.50" } : undefined}
+            type={field === "cost" ? "number" : "text"}
+            inputProps={field === "cost" ? { step: "0.50" } : undefined}
             value={formIngredients[field as keyof Iingredient] ?? ""}
             onChange={(e) => {
               const value = e.target.value;
@@ -89,7 +94,47 @@ export const FormIngredient = ({
             variant="outlined"
           />
         ))}
+
+        {/* Select de unidad de medida */}
+        <FormControl variant="outlined" fullWidth margin="dense">
+          <InputLabel>Unidad de Medida</InputLabel>
+          <Select
+            label="Unidad de Medida"
+            value={typeof formIngredients.unitOfMeasureId === 'object' ? formIngredients.unitOfMeasureId?.id : formIngredients.unitOfMeasureId}
+            onChange={(e) => {
+              setFormIngredients({
+                ...formIngredients,
+                unitOfMeasureId: e.target.value,
+              });
+            }}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  display: 'flex',
+                },
+              },
+            }}
+          >
+            {
+              units.length === 0 ? (
+                <MenuItem>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '200px' }}>
+                    <LoadingLottie />
+                  </div>
+                </MenuItem>
+              ) : (
+                units.map((unit) => (
+                  <MenuItem
+                    key={unit.id} value={unit.id}>
+                    {unit.name} ({unit.abbreviation})
+                  </MenuItem>
+                ))
+              )
+            }
+          </Select>
+        </FormControl>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={handleCloseForm} color="primary">
           Cancelar
