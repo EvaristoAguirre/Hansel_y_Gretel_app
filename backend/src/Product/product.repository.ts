@@ -231,7 +231,8 @@ export class ProductRepository {
           await queryRunner.commitTransaction();
           return product;
         }
-        if (!productToCreate.ingredients) {
+        if (productToCreate.ingredients &&
+          productToCreate.ingredients.length === 0) {
           const product = await this.createSimpleProduct(
             queryRunner,
             productToCreate,
