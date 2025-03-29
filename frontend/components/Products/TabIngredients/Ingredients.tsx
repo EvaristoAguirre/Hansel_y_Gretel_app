@@ -40,7 +40,8 @@ const Ingredients = () => {
                 id: params.row.id,
                 name: params.row.name,
                 description: params.row.description,
-                cost: params.row.cost
+                cost: params.row.cost,
+                unitOfMeasure: params.row.unitOfMeasure
               });
               setFormType(FormType.EDIT);
               setFormOpen(true);

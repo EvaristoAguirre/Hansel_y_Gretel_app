@@ -17,6 +17,7 @@ import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
 import { fetchUnits } from "@/api/unitOfMeasure";
+import LoadingLottie from '@/components/Loader/Loading';
 
 interface Errors {
   [key: string]: string;
@@ -37,18 +38,13 @@ export const FormIngredient = ({
   const [isFormValid, setIsFormValid] = useState(false);
   const [units, setUnits] = useState<IUnitOfMeasureResponse[]>([]);
 
-  // Efecto para obtener las unidades de medida solo una vez
   useEffect(() => {
-    console.time("API Call");
-
     const fetchAllUnits = async () => {
       try {
         const token = getAccessToken();
         if (!token) return;
         const response = await fetchUnits(token);
-        const data = await response.json();
-        setUnits(data);
-        console.log(data);
+        setUnits(response);
 
       } catch (error) {
         console.error("Error al obtener las unidades de medida:", error);
@@ -56,14 +52,8 @@ export const FormIngredient = ({
     };
 
     fetchAllUnits();
-    console.timeEnd("API Call");
 
   }, []);
-
-  useEffect(() => {
-    console.log("🩵Unidades de medida:", units);
-
-  }, [units]);
 
   const validateField = (field: string, value: any) => {
     let error = "";
@@ -137,12 +127,30 @@ export const FormIngredient = ({
                 unitOfMeasure: selectedUnit || null,
               }));
             }}
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  display: 'flex',
+                },
+              },
+            }}
           >
-            {units.map((unit) => (
-              <MenuItem key={unit.id} value={unit.id}>
-                {unit.name}
-              </MenuItem>
-            ))}
+            {
+              units.length === 0 ? (
+                <MenuItem>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '200px' }}>
+                    <LoadingLottie />
+                  </div>
+                </MenuItem>
+              ) : (
+                units.map((unit) => (
+                  <MenuItem
+                    key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </MenuItem>
+                ))
+              )
+            }
           </Select>
         </FormControl>
       </DialogContent>

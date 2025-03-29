@@ -72,7 +72,10 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     });
   }, []);
 
+  useEffect(() => {
+    console.log("Form ❗️ ", formIngredients);
 
+  }, [formIngredients]);
 
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
