@@ -15,8 +15,6 @@ import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
-import { useAuth } from "@/app/context/authContext";
-import { fetchUnits } from "@/api/unitOfMeasure";
 import LoadingLottie from '@/components/Loader/Loading';
 
 interface Errors {
@@ -26,34 +24,17 @@ interface Errors {
 export const FormIngredient = ({
   formType,
   onSave,
+  units
 }: {
   formType: FormType;
   onSave: () => void;
+  units: IUnitOfMeasureResponse[]
 }) => {
   const { formIngredients, setFormIngredients, formOpen, handleCloseForm } =
     useIngredientsContext();
-  const { getAccessToken } = useAuth();
 
   const [errors, setErrors] = useState<Errors>({});
   const [isFormValid, setIsFormValid] = useState(false);
-  const [units, setUnits] = useState<IUnitOfMeasureResponse[]>([]);
-
-  useEffect(() => {
-    const fetchAllUnits = async () => {
-      try {
-        const token = getAccessToken();
-        if (!token) return;
-        const response = await fetchUnits(token);
-        setUnits(response);
-
-      } catch (error) {
-        console.error("Error al obtener las unidades de medida:", error);
-      }
-    };
-
-    fetchAllUnits();
-
-  }, []);
 
   const validateField = (field: string, value: any) => {
     let error = "";
@@ -82,7 +63,7 @@ export const FormIngredient = ({
     description: "Descripción",
     cost: "Costo",
     stock: "Stock",
-    unitOfMeasure: "Unidad de Medida",
+    unitOfMeasureId: "Unidad de Medida",
   };
 
   return (
@@ -119,13 +100,12 @@ export const FormIngredient = ({
           <InputLabel>Unidad de Medida</InputLabel>
           <Select
             label="Unidad de Medida"
-            value={formIngredients.unitOfMeasure?.id ?? ""}
+            value={typeof formIngredients.unitOfMeasureId === 'object' ? formIngredients.unitOfMeasureId?.id : formIngredients.unitOfMeasureId}
             onChange={(e) => {
-              const selectedUnit = units.find((unit) => unit.id === e.target.value);
-              setFormIngredients((prev) => ({
-                ...prev,
-                unitOfMeasure: selectedUnit || null,
-              }));
+              setFormIngredients({
+                ...formIngredients,
+                unitOfMeasureId: e.target.value,
+              });
             }}
             MenuProps={{
               PaperProps: {
@@ -146,7 +126,7 @@ export const FormIngredient = ({
                 units.map((unit) => (
                   <MenuItem
                     key={unit.id} value={unit.id}>
-                    {unit.name}
+                    {unit.name} ({unit.abbreviation})
                   </MenuItem>
                 ))
               )

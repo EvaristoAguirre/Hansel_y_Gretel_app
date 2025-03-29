@@ -1,11 +1,16 @@
+import { fetchUnits } from "@/api/unitOfMeasure";
+import { useAuth } from "@/app/context/authContext";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
+import { IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
+import LoadingLottie from "@/components/Loader/Loading";
 import DataGridComponent from "@/components/Utils/ProductTable";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@mui/material";
 import { Box } from "@mui/system";
 import { GridCellParams } from "@mui/x-data-grid";
+import { useEffect, useState } from "react";
 import { FormIngredient } from "./FormIngredient";
 
 const Ingredients = () => {
@@ -21,10 +26,41 @@ const Ingredients = () => {
     handleEditIngredient
   } = useIngredientsContext();
 
+  const { getAccessToken } = useAuth();
+
+  const [units, setUnits] = useState<IUnitOfMeasureResponse[]>([]);
+
+
+  useEffect(() => {
+
+    const fetchAllUnits = async () => {
+      try {
+        const token = getAccessToken();
+        if (!token) return;
+        const response = await fetchUnits(token);
+        setUnits(response);
+
+      } catch (error) {
+        console.error("Error al obtener las unidades de medida:", error);
+      }
+    };
+
+    fetchAllUnits();
+
+  }, []);
+
   const columns = [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
     { field: "cost", headerName: "Costo", width: 100 },
+    {
+      field: "unitOfMeasure",
+      headerName: "Unidad",
+      width: 100,
+      renderCell: (params: GridCellParams) => {
+        return params.row?.unitOfMeasure?.name || "Sin unidad de medida";
+      },
+    },
     {
       field: "actions",
       headerName: "Acciones",
@@ -41,11 +77,12 @@ const Ingredients = () => {
                 name: params.row.name,
                 description: params.row.description,
                 cost: params.row.cost,
-                unitOfMeasure: params.row.unitOfMeasure
+                unitOfMeasureId: params.row.unitOfMeasure
               });
               setFormType(FormType.EDIT);
               setFormOpen(true);
             }}
+            disabled={units.length === 0}
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -76,16 +113,18 @@ const Ingredients = () => {
           onClick={() => {
             handleOpenCreateModal();
           }}
+          disabled={units.length === 0}
         >
-          + Nuevo Ingrediente
+          {units.length === 0 ? <LoadingLottie /> : '+ Nuevo Ingrediente'}
         </Button>
       </Box>
       {/* Tabla de productos */}
-      <DataGridComponent rows={ingredients} columns={columns} />
+      <DataGridComponent rows={ingredients} columns={columns} capitalize={['name', 'description']} />
 
       {/* Form para crear/editar Ingrediente */}
       {formOpen && (
         <FormIngredient
+          units={units}
           formType={formType}
           onSave={formType === FormType.CREATE ? handleCreateIngredient : handleEditIngredient}
         />
