@@ -4,8 +4,6 @@ export function capitalizeFirstLetter(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 export const capitalizeFirstLetterTable = (rows: readonly GridValidRowModel[], fields: string[]) => {
-  console.log("Array de fields🦋", fields);
-  console.log("rows🌳", rows);
 
   return rows.map((row) => {
     const newRow = { ...row };

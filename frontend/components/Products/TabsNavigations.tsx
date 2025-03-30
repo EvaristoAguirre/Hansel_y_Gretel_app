@@ -3,14 +3,15 @@ import { AppBar, Tabs, Tab } from "@mui/material";
 
 interface TabsNavigationProps {
   tabIndex: number;
-  onTabChange: (event: React.SyntheticEvent, newValue: number) => void;
   tabs: string[];
+  onChange: (event: React.SyntheticEvent, newIndex: number) => void;
+
 }
 
 export const TabsNavigation: React.FC<TabsNavigationProps> = ({
   tabIndex,
-  onTabChange,
   tabs,
+  onChange
 }) => (
   <AppBar
     position="static"
@@ -21,7 +22,6 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
   >
     <Tabs
       value={tabIndex}
-      onChange={onTabChange}
       textColor="inherit"
       sx={{
         "& .MuiTab-root": {
@@ -33,10 +33,9 @@ export const TabsNavigation: React.FC<TabsNavigationProps> = ({
           color: "white !important",
           backgroundColor: "var(--color-primary)!important",
         },
-        "& .MuiTabs-indicator": {
-          backgroundColor: "none !important",
-        },
+
       }}
+      onChange={onChange}
     >
       {tabs.map((label, index) => (
         <Tab key={index} label={label} />

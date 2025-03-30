@@ -29,18 +29,18 @@ const ProductsPage: React.FC = () => {
   ]);
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    if (newValue !== 0) {
-      const selectedTab = tabs[newValue];
-      setSelectedTab(selectedTab);
-      const newTabsOrder = [
-        selectedTab,
-        ...tabs.filter((_, index) => index !== newValue),
-      ];
-      setTabs(newTabsOrder);
-      setTabIndex(0); // El tab seleccionado siempre estará en el índice 0 tras el reordenamiento
-    }
-  };
+  // const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  //   if (newValue !== 0) {
+  //     const selectedTab = tabs[newValue];
+  //     setSelectedTab(selectedTab);
+  //     const newTabsOrder = [
+  //       selectedTab,
+  //       ...tabs.filter((_, index) => index !== newValue),
+  //     ];
+  //     setTabs(newTabsOrder);
+  //     setTabIndex(0); // El tab seleccionado siempre estará en el índice 0 tras el reordenamiento
+  //   }
+  // };
 
   const { connectWebSocket } = useProductos();
 
@@ -76,14 +76,17 @@ const ProductsPage: React.FC = () => {
     setSelectedCategoryId(null);
   };
 
+  const handleTabChange = (event: React.SyntheticEvent, newIndex: number) => {
+    setTabIndex(newIndex);
+    setSelectedTab(tabs[newIndex]); // Se actualiza la pestaña seleccionada
+  };
 
   return (
     <Box display="flex" flexDirection="column" min-height="100vh" bgcolor={"white"}>
-      <TabsNavigation tabIndex={tabIndex} onTabChange={handleTabChange} tabs={tabs} />
+      <TabsNavigation tabIndex={tabIndex} tabs={tabs} onChange={handleTabChange} />
       <Box display="flex" flex={1} overflow="hidden">
         {
-          (selectedTab === Tab.PRODUCTOS ||
-            selectedTab === Tab.CATEGORIA_PRODUCTOS) &&
+          (selectedTab === Tab.PRODUCTOS) &&
           <Sidebar
             onCategorySelected={handleCategorySelected}
             selectedCategoryId={selectedCategoryId}
