@@ -209,15 +209,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab
             label="Producto simple"
-            disabled={(form.type === TypeProduct.PROMO) || (form.ingredients.length > 0)}
+            disabled={(modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO) || (modalType === FormTypeProduct.EDIT && form.ingredients.length > 0)}
           />
           <Tab
             label="Producto con ingredientes"
-            disabled={(form.type === TypeProduct.PRODUCT && (form.ingredients.length === 0)) || (form.type === TypeProduct.PROMO)}
+            disabled={(modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PRODUCT && (modalType === FormTypeProduct.EDIT && form.ingredients.length === 0)) || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO)}
           />
           <Tab
             label="Promo"
-            disabled={form.type !== TypeProduct.PROMO}
+            disabled={modalType === FormTypeProduct.EDIT && form.type !== TypeProduct.PROMO}
           />
         </Tabs>
 
