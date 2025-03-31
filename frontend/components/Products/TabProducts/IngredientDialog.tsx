@@ -51,19 +51,27 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
-    if (form.ingredients) {
+    if (form.ingredients && form.ingredients.length > 0) {
+      console.log("👁️👁️👁️👁️👁️👁️👁️form en ingred dialog", form);
+
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
         name: ingredient.name,
         ingredientId: ingredient.ingredientId,
-        quantityOfIngredient: Number(ingredient.quantityOfIngredient),
+        quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
         unitOfMeasureId: ingredient.unitOfMeasureId
       }))
-      setSelectedIngredients(preparedIngredients);
-    }
 
+      setSelectedIngredients(preparedIngredients);
+
+
+    }
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
 
+  useEffect(() => {
+    console.log("🍎🍎🍎🍎🍎🍎", selectedIngredients);
+
+  }, [selectedIngredients]);
   useEffect(() => {
     setIsAddButtonDisabled(
       !newIngredient.ingredientId ||
@@ -71,6 +79,8 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
       newIngredient.quantityOfIngredient <= 0 ||
       !newIngredient.unitOfMeasureId
     );
+    console.log("newIngredient😋", newIngredient);
+
   }, [newIngredient]);
 
   const prevIngredientsRef = useRef<IingredientForm[]>([]);

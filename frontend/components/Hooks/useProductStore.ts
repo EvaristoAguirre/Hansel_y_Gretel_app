@@ -114,7 +114,27 @@ export const useProductStore = create<ProductState>((set) => {
 
   socket.on("productCreated", (data) => {
     console.log("🟢 Nuevo producto creado:", data);
-    set((state) => ({ products: [...state.products, data] }));
+    set((state) => {
+      const exists = state.products.some((product) => product.id === data.id);
+      if (!exists) {
+        const parsedProduct: ProductCreated = {
+          ...data,
+          categories: parseCategories(data.categories),
+          productIngredients: data.productIngredients && data.productIngredients.length > 0
+            ? data.productIngredients.map((ingredient) => ({
+              name: ingredient.ingredient.name,
+              ingredientId: ingredient.ingredient.id,
+              unitOfMeasureId: ingredient.unitOfMeasure?.id ?? '',
+              quantityOfIngredient: ingredient.quantityOfIngredient,
+            }))
+            : [],
+          promotionDetails: data.promotionDetails ?? null,
+        };
+
+        return { products: [...state.products, parsedProduct] };
+      }
+      return state;
+    });
   });
 
   socket.on("productUpdated", (data) => {
@@ -143,9 +163,9 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct = products.map((product: ProductResponse) => ({
         ...product,
         categories: parseCategories(product.categories),
-        productIngredients: product.productIngredients.map((ingredient) => ({
+        productIngredients: product.productIngredients.length > 0 && product.productIngredients.map((ingredient) => ({
           name: ingredient.ingredient.name,
-          ingredientId: ingredient.id,
+          ingredientId: ingredient.ingredient.id,
           unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
           quantityOfIngredient: ingredient.quantityOfIngredient,
         })),
@@ -156,9 +176,9 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct: ProductCreated = {
         ...product,
         categories: parseCategories(product.categories),
-        productIngredients: product.productIngredients.map((ingredient) => ({
+        productIngredients: product.productIngredients.length > 0 && product.productIngredients.map((ingredient) => ({
           name: ingredient.ingredient.name,
-          ingredientId: ingredient.id,
+          ingredientId: ingredient.ingredient.id,
           unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
           quantityOfIngredient: ingredient.quantityOfIngredient,
         })),
