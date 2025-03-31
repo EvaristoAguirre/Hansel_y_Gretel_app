@@ -127,6 +127,11 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     },
   ];
 
+  useEffect(() => {
+    console.log("formulario en products 🤍", form);
+  }, [form]);
+
+
   return (
     <Box flex={1} p={2} overflow="auto">
       {/* Product Table */}

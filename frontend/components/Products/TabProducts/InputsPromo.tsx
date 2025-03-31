@@ -25,15 +25,24 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
   // Resultado del buscador de productos
   const [searchProductsResults, setSearchProductsResults] = useState<ProductCreated[]>([]);
 
-  const preparedProducts = form.products
-    .filter((item) => item.id !== undefined && item.name !== undefined)
-    .map((item) => ({
-      productId: item.id,
-      productName: item.name,
-      quantity: item.quantity,
-      unitaryPrice: Number(item.price),
-    }));
+  useEffect(() => {
+    if (form.products && form.products.length > 0) {
+      const formattedProducts = form.products.map((item) => ({
+        productId: item.product && item.product.id,
+        productName: item.product && item.product.name,
+        quantity: item.quantity,
+        unitaryPrice: item.product && Number(item.product.price),
+      }));
+      setSelectedProducts(formattedProducts);
+      console.log("🌈selectedProducts", selectedProducts);
 
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log(" form❗️", form);
+
+  }, [form]);
 
   // Auto-actualización: cada vez que cambie selectedProducts, actualizamos el formulario del padre.
   useEffect(() => {
@@ -163,7 +172,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
               )}
 
               <Tooltip title={item.productName} arrow>
-                <ListItemText primary={capitalizeFirstLetter(item.productName)} />
+                <ListItemText primary={item.productName && capitalizeFirstLetter(item.productName)} />
               </Tooltip>
               {item.unitaryPrice !== null && (
                 <Typography>${(item.unitaryPrice * item.quantity).toFixed(2)}</Typography>

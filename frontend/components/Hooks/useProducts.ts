@@ -70,6 +70,10 @@ export const useProductos = () => {
         price: parseFloat(form.price as any),
         cost: parseFloat(form.cost as any),
       };
+      if (form.ingredients.length === 0) {
+        delete (preparedForm as any).ingredients;
+        delete (preparedForm as any).isActive;
+      }
       if (token) {
         const newProduct = await createProduct(preparedForm, token!);
         // addProduct(newProduct);
@@ -87,28 +91,32 @@ export const useProductos = () => {
 
   const handleEdit = async (token: string) => {
     try {
+      if (!token) throw new Error("Token no disponible");
+
       const preparedForm = {
         ...form,
-        code: parseInt(form.code as any, 10),
-        price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),
+        code: Number(form.code),
+        price: Number(form.price),
+        cost: Number(form.cost),
         id: form.id,
       };
-      if (token) {
-        const updatedProduct = await editProduct(preparedForm, token);
-        updateProduct(updatedProduct);
-      } else {
-        throw new Error("Token no disponible");
-      }
 
+      const updatedProduct = await editProduct(preparedForm, token);
+
+      console.log("response de edit🟢", updatedProduct);
+
+
+
+      updateProduct(updatedProduct);
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
 
       handleCloseModal();
-    } catch (error) {
-      Swal.fire("Error", "No se pudo editar el producto.", "error");
+    } catch (error: any) {
+      Swal.fire("Error", error.message || "No se pudo editar el producto.", "error");
       console.error(error);
     }
   };
+
 
   const handleDelete = async (id: string, token: string) => {
     const confirm = await Swal.fire({

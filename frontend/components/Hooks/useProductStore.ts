@@ -174,20 +174,24 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct: ProductCreated = {
         ...updatedProduct,
         categories: parseCategories(updatedProduct.categories),
-        productIngredients: updatedProduct.productIngredients.map((ingredient) => ({
-          name: ingredient.ingredient.name,
-          ingredientId: ingredient.id,
-          unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
-          quantityOfIngredient: ingredient.quantityOfIngredient,
-        })),
-        promotionDetails: updatedProduct.promotionDetails,
+        productIngredients: updatedProduct.productIngredients && updatedProduct.productIngredients.length > 0
+          ? updatedProduct.productIngredients.map((ingredient) => ({
+            name: ingredient.ingredient.name,
+            ingredientId: ingredient.id,
+            unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
+            quantityOfIngredient: ingredient.quantityOfIngredient,
+          }))
+          : null,
+        promotionDetails: updatedProduct.promotionDetails ? updatedProduct.promotionDetails : null,
       };
       set((state) => ({
         products: state.products.map((product) =>
           product.id === parsedProduct.id ? parsedProduct : product
         ),
+
       }));
+      console.log("✅ Producto actualizado:", parsedProduct);
     },
-    connectWebSocket: () => {}, // La conexión se establece al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece al cargar el store
   };
 });
