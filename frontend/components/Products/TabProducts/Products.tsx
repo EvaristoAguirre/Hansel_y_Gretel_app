@@ -19,7 +19,7 @@ import LoadingLottie from '@/components/Loader/Loading';
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
-
+  console.log('Ejecutando muchas cosas desde PRODUCTS');
   const {
     loading,
     setLoading,

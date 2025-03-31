@@ -10,13 +10,14 @@ import {
   Autocomplete,
   Chip,
 } from "@mui/material";
+import Grid from '@mui/material/Grid';
 import {
   ProductCreated,
   ProductForm,
   ProductForPromo,
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
-import { FormTypeProduct, TypeProduct } from "@/components/Enums/view-products";
+import { FormTypeProduct, TabProductKey, TypeProduct } from "@/components/Enums/view-products";
 import { getProductByCode } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
@@ -65,18 +66,22 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
    * Se inicializa en función del tipo de formulario y la modalidad de edición.
    * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
    *
-   * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
+   * @initialValue PRODUCTO SIMPLE
    */
-  const [tabValue, setTabValue] = useState<number>(0);
+  const [tabValue, setTabValue] = useState<TabProductKey>(TabProductKey.SIMPLE_PRODUCT);
+  const [disableTabs, setDisableTabs] = useState<TabProductKey[]>(
+    // [TabProductKey.SIMPLE_PRODUCT, TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.PROMO]
+    []
+  );
 
   useEffect(() => {
     if (modalType === FormTypeProduct.EDIT) {
       if (form.type === TypeProduct.PROMO) {
-        setTabValue(2);
+        setTabValue(TabProductKey.PROMO);
       } else if (form.type === TypeProduct.PRODUCT && form.ingredients.length > 0) {
-        setTabValue(1);
+        setTabValue(TabProductKey.PRODUCT_WITH_INGREDIENT);
       } else {
-        setTabValue(0);
+        setTabValue(TabProductKey.SIMPLE_PRODUCT);
       }
     }
   }, [modalType, form.type, form.ingredients]);
@@ -165,11 +170,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     validateForm();
   }, [errors, form]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: TabProductKey) => {
     setTabValue(newValue);
-    if (newValue === 2 && form.type !== TypeProduct.PROMO) {
+    if (newValue === TabProductKey.PROMO && form.type !== TypeProduct.PROMO) {
       onChange("type", TypeProduct.PROMO);
-    } else if (newValue !== 2 && form.type === TypeProduct.PROMO) {
+    } else if (newValue !== TabProductKey.PROMO && form.type === TypeProduct.PROMO) {
       onChange("type", TypeProduct.PRODUCT);
     }
   };
@@ -186,143 +191,135 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     onClose();
   };
 
+  const handleSetDisableTabs = (newDisableTabs: TabProductKey[]) => {
+    // return setDisableTabs(disableTabs.filter(tab => tab !== tabKey));
+    return setDisableTabs(newDisableTabs);
+
+  }
+
+  const onDisableTabs = (tabKey: TabProductKey) => {
+    if (modalType === FormTypeProduct.EDIT) {
+      switch (tabKey) {
+        case TabProductKey.SIMPLE_PRODUCT:
+          return form.type === TypeProduct.PROMO || form.ingredients.length > 0;
+
+        case TabProductKey.PRODUCT_WITH_INGREDIENT:
+          return (form.type === TypeProduct.PRODUCT && !form.ingredients.length) || form.type === TypeProduct.PROMO;
+
+        case TabProductKey.PROMO:
+          return form.type !== TypeProduct.PROMO;
+
+        default:
+          return false;
+
+      }
+    } else {
+      return disableTabs.includes(tabKey);
+    }
+  };
+
   return (
     <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          width: 600,
-          bgcolor: "background.paper",
-          p: 4,
-          mx: "auto",
-          mt: 5,
-          overflowY: "auto", // Habilita el scroll vertical
-          "&::-webkit-scrollbar": {
-            // Personaliza la barra de scroll (opcional)
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#888",
-            borderRadius: "4px",
-          },
-        }}
-      >
+      <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab
             label="Producto simple"
-            disabled={(modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO) || (modalType === FormTypeProduct.EDIT && form.ingredients.length > 0)}
+            value={TabProductKey.SIMPLE_PRODUCT}
+            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO) || (modalType === FormTypeProduct.EDIT && form.ingredients.length > 0)}
+            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && (form.type === TypeProduct.PROMO || form.ingredients.length > 0))}
+            disabled={onDisableTabs(TabProductKey.SIMPLE_PRODUCT)}
           />
           <Tab
             label="Producto con ingredientes"
-            disabled={(modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PRODUCT && (modalType === FormTypeProduct.EDIT && form.ingredients.length === 0)) || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO)}
+            value={TabProductKey.PRODUCT_WITH_INGREDIENT}
+            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PRODUCT && (modalType === FormTypeProduct.EDIT && form.ingredients.length === 0)) || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO)}
+            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && (form.type === TypeProduct.PRODUCT && !form.ingredients.length) || form.type === TypeProduct.PROMO)}
+            disabled={onDisableTabs(TabProductKey.PRODUCT_WITH_INGREDIENT)}
           />
           <Tab
             label="Promo"
-            disabled={modalType === FormTypeProduct.EDIT && form.type !== TypeProduct.PROMO}
+            value={TabProductKey.PROMO}
+            // disabled={disableTabs || modalType === FormTypeProduct.EDIT && form.type !== TypeProduct.PROMO}
+            disabled={onDisableTabs(TabProductKey.PROMO)}
           />
         </Tabs>
-
-
-
-        {/* Campos comunes */}
-        {["code", "name", "description", "price", "cost"].map((field) => (
-          <TextField
-            key={field}
-            margin="dense"
-            label={fieldLabels[field]}
-            type={["code", "price", "cost"].includes(field) ? "number" : "text"}
-            inputProps={
-              ["price", "cost"].includes(field) ? { step: "0.50" } : undefined
-            }
-            value={form[field] ?? ""}
-            onChange={(e) => {
-              const value = ["price", "cost"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseFloat(e.target.value)
-                : ["code"].includes(field)
-                  ? e.target.value === ""
-                    ? null
-                    : parseInt(e.target.value, 10)
-                  : e.target.value;
-              onChange(field as keyof ProductForm, value);
-              if (field !== "code") {
-                validateField(field, value);
-              }
-            }}
-            onBlur={(e) => {
-              if (field === "code") {
-                validateField(field, e.target.value);
-              }
-            }}
-            error={!!errors[field as keyof ProductForm]}
-            helperText={
-              isCheckingCode && field === "code"
-                ? "Verificando código..."
-                : errors[field as keyof ProductForm]
-            }
-            fullWidth
-            variant="outlined"
-          />
-        ))}
-        {/* CATEGORIAS */}
-        <FormControl
-          fullWidth
-          margin="dense"
-          //  error={!!errors.categories}
-          variant="outlined"
-        >
-          <Autocomplete
-            multiple
-            options={categories}
-            getOptionLabel={(option) => option.name}
-            value={categories.filter(
-              (category) => category.id && form.categories.includes(category.id)
-            )}
-            onChange={(_, newValue) => {
-              const selectedIds = newValue.map((category) => category.id);
-              onChange(
-                "categories",
-                selectedIds.map((id) => id || "")
-              );
-              validateField("categories", selectedIds);
-            }}
-            renderInput={(params) => (
+        <Grid container spacing={1} mt={1}>
+          {["code", "name", "price", "cost"].map((field, index) => (
+            <Grid item xs={12} sm={6} key={field}>
               <TextField
-                {...params}
-                variant="outlined"
-                label={fieldLabels.categories}
-                placeholder="Selecciona categorías"
-                error={!!errors.categories}
-                helperText={errors.categories}
+                fullWidth
+                label={fieldLabels[field]}
+                type={field === "price" || field === "cost" ? "number" : "text"}
+                value={form[field] ?? ""}
+                onChange={(e) => {
+                  const value = ["price", "cost"].includes(field)
+                    ? e.target.value === ""
+                      ? null
+                      : parseFloat(e.target.value)
+                    : ["code"].includes(field)
+                      ? e.target.value === ""
+                        ? null
+                        : parseInt(e.target.value, 10)
+                      : e.target.value;
+                  onChange(field as keyof ProductForm, value);
+                  if (field !== "code") {
+                    validateField(field, value);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (field === "code") {
+                    validateField(field, e.target.value);
+                  }
+                }}
+                error={!!errors[field as keyof ProductForm]}
+                helperText={
+                  isCheckingCode && field === "code"
+                    ? "Verificando código..."
+                    : errors[field as keyof ProductForm]
+                } variant="outlined"
+                size="small"
+
               />
-            )}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.id}
-                  label={option.name}
-                  sx={{
-                    backgroundColor: "#f3d49ab8",
-                    color: "black",
-                    fontWeight: "bold",
-                  }}
-                />
-              ))
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-          />
-        </FormControl>
+            </Grid>
+          ))}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Descripción"
+              multiline
+              minRows={2}
+              value={form.description ?? ""}
+              onChange={(e) => onChange("description", e.target.value)}
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} mt={1}>
+            <FormControl fullWidth>
+              <Autocomplete
+                multiple
+                options={categories}
+                getOptionLabel={(option) => option.name}
+                value={categories.filter((category) => category.id && form.categories.includes(category.id))}
+                onChange={(_, newValue) => {
+                  const selectedIds = newValue.map((category) => category.id);
+                  onChange("categories", selectedIds.map((id) => id || ""));
+                }}
+                renderInput={(params) => <TextField {...params} label="Categorías" variant="outlined" placeholder="Selecciona categorías" />}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip {...getTagProps({ index })} key={option.id} label={option.name} sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }} />
+                  ))
+                }
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                size="small"
+              />
+            </FormControl>
+          </Grid>
+        </Grid>
 
-        {/* Campos para ingredientes */}
-        {tabValue === 1 && (
-          <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} />
-        )}
-
-        {/* Campos para promos */}
-        {tabValue === 2 && (
-          <InputsPromo onSave={handleProductsPromo} form={form} />
-        )}
+        {tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT && <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} handleSetDisableTabs={handleSetDisableTabs} />}
+        {tabValue === TabProductKey.PROMO && <InputsPromo onSave={handleProductsPromo} form={form} handleSetDisableTabs={handleSetDisableTabs} />}
 
         <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
           {form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo"}

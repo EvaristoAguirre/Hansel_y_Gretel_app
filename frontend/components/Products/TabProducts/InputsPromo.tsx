@@ -6,13 +6,15 @@ import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter"
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
 import { Button, IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
+import { Tab, TabProductKey } from '../../Enums/view-products';
 
 interface InputsPromoProps {
   onSave: (productsForm: ProductForPromo[]) => void;
   form: ProductForm;
+  handleSetDisableTabs: (tabKeys: TabProductKey[]) => void
 }
 
-const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
+const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisableTabs }) => {
   const { getAccessToken } = useAuth();
 
   // Estado único para los productos seleccionados
@@ -34,18 +36,15 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
         unitaryPrice: item.product && Number(item.product.price),
       }));
       setSelectedProducts(formattedProducts);
-      console.log("🌈selectedProducts", selectedProducts);
 
     }
   }, []);
 
-  useEffect(() => {
-    console.log(" form❗️", form);
-
-  }, [form]);
-
   // Auto-actualización: cada vez que cambie selectedProducts, actualizamos el formulario del padre.
   useEffect(() => {
+    if (!selectedProducts.length) {
+      handleSetDisableTabs([]);
+    }
     const productsForPromo: ProductForPromo[] = selectedProducts.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -79,6 +78,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
         unitaryPrice: Number(product.price),
       },
     ]);
+    handleSetDisableTabs([TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.SIMPLE_PRODUCT]);
   };
 
   const handleEdit = (index: number) => {
@@ -97,6 +97,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
       const updatedProducts = [...selectedProducts];
       updatedProducts[editIndex].quantity = editQuantity;
       setSelectedProducts(updatedProducts);
+      // handleSetDisableTabs([TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.SIMPLE_PRODUCT]);
       setEditIndex(null);
     }
   };
@@ -132,16 +133,20 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
   };
 
   return (
-    <>
-      <AutoCompleteProduct
-        options={searchProductsResults}
-        onSearch={handleSearch}
-        onSelect={handleSelectProduct}
-      />
+    <div className="mt-4">
+      <div className="w-full">
+
+        <AutoCompleteProduct
+          options={searchProductsResults}
+          onSearch={handleSearch}
+          onSelect={handleSelectProduct}
+        />
+      </div>
       {selectedProducts.length > 0 ? (
         <List
+          dense={true}
           style={{
-            maxHeight: "12rem",
+            maxHeight: "10rem",
             overflowY: "auto",
             border: "2px solid #856D5E",
             borderRadius: "5px",
@@ -154,8 +159,8 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
                 justifyContent: "space-between",
+                padding: "4px 8px",
               }}
             >
               {editIndex === index ? (
@@ -165,46 +170,53 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form }) => {
                   type="number"
                   inputProps={{ min: 1 }}
                   size="small"
-                  style={{ width: "4rem" }}
+                  sx={{ width: "4rem", marginRight: "8px" }}
                 />
               ) : (
-                <Typography>{item.quantity}</Typography>
+                <Typography fontSize="1rem" sx={{ marginX: "18px" }}>{item.quantity}</Typography>
               )}
 
               <Tooltip title={item.productName} arrow>
-                <ListItemText primary={item.productName && capitalizeFirstLetter(item.productName)} />
+                <ListItemText
+                  primary={item.productName && capitalizeFirstLetter(item.productName)}
+                  sx={{ typography: 'caption' }}
+                />
               </Tooltip>
+
               {item.unitaryPrice !== null && (
-                <Typography>${(item.unitaryPrice * item.quantity).toFixed(2)}</Typography>
+                <Typography fontSize="0.8rem">
+                  ${(item.unitaryPrice * item.quantity).toFixed(2)}
+                </Typography>
               )}
 
               {editIndex === index ? (
                 <>
-                  <IconButton onClick={handleSaveEdit}>
-                    <Save color="success" />
+                  <IconButton onClick={handleSaveEdit} size="small">
+                    <Save color="success" fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={handleCancelEdit}>
-                    <Close color="error" />
+                  <IconButton onClick={handleCancelEdit} size="small">
+                    <Close color="error" fontSize="small" />
                   </IconButton>
                 </>
               ) : (
-                <IconButton onClick={() => handleEdit(index)}>
-                  <Edit color="primary" />
+                <IconButton onClick={() => handleEdit(index)} size="small">
+                  <Edit color="primary" fontSize="small" />
                 </IconButton>
               )}
 
-              <IconButton onClick={() => handleDelete(item.productId)}>
-                <Delete color="error" />
+              <IconButton onClick={() => handleDelete(item.productId)} size="small">
+                <Delete color="error" fontSize="small" />
               </IconButton>
             </ListItem>
           ))}
         </List>
+
       ) : (
         <Typography style={{ margin: "1rem 0", color: "gray", fontSize: "0.8rem" }}>
           No hay productos seleccionados.
         </Typography>
       )}
-    </>
+    </div>
   );
 };
 

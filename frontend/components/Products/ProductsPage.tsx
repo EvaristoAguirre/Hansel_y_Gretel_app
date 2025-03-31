@@ -42,6 +42,7 @@ const ProductsPage: React.FC = () => {
   //   }
   // };
 
+  console.log('Ejecutando connectWebSocket desde PRODUCTS PAGE');
   const { connectWebSocket } = useProductos();
 
   const { categories, setCategories, } = useCategoryStore();

@@ -12,6 +12,7 @@ import LoadingLottie from "../Loader/Loading";
 const Cafe = () => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
+  console.log('Ejecutando fetchAndSetProducts desde CAFE');
   const { fetchAndSetProducts } = useProductos();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const { selectedOrderByTable } = useOrderContext();

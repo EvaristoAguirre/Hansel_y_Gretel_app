@@ -19,6 +19,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   const { getAccessToken } = useAuth();
   const { products, setProducts } = useProductStore();
+  console.log('Ejecutando fetchAndSetProducts desde PRODUCT TABLE');
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
@@ -110,11 +111,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
 
         {/* Buscador de productos */}
-        <AutoCompleteProduct
-          options={selectedCategoryId ? searchResults : products}
-          onSearch={(value) => handleSearch(value, token!)}
-          onSelect={handleSelectProduct}
-        />
+        <div className="w-[60%]">
+          <AutoCompleteProduct
+            options={selectedCategoryId ? searchResults : products}
+            onSearch={(value) => handleSearch(value, token!)}
+            onSelect={handleSelectProduct}
+          />
+        </div>
 
         {/* Botón para limpiar búsqueda */}
         <Button

@@ -24,3 +24,9 @@ export enum FormTypeProduct {
   CREATE = 'create',
   EDIT = 'edit'
 }
+
+export enum TabProductKey {
+  SIMPLE_PRODUCT = 'SIMPLE PRODUCT',
+  PRODUCT_WITH_INGREDIENT = 'PRODUCT WITH INGREDIENT',
+  PROMO = 'PROMO'
+}
