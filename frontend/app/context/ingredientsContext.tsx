@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { createIngredient, deleteIngredient, editIngredient, fetchIngredients } from '../../api/ingredients';
 import { useEffect } from 'react';
 import { useAuth } from './authContext';
+import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
 
 
 type IngredientsContextType = {
@@ -28,7 +29,8 @@ const IngredientsContext = createContext<IngredientsContextType>({
     id: "",
     name: "",
     description: "",
-    cost: null
+    cost: null,
+    unitOfMeasureId: ""
   },
   setFormIngredients: () => { },
   formOpen: false,
@@ -55,7 +57,8 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   const [formIngredients, setFormIngredients] = useState<Iingredient>({
     name: "",
     description: "",
-    cost: null
+    cost: null,
+    unitOfMeasureId: "",
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
@@ -69,8 +72,6 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       if (dataIngredients) setIngredients(dataIngredients);
     });
   }, []);
-
-
 
   const addIngredient = (ingredient: Iingredient) => {
     setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
@@ -120,7 +121,10 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         ...formIngredients,
         cost: parseFloat(formIngredients.cost as any),
         id: formIngredients.id,
+        unitOfMeasureId: (formIngredients.unitOfMeasureId as IUnitOfMeasureStandard)?.id ?? formIngredients.unitOfMeasureId
       };
+
+
       const updatedIngredient = await editIngredient(preparedForm, token);
 
       updateIngredient(updatedIngredient);
@@ -168,6 +172,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       name: "",
       description: "",
       cost: null,
+      unitOfMeasureId: ""
     });
   };
 
