@@ -75,14 +75,6 @@ export const StepperTable: React.FC<Props> = ({
     // función de impresión
   };
 
-  // React.useEffect(() => {
-  //   console.log("fetchOrderBySelectedTable:", fetchOrderBySelectedTable);
-  //   if (selectedOrderByTable) {
-  //     fetchOrderBySelectedTable();
-  //   }
-  // }, [selectedOrderByTable]);
-  
-  
 
   const renderStepContent = (step: number) => {
     switch (step) {

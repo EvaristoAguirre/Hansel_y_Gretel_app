@@ -19,7 +19,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   const { getAccessToken } = useAuth();
   const { products, setProducts } = useProductStore();
-  console.log('Ejecutando fetchAndSetProducts desde PRODUCT TABLE');
   const { fetchAndSetProducts } = useProductos();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
@@ -61,17 +60,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const handleSearch = async (value: string, token: string) => {
     const searchTerm = value.trim();
     if (searchTerm.length > 0) {
-      console.log("Buscando productos al escribir");
       setSearchTerm(searchTerm);
       if (token) {
-        console.log("Buscando productos... con token");
-
         const results = await searchProducts(searchTerm, selectedCategoryId!, token);
         setSearchResults(results);
       }
     } else if (searchTerm.length === 0) {
-      console.log("Mostrando todos los productos sin token");
-
       setSearchResults(products);
     }
   };
