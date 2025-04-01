@@ -43,102 +43,97 @@ const Rooms = () => {
   return (
     <>
       {/* Barra de navegación con Tabs */}
-      {
-        salas.length === 0 ?
-          (<LoadingLottie />) : (
-            <AppBar
-              position="sticky"
-              sx={{
-                backgroundColor: "#f3d49ab8",
-                color: "black",
-                gap: 2,
-                boxShadow: "none",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                height: "4rem",
-                pr: 2,
-              }}
-            >
-              <Tabs
-                value={selectedSala?.id || false}
-                onChange={(_, newValue) => {
-                  const salaSeleccionada = salas.find((sala) => sala.id === newValue);
+      <AppBar
+        position="sticky"
+        sx={{
+          backgroundColor: "#f3d49ab8",
+          color: "black",
+          gap: 2,
+          boxShadow: "none",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: "4rem",
+          pr: 2,
+        }}
+      >
+        <Tabs
+          value={selectedSala?.id || false}
+          onChange={(_, newValue) => {
+            const salaSeleccionada = salas.find((sala) => sala.id === newValue);
 
-                  handleSelectSala(salaSeleccionada || null);
-                }}
-                textColor="inherit"
-                variant="scrollable"
-                sx={{
-                  [`& .${tabsClasses.scrollButtons}`]: {
-                    '&.Mui-disabled': { opacity: 0.3 },
-                  },
-                  "& .MuiTab-root": {
-                    fontWeight: "bold !important",
-                  }
-                }}
-              >
-                {Array.isArray(salas) &&
-                  salas.map((sala) => (
-                    <Tab
-                      key={sala.id}
-                      label={
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 2,
-                            height: "100%",
-                          }}
-                        >
-                          <span className="ml-4">
-                            {sala.name}
-                          </span>
-                          <MoreVertIcon
-                            sx={{ cursor: "pointer" }}
-                            onClick={(e) => handleMenuOpen(e, sala)}
-                          />
-                        </Box>
-                      }
-                      value={sala.id}
-                      sx={{
-                        textTransform: "uppercase",
-                      }}
-                    />
-                  ))}
-              </Tabs>
-              {
-                role !== UserRole.MOZO && (
-
-                  <Button
-                    variant="outlined"
+            handleSelectSala(salaSeleccionada || null);
+          }}
+          textColor="inherit"
+          variant="scrollable"
+          sx={{
+            [`& .${tabsClasses.scrollButtons}`]: {
+              '&.Mui-disabled': { opacity: 0.3 },
+            },
+            "& .MuiTab-root": {
+              fontWeight: "bold !important",
+            }
+          }}
+        >
+          {Array.isArray(salas) &&
+            salas.map((sala) => (
+              <Tab
+                key={sala.id}
+                label={
+                  <Box
                     sx={{
-                      fontSize: "12px",
-                      border: "1.5px solid #63412c",
-                      // marginTop: 10,
-                      width: "200px",
-                      marginBottom: 1,
-                      "&:hover": {
-                        backgroundColor: "primary.main",
-                        color: "white",
-                        borderColor: "primary.main",
-                      },
-                    }}
-                    onClick={() => {
-                      setEditingSala(null);
-                      setModalOpen(true);
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                      height: "100%",
                     }}
                   >
-                    Nueva Sala
-                  </Button>
-                )
-              }
-            </AppBar>
+                    <span className="ml-4">
+                      {sala.name}
+                    </span>
+                    <MoreVertIcon
+                      sx={{ cursor: "pointer" }}
+                      onClick={(e) => handleMenuOpen(e, sala)}
+                    />
+                  </Box>
+                }
+                value={sala.id}
+                sx={{
+                  textTransform: "uppercase",
+                }}
+              />
+            ))}
+        </Tabs>
+        {
+          role !== UserRole.MOZO && (
 
+            <Button
+              variant="outlined"
+              sx={{
+                fontSize: "12px",
+                border: "1.5px solid #63412c",
+                // marginTop: 10,
+                width: "200px",
+                marginBottom: 1,
+                "&:hover": {
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  borderColor: "primary.main",
+                },
+              }}
+              onClick={() => {
+                setEditingSala(null);
+                setModalOpen(true);
+              }}
+            >
+              Nueva Sala
+            </Button>
           )
-      }
+        }
+      </AppBar>
+
       {/* Menú de opciones */}
       {
         role !== UserRole.MOZO && (
