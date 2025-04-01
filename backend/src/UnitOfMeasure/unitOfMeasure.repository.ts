@@ -1,6 +1,6 @@
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, ILike, Raw, Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, In, Raw, Repository } from 'typeorm';
 import { UnitConversion } from './unitConversion.entity';
 import {
   BadRequestException,
@@ -15,7 +15,10 @@ import {
   CreateUnitConversionDto,
 } from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
-import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
+import {
+  EspecialUnitMeasureResponseDto,
+  UnitOfMeasureSummaryResponseDto,
+} from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 import { isUUID } from 'class-validator';
 
 @Injectable()
@@ -38,26 +41,17 @@ export class UnitOfMeasureRepository {
       throw new BadRequestException('Name must be provided');
     }
 
-    const existingUnitByName = await this.unitOfMeasureRepository.findOne({
-      where: { name: name },
-    });
+    const [existingUnitByName, existingUnitByAbbreviation] = await Promise.all([
+      this.unitOfMeasureRepository.findOne({ where: { name } }),
+      abbreviation
+        ? this.unitOfMeasureRepository.findOne({ where: { abbreviation } })
+        : null,
+    ]);
 
-    if (existingUnitByName) {
-      throw new ConflictException('Unit of measure name already exists');
-    }
-
-    if (abbreviation) {
-      const existingUnitByAbbreviation =
-        await this.unitOfMeasureRepository.findOne({
-          where: { abbreviation: abbreviation },
-        });
-
-      if (existingUnitByAbbreviation) {
-        throw new ConflictException(
-          'Unit of measure abbreviation already exists',
-        );
-      }
-    }
+    if (existingUnitByName)
+      throw new ConflictException('Unit name already exists');
+    if (existingUnitByAbbreviation)
+      throw new ConflictException('Abbreviation already exists');
 
     const unitOfMeasure = this.unitOfMeasureRepository.create({
       name,
@@ -66,15 +60,58 @@ export class UnitOfMeasureRepository {
       isActive: true,
     });
 
-    const savedUnitOfMeasure =
-      await this.unitOfMeasureRepository.save(unitOfMeasure);
+    if (conversions?.length > 0) {
+      const conversionUnitIds = conversions.map((c) => c.toUnitId);
 
-    if (conversions && conversions.length > 0) {
-      await this.handleConversions(savedUnitOfMeasure, conversions);
+      const referencedUnits = await this.unitOfMeasureRepository.find({
+        where: { id: In(conversionUnitIds) },
+      });
+
+      const volumeUnits = ['Litro', 'Mililitro', 'Centímetro cúbico'];
+      const massUnits = ['Kilogramo', 'Gramo', 'Miligramo'];
+
+      const hasVolume = referencedUnits.some((u) =>
+        volumeUnits.includes(u.name),
+      );
+      const hasMass = referencedUnits.some((u) => massUnits.includes(u.name));
+
+      if (hasVolume && hasMass) {
+        throw new BadRequestException(
+          'No se pueden mezclar unidades de volumen y masa',
+        );
+      }
+
+      if (!hasVolume && !hasMass) {
+        throw new BadRequestException(
+          'Las conversiones deben ser a unidades de volumen o masa',
+        );
+      }
+
+      const baseUnitName = hasVolume ? 'Litro' : 'Kilogramo';
+      const baseUnit = await this.unitOfMeasureRepository.findOne({
+        where: { name: baseUnitName },
+      });
+
+      if (!baseUnit) {
+        throw new NotFoundException(
+          `No se encontró la unidad base ${baseUnitName}`,
+        );
+      }
+
+      unitOfMeasure.baseUnit = baseUnit;
+      console.log(
+        `Unidad base asignada: ${baseUnit.name} (ID: ${baseUnit.id})`,
+      );
     }
 
-    const unitWithConversions = await this.unitOfMeasureRepository.findOne({
-      where: { id: savedUnitOfMeasure.id },
+    const savedUnit = await this.unitOfMeasureRepository.save(unitOfMeasure);
+
+    if (conversions?.length > 0) {
+      await this.handleConversions(savedUnit, conversions);
+    }
+
+    const fullUnit = await this.unitOfMeasureRepository.findOne({
+      where: { id: savedUnit.id },
       relations: [
         'baseUnit',
         'fromConversions',
@@ -84,7 +121,7 @@ export class UnitOfMeasureRepository {
       ],
     });
 
-    return this.mapUnitWithConversions(unitWithConversions);
+    return this.mapUnitWithConversions(fullUnit);
   }
 
   // ---------------   estandarizada con el nuevo dto
@@ -210,6 +247,64 @@ export class UnitOfMeasureRepository {
       }
       throw new InternalServerErrorException(
         'Error fetching the unit of mesure',
+        error.message,
+      );
+    }
+  }
+
+  async getUnitsOfVolume(): Promise<EspecialUnitMeasureResponseDto[]> {
+    try {
+      const units = await this.unitOfMeasureRepository.find({
+        where: {
+          baseUnit: { name: ILike('%Litro%') },
+        },
+        relations: ['baseUnit'],
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          baseUnit: { id: true, name: true, abbreviation: true },
+        },
+      });
+
+      return units.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        abbreviation: unit.abbreviation,
+        baseUnit: unit.baseUnit
+          ? {
+              id: unit.baseUnit.id,
+              name: unit.baseUnit.name,
+              abbreviation: unit.baseUnit.abbreviation,
+            }
+          : null,
+      }));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching units',
+        error.message,
+      );
+    }
+  }
+
+  async getUnitsOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
+    try {
+      const units = await this.unitOfMeasureRepository.find({
+        where: { name: In(['Kilogramo', 'Miligramo', 'Gramo']) },
+        select: ['id', 'name', 'abbreviation'],
+        relations: [],
+      });
+
+      return units.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        abbreviation: unit.abbreviation,
+      }));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching units',
         error.message,
       );
     }
@@ -537,7 +632,6 @@ export class UnitOfMeasureRepository {
   private mapUnitWithConversions(
     unit: UnitOfMeasure,
   ): UnitOfMeasureSummaryResponseDto {
-    // Obtener todas las conversiones relacionadas
     const allConversions = [
       ...(unit.fromConversions || []).map((c) => ({
         direction: 'from',
@@ -546,13 +640,11 @@ export class UnitOfMeasureRepository {
       })),
     ];
 
-    // Encontrar la unidad base relacionada (ya sea directa o a través de conversiones)
     let relatedBaseUnit = unit.baseUnit;
     // eslint-disable-next-line prefer-const
     let conversionPath = [];
 
     if (!relatedBaseUnit && !unit.isConventional) {
-      // Para unidades especiales, buscar conexión con unidades convencionales
       const conventionalConversion = allConversions.find(
         (c) => c.unit.isConventional,
       );
