@@ -263,6 +263,13 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 fullWidth
                 label={fieldLabels[field]}
                 type={field === "price" || field === "cost" ? "number" : "text"}
+                inputProps={{
+                  onKeyDown: (e) => {
+                    if (e.key === "e" || e.key === "E") {
+                      e.preventDefault();
+                    }
+                  },
+                }}
                 value={form[field] ?? ""}
                 onChange={(e) => {
                   const value = ["price", "cost"].includes(field)
