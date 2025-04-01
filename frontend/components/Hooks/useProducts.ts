@@ -45,7 +45,7 @@ export const useProductos = () => {
     if (token) {
       fetchAndSetProducts(token);
     }
-  }, [token]);
+  }, []);
 
   const fetchAndSetProducts = async (token: string) => {
     setLoading(true);

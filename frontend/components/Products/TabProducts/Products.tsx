@@ -19,7 +19,6 @@ import LoadingLottie from '@/components/Loader/Loading';
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
-  console.log('Ejecutando muchas cosas desde PRODUCTS');
   const {
     loading,
     setLoading,
@@ -52,14 +51,23 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
   const token = getAccessToken();
 
   useEffect(() => {
-    if (token) {
-      setLoading(true);
-      fetchUnits(token).then(units => {
+    if (!token) return;
+
+    let isMounted = true;
+    setLoading(true);
+    fetchUnits(token).then(units => {
+      if (isMounted) {
         setUnits(units);
+        console.log("llamada en products.tsx de units");
         setLoading(false);
-      });
-    }
-  }, [token]);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   const handleSave = () => {
     if (token) {

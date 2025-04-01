@@ -41,7 +41,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const [formValues, setFormValues] = useState(initialState);
   const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
   const { getAccessToken } = useAuth();
-  console.log('Ejecutando fetchAndSetProducts desde MODAL STOCK');
 
   const { fetchAndSetProducts } = useProductos();
   const { updateIngredient } = useIngredientsContext();
@@ -53,7 +52,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
       fetchUnits(token).then((fetchedUnits) => {
 
         let updatedUnits = [...fetchedUnits];
-
         let selectedUnit = fetchedUnits.find((u: IUnitOfMeasure) => u.name === selectedItem.unit);
 
         setUnits(updatedUnits);
@@ -65,7 +63,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         });
       });
     }
-  }, [open, getAccessToken, selectedItem]);
+  }, [open, selectedItem]);
 
 
 
