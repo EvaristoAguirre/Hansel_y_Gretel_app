@@ -94,4 +94,20 @@ export class ProductService {
       limit,
     );
   }
+
+  async searchProductsToPromotion(
+    isActive: boolean,
+    page: number,
+    limit: number,
+    name?: string,
+    code?: number,
+  ): Promise<ProductResponseDto[]> {
+    return this.productRepository.searchProductsToPromotion(
+      isActive,
+      page,
+      limit,
+      name,
+      code,
+    );
+  }
 }

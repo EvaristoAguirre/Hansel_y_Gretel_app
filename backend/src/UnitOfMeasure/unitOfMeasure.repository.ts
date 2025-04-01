@@ -16,6 +16,7 @@ import {
 } from 'src/DTOs/create-unit.dto';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class UnitOfMeasureRepository {
@@ -187,6 +188,11 @@ export class UnitOfMeasureRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
         where: { id: id, isActive: true },
@@ -214,6 +220,14 @@ export class UnitOfMeasureRepository {
     id: string,
     updateData: UpdateUnitOfMeasureDto,
   ): Promise<UnitOfMeasureSummaryResponseDto> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     const { name, abbreviation, conversions } = updateData;
 
     // 1. Verificar existencia de la unidad
@@ -318,6 +332,11 @@ export class UnitOfMeasureRepository {
     toUnitId: string,
     quantity: number,
   ): Promise<number> {
+    if (!isUUID(fromUnitId) && !isUUID(toUnitId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     if (fromUnitId === toUnitId) {
       return quantity;
     }
@@ -625,6 +644,14 @@ export class UnitOfMeasureRepository {
   }
 
   async deleteUnitOfMeasure(id: string) {
+    if (!id) {
+      throw new BadRequestException('ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     const unit = await this.unitOfMeasureRepository.findOne({
       where: { id },
     });

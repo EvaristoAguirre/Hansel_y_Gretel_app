@@ -32,8 +32,8 @@ export class StockService {
     return await this.stockRepository.getStockByIngredientId(ingredientId);
   }
 
-  async createStock(createStockDto: CreateStockDto): Promise<Stock> {
-    const createdStock = await this.stockRepository.createStock(createStockDto);
+  async createStock(createStock: CreateStockDto): Promise<Stock> {
+    const createdStock = await this.stockRepository.createStock(createStock);
     await this.eventEmitter.emit('stock.created', { stock: createdStock });
     return createdStock;
   }

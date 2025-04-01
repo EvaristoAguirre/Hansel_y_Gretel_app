@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { Room } from './room.entity';
 import { CreateRoomDto } from 'src/DTOs/create-room.dto';
 import { UpdateRoomDto } from 'src/DTOs/update-room.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class RoomRepository {
@@ -39,6 +40,11 @@ export class RoomRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const room = await this.roomRepository.findOne({
         where: { id, isActive: true },
@@ -62,6 +68,11 @@ export class RoomRepository {
   async deleteRoom(id: string): Promise<string> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const result = await this.roomRepository.update(id, { isActive: false });
@@ -91,6 +102,11 @@ export class RoomRepository {
   async getRoomById(id: string): Promise<Room> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const room = await this.roomRepository.findOne({
