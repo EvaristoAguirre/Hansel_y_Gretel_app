@@ -14,7 +14,10 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
-import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
+import {
+  EspecialUnitMeasureResponseDto,
+  UnitOfMeasureSummaryResponseDto,
+} from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Controller('unitofmeasure')
 export class UnitOfMeasureController {
@@ -73,6 +76,18 @@ export class UnitOfMeasureController {
       pageNumber,
       limitNumber,
     );
+  }
+
+  @Get('unit-of-volume')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getUnitOfVolume(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureService.getUnitsOfVolume();
+  }
+
+  @Get('unit-of-mass')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getUnitOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureService.getUnitsOfMass();
   }
 
   @Get(':id')

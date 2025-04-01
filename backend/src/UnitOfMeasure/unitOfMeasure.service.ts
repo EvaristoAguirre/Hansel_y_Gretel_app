@@ -3,7 +3,10 @@ import { UnitOfMeasure } from './unitOfMesure.entity';
 import { UpdateUnitOfMeasureDto } from 'src/DTOs/update-unit.dto';
 import { UnitOfMeasureRepository } from './unitOfMeasure.repository';
 import { CreateUnitOfMeasureDto } from 'src/DTOs/create-unit.dto';
-import { UnitOfMeasureSummaryResponseDto } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
+import {
+  EspecialUnitMeasureResponseDto,
+  UnitOfMeasureSummaryResponseDto,
+} from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 
 @Injectable()
 export class UnitOfMeasureService {
@@ -80,5 +83,13 @@ export class UnitOfMeasureService {
     abbreviation?: string,
   ): Promise<UnitOfMeasure[]> {
     return this.unitOfMeasureRepository.searchUnit(name, abbreviation);
+  }
+
+  async getUnitsOfVolume(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureRepository.getUnitsOfVolume();
+  }
+
+  async getUnitsOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureRepository.getUnitsOfMass();
   }
 }

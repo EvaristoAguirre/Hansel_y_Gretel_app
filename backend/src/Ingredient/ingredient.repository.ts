@@ -13,6 +13,7 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class IngredientRepository {
@@ -55,6 +56,11 @@ export class IngredientRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { id, isActive: true },
@@ -79,15 +85,15 @@ export class IngredientRepository {
   }
 
   async getIngredientByName(name: string): Promise<Ingredient> {
-    if (!name) {
-      throw new BadRequestException('Either ID must be provided.');
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('Name parameter is required');
     }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { name },
       });
       if (!ingredient) {
-        throw new NotFoundException(`Ingredient with ID: ${name} not found`);
+        throw new NotFoundException(`Ingredient with name: ${name} not found`);
       }
       return ingredient;
     } catch (error) {
@@ -153,6 +159,11 @@ export class IngredientRepository {
     if (!id) {
       throw new BadRequestException('ID must be provided');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
 
     try {
       const ingredient = await this.ingredientRepository.findOne({
@@ -200,6 +211,11 @@ export class IngredientRepository {
   async deleteIngredient(id: string) {
     if (!id) {
       throw new BadRequestException('ID must be provided');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const ingredient = await this.ingredientRepository.findOne({

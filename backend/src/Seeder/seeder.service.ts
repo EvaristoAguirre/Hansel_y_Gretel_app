@@ -26,6 +26,8 @@ export class SeederService implements OnApplicationBootstrap {
           abbreviation: 'kg',
           isConventional: true,
           isBase: true,
+          baseUnit: 'Kilogramo',
+          equivalenceToBaseUnit: 1,
           conversions: [
             { toUnitName: 'Gramo', conversionFactor: 1000 },
             { toUnitName: 'Miligramo', conversionFactor: 1e6 },
@@ -50,6 +52,8 @@ export class SeederService implements OnApplicationBootstrap {
           abbreviation: 'L',
           isConventional: true,
           isBase: true,
+          baseUnit: 'Litro',
+          equivalenceToBaseUnit: 1,
           conversions: [
             { toUnitName: 'Mililitro', conversionFactor: 1000 },
             { toUnitName: 'Centímetro cúbico', conversionFactor: 1000 },

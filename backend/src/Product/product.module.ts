@@ -14,6 +14,12 @@ import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
+import { StockService } from 'src/Stock/stock.service';
+import { Stock } from 'src/Stock/stock.entity';
+import { StockRepository } from 'src/Stock/stock.repository';
+import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -22,6 +28,8 @@ import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
       PromotionProduct,
       UnitConversion,
       UnitOfMeasure,
+      Stock,
+      Ingredient,
     ]),
     forwardRef(() => CategoryModule),
     UserModule,
@@ -34,6 +42,10 @@ import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
     CategoryRepository,
     UnitOfMeasureService,
     UnitOfMeasureRepository,
+    StockService,
+    StockRepository,
+    IngredientRepository,
+    IngredientService,
   ],
   exports: [ProductService],
 })

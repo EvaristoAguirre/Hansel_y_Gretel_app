@@ -25,6 +25,18 @@ export class IngredientResponseDto {
   isActive: boolean;
 }
 
+export class StockSummary {
+  @Expose()
+  id: string;
+  @Expose()
+  quantityInStock: number;
+  @Expose()
+  minimumStock: number;
+  @Expose()
+  @Type(() => UnitOfMeasureResponseDto)
+  unitOfMeasure: UnitOfMeasureResponseDto;
+}
+
 export class ProductResponseDto {
   @Expose()
   id: string;
@@ -54,13 +66,25 @@ export class ProductResponseDto {
   @Expose()
   @Type(() => PromotionProductResponseDto)
   promotionProducts?: PromotionProductResponseDto[];
+
+  @Expose()
+  @Type(() => UnitOfMeasureResponseDto)
+  unitOfMeasure: UnitOfMeasureResponseDto;
+
+  @Expose()
+  @Type(() => StockSummary)
+  stock: StockSummary;
 }
 
 export class ProductIngredientsResponseDto {
+  @Expose()
   id: string;
+  @Expose()
   quantityOfIngredient: number;
+  @Expose()
   @Type(() => IngredientResponseDto)
   ingredient: IngredientResponseDto;
+  @Expose()
   @Type(() => UnitOfMeasureResponseDto)
   unitOfMeasure: UnitOfMeasureResponseDto;
 }

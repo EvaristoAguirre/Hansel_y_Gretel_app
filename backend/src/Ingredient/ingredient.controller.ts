@@ -32,18 +32,18 @@ export class IngredientController {
     return await this.ingredientService.getAllIngredients(page, limit);
   }
 
+  @Get('by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getIngredientByName(@Query('name') name: string): Promise<Ingredient> {
+    return await this.ingredientService.getIngredientByName(name);
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getIngredientById(
     @Param('id') id: string,
   ): Promise<IngredientResponseDTO> {
     return await this.ingredientService.getIngredientById(id);
-  }
-
-  @Get('by-name/:name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getIngredientByName(@Param('name') name: string): Promise<Ingredient> {
-    return await this.ingredientService.getIngredientByName(name);
   }
 
   @Post()
