@@ -229,6 +229,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     return "Guardar producto";
   };
 
+  const fieldsToRender = ["code", "name", "price"];
+
+  if (tabValue === TabProductKey.SIMPLE_PRODUCT) {
+    fieldsToRender.push("cost");
+  }
+
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -251,7 +257,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           />
         </Tabs>
         <Grid container spacing={1} mt={1}>
-          {["code", "name", "price", "cost"].map((field, index) => (
+          {fieldsToRender.map((field, index) => (
             <Grid item xs={12} sm={6} key={field}>
               <TextField
                 fullWidth
