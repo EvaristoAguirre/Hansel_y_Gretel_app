@@ -9,6 +9,7 @@ import {
   FormControl,
   Autocomplete,
   Chip,
+  DialogActions,
 } from "@mui/material";
 import Grid from '@mui/material/Grid';
 import {
@@ -218,6 +219,17 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     }
   };
 
+  const getButtonText = () => {
+    if (modalType === FormTypeProduct.CREATE) {
+      return form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo";
+    }
+    if (modalType === FormTypeProduct.EDIT) {
+      return form.type === TypeProduct.PRODUCT ? "Guardar producto" : "Guardar promo";
+    }
+    return "Guardar producto";
+  };
+
+
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
@@ -225,21 +237,16 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           <Tab
             label="Producto simple"
             value={TabProductKey.SIMPLE_PRODUCT}
-            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO) || (modalType === FormTypeProduct.EDIT && form.ingredients.length > 0)}
-            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && (form.type === TypeProduct.PROMO || form.ingredients.length > 0))}
             disabled={onDisableTabs(TabProductKey.SIMPLE_PRODUCT)}
           />
           <Tab
             label="Producto con ingredientes"
             value={TabProductKey.PRODUCT_WITH_INGREDIENT}
-            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PRODUCT && (modalType === FormTypeProduct.EDIT && form.ingredients.length === 0)) || (modalType === FormTypeProduct.EDIT && form.type === TypeProduct.PROMO)}
-            // disabled={disableTabs || (modalType === FormTypeProduct.EDIT && (form.type === TypeProduct.PRODUCT && !form.ingredients.length) || form.type === TypeProduct.PROMO)}
             disabled={onDisableTabs(TabProductKey.PRODUCT_WITH_INGREDIENT)}
           />
           <Tab
             label="Promo"
             value={TabProductKey.PROMO}
-            // disabled={disableTabs || modalType === FormTypeProduct.EDIT && form.type !== TypeProduct.PROMO}
             disabled={onDisableTabs(TabProductKey.PROMO)}
           />
         </Tabs>
@@ -321,9 +328,16 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         {tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT && <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} handleSetDisableTabs={handleSetDisableTabs} />}
         {tabValue === TabProductKey.PROMO && <InputsPromo onSave={handleProductsPromo} form={form} handleSetDisableTabs={handleSetDisableTabs} />}
 
-        <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
-          {form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo"}
-        </Button>
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button sx={{ mt: 2 }} onClick={() => {
+            onClose();
+          }} color="warning">
+            Cancelar
+          </Button>
+          <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
+            {getButtonText()}
+          </Button>
+        </DialogActions>
       </Box>
     </Modal>
   );
