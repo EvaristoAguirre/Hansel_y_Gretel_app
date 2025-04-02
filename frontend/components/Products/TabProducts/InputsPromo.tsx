@@ -1,10 +1,10 @@
-import { searchProducts } from "@/api/products";
+import { searchProductsNotProm } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
 import { ProductCreated, ProductForm, ProductForPromo, SelectedProductsI } from "@/components/Interfaces/IProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
-import { Button, IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
+import { IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Tab, TabProductKey } from '../../Enums/view-products';
 
@@ -56,7 +56,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
   const handleSearch = async (value: string) => {
     const token = getAccessToken();
     if (value.trim() && token) {
-      const results = await searchProducts(value, token);
+      const results = await searchProductsNotProm(value, token);
       setSearchProductsResults(results);
     }
   };
