@@ -174,9 +174,12 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
             type="number"
             margin="dense"
             value={newIngredient.quantityOfIngredient}
-            onChange={(e) =>
-              setNewIngredient({ ...newIngredient, quantityOfIngredient: parseFloat(e.target.value) })
-            }
+            onChange={(e) => {
+              let value = parseFloat(e.target.value);
+              if (isNaN(value) || value <= 0) return;
+              setNewIngredient({ ...newIngredient, quantityOfIngredient: value });
+            }}
+            inputProps={{ min: 1, step: "any" }}
             sx={{ width: "25%" }}
             size="small"
           />
@@ -270,14 +273,15 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
                     label="Cantidad"
                     type="number"
                     value={editIngredient.quantityOfIngredient}
-                    onChange={(e) =>
-                      setEditIngredient({
-                        ...editIngredient,
-                        quantityOfIngredient: parseFloat(e.target.value),
-                      })
-                    }
+                    onChange={(e) => {
+                      let value = parseFloat(e.target.value);
+                      if (isNaN(value) || value <= 0) return;
+                      setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
+                    }}
+                    inputProps={{ min: 1, step: "any" }}
                     size="small"
                   />
+
                   <FormControl fullWidth margin="dense" size="small"
                     sx={{ width: "40%" }}>
                     <InputLabel>Unidad</InputLabel>

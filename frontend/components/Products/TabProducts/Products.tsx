@@ -74,7 +74,12 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
       if (modalType === "create") {
         return handleCreateProduct(token);
       } else {
-        return handleEdit(token!);
+        if (selectedCategoryId) {
+          return handleEdit(token, selectedCategoryId);
+
+        } else {
+          return handleEdit(token);
+        }
       }
     }
   };
@@ -111,8 +116,8 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
-                ingredients: params.row.productIngredients,
-                products: params.row.promotionDetails,
+                ingredients: params.row.productIngredients || [],
+                products: params.row.promotionDetails || [],
                 isActive: true,
               });
               setModalType(FormTypeProduct.EDIT);
@@ -136,20 +141,14 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
   ];
 
   useEffect(() => {
+
     console.log("formulario en products 🤍", form);
   }, [form]);
 
 
   return (
     <Box flex={1} p={2} overflow="auto">
-      {/* Product Table */}
-      {/* {
-        units.length === 0 ? (
-          <div className="p-[20%] flex flex-col justify-center items-center">
-            <LoadingLottie />
-            <p>Por favor, espere mientras se cargan las unidades de medida</p>
-          </div>
-        ) : */}
+
       <ProductTable
         loading={loading}
         rows={products}
@@ -161,7 +160,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
           setModalOpen(true);
         }}
       />
-      {/* } */}
 
       {/* Product Dialog */}
       {modalOpen && (

@@ -229,7 +229,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     return "Guardar producto";
   };
 
-  const fieldsToRender = ["code", "name", "price"];
+  const fieldsToRender = ["name", "code", "price"];
 
   if (tabValue === TabProductKey.SIMPLE_PRODUCT) {
     fieldsToRender.push("cost");

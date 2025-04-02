@@ -1,4 +1,4 @@
-import { createProduct, fetchProducts } from "@/api/products";
+import { createProduct, fetchProducts, getProductsByCategory } from "@/api/products";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
@@ -89,7 +89,7 @@ export const useProductos = () => {
     }
   };
 
-  const handleEdit = async (token: string) => {
+  const handleEdit = async (token: string, selectedCategoryId?: string) => {
     try {
       if (!token) throw new Error("Token no disponible");
 
@@ -101,6 +101,8 @@ export const useProductos = () => {
         id: form.id,
       };
 
+      console.log("👀👀👀👀👀👀 FORM EN EDIT", preparedForm);
+
       const updatedProduct = await editProduct(preparedForm, token);
 
       console.log("response de edit🟢", updatedProduct);
@@ -109,6 +111,13 @@ export const useProductos = () => {
 
       updateProduct(updatedProduct);
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
+
+      if (selectedCategoryId) {
+        const data = await getProductsByCategory(selectedCategoryId, token);
+
+        setProducts(data);
+
+      }
 
       handleCloseModal();
     } catch (error: any) {
