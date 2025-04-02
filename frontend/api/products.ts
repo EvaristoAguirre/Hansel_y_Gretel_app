@@ -133,9 +133,6 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 };
 
 
-// /product/prod-to-prom
-
-
 export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
   try {
     const isNumeric = !isNaN(Number(searchTerm));
