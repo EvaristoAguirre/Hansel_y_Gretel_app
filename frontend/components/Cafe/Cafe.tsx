@@ -1,28 +1,14 @@
 "use client";
 import React, { Suspense, useEffect, useState } from "react";
-import { useProductos } from "../Hooks/useProducts";
-import OrderProvider, {
-  useOrderContext,
-} from "../../app/context/order.context";
 import RoomProvider from "@/app/context/room.context";
-import { useAuth } from "@/app/context/authContext";
 import Rooms from "../Rooms/Rooms";
 import LoadingLottie from "../Loader/Loading";
+import OrderProvider from "@/app/context/order.context";
 
 const Cafe = () => {
-  const { getAccessToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null);
-  const { fetchAndSetProducts } = useProductos();
   const [navbarHeight, setNavbarHeight] = useState(0);
-  const { selectedOrderByTable } = useOrderContext();
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
-    setToken(token);
-
-    fetchAndSetProducts(token);
-
     const navbar = document.querySelector("nav");
     if (navbar) {
       setNavbarHeight(navbar.offsetHeight);

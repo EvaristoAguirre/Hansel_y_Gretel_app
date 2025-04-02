@@ -38,7 +38,7 @@ const OrderEditor = ({
   const { productosDisponibles, products, setProductosDisponibles } =
     usePedido();
 
- 
+
 
   const {
     selectedProducts,
@@ -63,7 +63,6 @@ const OrderEditor = ({
   const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
-    console.log("Confirmando pedido", selectedProducts);
 
     if (selectedOrderByTable) {
       handleEditOrder(
@@ -73,11 +72,9 @@ const OrderEditor = ({
         selectedOrderByTable.comment
       );
       setSelectedProducts([]);
-      console.log("prod sele despues de supuestam limpiarse", selectedProducts);
       handleCompleteStep();
       handleNextStep();
     }
-    console.log("selectedOrderByTable (dentro de confirmarPedido)", selectedOrderByTable);
   };
 
   useEffect(() => {
@@ -122,13 +119,13 @@ const OrderEditor = ({
   //   if (orders && orders.length > 0) {
   //     // Verifica si hay un pedido seleccionado y actualiza su estado si es necesario
   //     const updatedOrder = orders.find(order => order.id === selectedOrderByTable?.id);
-      
+
   //     if (updatedOrder) {
   //       setSelectedOrderByTable(updatedOrder);
   //     }
   //   }
   // }, [orders]); // Se ejecuta cada vez que orders cambia
-  
+
 
 
   return (

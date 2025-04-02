@@ -61,7 +61,6 @@ export const getProductsByCategory = async (id: string, token: string) => {
     });
 
     if (response.status === 404) {
-      console.log("No se encontraron productos para la categoría seleccionada.👀");
       return [];
     }
     if (!response.ok) {
@@ -122,7 +121,6 @@ export const searchProducts = async (searchTerm: string, token: string, selected
     }
 
     const data = await response.json();
-    console.log("Resultados de la búsqueda en endpoint:", data);
 
 
     return data;

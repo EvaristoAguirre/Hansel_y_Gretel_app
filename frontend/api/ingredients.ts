@@ -70,7 +70,6 @@ export const ingredientsById = async (id: string, token: string) => {
 
 
 export const ingredientsByName = async (name: string, token: string,) => {
-  console.log(" nombre y token ", name, token);
 
   try {
     const response = await fetch(`${URI_INGREDIENT}/by-name/${name}`, {

@@ -17,7 +17,7 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
   onSearch,
   onSelect,
   label = "Buscar productos por nombre o código",
-  sx = { flexGrow: 1, width: "60%", marginRight: 2 }
+  sx = { flexGrow: 1, width: "100%", marginRight: 2 }
 
 }) => {
   return (

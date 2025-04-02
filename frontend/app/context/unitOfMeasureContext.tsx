@@ -5,6 +5,7 @@ import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
+import { log } from 'console';
 
 
 type UnitContextType = {
@@ -70,8 +71,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     if (!token) return;
     setToken(token);
 
-    fetchUnits(token).then(dataUnit => {
+    fetchUnits(token, "1", "50").then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
+
     });
 
     allUnitsConventional(token).then(dataUnit => {
