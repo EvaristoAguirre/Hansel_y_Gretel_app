@@ -27,12 +27,6 @@ export const editProduct = async (form: ProductForm, token: string) => {
 
   return await response.json();
 };
-// Para traer todos los productos en la cantidad por defecto(11, hasta indice 10)
-// export const fetchProducts = async () => {
-//   const response = await fetch(URI_PRODUCT, { method: "GET" });
-//   const data = await response.json();
-//   return data;
-// };
 
 // Para traer todos los productos con paginación:
 export const fetchProducts = async (page: string, limit: string, token: string) => {
@@ -79,6 +73,29 @@ export const getProductsByCategory = async (id: string, token: string) => {
 export const getProductByCode = async (code: number, token: string) => {
   try {
     const response = await fetch(`${URI_PRODUCT}/by-code/${code}`, {
+      method: "GET",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+
+    });
+
+    if (!response.ok) {
+      return { ok: false, status: response.status };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error("Error en getProductByCode:", error);
+    return { ok: false, status: 500, error: "Error al conectar con el servidor" };
+  }
+};
+
+export const getProductByName = async (name: string, token: string) => {
+  try {
+    const response = await fetch(`${URI_PRODUCT}/by-name/${name}`, {
       method: "GET",
       headers: {
         'Content-Type': 'application/json',
