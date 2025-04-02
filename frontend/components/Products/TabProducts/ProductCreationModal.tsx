@@ -279,7 +279,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 inputProps={{
                   onKeyDown: (e) => {
                     if (
-                      (field === "price" || field === "cost") &&
+                      (field === "price" || field === "cost" || field === "code") &&
                       (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
                     ) {
                       e.preventDefault();
