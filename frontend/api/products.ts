@@ -49,6 +49,7 @@ export const fetchProducts = async (page: string, limit: string, token: string) 
   return data;
 };
 
+
 export const getProductsByCategory = async (id: string, token: string) => {
   try {
     const response = await fetch(`${URI_PRODUCT_BY_CATEGORY}`, {
@@ -132,4 +133,37 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 };
 
 
+// /product/prod-to-prom
 
+
+export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
+  try {
+    const isNumeric = !isNaN(Number(searchTerm));
+    const queryParams = new URLSearchParams({
+      [isNumeric ? "code" : "name"]: searchTerm,
+      limit: "100",
+    });
+
+    const response = await fetch(`${URI_PRODUCT}/prod-to-prom?${queryParams.toString()}`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ "categories": [selectedCategoryId] })
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+
+    return data;
+  } catch (error) {
+
+    console.error("❌ Error fetching searched products:", error);
+    return [];
+  }
+};
