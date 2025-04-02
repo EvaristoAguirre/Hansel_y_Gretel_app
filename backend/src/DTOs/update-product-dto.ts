@@ -10,8 +10,8 @@ import {
   IsBoolean,
   ValidateNested,
   IsEnum,
+  IsNotEmpty,
 } from 'class-validator';
-import { ProductIngredientDto } from './productIngredient.dto';
 import { Type } from 'class-transformer';
 import { PromotionProductDto } from './create-promotion.dto';
 
@@ -68,4 +68,18 @@ export class UpdateProductDto {
   @ValidateNested({ each: true })
   @Type(() => PromotionProductDto)
   products?: PromotionProductDto[];
+}
+
+export class ProductIngredientDto {
+  @IsNotEmpty()
+  @IsString()
+  ingredientId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  quantityOfIngredient: string;
+
+  @IsNotEmpty()
+  @IsString()
+  unitOfMeasureId: string;
 }

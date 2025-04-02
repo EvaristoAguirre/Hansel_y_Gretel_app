@@ -33,6 +33,8 @@ export class ProductRepository {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(PromotionProduct)
     private readonly promotionProductRepository: Repository<PromotionProduct>,
+    @InjectRepository(Ingredient)
+    private readonly ingredientRepository: Repository<Ingredient>,
     private readonly stockService: StockService,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
@@ -651,6 +653,17 @@ export class ProductRepository {
     productData: Partial<Product>,
   ): Promise<void> {
     try {
+      if (productData.name) {
+        const existingProductByName = await queryRunner.manager.findOne(
+          Product,
+          {
+            where: { name: productData.name },
+          },
+        );
+        if (existingProductByName) {
+          throw new ConflictException('Product name already exists');
+        }
+      }
       if (productData.code) {
         const existingProductByCode = await queryRunner.manager.findOne(
           Product,
@@ -661,13 +674,6 @@ export class ProductRepository {
         if (existingProductByCode) {
           throw new ConflictException('Product code already exists');
         }
-      }
-
-      const existingProductByName = await queryRunner.manager.findOne(Product, {
-        where: { name: productData.name },
-      });
-      if (existingProductByName) {
-        throw new ConflictException('Product name already exists');
       }
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -689,10 +695,8 @@ export class ProductRepository {
       );
     }
     const { categories, ingredients, ...otherAttributes } = updateData;
-
     //producto simple
     if (!updateData.ingredients || updateData.ingredients.length === 0) {
-      console.log('esta entrando por aca?');
       const product = await queryRunner.manager.findOne(Product, {
         where: { id: id, isActive: true },
         relations: [
@@ -768,7 +772,7 @@ export class ProductRepository {
       }
 
       Object.assign(product, otherAttributes);
-      product.cost = otherAttributes.cost || 0; // Mantener costo base si existe
+      product.cost = otherAttributes.cost || 0;
 
       if (categories) {
         if (categories.length > 0) {
@@ -792,32 +796,28 @@ export class ProductRepository {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const existingIngredientIds = product.productIngredients.map(
-        (pi) => (
-          pi.ingredient.id,
-          console.log('existingIngredientIds...', pi.ingredient.id)
-        ),
+        (pi) => (pi.id, console.log('existingIngredientIds...', pi.id)),
       );
       const newIngredientIds = ingredients.map((i) => i.ingredientId);
 
-      // Eliminar ingredientes que ya no están
       const ingredientsToRemove = product.productIngredients.filter(
-        (pi) => !newIngredientIds.includes(pi.ingredient.id),
+        (pi) => !newIngredientIds.includes(pi.id),
       );
+
       await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
 
-      // Actualizar/agregar ingredientes
       const updatedIngredients = await Promise.all(
         ingredients.map(async (ingredientDto) => {
           const ingredient = await queryRunner.manager.findOne(Ingredient, {
             where: { id: ingredientDto.ingredientId },
             relations: ['unitOfMeasure'],
           });
+
           if (!ingredient) {
             throw new BadRequestException(
               `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
             );
           }
-          console.log('unit of measure...', ingredientDto.unitOfMeasureId);
           const unitOfMeasure = await queryRunner.manager.findOne(
             UnitOfMeasure,
             {
@@ -829,27 +829,18 @@ export class ProductRepository {
               `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
             );
           }
-
-          console.log(
-            'ingredientDto.unitOfMeasureId...para convertir',
-            ingredientDto.unitOfMeasureId,
-          );
-          console.log(
-            'ingredient.unitOfMeasure.id...para convertir',
-            ingredient.unitOfMeasure.id,
-          );
-          console.log(
-            'ingredientDto.quantityOfIngredient...para convertir',
+          const quantityOfIngredientInNumber = parseFloat(
             ingredientDto.quantityOfIngredient,
           );
+
           const convertedQuantity = await this.unitOfMeasureService.convertUnit(
             ingredientDto.unitOfMeasureId,
             ingredient.unitOfMeasure.id,
-            ingredientDto.quantityOfIngredient,
+            quantityOfIngredientInNumber,
           );
-          console.log('valor obtenido de la conversion', convertedQuantity);
+
           const existing = product.productIngredients.find(
-            (pi) => pi.ingredient.id === ingredientDto.ingredientId,
+            (pi) => pi.id === ingredientDto.ingredientId,
           );
 
           if (existing) {
@@ -1268,6 +1259,30 @@ export class ProductRepository {
 
       throw new InternalServerErrorException(
         'Error fetching the products',
+        error.message,
+      );
+    }
+  }
+
+  async getSimpleAndCompositeProducts(page: number, limit: number) {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    try {
+      return await this.productRepository.find({
+        where: { type: 'product', isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['stock', 'stock.unitOfMeasure'],
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the product',
         error.message,
       );
     }

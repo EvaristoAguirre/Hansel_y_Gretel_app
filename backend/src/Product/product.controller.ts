@@ -38,6 +38,15 @@ export class ProductController {
     return this.productService.getAllProducts(page, limit);
   }
 
+  @Get('not-promotion')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getSimpleAndCompositeProducts(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.productService.getSimpleAndCompositeProducts(page, limit);
+  }
+
   @Post('prod-to-prom')
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
