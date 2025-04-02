@@ -27,12 +27,6 @@ export const editProduct = async (form: ProductForm, token: string) => {
 
   return await response.json();
 };
-// Para traer todos los productos en la cantidad por defecto(11, hasta indice 10)
-// export const fetchProducts = async () => {
-//   const response = await fetch(URI_PRODUCT, { method: "GET" });
-//   const data = await response.json();
-//   return data;
-// };
 
 // Para traer todos los productos con paginación:
 export const fetchProducts = async (page: string, limit: string, token: string) => {
@@ -49,6 +43,7 @@ export const fetchProducts = async (page: string, limit: string, token: string) 
   return data;
 };
 
+
 export const getProductsByCategory = async (id: string, token: string) => {
   try {
     const response = await fetch(`${URI_PRODUCT_BY_CATEGORY}`, {
@@ -61,7 +56,6 @@ export const getProductsByCategory = async (id: string, token: string) => {
     });
 
     if (response.status === 404) {
-      console.log("No se encontraron productos para la categoría seleccionada.👀");
       return [];
     }
     if (!response.ok) {
@@ -79,6 +73,29 @@ export const getProductsByCategory = async (id: string, token: string) => {
 export const getProductByCode = async (code: number, token: string) => {
   try {
     const response = await fetch(`${URI_PRODUCT}/by-code/${code}`, {
+      method: "GET",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+
+    });
+
+    if (!response.ok) {
+      return { ok: false, status: response.status };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error("Error en getProductByCode:", error);
+    return { ok: false, status: 500, error: "Error al conectar con el servidor" };
+  }
+};
+
+export const getProductByName = async (name: string, token: string) => {
+  try {
+    const response = await fetch(`${URI_PRODUCT}/by-name/${name}`, {
       method: "GET",
       headers: {
         'Content-Type': 'application/json',
@@ -122,7 +139,6 @@ export const searchProducts = async (searchTerm: string, token: string, selected
     }
 
     const data = await response.json();
-    console.log("Resultados de la búsqueda en endpoint:", data);
 
 
     return data;
@@ -134,4 +150,34 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 };
 
 
+export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
+  try {
+    const isNumeric = !isNaN(Number(searchTerm));
+    const queryParams = new URLSearchParams({
+      [isNumeric ? "code" : "name"]: searchTerm,
+      limit: "100",
+    });
 
+    const response = await fetch(`${URI_PRODUCT}/prod-to-prom?${queryParams.toString()}`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ "categories": [selectedCategoryId] })
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+
+    return data;
+  } catch (error) {
+
+    console.error("❌ Error fetching searched products:", error);
+    return [];
+  }
+};

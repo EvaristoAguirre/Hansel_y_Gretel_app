@@ -9,19 +9,22 @@ import {
   FormControl,
   Autocomplete,
   Chip,
+  DialogActions,
 } from "@mui/material";
+import Grid from '@mui/material/Grid';
 import {
   ProductCreated,
   ProductForm,
   ProductForPromo,
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
-import { FormType, TypeProduct } from "@/components/Enums/view-products";
-import { getProductByCode } from "@/api/products";
+import { FormTypeProduct, TabProductKey, TypeProduct } from "@/components/Enums/view-products";
+import { getProductByCode, getProductByName } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -39,8 +42,9 @@ interface ProductCreationModalProps {
       | ProductForPromo[]
   ) => void;
   onSave: () => void;
-  modalType: "create" | "edit";
+  modalType: FormTypeProduct;
   products: ProductCreated[];
+  units: IUnitOfMeasureForm[]
 }
 
 interface Errors {
@@ -56,19 +60,32 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   onSave,
   modalType,
   products,
+  units
 }) => {
   /**
    * Estado que almacena el valor actual de la pestaña seleccionada.
    * Se inicializa en función del tipo de formulario y la modalidad de edición.
    * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
    *
-   * @initialValue 0 o 2 dependiendo del tipo de formulario y la modalidad de edición
+   * @initialValue PRODUCTO SIMPLE
    */
-  const [tabValue, setTabValue] = useState<number>(() => {
-    return modalType === FormType.EDIT && form.type === TypeProduct.PROMO
-      ? 2
-      : 0;
-  });
+  const [tabValue, setTabValue] = useState<TabProductKey>(TabProductKey.SIMPLE_PRODUCT);
+  const [disableTabs, setDisableTabs] = useState<TabProductKey[]>(
+    // [TabProductKey.SIMPLE_PRODUCT, TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.PROMO]
+    []
+  );
+
+  useEffect(() => {
+    if (modalType === FormTypeProduct.EDIT) {
+      if (form.type === TypeProduct.PROMO) {
+        setTabValue(TabProductKey.PROMO);
+      } else if (form.type === TypeProduct.PRODUCT && form.ingredients.length > 0) {
+        setTabValue(TabProductKey.PRODUCT_WITH_INGREDIENT);
+      } else {
+        setTabValue(TabProductKey.SIMPLE_PRODUCT);
+      }
+    }
+  }, [modalType, form.type, form.ingredients]);
 
   const [errors, setErrors] = useState<Errors>({
     code: "",
@@ -124,6 +141,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               error = result.error || "Error al validar el código";
             }
           }
+
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
@@ -132,10 +150,22 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         }
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
-      }
-    }
 
-    setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+      } else if (field === "name") {
+        // Validación del nombre
+        if (token) {
+          const result = await getProductByName(value, token);
+          if (result.ok) {
+            error = "El nombre ya está en uso";
+          } else if (result.status === 404) {
+            error = "";
+          } else {
+            error = result.error || "Error al validar el nombre";
+          }
+        }
+      }
+      setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+    };
   };
 
   const validateForm = () => {
@@ -154,11 +184,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     validateForm();
   }, [errors, form]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: TabProductKey) => {
     setTabValue(newValue);
-    if (newValue === 2 && form.type !== TypeProduct.PROMO) {
+    if (newValue === TabProductKey.PROMO && form.type !== TypeProduct.PROMO) {
       onChange("type", TypeProduct.PROMO);
-    } else if (newValue !== 2 && form.type === TypeProduct.PROMO) {
+    } else if (newValue !== TabProductKey.PROMO && form.type === TypeProduct.PROMO) {
       onChange("type", TypeProduct.PRODUCT);
     }
   };
@@ -175,136 +205,168 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     onClose();
   };
 
+  const handleSetDisableTabs = (newDisableTabs: TabProductKey[]) => {
+    // return setDisableTabs(disableTabs.filter(tab => tab !== tabKey));
+    return setDisableTabs(newDisableTabs);
+
+  }
+
+  const onDisableTabs = (tabKey: TabProductKey) => {
+    if (modalType === FormTypeProduct.EDIT) {
+      switch (tabKey) {
+        case TabProductKey.SIMPLE_PRODUCT:
+          return form.type === TypeProduct.PROMO || form.ingredients.length > 0;
+
+        case TabProductKey.PRODUCT_WITH_INGREDIENT:
+          return (form.type === TypeProduct.PRODUCT && !form.ingredients.length) || form.type === TypeProduct.PROMO;
+
+        case TabProductKey.PROMO:
+          return form.type !== TypeProduct.PROMO;
+
+        default:
+          return false;
+
+      }
+    } else {
+      return disableTabs.includes(tabKey);
+    }
+  };
+
+  const getButtonText = () => {
+    if (modalType === FormTypeProduct.CREATE) {
+      return form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo";
+    }
+    if (modalType === FormTypeProduct.EDIT) {
+      return form.type === TypeProduct.PRODUCT ? "Guardar producto" : "Guardar promo";
+    }
+    return "Guardar producto";
+  };
+
+  const fieldsToRender = ["name", "code", "price"];
+
+  if (tabValue === TabProductKey.SIMPLE_PRODUCT) {
+    fieldsToRender.push("cost");
+  }
+
+
   return (
     <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          width: 600,
-          bgcolor: "background.paper",
-          p: 4,
-          mx: "auto",
-          mt: 5,
-          overflowY: "auto", // Habilita el scroll vertical
-          "&::-webkit-scrollbar": {
-            // Personaliza la barra de scroll (opcional)
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#888",
-            borderRadius: "4px",
-          },
-        }}
-      >
+      <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Producto simple" />
-          <Tab label="Producto con ingredientes" />
-          <Tab label="Promo" />
+          <Tab
+            label="Producto simple"
+            value={TabProductKey.SIMPLE_PRODUCT}
+            disabled={onDisableTabs(TabProductKey.SIMPLE_PRODUCT)}
+          />
+          <Tab
+            label="Producto con ingredientes"
+            value={TabProductKey.PRODUCT_WITH_INGREDIENT}
+            disabled={onDisableTabs(TabProductKey.PRODUCT_WITH_INGREDIENT)}
+          />
+          <Tab
+            label="Promo"
+            value={TabProductKey.PROMO}
+            disabled={onDisableTabs(TabProductKey.PROMO)}
+          />
         </Tabs>
-
-        {/* Campos comunes */}
-        {["code", "name", "description", "price", "cost"].map((field) => (
-          <TextField
-            key={field}
-            margin="dense"
-            label={fieldLabels[field]}
-            type={["code", "price", "cost"].includes(field) ? "number" : "text"}
-            inputProps={
-              ["price", "cost"].includes(field) ? { step: "0.50" } : undefined
-            }
-            value={form[field] ?? ""}
-            onChange={(e) => {
-              const value = ["price", "cost"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseFloat(e.target.value)
-                : ["code"].includes(field)
-                ? e.target.value === ""
-                  ? null
-                  : parseInt(e.target.value, 10)
-                : e.target.value;
-              onChange(field as keyof ProductForm, value);
-              if (field !== "code") {
-                validateField(field, value);
-              }
-            }}
-            onBlur={(e) => {
-              if (field === "code") {
-                validateField(field, e.target.value);
-              }
-            }}
-            error={!!errors[field as keyof ProductForm]}
-            helperText={
-              isCheckingCode && field === "code"
-                ? "Verificando código..."
-                : errors[field as keyof ProductForm]
-            }
-            fullWidth
-            variant="outlined"
-          />
-        ))}
-        {/* CATEGORIAS */}
-        <FormControl
-          fullWidth
-          margin="dense"
-          //  error={!!errors.categories}
-          variant="outlined"
-        >
-          <Autocomplete
-            multiple
-            options={categories}
-            getOptionLabel={(option) => option.name}
-            value={categories.filter(
-              (category) => category.id && form.categories.includes(category.id)
-            )}
-            onChange={(_, newValue) => {
-              const selectedIds = newValue.map((category) => category.id);
-              onChange(
-                "categories",
-                selectedIds.map((id) => id || "")
-              );
-              validateField("categories", selectedIds);
-            }}
-            renderInput={(params) => (
+        <Grid container spacing={1} mt={1}>
+          {fieldsToRender.map((field, index) => (
+            <Grid item xs={12} sm={6} key={field}>
               <TextField
-                {...params}
-                variant="outlined"
-                label={fieldLabels.categories}
-                placeholder="Selecciona categorías"
-                error={!!errors.categories}
-                helperText={errors.categories}
+                fullWidth
+                label={fieldLabels[field]}
+                type={field === "price" || field === "cost" ? "number" : "text"}
+                inputProps={{
+                  onKeyDown: (e) => {
+                    if (
+                      (field === "price" || field === "cost" || field === "code") &&
+                      (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
+                    ) {
+                      e.preventDefault();
+                    }
+                  },
+                }}
+                value={form[field] ?? ""}
+                onChange={(e) => {
+                  const value = ["price", "cost"].includes(field)
+                    ? e.target.value === ""
+                      ? null
+                      : parseFloat(e.target.value)
+                    : ["code"].includes(field)
+                      ? e.target.value === ""
+                        ? null
+                        : parseInt(e.target.value, 10)
+                      : e.target.value;
+                  onChange(field as keyof ProductForm, value);
+                  if (field !== "code") {
+                    validateField(field, value);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (field === "code") {
+                    validateField(field, e.target.value);
+                  }
+                }}
+                error={!!errors[field as keyof ProductForm]}
+                helperText={
+                  isCheckingCode && field === "code"
+                    ? "Verificando código..."
+                    : errors[field as keyof ProductForm]
+                } variant="outlined"
+                size="small"
+
               />
-            )}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.id}
-                  label={option.name}
-                  sx={{
-                    backgroundColor: "#f3d49ab8",
-                    color: "black",
-                    fontWeight: "bold",
-                  }}
-                />
-              ))
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-          />
-        </FormControl>
+            </Grid>
+          ))}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Descripción"
+              multiline
+              minRows={2}
+              value={form.description ?? ""}
+              onChange={(e) => onChange("description", e.target.value)}
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
+          <Grid item xs={12} mt={1}>
+            <FormControl fullWidth>
+              <Autocomplete
+                multiple
+                options={categories}
+                getOptionLabel={(option) => option.name}
+                value={categories.filter((category) => category.id && form.categories.includes(category.id))}
+                onChange={(_, newValue) => {
+                  const selectedIds = newValue.map((category) => category.id);
+                  onChange("categories", selectedIds.map((id) => id || ""));
+                }}
+                renderInput={(params) => <TextField {...params} label="Categorías" variant="outlined" placeholder="Selecciona categorías" />}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip {...getTagProps({ index })} key={option.id} label={option.name} sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }} />
+                  ))
+                }
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                size="small"
+              />
+            </FormControl>
+          </Grid>
+        </Grid>
 
-        {/* Campos para ingredientes */}
-        {tabValue === 1 && (
-          <IngredientDialog onSave={handleSaveIngredients} form={form} />
-        )}
+        {tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT && <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} handleSetDisableTabs={handleSetDisableTabs} />}
+        {tabValue === TabProductKey.PROMO && <InputsPromo onSave={handleProductsPromo} form={form} handleSetDisableTabs={handleSetDisableTabs} />}
 
-        {/* Campos para promos */}
-        {tabValue === 2 && (
-          <InputsPromo onSave={handleProductsPromo} form={form} />
-        )}
-
-        <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
-          {form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo"}
-        </Button>
+        <DialogActions sx={{ justifyContent: "space-between" }}>
+          <Button sx={{ mt: 2 }} onClick={() => {
+            onClose();
+          }} color="warning">
+            Cancelar
+          </Button>
+          <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
+            {getButtonText()}
+          </Button>
+        </DialogActions>
       </Box>
     </Modal>
   );

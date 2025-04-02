@@ -37,7 +37,7 @@ const Ingredients = () => {
       try {
         const token = getAccessToken();
         if (!token) return;
-        const response = await fetchUnits(token);
+        const response = await fetchUnits(token, "1", "100");
         setUnits(response);
 
       } catch (error) {
