@@ -19,7 +19,7 @@ import {
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { FormTypeProduct, TabProductKey, TypeProduct } from "@/components/Enums/view-products";
-import { getProductByCode } from "@/api/products";
+import { getProductByCode, getProductByName } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
@@ -141,6 +141,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               error = result.error || "Error al validar el código";
             }
           }
+
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
@@ -149,10 +150,22 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         }
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
-      }
-    }
 
-    setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+      } else if (field === "name") {
+        // Validación del nombre
+        if (token) {
+          const result = await getProductByName(value, token);
+          if (result.ok) {
+            error = "El nombre ya está en uso";
+          } else if (result.status === 404) {
+            error = "";
+          } else {
+            error = result.error || "Error al validar el nombre";
+          }
+        }
+      }
+      setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+    };
   };
 
   const validateForm = () => {
