@@ -188,6 +188,14 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
               onChange={(e) =>
                 setNewIngredient({ ...newIngredient, unitOfMeasureId: e.target.value })
               }
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 200,
+                    overflowY: "auto",
+                  },
+                },
+              }}
             >
               {units.map((u) => (
                 <MenuItem key={u.id} value={u.id}>

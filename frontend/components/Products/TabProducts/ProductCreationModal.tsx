@@ -265,7 +265,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 type={field === "price" || field === "cost" ? "number" : "text"}
                 inputProps={{
                   onKeyDown: (e) => {
-                    if (e.key === "e" || e.key === "E") {
+                    if (
+                      (field === "price" || field === "cost") &&
+                      (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
+                    ) {
                       e.preventDefault();
                     }
                   },

@@ -55,7 +55,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
     let isMounted = true;
     setLoading(true);
-    fetchUnits(token).then(units => {
+    fetchUnits(token, "1", "50").then(units => {
       if (isMounted) {
         setUnits(units);
         console.log("llamada en products.tsx de units");

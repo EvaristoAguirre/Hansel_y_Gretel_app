@@ -71,7 +71,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     if (!token) return;
     setToken(token);
 
-    fetchUnits(token).then(dataUnit => {
+    fetchUnits(token, "1", "50").then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
 
     });
