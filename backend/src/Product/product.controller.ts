@@ -38,12 +38,29 @@ export class ProductController {
     return this.productService.getAllProducts(page, limit);
   }
 
+  @Post('prod-to-prom')
+  async searchProductsToPromotion(
+    @Query('isActive') isActive: boolean = true,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('name') name?: string,
+    @Query('code') code?: number,
+  ): Promise<ProductResponseDto[]> {
+    return this.productService.searchProductsToPromotion(
+      isActive,
+      page,
+      limit,
+      name,
+      code,
+    );
+  }
+
   @Post('search')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async searchProducts(
     @Query('name') name?: string,
     @Query('code') code?: string,
-    @Query('isActive') isActive?: boolean,
+    @Query('isActive') isActive: boolean = true,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('categories') categories?: string[],

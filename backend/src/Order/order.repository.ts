@@ -17,6 +17,7 @@ import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductSummary } from 'src/DTOs/productSummary.dto';
 import { StockService } from 'src/Stock/stock.service';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class OrderRepository {
@@ -87,6 +88,11 @@ export class OrderRepository {
   ): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -228,6 +234,11 @@ export class OrderRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const result = await this.orderRepository.update(id, { isActive: false });
       if (result.affected === 0) {
@@ -273,6 +284,11 @@ export class OrderRepository {
   async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const order = await this.orderRepository.findOne({
@@ -346,6 +362,11 @@ export class OrderRepository {
   async markOrderAsPendingPayment(
     id: string,
   ): Promise<OrderSummaryResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -389,6 +410,11 @@ export class OrderRepository {
   }
 
   async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
@@ -433,6 +459,11 @@ export class OrderRepository {
   async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const order = await this.orderRepository.findOne({

@@ -29,3 +29,9 @@ export class UnitOfMeasureSummaryResponseDto {
   conversions: ConversionDto[];
   toBaseConversion: BaseConversionDto | null;
 }
+
+export class EspecialUnitMeasureResponseDto {
+  id: string;
+  name: string;
+  abbreviation: string;
+}

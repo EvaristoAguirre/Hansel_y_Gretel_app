@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   Injectable,
@@ -10,6 +11,7 @@ import { Category } from './category.entity';
 import { Repository } from 'typeorm';
 import { CreateCategoryDto } from 'src/DTOs/create-category.dto';
 import { UpdateCategoryDto } from 'src/DTOs/update-category.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class CategoryRepository {
@@ -93,15 +95,23 @@ export class CategoryRepository {
   }
 
   async getCategoryById(id: string): Promise<Category> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
-      const categoryFinded = await this.categoryRepository.findOneOrFail({
+      const categoryFinded = await this.categoryRepository.findOne({
         where: { id },
       });
-      if (categoryFinded.isActive === false) {
-        throw new ConflictException(`Category with ID ${id} is disabled`);
-      }
       if (!categoryFinded) {
         throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+      if (categoryFinded && categoryFinded.isActive === false) {
+        throw new ConflictException(`Category with ID ${id} is disabled`);
       }
       return categoryFinded;
     } catch (error) {
