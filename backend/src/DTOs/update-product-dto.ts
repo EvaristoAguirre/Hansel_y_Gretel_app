@@ -76,8 +76,8 @@ export class ProductIngredientDto {
   ingredientId: string;
 
   @IsNotEmpty()
-  @IsString()
-  quantityOfIngredient: string;
+  @IsNumber()
+  quantityOfIngredient: number;
 
   @IsNotEmpty()
   @IsString()

@@ -139,12 +139,12 @@ export class ProductRepository {
 
     try {
       const product = await this.productRepository.findOne({
-        where: { name: name },
+        where: { name: ILike(`%${name}%`) },
         relations: ['categories'],
       });
 
       if (!product) {
-        throw new NotFoundException(`Product not found with  code: ${name}`);
+        throw new NotFoundException(`Product not found with  name: ${name}`);
       }
       return product;
     } catch (error) {
@@ -695,6 +695,7 @@ export class ProductRepository {
       );
     }
     const { categories, ingredients, ...otherAttributes } = updateData;
+    console.log('update data....', updateData);
     //producto simple
     if (!updateData.ingredients || updateData.ingredients.length === 0) {
       const product = await queryRunner.manager.findOne(Product, {
@@ -829,14 +830,11 @@ export class ProductRepository {
               `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
             );
           }
-          const quantityOfIngredientInNumber = parseFloat(
-            ingredientDto.quantityOfIngredient,
-          );
 
           const convertedQuantity = await this.unitOfMeasureService.convertUnit(
             ingredientDto.unitOfMeasureId,
             ingredient.unitOfMeasure.id,
-            quantityOfIngredientInNumber,
+            ingredientDto.quantityOfIngredient,
           );
 
           const existing = product.productIngredients.find(

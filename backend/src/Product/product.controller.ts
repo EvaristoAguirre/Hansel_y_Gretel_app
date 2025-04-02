@@ -47,6 +47,12 @@ export class ProductController {
     return this.productService.getSimpleAndCompositeProducts(page, limit);
   }
 
+  @Get('by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getProductByName(@Query('name') name: string): Promise<Product> {
+    return this.productService.getProductByName(name);
+  }
+
   @Post('prod-to-prom')
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
@@ -93,12 +99,6 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductByCode(@Param('code') code: string): Promise<Product> {
     return this.productService.getProductByCode(+code);
-  }
-
-  @Get('by-name/:name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductByName(@Param('name') name: string): Promise<Product> {
-    return this.productService.getProductByName(name);
   }
 
   @Post('by-categories')
