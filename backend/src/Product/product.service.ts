@@ -110,4 +110,8 @@ export class ProductService {
       code,
     );
   }
+
+  async getSimpleAndCompositeProducts(page: number, limit: number) {
+    return this.productRepository.getSimpleAndCompositeProducts(page, limit);
+  }
 }
