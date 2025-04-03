@@ -61,10 +61,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
         quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
         unitOfMeasureId: ingredient.unitOfMeasureId
       }))
-
       setSelectedIngredients(preparedIngredients);
-
-
     }
     fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
@@ -76,7 +73,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
       newIngredient.quantityOfIngredient <= 0 ||
       !newIngredient.unitOfMeasureId
     );
+
   }, [newIngredient]);
+
 
   const prevIngredientsRef = useRef<IingredientForm[]>([]);
 
