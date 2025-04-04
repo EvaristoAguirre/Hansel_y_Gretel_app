@@ -26,7 +26,7 @@ export class UnitOfMeasure {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @Column({ nullable: true, type: 'decimal', precision: 20, scale: 10 })
   equivalenceToBaseUnit: number;
 
   @Column({ nullable: true })

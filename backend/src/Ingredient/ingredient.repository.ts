@@ -135,19 +135,40 @@ export class IngredientRepository {
     try {
       const ingredient = this.ingredientRepository.create(createData);
       if (unitOfMeasureId) {
-        ingredient.unitOfMeasure =
+        const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
+        console.log(unitOfMeasure);
+        if (!unitOfMeasure) {
+          throw new BadRequestException('Unit of measure not found');
+        }
+        ingredient.unitOfMeasure = unitOfMeasure;
+        if (
+          unitOfMeasure.name === 'Litro' ||
+          unitOfMeasure.name === 'Mililitro' ||
+          unitOfMeasure.name === 'Centímetro cúbico'
+        ) {
+          ingredient.type = 'volumen';
+        }
+
+        if (
+          unitOfMeasure.name === 'Miligramo' ||
+          unitOfMeasure.name === 'Kilogramo' ||
+          unitOfMeasure.name === 'Gramo'
+        ) {
+          ingredient.type = 'masa';
+        }
+        if (unitOfMeasure.name === 'Unidad') {
+          ingredient.type = 'unidad';
+        }
       }
       return await this.ingredientRepository.save(ingredient);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
         'An error occurred while creating the ingredient. Please try again later.',
+        error.message,
       );
     }
   }
@@ -247,6 +268,7 @@ export class IngredientRepository {
       isActive: ingredient.isActive,
       description: ingredient.description,
       cost: ingredient.cost,
+      type: ingredient.type,
       unitOfMeasure: ingredient.unitOfMeasure
         ? {
             id: ingredient.unitOfMeasure.id,
