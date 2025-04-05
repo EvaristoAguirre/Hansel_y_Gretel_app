@@ -10,5 +10,6 @@ export class IngredientResponseDTO {
   description: string;
   cost: number;
   stock?: StockResponseDTO | null;
+  type: 'masa' | 'volumen';
   unitOfMeasure?: UnitOfMeasureResponseDTO | null;
 }

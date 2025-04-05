@@ -636,31 +636,11 @@ export class UnitOfMeasureRepository {
       ...(unit.fromConversions || []).map((c) => ({
         direction: 'from',
         unit: c.toUnit,
-        factor: c.conversionFactor,
+        factor: Number(c.conversionFactor),
       })),
     ];
 
-    let relatedBaseUnit = unit.baseUnit;
-    // eslint-disable-next-line prefer-const
-    let conversionPath = [];
-
-    if (!relatedBaseUnit && !unit.isConventional) {
-      const conventionalConversion = allConversions.find(
-        (c) => c.unit.isConventional,
-      );
-
-      if (conventionalConversion) {
-        relatedBaseUnit = conventionalConversion.unit;
-        conversionPath.push({
-          unit: conventionalConversion.unit.name,
-          factor:
-            conventionalConversion.direction === 'from'
-              ? conventionalConversion.factor
-              : 1 / conventionalConversion.factor,
-        });
-      }
-    }
-
+    const relatedBaseUnit = unit.baseUnit;
     return {
       id: unit.id,
       name: unit.name,
@@ -686,10 +666,7 @@ export class UnitOfMeasureRepository {
         ? {
             unitId: relatedBaseUnit.id,
             unitName: relatedBaseUnit.name,
-            factor: conversionPath.reduce(
-              (total, step) => total * parseFloat(step.factor.toString()),
-              1,
-            ),
+            factor: Number(unit.equivalenceToBaseUnit),
           }
         : null,
     };

@@ -135,19 +135,47 @@ export class IngredientRepository {
     try {
       const ingredient = this.ingredientRepository.create(createData);
       if (unitOfMeasureId) {
-        ingredient.unitOfMeasure =
+        const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
+        console.log(unitOfMeasure);
+        if (!unitOfMeasure) {
+          throw new BadRequestException('Unit of measure not found');
+        }
+        ingredient.unitOfMeasure = unitOfMeasure;
+
+        const unitOfMeasureBaseUnit =
+          await this.unitOfMeasureService.getUnitOfMeasureById(
+            unitOfMeasure.baseUnitId,
+          );
+        console.log('unidad de base', unitOfMeasureBaseUnit);
+        console.log('unidad de base', unitOfMeasureBaseUnit.name);
+        if (
+          unitOfMeasureBaseUnit.name === 'Litro' ||
+          unitOfMeasureBaseUnit.name === 'Mililitro' ||
+          unitOfMeasureBaseUnit.name === 'Centímetro cúbico'
+        ) {
+          ingredient.type = 'volumen';
+        }
+
+        if (
+          unitOfMeasureBaseUnit.name === 'Miligramo' ||
+          unitOfMeasureBaseUnit.name === 'Kilogramo' ||
+          unitOfMeasureBaseUnit.name === 'Gramo'
+        ) {
+          ingredient.type = 'masa';
+        }
+        if (unitOfMeasureBaseUnit.name === 'Unidad') {
+          ingredient.type = 'unidad';
+        }
       }
       return await this.ingredientRepository.save(ingredient);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
         'An error occurred while creating the ingredient. Please try again later.',
+        error.message,
       );
     }
   }
@@ -247,6 +275,7 @@ export class IngredientRepository {
       isActive: ingredient.isActive,
       description: ingredient.description,
       cost: ingredient.cost,
+      type: ingredient.type,
       unitOfMeasure: ingredient.unitOfMeasure
         ? {
             id: ingredient.unitOfMeasure.id,

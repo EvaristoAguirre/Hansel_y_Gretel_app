@@ -31,6 +31,9 @@ export class Ingredient {
   @Min(0)
   cost: number;
 
+  @Column({ type: 'enum', enum: ['masa', 'volumen', 'unidad'] })
+  type: 'masa' | 'volumen' | 'unidad';
+
   // -------------- Relaciones -----------------//
   @OneToOne(() => Stock, (stock) => stock.ingredient)
   stock: Stock;

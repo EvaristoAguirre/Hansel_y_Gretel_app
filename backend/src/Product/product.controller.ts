@@ -22,6 +22,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -136,5 +137,10 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteProduct(@Param() id: UUID) {
     return await this.productService.deleteProduct(id);
+  }
+
+  @Post('check-stock')
+  async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
+    return this.productService.checkProductsStockAvailability(dataToCheck);
   }
 }

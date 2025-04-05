@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -23,6 +24,7 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @Injectable()
 export class ProductRepository {
@@ -994,138 +996,196 @@ export class ProductRepository {
     return updatedPromotion;
   }
 
-  // async checkProductStockAvailability(
-  //   productId: string,
-  //   quantityToSell: number,
-  // ): Promise<{ available: boolean; message?: string; details?: any }> {
-  //   try {
-  //     // 1. Obtener el producto con sus relaciones
-  //     const product = await this.productRepository.findOne({
-  //       where: { id: productId },
-  //       relations: [
-  //         'productIngredients',
-  //         'productIngredients.ingredient',
-  //         'productIngredients.ingredient.stock',
-  //         'productIngredients.ingredient.stock.unitOfMeasure',
-  //         'stock',
-  //         'stock.unitOfMeasure',
-  //         'unitOfMeasure',
-  //       ],
-  //     });
+  async checkProductsStockAvailability(dataToCheck: CheckStockDto) {
+    const productId = dataToCheck.productId;
+    const quantityToSell = dataToCheck.quantityToSell;
+    console.log(dataToCheck);
+    if (!isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const product = await this.productRepository.findOne({
+        where: { id: productId, isActive: true },
+      });
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
 
-  //     if (!product) {
-  //       throw new NotFoundException('Product not found');
-  //     }
+      if (product.type === 'promotion') {
+        return this.checkPromotionStockAvailability(productId, quantityToSell);
+      }
 
-  //     // 2. Si es una promoción, manejarlo diferente (asumiendo que las promociones son conjuntos de productos)
-  //     if (product.type === 'promotion') {
-  //       return this.checkPromotionStockAvailability(productId, quantityToSell);
-  //     }
+      if (product.type === 'product') {
+        return this.checkProductStockAvailability(productId, quantityToSell);
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error updating the product',
+        error.message,
+      );
+    }
+  }
 
-  //     // 3. Si es un producto simple (sin ingredientes)
-  //     if (
-  //       !product.productIngredients ||
-  //       product.productIngredients.length === 0
-  //     ) {
-  //       if (!product.stock) {
-  //         return {
-  //           available: false,
-  //           message: 'Product has no stock information',
-  //         };
-  //       }
+  async checkPromotionStockAvailability(
+    productId: string,
+    quantityToSell: number,
+  ) {
+    if (!isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      console.log('holi.....');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error updating the product',
+        error.message,
+      );
+    }
+  }
 
-  //       const availableQuantity = product.stock.quantityInStock;
-  //       if (availableQuantity >= quantityToSell) {
-  //         return { available: true };
-  //       } else {
-  //         return {
-  //           available: false,
-  //           message: `Insufficient stock. Available: ${availableQuantity}, Required: ${quantityToSell}`,
-  //           details: {
-  //             available: availableQuantity,
-  //             required: quantityToSell,
-  //             deficit: quantityToSell - availableQuantity,
-  //           },
-  //         };
-  //       }
-  //     }
+  async checkProductStockAvailability(
+    productId: string,
+    quantityToSell: number,
+  ) {
+    if (!isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const productToCheck = await this.productRepository.findOne({
+        where: { id: productId, isActive: true },
+        relations: [
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
+          'stock',
+          'stock.unitOfMeasure',
+        ],
+      });
+      if (!productToCheck) {
+        throw new NotFoundException('Product not found');
+      }
 
-  //     // 4. Si es un producto compuesto (con ingredientes)
-  //     const ingredientChecks = await Promise.all(
-  //       product.productIngredients.map(async (pi) => {
-  //         const ingredient = pi.ingredient;
-  //         if (!ingredient.stock) {
-  //           return {
-  //             ingredientId: ingredient.id,
-  //             ingredientName: ingredient.name,
-  //             available: false,
-  //             message: 'Ingredient has no stock information',
-  //           };
-  //         }
+      if (
+        !productToCheck.productIngredients ||
+        productToCheck.productIngredients.length === 0
+      ) {
+        if (!productToCheck.stock) {
+          return {
+            available: false,
+            message: 'Product has no stock information',
+          };
+        }
 
-  //         // Convertir la cantidad necesaria a la unidad de medida del stock del ingrediente
-  //         let requiredQuantity = pi.quantity;
+        const availableQuantity = productToCheck.stock.quantityInStock;
+        if (availableQuantity >= quantityToSell) {
+          return { available: true };
+        } else {
+          return {
+            available: false,
+            message: `Insufficient stock. Available: ${availableQuantity}, Required: ${quantityToSell}`,
+            details: {
+              available: availableQuantity,
+              required: quantityToSell,
+              deficit: quantityToSell - availableQuantity,
+            },
+          };
+        }
+      }
 
-  //         // Si las unidades de medida son diferentes, hacer la conversión
-  //         if (pi.unitOfMeasure?.id !== ingredient.stock.unitOfMeasure?.id) {
-  //           try {
-  //             requiredQuantity = await this.convertUnit(
-  //               pi.unitOfMeasure.id,
-  //               ingredient.stock.unitOfMeasure.id,
-  //               pi.quantity,
-  //             );
-  //           } catch (error) {
-  //             return {
-  //               ingredientId: ingredient.id,
-  //               ingredientName: ingredient.name,
-  //               available: false,
-  //               message: `Unit conversion error: ${error.message}`,
-  //             };
-  //           }
-  //         }
+      if (
+        productToCheck.productIngredients &&
+        productToCheck.productIngredients.length > 0
+      ) {
+        const ingredientChecks = await Promise.all(
+          productToCheck.productIngredients.map(async (pi) => {
+            const ingredientId = pi.ingredient.id;
+            const stockOfIngredient =
+              await this.stockService.getStockByIngredientId(ingredientId);
+            if (!stockOfIngredient.quantityInStock) {
+              return {
+                ingredientId: ingredientId,
+                ingredientName: stockOfIngredient.ingredient.name,
+                available: false,
+                message: 'Ingredient has no stock information',
+              };
+            }
 
-  //         // Calcular la cantidad total necesaria (considerando la cantidad a vender del producto)
-  //         const totalRequired = requiredQuantity * quantityToSell;
-  //         const availableQuantity = ingredient.stock.quantityInStock;
+            let requiredQuantity = pi.quantityOfIngredient;
 
-  //         return {
-  //           ingredientId: ingredient.id,
-  //           ingredientName: ingredient.name,
-  //           requiredQuantity: totalRequired,
-  //           availableQuantity: availableQuantity,
-  //           available: availableQuantity >= totalRequired,
-  //           unitOfMeasure: ingredient.stock.unitOfMeasure.name,
-  //           deficit:
-  //             availableQuantity >= totalRequired
-  //               ? 0
-  //               : totalRequired - availableQuantity,
-  //         };
-  //       }),
-  //     );
+            if (pi.unitOfMeasure?.id !== stockOfIngredient.unitOfMeasure?.id) {
+              try {
+                requiredQuantity = await this.unitOfMeasureService.convertUnit(
+                  pi.unitOfMeasure.id,
+                  stockOfIngredient.unitOfMeasure.id,
+                  pi.quantityOfIngredient,
+                );
+              } catch (error) {
+                return {
+                  ingredientId: stockOfIngredient.ingredient.id,
+                  ingredientName: stockOfIngredient.ingredient.name,
+                  available: false,
+                  message: `Unit conversion error: ${error.message}`,
+                };
+              }
+            }
 
-  //     // Verificar si todos los ingredientes tienen suficiente stock
-  //     const allAvailable = ingredientChecks.every((check) => check.available);
+            const totalRequired = requiredQuantity * quantityToSell;
+            const availableQuantity = parseFloat(
+              stockOfIngredient.quantityInStock,
+            );
 
-  //     if (allAvailable) {
-  //       return { available: true };
-  //     } else {
-  //       const insufficientIngredients = ingredientChecks.filter(
-  //         (check) => !check.available,
-  //       );
-  //       return {
-  //         available: false,
-  //         message: 'Insufficient stock for some ingredients',
-  //         details: insufficientIngredients,
-  //       };
-  //     }
-  //   } catch (error) {
-  //     if (error instanceof NotFoundException) throw error;
-  //     throw new InternalServerErrorException(
-  //       'Error checking product stock availability',
-  //       error.message,
-  //     );
-  //   }
-  // }
+            return {
+              ingredientId: stockOfIngredient.ingredient.id,
+              ingredientName: stockOfIngredient.ingredient.name,
+              requiredQuantity: totalRequired,
+              availableQuantity: availableQuantity,
+              available: availableQuantity >= totalRequired,
+              unitOfMeasure: stockOfIngredient.unitOfMeasure.name,
+              deficit:
+                availableQuantity >= totalRequired
+                  ? 0
+                  : totalRequired - availableQuantity,
+            };
+          }),
+        );
+
+        const allAvailable = ingredientChecks.every((check) => check.available);
+
+        if (allAvailable) {
+          return { available: true };
+        } else {
+          const insufficientIngredients = ingredientChecks.filter(
+            (check) => !check.available,
+          );
+          return {
+            available: false,
+            message: 'Insufficient stock for some ingredients',
+            details: insufficientIngredients,
+          };
+        }
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error updating the product',
+        error.message,
+      );
+    }
+  }
 
   // Método auxiliar para promociones (similar pero verifica los productos componentes)
   // private async checkPromotionStockAvailability(

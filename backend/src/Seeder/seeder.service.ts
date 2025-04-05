@@ -28,6 +28,7 @@ export class SeederService implements OnApplicationBootstrap {
           isBase: true,
           baseUnit: 'Kilogramo',
           equivalenceToBaseUnit: 1,
+          type: 'masa',
           conversions: [
             { toUnitName: 'Gramo', conversionFactor: 1000 },
             { toUnitName: 'Miligramo', conversionFactor: 1e6 },
@@ -37,6 +38,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Gramo',
           abbreviation: 'g',
           isConventional: true,
+          type: 'masa',
           baseUnit: 'Kilogramo',
           equivalenceToBaseUnit: 0.001,
         },
@@ -44,6 +46,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Miligramo',
           abbreviation: 'mg',
           isConventional: true,
+          type: 'masa',
           baseUnit: 'Kilogramo',
           equivalenceToBaseUnit: 0.000001,
         },
@@ -53,6 +56,7 @@ export class SeederService implements OnApplicationBootstrap {
           isConventional: true,
           isBase: true,
           baseUnit: 'Litro',
+          type: 'volumen',
           equivalenceToBaseUnit: 1,
           conversions: [
             { toUnitName: 'Mililitro', conversionFactor: 1000 },
@@ -63,6 +67,7 @@ export class SeederService implements OnApplicationBootstrap {
           name: 'Mililitro',
           abbreviation: 'ml',
           isConventional: true,
+          type: 'volumen',
           baseUnit: 'Litro',
           equivalenceToBaseUnit: 0.001,
         },
@@ -71,13 +76,16 @@ export class SeederService implements OnApplicationBootstrap {
           abbreviation: 'cm³',
           isConventional: true,
           baseUnit: 'Litro',
+          type: 'volumen',
           equivalenceToBaseUnit: 0.001,
         },
         {
           name: 'Unidad',
           abbreviation: 'u',
+          type: 'unidad',
           isConventional: true,
           isBase: true,
+          baseUnit: 'Unidad',
         },
       ];
 
