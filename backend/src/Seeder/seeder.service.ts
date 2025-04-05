@@ -85,6 +85,7 @@ export class SeederService implements OnApplicationBootstrap {
           type: 'unidad',
           isConventional: true,
           isBase: true,
+          baseUnit: 'Unidad',
         },
       ];
 

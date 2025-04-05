@@ -142,22 +142,29 @@ export class IngredientRepository {
           throw new BadRequestException('Unit of measure not found');
         }
         ingredient.unitOfMeasure = unitOfMeasure;
+
+        const unitOfMeasureBaseUnit =
+          await this.unitOfMeasureService.getUnitOfMeasureById(
+            unitOfMeasure.baseUnitId,
+          );
+        console.log('unidad de base', unitOfMeasureBaseUnit);
+        console.log('unidad de base', unitOfMeasureBaseUnit.name);
         if (
-          unitOfMeasure.name === 'Litro' ||
-          unitOfMeasure.name === 'Mililitro' ||
-          unitOfMeasure.name === 'Centímetro cúbico'
+          unitOfMeasureBaseUnit.name === 'Litro' ||
+          unitOfMeasureBaseUnit.name === 'Mililitro' ||
+          unitOfMeasureBaseUnit.name === 'Centímetro cúbico'
         ) {
           ingredient.type = 'volumen';
         }
 
         if (
-          unitOfMeasure.name === 'Miligramo' ||
-          unitOfMeasure.name === 'Kilogramo' ||
-          unitOfMeasure.name === 'Gramo'
+          unitOfMeasureBaseUnit.name === 'Miligramo' ||
+          unitOfMeasureBaseUnit.name === 'Kilogramo' ||
+          unitOfMeasureBaseUnit.name === 'Gramo'
         ) {
           ingredient.type = 'masa';
         }
-        if (unitOfMeasure.name === 'Unidad') {
+        if (unitOfMeasureBaseUnit.name === 'Unidad') {
           ingredient.type = 'unidad';
         }
       }
