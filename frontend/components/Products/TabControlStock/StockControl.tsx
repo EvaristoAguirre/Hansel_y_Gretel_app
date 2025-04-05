@@ -48,6 +48,7 @@ const StockControl = () => {
     setToken(token);
   }, []);
 
+
   const formattedProducts = products.map((product) => ({
     id: product.id,
     name: product.name,
@@ -55,6 +56,7 @@ const StockControl = () => {
     unit: product.stock?.unitOfMeasure?.name || null,
     min: Number(product.stock?.minimumStock) || null,
     cost: product.cost || null,
+    idStock: product.stock?.id || null
   }));
 
   const formattedIngredients = ingredients.map((ingredient) => ({
@@ -63,8 +65,8 @@ const StockControl = () => {
     stock: Number(ingredient.stock?.quantityInStock) || null,
     unit: ingredient.stock?.unitOfMeasure?.name || null,
     min: Number(ingredient.stock?.minimumStock) || null,
-
     cost: ingredient.cost || null,
+    idStock: ingredient.stock?.id || null
   }));
 
   //Edición de Producto
@@ -159,7 +161,7 @@ const StockControl = () => {
     setModalOpen(false);
   };
 
-  const [selectedStockFilter, setSelectedStockFilter] = useState(null);
+  const [selectedStockFilter, setSelectedStockFilter] = useState<string | null>(null);
 
   const filterByStock = (items: SelectedItem[]) => {
     return items.filter((item: SelectedItem) => {
