@@ -1,13 +1,12 @@
 import { Box } from "@mui/system";
 import { useEffect } from "react";
-import { useCategoryStore } from "../Categories/useCategoryStore";
 import { Tab } from "../Enums/view-products";
 import { useProductos } from "../Hooks/useProducts";
 import { Sidebar } from "./Sidebar";
 import StockControl from "./TabControlStock/StockControl";
 import Ingredients from "./TabIngredients/Ingredients";
 import Products from "./TabProducts/Products";
-import ProductsCategory from "./TabProductsCategory/ProductsCategory";
+import CategoriesTable from "./TabProductsCategory/CategoriesTable";
 import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
 
 interface ProductsContentProps {
@@ -44,7 +43,7 @@ const ProductsContent: React.FC<ProductsContentProps> = ({
           />
         </>
       )}
-      {selectedTab === Tab.CATEGORIA_PRODUCTOS && <ProductsCategory />}
+      {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriesTable />}
       {selectedTab === Tab.CONTROL_DE_STOCK && (
         <Box flex={1} overflow="auto">
           <StockControl />
