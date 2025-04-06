@@ -82,7 +82,6 @@ export class Product {
   )
   promotionDetails: PromotionProduct[];
 
-  // Relación para productos que forman parte de una promoción
   @OneToMany(
     () => PromotionProduct,
     (promotionProduct) => promotionProduct.product,

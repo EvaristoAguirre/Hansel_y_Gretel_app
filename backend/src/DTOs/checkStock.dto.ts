@@ -1,8 +1,8 @@
 import { IsInt, IsString, IsUUID, Min } from 'class-validator';
 
 export class CheckStockDto {
-  @IsString() // Primero verifica que sea string
-  @IsUUID() // Luego que sea UUID
+  @IsString()
+  @IsUUID()
   productId: string;
 
   @IsInt()
