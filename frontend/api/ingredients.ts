@@ -71,8 +71,12 @@ export const ingredientsById = async (id: string, token: string) => {
 
 export const ingredientsByName = async (name: string, token: string,) => {
 
+  const queryParams = new URLSearchParams({
+    name: name,
+  });
+
   try {
-    const response = await fetch(`${URI_INGREDIENT}/by-name/${name}`, {
+    const response = await fetch(`${URI_INGREDIENT}/by-name?${queryParams.toString()}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,

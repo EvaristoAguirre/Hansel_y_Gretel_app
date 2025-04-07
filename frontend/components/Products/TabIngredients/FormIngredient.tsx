@@ -14,7 +14,7 @@ import {
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
-import { IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
 import LoadingLottie from '@/components/Loader/Loading';
 import { useAuth } from "@/app/context/authContext";
 import { ingredientsByName } from "@/api/ingredients";
@@ -30,7 +30,7 @@ export const FormIngredient = ({
 }: {
   formType: FormType;
   onSave: () => void;
-  units: IUnitOfMeasureResponse[]
+  units: IUnitOfMeasureForm[]
 }) => {
   const { formIngredients, setFormIngredients, formOpen, handleCloseForm } =
     useIngredientsContext();
@@ -81,39 +81,46 @@ export const FormIngredient = ({
 
   };
 
+  const fields: {
+    key: keyof Iingredient;
+    label: string;
+    type: "text" | "number";
+  }[] = [
+      { key: "name", label: "Nombre", type: "text" },
+      { key: "description", label: "Descripción", type: "text" },
+      { key: "cost", label: "Costo", type: "number" },
+    ];
+
+  const handleChangeField = (key: keyof Iingredient, value: string | number) => {
+    setFormIngredients((prev) => ({ ...prev, [key]: value }));
+    validateField(key, value);
+  };
+
+
+
+
   return (
     <Dialog open={formOpen} onClose={handleCloseForm}>
       <DialogTitle sx={{ color: "primary", fontWeight: "bold" }}>
         {formType === FormType.CREATE ? "Crear Ingrediente" : "Editar Ingrediente"}
       </DialogTitle>
       <DialogContent>
-        {["name", "description", "cost"].map((field) => (
+        {fields.map(({ key, label, type }) => (
           <TextField
-            key={field}
+            key={key}
             margin="dense"
-            label={fieldLabels[field as keyof Iingredient]}
-            type={field === "cost" ? "number" : "text"}
-            inputProps={field === "cost" ? { step: "0.50" } : undefined}
-            value={formIngredients[field as keyof Iingredient] ?? ""}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFormIngredients((prev) => ({
-                ...prev,
-                [field]: value,
-              }));
-              validateField(field, value);
-            }}
-            onBlur={() => {
-              if (formType === FormType.CREATE && formIngredients.name?.trim()) {
-                checkNameAvailability(formIngredients.name);
-              }
-            }}
-            error={!!errors[field]}
-            helperText={errors[field]}
+            label={label}
+            type={type}
+            value={formIngredients[key] ?? ""}
+            onChange={(e) => handleChangeField(key, e.target.value)}
+            onBlur={() => key === "name" && formType === FormType.CREATE && checkNameAvailability(formIngredients.name)}
+            error={!!errors[key]}
+            helperText={errors[key]}
             fullWidth
             variant="outlined"
           />
         ))}
+
 
         {/* Select de unidad de medida */}
         <FormControl variant="outlined" fullWidth margin="dense">
