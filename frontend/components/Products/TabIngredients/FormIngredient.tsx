@@ -14,8 +14,7 @@ import {
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
-import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from "../../Interfaces/IUnitOfMeasure";
-import LoadingLottie from '@/components/Loader/Loading';
+import { IUnitOfMeasureForm } from "../../Interfaces/IUnitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
 import { ingredientsByName } from "@/api/ingredients";
 
@@ -143,20 +142,13 @@ export const FormIngredient = ({
             }}
           >
             {
-              units.length === 0 ? (
-                <MenuItem>
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '200px' }}>
-                    <LoadingLottie />
-                  </div>
+              units.map((unit) => (
+                <MenuItem
+                  key={unit.id} value={unit.id}>
+                  {unit.name} ({unit.abbreviation})
                 </MenuItem>
-              ) : (
-                units.map((unit) => (
-                  <MenuItem
-                    key={unit.id} value={unit.id}>
-                    {unit.name} ({unit.abbreviation})
-                  </MenuItem>
-                ))
-              )
+              ))
+
             }
           </Select>
         </FormControl>

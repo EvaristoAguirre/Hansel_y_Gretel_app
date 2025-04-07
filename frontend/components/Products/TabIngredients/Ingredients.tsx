@@ -88,7 +88,7 @@ const Ingredients = () => {
           onClick={() => openForm(FormType.CREATE)}
           disabled={units.length === 0}
         >
-          {units.length === 0 ? <LoadingLottie /> : "+ Nuevo Ingrediente"}
+          + Nuevo Ingrediente
         </Button>
       </Box>
 
