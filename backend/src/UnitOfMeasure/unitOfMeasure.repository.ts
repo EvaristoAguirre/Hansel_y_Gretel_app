@@ -291,15 +291,27 @@ export class UnitOfMeasureRepository {
   async getUnitsOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
     try {
       const units = await this.unitOfMeasureRepository.find({
-        where: { name: In(['Kilogramo', 'Miligramo', 'Gramo']) },
-        select: ['id', 'name', 'abbreviation'],
-        relations: [],
+        where: { baseUnit: { name: ILike('%Kilogramo%') } },
+        relations: ['baseUnit'],
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          baseUnit: { id: true, name: true, abbreviation: true },
+        },
       });
 
       return units.map((unit) => ({
         id: unit.id,
         name: unit.name,
         abbreviation: unit.abbreviation,
+        baseUnit: unit.baseUnit
+          ? {
+              id: unit.baseUnit.id,
+              name: unit.baseUnit.name,
+              abbreviation: unit.baseUnit.abbreviation,
+            }
+          : null,
       }));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;

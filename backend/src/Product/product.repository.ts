@@ -996,6 +996,84 @@ export class ProductRepository {
     return updatedPromotion;
   }
 
+  //---- Estandarizado  -------- con el dto nuevo
+  async searchProductsToPromotion(
+    isActive: boolean = true,
+    page: number,
+    limit: number,
+    name?: string,
+    code?: number,
+  ): Promise<ProductResponseDto[]> {
+    try {
+      if (!name && !code) {
+        throw new BadRequestException(
+          'At least a name or a code must be provided for search.',
+        );
+      }
+
+      const offset = (page - 1) * limit;
+      const whereConditions: any = { isActive, type: 'product' };
+      if (name) {
+        whereConditions.name = ILike(`%${name}%`);
+      } else if (code) {
+        whereConditions.code = Raw(
+          (alias) => `CAST(${alias} AS TEXT) ILIKE :code`,
+          {
+            code: `%${code}%`,
+          },
+        );
+      }
+
+      const [products] = await this.productRepository.findAndCount({
+        where: whereConditions,
+        relations: ['stock', 'stock.unitOfMeasure'],
+        skip: offset,
+        take: limit,
+      });
+
+      if (products.length === 0) {
+        const searchCriteria = name ? `name: ${name}` : `code: ${code}`;
+        throw new NotFoundException(`No products found with ${searchCriteria}`);
+      }
+
+      return products;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error fetching the products',
+        error.message,
+      );
+    }
+  }
+
+  async getSimpleAndCompositeProducts(page: number, limit: number) {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    try {
+      return await this.productRepository.find({
+        where: { type: 'product', isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['stock', 'stock.unitOfMeasure'],
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the product',
+        error.message,
+      );
+    }
+  }
+
+  // ---------------------------------- todo el conjunto de chequeo --------------------
   async checkProductsStockAvailability(dataToCheck: CheckStockDto) {
     const productId = dataToCheck.productId;
     const quantityToSell = dataToCheck.quantityToSell;
@@ -1039,8 +1117,6 @@ export class ProductRepository {
       );
     }
   }
-
-  // ---------------------------------- todo el conjunto de chequeo --------------------
 
   private async checkStockAvailability(
     id: string,
@@ -1370,82 +1446,5 @@ export class ProductRepository {
       where: { id, isActive: true, type },
       relations,
     });
-  }
-
-  //---- Estandarizado  -------- con el dto nuevo
-  async searchProductsToPromotion(
-    isActive: boolean = true,
-    page: number,
-    limit: number,
-    name?: string,
-    code?: number,
-  ): Promise<ProductResponseDto[]> {
-    try {
-      if (!name && !code) {
-        throw new BadRequestException(
-          'At least a name or a code must be provided for search.',
-        );
-      }
-
-      const offset = (page - 1) * limit;
-      const whereConditions: any = { isActive, type: 'product' };
-      if (name) {
-        whereConditions.name = ILike(`%${name}%`);
-      } else if (code) {
-        whereConditions.code = Raw(
-          (alias) => `CAST(${alias} AS TEXT) ILIKE :code`,
-          {
-            code: `%${code}%`,
-          },
-        );
-      }
-
-      const [products] = await this.productRepository.findAndCount({
-        where: whereConditions,
-        relations: ['stock', 'stock.unitOfMeasure'],
-        skip: offset,
-        take: limit,
-      });
-
-      if (products.length === 0) {
-        const searchCriteria = name ? `name: ${name}` : `code: ${code}`;
-        throw new NotFoundException(`No products found with ${searchCriteria}`);
-      }
-
-      return products;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Error fetching the products',
-        error.message,
-      );
-    }
-  }
-
-  async getSimpleAndCompositeProducts(page: number, limit: number) {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.productRepository.find({
-        where: { type: 'product', isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['stock', 'stock.unitOfMeasure'],
-      });
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
-    }
   }
 }
