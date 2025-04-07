@@ -1,3 +1,4 @@
+import { TypeBaseUnitIngredient } from "../Enums/Ingredients"
 import { IStockOfProduct } from "./IStock"
 import { IUnitOfMeasureResponse, IUnitOfMeasureStandard } from "./IUnitOfMeasure"
 
@@ -10,12 +11,14 @@ export interface Iingredient {
   cost: number | null,
   stock?: IStockOfProduct,
   unitOfMeasureId?: (IUnitOfMeasureStandard | string) | null
+  type: TypeBaseUnitIngredient
 }
 export interface IingredientForm {
   name: string,
   ingredientId: string,
   quantityOfIngredient: number | null,
-  unitOfMeasureId: string
+  unitOfMeasureId: string,
+  type: TypeBaseUnitIngredient | null
 }
 
 export interface IingredientResponse {

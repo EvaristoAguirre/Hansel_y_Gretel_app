@@ -101,31 +101,22 @@ export const useProductos = () => {
         id: form.id,
       };
 
-      console.log("👀👀👀👀👀👀 FORM EN EDIT", preparedForm);
-
       const updatedProduct = await editProduct(preparedForm, token);
 
-      console.log("response de edit🟢", updatedProduct);
-
-
-
       updateProduct(updatedProduct);
+
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
 
       if (selectedCategoryId) {
         const data = await getProductsByCategory(selectedCategoryId, token);
-
         setProducts(data);
-
       }
-
       handleCloseModal();
     } catch (error: any) {
       Swal.fire("Error", error.message || "No se pudo editar el producto.", "error");
       console.error(error);
     }
   };
-
 
   const handleDelete = async (id: string, token: string) => {
     const confirm = await Swal.fire({
