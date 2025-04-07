@@ -16,6 +16,7 @@ import { fetchUnits } from "@/api/unitOfMeasure";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { FormTypeProduct } from "@/components/Enums/view-products";
 import LoadingLottie from '@/components/Loader/Loading';
+import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -40,8 +41,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     categories,
   } = useCategoryStore();
 
-  const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
-
 
   useEffect(() => {
     connectWebSocket();
@@ -49,25 +48,11 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
+  const { units } = useUnitContext()
 
   useEffect(() => {
-    if (!token) return;
-
-    let isMounted = true;
-    setLoading(true);
-    fetchUnits(token, "1", "50").then(units => {
-      if (isMounted) {
-        setUnits(units);
-        console.log("llamada en products.tsx de units");
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+    units.length === 0 ? setLoading(true) : setLoading(false);
+  }, [units]);
 
   const handleSave = () => {
     if (token) {
@@ -140,10 +125,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     },
   ];
 
-  useEffect(() => {
-
-    console.log("formulario en products 🤍", form);
-  }, [form]);
 
 
   return (

@@ -29,6 +29,9 @@ export class OrderDetails {
   @Column()
   batchId: string;
 
+  // @Column({nullable: true})
+  // comment: string;
+
   //--------------- Relaciones ---------------- //
 
   @ManyToOne(() => Product, (product) => product.orderDetails)

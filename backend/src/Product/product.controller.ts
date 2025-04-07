@@ -22,6 +22,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -36,6 +37,21 @@ export class ProductController {
     @Query('limit') limit: number = 10,
   ): Promise<ProductResponseDto[]> {
     return this.productService.getAllProducts(page, limit);
+  }
+
+  @Get('not-promotion')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getSimpleAndCompositeProducts(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.productService.getSimpleAndCompositeProducts(page, limit);
+  }
+
+  @Get('by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getProductByName(@Query('name') name: string): Promise<Product> {
+    return this.productService.getProductByName(name);
   }
 
   @Post('prod-to-prom')
@@ -86,12 +102,6 @@ export class ProductController {
     return this.productService.getProductByCode(+code);
   }
 
-  @Get('by-name/:name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductByName(@Param('name') name: string): Promise<Product> {
-    return this.productService.getProductByName(name);
-  }
-
   @Post('by-categories')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductsByCategories(
@@ -127,5 +137,10 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteProduct(@Param() id: UUID) {
     return await this.productService.deleteProduct(id);
+  }
+
+  @Post('check-stock')
+  async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
+    return this.productService.checkProductsStockAvailability(dataToCheck);
   }
 }

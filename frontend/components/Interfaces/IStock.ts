@@ -1,5 +1,5 @@
 import { StockModalType } from "../Enums/view-products";
-import { IUnitOfMeasure } from "./IUnitOfMeasure";
+import { IUnitOfMeasureForm } from "./IUnitOfMeasure";
 
 export interface IStock {
   quantityInStock: number
@@ -14,7 +14,7 @@ export interface IStockOfProduct {
   id: string;
   quantityInStock: number;
   minimumStock: number;
-  unitOfMeasure: IUnitOfMeasure;
+  unitOfMeasure: IUnitOfMeasureForm;
 
 }
 
@@ -26,6 +26,7 @@ export interface SelectedItem {
   stock?: number | null;
   min: number | null;
   unit: string | null;
+  idStock?: string | null;
 }
 
 
