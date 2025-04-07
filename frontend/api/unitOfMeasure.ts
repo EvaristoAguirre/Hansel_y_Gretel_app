@@ -42,6 +42,31 @@ export const allUnitsConventional = async (token: string) => {
   return data;
 };
 
+export const fetchUnitOfMass = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/unit-of-mass`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const fetchUnitOfVolume = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/unit-of-volume`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+
 export const createUnit = async (form: IUnitOfMeasureForm, token: string) => {
   const response = await fetch(URI_UNIT_OF_MEASURE, {
     method: "POST",

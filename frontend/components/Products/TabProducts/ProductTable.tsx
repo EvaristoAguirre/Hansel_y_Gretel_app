@@ -105,8 +105,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </Button>
 
         {/* Buscador de productos */}
-        <div className="w-[60%]">
+        <div className="w-[60%] mr-3">
           <AutoCompleteProduct
+
             options={selectedCategoryId ? searchResults : products}
             onSearch={(value) => handleSearch(value, token!)}
             onSelect={handleSelectProduct}
