@@ -69,7 +69,8 @@ export class PrinterService {
       this.printer.println('--------------');
       this.printer.alignLeft();
       this.printer.println('Este es un ticket de prueba');
-      this.printer.partialCut(); // Cortar papel (importante!)
+      this.printer.beep();
+      this.printer.cut({ verticalTabAmount: 3 }); // Cortar papel (importante!)
 
       // 4. Ejecutar la impresión (esto debe ir AL FINAL)
       await this.printer.execute();

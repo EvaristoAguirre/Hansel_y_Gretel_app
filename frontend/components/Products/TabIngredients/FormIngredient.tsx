@@ -65,13 +65,12 @@ export const FormIngredient = ({
     cost: "Costo",
     stock: "Stock",
     unitOfMeasureId: "Unidad de Medida",
+    type: "Tipo",
   };
 
   const checkNameAvailability = async (name: string) => {
     const token = getAccessToken();
     const result = token && await ingredientsByName(name, token);
-    console.log({ result });
-
     if (result && result.ok) {
       setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
     } else {

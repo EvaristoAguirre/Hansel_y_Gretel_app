@@ -62,18 +62,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   products,
   units
 }) => {
-  /**
-   * Estado que almacena el valor actual de la pestaña seleccionada.
-   * Se inicializa en función del tipo de formulario y la modalidad de edición.
-   * Si se está editando un producto de tipo PROMO, se selecciona la pestaña 2 por defecto.
-   *
-   * @initialValue PRODUCTO SIMPLE
-   */
+
   const [tabValue, setTabValue] = useState<TabProductKey>(TabProductKey.SIMPLE_PRODUCT);
-  const [disableTabs, setDisableTabs] = useState<TabProductKey[]>(
-    // [TabProductKey.SIMPLE_PRODUCT, TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.PROMO]
-    []
-  );
+  const [disableTabs, setDisableTabs] = useState<TabProductKey[]>([]);
 
   useEffect(() => {
     if (modalType === FormTypeProduct.EDIT) {
@@ -93,6 +84,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     price: "",
     cost: "",
     categories: "",
+    products: "",
   });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
@@ -106,6 +98,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setToken(token);
   }, [getAccessToken]);
 
+
+  useEffect(() => {
+    validateForm(errors);
+  }, [errors, form]);
+
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
     name: "Nombre",
@@ -118,6 +115,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     id: "ID",
   };
 
+
   const validateField = async (field: string, value: any) => {
     let error = "";
 
@@ -128,7 +126,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       if (!value) {
         error = "Este campo es obligatorio";
       } else if (field === "code") {
-        // Validación del código
         setIsCheckingCode(true);
         try {
           if (token) {
@@ -141,7 +138,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               error = result.error || "Error al validar el código";
             }
           }
-
         } catch (err) {
           console.error("Error al validar el código:", err);
           error = "Error al conectar con el servidor";
@@ -150,9 +146,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         }
       } else if ((field === "price" || field === "cost") && value <= 0) {
         error = "Debe ser un número positivo";
-
       } else if (field === "name") {
-        // Validación del nombre
         if (token) {
           const result = await getProductByName(value, token);
           if (result.ok) {
@@ -164,25 +158,37 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           }
         }
       }
+
       setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
     };
-  };
+    if (field === "products" && Array.isArray(value) && value.length === 0) {
+      error = "Debe seleccionar al menos un producto";
+      setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+    }
 
-  const validateForm = () => {
-    const hasErrors = Object.values(errors).some((error) => error);
+  };
+  const validateForm = (currentErrors = errors) => {
+    const hasErrors = Object.values(currentErrors).some((error) => error);
+    const validationFields: { [key in TabProductKey]: string[] } = {
+      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "cost"],
+      [TabProductKey.PRODUCT_WITH_INGREDIENT]: ["code", "name", "price", "ingredients"],
+      [TabProductKey.PROMO]: ["code", "name", "price", "products"],
+    };
+
     const hasEmptyFields =
-      ["code", "name", "price", "cost"].some(
-        (field) => !form[field as keyof ProductForm]
-      ) ||
+      validationFields[tabValue].some((field) => {
+        if (field === "products") {
+          return !Array.isArray(form.products) || form.products.length === 0;
+        } else if (field === "ingredients") {
+          return !Array.isArray(form.ingredients) || form.ingredients.length === 0;
+        }
+        return !form[field as keyof ProductForm];
+      }) ||
       !Array.isArray(form.categories) ||
       form.categories.length === 0;
 
     setIsFormValid(!hasErrors && !hasEmptyFields);
   };
-
-  useEffect(() => {
-    validateForm();
-  }, [errors, form]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: TabProductKey) => {
     setTabValue(newValue);
@@ -206,9 +212,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   };
 
   const handleSetDisableTabs = (newDisableTabs: TabProductKey[]) => {
-    // return setDisableTabs(disableTabs.filter(tab => tab !== tabKey));
-    return setDisableTabs(newDisableTabs);
-
+    setDisableTabs(newDisableTabs);
   }
 
   const onDisableTabs = (tabKey: TabProductKey) => {
@@ -298,12 +302,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                         : parseInt(e.target.value, 10)
                       : e.target.value;
                   onChange(field as keyof ProductForm, value);
-                  if (field !== "code") {
+                  if (!["code", "name"].includes(field)) {
                     validateField(field, value);
                   }
                 }}
                 onBlur={(e) => {
-                  if (field === "code") {
+                  if (field === "code" || field === "name") {
                     validateField(field, e.target.value);
                   }
                 }}
@@ -363,7 +367,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           }} color="warning">
             Cancelar
           </Button>
-          <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }}>
+          <Button variant="contained" onClick={handleSaveProduct} sx={{ mt: 2 }} disabled={!isFormValid}>
             {getButtonText()}
           </Button>
         </DialogActions>
