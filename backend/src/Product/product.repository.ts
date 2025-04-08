@@ -25,6 +25,7 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
+import { query } from 'express';
 
 @Injectable()
 export class ProductRepository {
@@ -281,6 +282,7 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
@@ -659,7 +661,7 @@ export class ProductRepository {
         const existingProductByName = await queryRunner.manager.findOne(
           Product,
           {
-            where: { name: productData.name },
+            where: { name: ILike(productData.name) },
           },
         );
         if (existingProductByName) {

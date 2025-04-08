@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsInt,
@@ -13,6 +13,7 @@ import {
 
 export class CreatePromotionDto {
   @IsString()
+  @Transform(({ value }) => value.toLowerCase())
   name: string;
 
   @IsOptional()

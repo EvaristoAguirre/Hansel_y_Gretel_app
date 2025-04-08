@@ -13,6 +13,7 @@ import {
   ManyToOne,
   OneToMany,
   OneToOne,
+  Index,
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
@@ -30,6 +31,7 @@ export class Product {
   code?: number;
 
   @Column({ nullable: false, unique: true })
+  @Index({ unique: true })
   name: string;
 
   @Column({ nullable: true })

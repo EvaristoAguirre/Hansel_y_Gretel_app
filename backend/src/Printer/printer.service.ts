@@ -83,14 +83,85 @@ export class PrinterService {
     }
   }
 
-  async printRawTest(): Promise<string> {
-    const buffer = Buffer.from([
-      ...Buffer.from('=== PRUEBA ===\n'),
-      ...Buffer.from('Hola mundo!\n'),
-      ...Buffer.from('\x1B\x69'), // Comando para cortar (depende del modelo)
-    ]);
+  // async printRawTest(): Promise<string> {
+  //   const buffer = Buffer.from([
+  //     ...Buffer.from('=== PRUEBA ===\n'),
+  //     ...Buffer.from('Hola mundo!\n'),
+  //     ...Buffer.from('\x1B\x69'), // Comando para cortar (depende del modelo)
+  //   ]);
 
-    await this.printer.raw(buffer);
-    return 'Impresión RAW enviada';
+  //   await this.printer.raw(buffer);
+  //   return 'Impresión RAW enviada';
+  // }
+
+  async printRawTest(): Promise<string> {
+    try {
+      // 1. Verificar conexión primero
+      const isConnected = await this.printer.isPrinterConnected();
+      if (!isConnected) {
+        throw new Error('La impresora no está conectada');
+      }
+
+      // 2. Configurar la impresión (usando el método de alto nivel)
+      this.printer.clear();
+      this.printer.setCharacterSet(CharacterSet.PC850_MULTILINGUAL);
+      this.printer.alignCenter();
+
+      // 3. Añadir contenido
+      this.printer.bold(true);
+      this.printer.println('=== PRUEBA ===');
+      this.printer.bold(false);
+      this.printer.println('Hola mundo!');
+      this.printer.println(new Date().toLocaleString());
+      this.printer.println('--------------');
+      this.printer.alignLeft();
+      this.printer.println('Este es un ticket de prueba');
+
+      // 4. Ejecutar la impresión del texto
+      await this.printer.execute();
+
+      // 5. Enviar comando RAW para el corte de papel
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      const cutCommand = Buffer.from('\x1B\x69', 'ascii'); // Comando de corte que funciona
+      await this.printer.raw(cutCommand);
+
+      return 'Ticket impreso y cortado correctamente';
+    } catch (error) {
+      console.error('Error al imprimir:', error);
+      throw new Error(`Error al imprimir: ${error.message}`);
+    }
   }
+
+  //   async printRawTest(): Promise<string> {
+  //     try {
+  //       // Crear el contenido del ticket
+  //       const content = [
+  //         '=== PRUEBA ===\n',
+  //         'Hola mundo!\n',
+  //         new Date().toLocaleString() + '\n',
+  //         '--------------\n',
+  //         'Este es un ticket de prueba\n',
+  //       ].join('');
+
+  //       // Convertir a buffer con codificación correcta
+  //       const textBuffer = Buffer.from(content, 'utf8');
+
+  //       // Comando de corte (ajusta según tu modelo de impresora)
+  //       const cutCommand = Buffer.from('\x1B\x69', 'ascii');
+
+  //       // Combinar ambos buffers
+  //       // const fullBuffer = Buffer.concat([textBuffer, cutCommand]);
+
+  //       // Enviar a la impresora
+  //       // await this.printer.raw(fullBuffer);
+  //       await this.printer.execute();
+  // await new Promise(resolve => setTimeout(resolve, 500)); // Espera 500ms
+  // await this.printer.raw(Buffer.from('\x1D\x56\x00', 'ascii')); // Corte completo
+
+  //       return 'Impresión RAW mejorada enviada';
+  //     } catch (error) {
+  //       console.error('Error al imprimir:', error);
+  //       throw new Error(`Error al imprimir: ${error.message}`);
+  //     }
+  //   }
 }
