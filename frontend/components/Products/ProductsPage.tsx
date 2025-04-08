@@ -1,12 +1,14 @@
 "use client";
 import { Box } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TabsNavigation } from "./TabsNavigations";
 import { Tab } from "../Enums/view-products";
 import IngredientsProvider from "@/app/context/ingredientsContext";
 import UnitProvider from "@/app/context/unitOfMeasureContext";
 import { useAuth } from "@/app/context/authContext";
 import ProductsContent from "./ProductContent";
+import { useCategoryStore } from "../Categories/useCategoryStore";
+import { fetchCategories } from "@/api/categories";
 
 
 const ProductsPage: React.FC = () => {
@@ -22,6 +24,21 @@ const ProductsPage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const { getAccessToken } = useAuth();
+  const { setCategories } = useCategoryStore();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = getAccessToken();
+      if (!token) return;
+      try {
+        const data = await fetchCategories(token);
+        if (data) setCategories(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, [getAccessToken, setCategories]);
 
   const handleTabChange = (event: React.SyntheticEvent, newIndex: number) => {
     setTabIndex(newIndex);
