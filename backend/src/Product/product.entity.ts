@@ -50,8 +50,8 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'enum', enum: ['product', 'promotion'] })
-  type: 'product' | 'promotion';
+  @Column({ type: 'enum', enum: ['product', 'promotion', 'simple'] })
+  type: 'product' | 'promotion' | 'simple';
 
   // ---------       Relaciones   -----------
 

@@ -629,6 +629,7 @@ export class ProductRepository {
       ...productData,
       categories: categoryEntities,
       unitOfMeasure: unitToSimpleProduct,
+      type: 'simple',
     });
 
     const savedProduct = await queryRunner.manager.save(product);
@@ -1014,7 +1015,10 @@ export class ProductRepository {
       }
 
       const offset = (page - 1) * limit;
-      const whereConditions: any = { isActive, type: 'product' };
+      const whereConditions: any = {
+        isActive,
+        type: In(['product', 'simple']),
+      };
       if (name) {
         whereConditions.name = ILike(`%${name}%`);
       } else if (code) {
