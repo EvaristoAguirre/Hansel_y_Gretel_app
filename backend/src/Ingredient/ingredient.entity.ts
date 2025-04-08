@@ -2,6 +2,7 @@ import { Stock } from 'src/Stock/stock.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -17,7 +18,8 @@ export class Ingredient {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ nullable: false, unique: true })
+  @Index({ unique: true })
   name: string;
 
   @Column({ default: true })
