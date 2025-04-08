@@ -302,12 +302,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                         : parseInt(e.target.value, 10)
                       : e.target.value;
                   onChange(field as keyof ProductForm, value);
-                  if (field !== "code") {
+                  if (!["code", "name"].includes(field)) {
                     validateField(field, value);
                   }
                 }}
                 onBlur={(e) => {
-                  if (field === "code") {
+                  if (field === "code" || field === "name") {
                     validateField(field, e.target.value);
                   }
                 }}

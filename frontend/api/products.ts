@@ -71,6 +71,7 @@ export const getProductsByCategory = async (id: string, token: string) => {
 
 //función usada para validar un código en el form
 export const getProductByCode = async (code: number, token: string) => {
+
   try {
     const response = await fetch(`${URI_PRODUCT}/by-code/${code}`, {
       method: "GET",
@@ -94,8 +95,13 @@ export const getProductByCode = async (code: number, token: string) => {
 };
 
 export const getProductByName = async (name: string, token: string) => {
+
+  const queryParams = new URLSearchParams({
+    name: name,
+  });
+
   try {
-    const response = await fetch(`${URI_PRODUCT}/by-name/${name}`, {
+    const response = await fetch(`${URI_PRODUCT}/by-name?${queryParams.toString()}`, {
       method: "GET",
       headers: {
         'Content-Type': 'application/json',
