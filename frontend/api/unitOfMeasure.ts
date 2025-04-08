@@ -3,8 +3,10 @@ import { FieldUnitType } from "@/components/Enums/unitOfMeasure";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { URI_UNIT_OF_MEASURE } from "@/components/URI/URI";
 
-export const fetchUnits = async (token: string) => {
-  const response = await fetch(`${URI_UNIT_OF_MEASURE}/all`, {
+export const fetchUnits = async (token: string, page: string, limit: string) => {
+  const queryParams = new URLSearchParams({ page, limit }).toString();
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/all?${queryParams}`, {
+
     method: "GET",
     headers: {
       'Content-Type': 'application/json',
@@ -39,6 +41,31 @@ export const allUnitsConventional = async (token: string) => {
   const data = await response.json();
   return data;
 };
+
+export const fetchUnitOfMass = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/unit-of-mass`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const fetchUnitOfVolume = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/unit-of-volume`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
 
 export const createUnit = async (form: IUnitOfMeasureForm, token: string) => {
   const response = await fetch(URI_UNIT_OF_MEASURE, {

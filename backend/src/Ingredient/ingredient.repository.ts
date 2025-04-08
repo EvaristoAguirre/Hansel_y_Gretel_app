@@ -13,6 +13,7 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class IngredientRepository {
@@ -55,6 +56,11 @@ export class IngredientRepository {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { id, isActive: true },
@@ -79,15 +85,15 @@ export class IngredientRepository {
   }
 
   async getIngredientByName(name: string): Promise<Ingredient> {
-    if (!name) {
-      throw new BadRequestException('Either ID must be provided.');
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('Name parameter is required');
     }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { name },
       });
       if (!ingredient) {
-        throw new NotFoundException(`Ingredient with ID: ${name} not found`);
+        throw new NotFoundException(`Ingredient with name: ${name} not found`);
       }
       return ingredient;
     } catch (error) {
@@ -129,19 +135,47 @@ export class IngredientRepository {
     try {
       const ingredient = this.ingredientRepository.create(createData);
       if (unitOfMeasureId) {
-        ingredient.unitOfMeasure =
+        const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
+        console.log(unitOfMeasure);
+        if (!unitOfMeasure) {
+          throw new BadRequestException('Unit of measure not found');
+        }
+        ingredient.unitOfMeasure = unitOfMeasure;
+
+        const unitOfMeasureBaseUnit =
+          await this.unitOfMeasureService.getUnitOfMeasureById(
+            unitOfMeasure.baseUnitId,
+          );
+        console.log('unidad de base', unitOfMeasureBaseUnit);
+        console.log('unidad de base', unitOfMeasureBaseUnit.name);
+        if (
+          unitOfMeasureBaseUnit.name === 'Litro' ||
+          unitOfMeasureBaseUnit.name === 'Mililitro' ||
+          unitOfMeasureBaseUnit.name === 'Centímetro cúbico'
+        ) {
+          ingredient.type = 'volumen';
+        }
+
+        if (
+          unitOfMeasureBaseUnit.name === 'Miligramo' ||
+          unitOfMeasureBaseUnit.name === 'Kilogramo' ||
+          unitOfMeasureBaseUnit.name === 'Gramo'
+        ) {
+          ingredient.type = 'masa';
+        }
+        if (unitOfMeasureBaseUnit.name === 'Unidad') {
+          ingredient.type = 'unidad';
+        }
       }
       return await this.ingredientRepository.save(ingredient);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
         'An error occurred while creating the ingredient. Please try again later.',
+        error.message,
       );
     }
   }
@@ -152,6 +186,11 @@ export class IngredientRepository {
   ): Promise<Ingredient> {
     if (!id) {
       throw new BadRequestException('ID must be provided');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
 
     try {
@@ -201,6 +240,11 @@ export class IngredientRepository {
     if (!id) {
       throw new BadRequestException('ID must be provided');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const ingredient = await this.ingredientRepository.findOne({
         where: { id: id, isActive: true },
@@ -231,6 +275,7 @@ export class IngredientRepository {
       isActive: ingredient.isActive,
       description: ingredient.description,
       cost: ingredient.cost,
+      type: ingredient.type,
       unitOfMeasure: ingredient.unitOfMeasure
         ? {
             id: ingredient.unitOfMeasure.id,

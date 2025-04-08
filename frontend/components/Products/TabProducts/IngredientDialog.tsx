@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   DialogContent,
   TextField,
@@ -17,29 +17,36 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
-import { fetchUnits } from "@/api/unitOfMeasure";
-import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
-import { fetchIngredients } from "@/api/ingredients";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
+// import { fetchIngredients } from "@/api/ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
+import { TabProductKey } from "@/components/Enums/view-products";
+import { useIngredientsContext } from '../../../app/context/ingredientsContext';
+import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
+import { useUnitContext } from '../../../app/context/unitOfMeasureContext';
 
 interface IngredientDialogProps {
   onSave: (ingredientsForm: IingredientForm[]) => void;
   form: ProductForm;
+  units: IUnitOfMeasureForm[];
+  handleSetDisableTabs: (tabKeys: TabProductKey[]) => void;
 }
 
-const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => {
+const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units, handleSetDisableTabs }) => {
   const { getAccessToken } = useAuth();
-  const [unit, setUnit] = useState<IUnitOfMeasure[]>([]);
-  const [ingredients, setIngredients] = useState<Iingredient[]>([]);
+  const { ingredients } = useIngredientsContext();
+  const { unitsOfMass, unitsOfVolume, fetchUnitsMass, fetchUnitsVolume } = useUnitContext()
+  // const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<IingredientForm[]>([]);
   const [newIngredient, setNewIngredient] = useState<IingredientForm>({
     name: "",
     ingredientId: "",
     quantityOfIngredient: 0,
     unitOfMeasureId: "",
+    type: null
   });
 
   // Estados para editar
@@ -50,17 +57,18 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
-    if (form.ingredients) {
+    if (form.ingredients && form.ingredients.length > 0) {
+
       const preparedIngredients = form.ingredients.map((ingredient: any) => ({
-        name: ingredient.ingredient.name,
-        ingredientId: ingredient.ingredient.id,
-        quantityOfIngredient: Number(ingredient.quantityOfIngredient),
-        unitOfMeasureId: ingredient.unitOfMeasure.id
+        name: ingredient.name,
+        ingredientId: ingredient.ingredientId,
+        quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
+        unitOfMeasureId: ingredient.unitOfMeasureId,
+        type: ingredient.type
       }))
       setSelectedIngredients(preparedIngredients);
     }
-    fetchUnits(token).then(units => setUnit(units));
-    fetchIngredients(token).then(ings => setIngredients(ings));
+    // fetchIngredients(token).then(ings => setIngredients(ings));
   }, []);
 
   useEffect(() => {
@@ -70,11 +78,22 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
       newIngredient.quantityOfIngredient <= 0 ||
       !newIngredient.unitOfMeasureId
     );
+
   }, [newIngredient]);
 
+
+  const prevIngredientsRef = useRef<IingredientForm[]>([]);
+
   useEffect(() => {
-    onSave(selectedIngredients);
+    if (!selectedIngredients.length) {
+      handleSetDisableTabs([]);
+    }
+    if (JSON.stringify(prevIngredientsRef.current) !== JSON.stringify(selectedIngredients)) {
+      onSave(selectedIngredients);
+      prevIngredientsRef.current = selectedIngredients;
+    }
   }, [selectedIngredients]);
+
 
   const handleAddIngredient = () => {
     if (
@@ -89,11 +108,13 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
         name: ingredientData ? ingredientData.name : newIngredient.name,
       };
       setSelectedIngredients([...selectedIngredients, ingredientWithName]);
+      handleSetDisableTabs([TabProductKey.PROMO, TabProductKey.SIMPLE_PRODUCT]);
       setNewIngredient({
         name: "",
         ingredientId: "",
         quantityOfIngredient: 0,
         unitOfMeasureId: "",
+        type: null
       });
     }
   };
@@ -124,22 +145,40 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
 
   return (
     <>
-      <DialogContent>
+      <DialogContent sx={{ padding: 0 }}>
         {/* Sección para agregar un nuevo ingrediente */}
         <FormControl margin="dense"
           sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 2, width: "100%" }}>
-          <FormControl variant="outlined" sx={{ minWidth: 120, width: "40%" }}>
+
+          <FormControl
+            variant="outlined"
+            sx={{ width: "40%" }}
+            size="small"
+          >
+            {/* //todo INGREDIENTE */}
+
             <InputLabel>Ingrediente</InputLabel>
             <Select
               label="Ingrediente"
               value={newIngredient.ingredientId}
-              onChange={(e) =>
+              onChange={(e) => {
+                const selectedIngredient = ingredients.find(ing => ing.id === e.target.value);
+                const type = selectedIngredient?.type ?? null;
+
                 setNewIngredient({
                   ...newIngredient,
                   ingredientId: e.target.value,
                   name: e.target.name,
-                })
-              }
+                  type
+                });
+
+                if (type === TypeBaseUnitIngredient.MASS) {
+                  fetchUnitsMass();
+                } else if (type === TypeBaseUnitIngredient.VOLUME) {
+                  fetchUnitsVolume();
+                }
+              }}
+
             >
               {ingredients.map((ingredient) => (
                 <MenuItem key={ingredient.id} value={ingredient.id}>
@@ -148,30 +187,56 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
               ))}
             </Select>
           </FormControl>
+
+          {/* //todo CANTIDAD DE INGREDIENTE */}
+
           <TextField
             label="Cantidad"
             type="number"
             margin="dense"
             value={newIngredient.quantityOfIngredient}
-            onChange={(e) =>
-              setNewIngredient({ ...newIngredient, quantityOfIngredient: parseFloat(e.target.value) })
-            }
-            sx={{ minWidth: 120, width: "15%" }}
+            onChange={(e) => {
+              let value = parseFloat(e.target.value);
+              if (isNaN(value) || value <= 0) return;
+              setNewIngredient({ ...newIngredient, quantityOfIngredient: value });
+            }}
+            inputProps={{ min: 1, step: "any" }}
+            sx={{ width: "25%" }}
+            size="small"
           />
-          <FormControl variant="outlined" sx={{ minWidth: 120, width: "45%" }}>
-            <InputLabel sx={{ fontSize: "15px" }}>Unidad de Medida</InputLabel>
+
+          {/* //todo UNIDAD DE MEDIDA */}
+
+          <FormControl variant="outlined" sx={{ minWidth: 120, width: "45%" }} size="small">
+            <InputLabel sx={{}}>Unidad de Medida</InputLabel>
             <Select
               label="Unidad de medida"
               value={newIngredient.unitOfMeasureId}
               onChange={(e) =>
                 setNewIngredient({ ...newIngredient, unitOfMeasureId: e.target.value })
               }
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 200,
+                    overflowY: "auto",
+                  },
+                },
+              }}
             >
-              {unit.map((u) => (
-                <MenuItem key={u.id} value={u.id}>
-                  {u.name}
-                </MenuItem>
-              ))}
+              {
+                newIngredient.type === TypeBaseUnitIngredient.MASS ?
+                  (unitsOfMass.map((u) => (
+                    <MenuItem key={u.id} value={u.id}>
+                      {u.name}
+                    </MenuItem>
+                  ))) :
+                  (unitsOfVolume.map((u) => (
+                    <MenuItem key={u.id} value={u.id}>
+                      {u.name}
+                    </MenuItem>
+                  )))
+              }
             </Select>
           </FormControl>
         </FormControl>
@@ -186,13 +251,13 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
         </Button>
 
         {/* Lista de ingredientes agregados */}
-        <List sx={{ mt: 2 }}>
+        <List sx={{ maxHeight: 130, overflowY: 'auto' }}>
           {selectedIngredients.map((ingredient, index) => (
             <ListItem key={index} divider
               secondaryAction={
                 <>
                   {editIndex === index ? (
-                    <Box sx={{ display: "flex", flexDirection: "row", gap: "8px" }}>
+                    <Box sx={{ display: "flex", flexDirection: "row", gap: "8px" }} >
                       <Tooltip title="Guardar">
                         <IconButton edge="end" onClick={handleSaveEdit}>
                           <SaveIcon color="success" />
@@ -221,7 +286,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                 // Modo edición para el ingrediente
                 <div style={{ width: "90%", display: "flex", flexDirection: "row", gap: "8px" }}>
                   <TextField
-                    fullWidth
+                    sx={{ width: "40%" }}
                     margin="dense"
                     label="Nombre"
                     type="string"
@@ -232,21 +297,25 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                         name: e.target.value,
                       })
                     }
+                    size="small"
                   />
                   <TextField
-                    fullWidth
+                    sx={{ width: "20%" }}
                     margin="dense"
                     label="Cantidad"
                     type="number"
                     value={editIngredient.quantityOfIngredient}
-                    onChange={(e) =>
-                      setEditIngredient({
-                        ...editIngredient,
-                        quantityOfIngredient: parseFloat(e.target.value),
-                      })
-                    }
+                    onChange={(e) => {
+                      let value = parseFloat(e.target.value);
+                      if (isNaN(value) || value <= 0) return;
+                      setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
+                    }}
+                    inputProps={{ min: 1, step: "any" }}
+                    size="small"
                   />
-                  <FormControl fullWidth margin="dense">
+//todo UNIDAD DE MEDIDA EN EDICION
+                  <FormControl fullWidth margin="dense" size="small"
+                    sx={{ width: "40%" }}>
                     <InputLabel>Unidad</InputLabel>
                     <Select
                       value={editIngredient.unitOfMeasureId}
@@ -256,8 +325,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                           unitOfMeasureId: e.target.value,
                         })
                       }
+                      size="small"
                     >
-                      {unit.map((u) => (
+                      {units.map((u) => (
                         <MenuItem key={u.id} value={u.id}>
                           {u.name}
                         </MenuItem>
@@ -270,7 +340,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
                 // Vista del ingrediente agregado
 
                 <ListItemText
-                  primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${unit.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ingredient.unitOfMeasureId}`}
+
+                  primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${units.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ""}`}
+                  sx={{ fontSize: '0.5rem' }}
                 />
 
               )}
@@ -280,6 +352,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form }) => 
       </DialogContent>
     </>
   );
+
 };
 
 export default IngredientDialog;

@@ -5,6 +5,6 @@ import { PrinterService } from './printer.service';
 @Module({
   controllers: [PrinterController],
   providers: [PrinterService],
-  exports: [PrinterService]
+  exports: [PrinterService],
 })
 export class PrinterModule {}

@@ -22,6 +22,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @ApiTags('Producto')
 @Controller('product')
@@ -38,12 +39,44 @@ export class ProductController {
     return this.productService.getAllProducts(page, limit);
   }
 
+  @Get('not-promotion')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getSimpleAndCompositeProducts(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.productService.getSimpleAndCompositeProducts(page, limit);
+  }
+
+  @Get('by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getProductByName(@Query('name') name: string): Promise<Product> {
+    return this.productService.getProductByName(name);
+  }
+
+  @Post('prod-to-prom')
+  async searchProductsToPromotion(
+    @Query('isActive') isActive: boolean = true,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('name') name?: string,
+    @Query('code') code?: number,
+  ): Promise<ProductResponseDto[]> {
+    return this.productService.searchProductsToPromotion(
+      isActive,
+      page,
+      limit,
+      name,
+      code,
+    );
+  }
+
   @Post('search')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async searchProducts(
     @Query('name') name?: string,
     @Query('code') code?: string,
-    @Query('isActive') isActive?: boolean,
+    @Query('isActive') isActive: boolean = true,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Body('categories') categories?: string[],
@@ -67,12 +100,6 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getProductByCode(@Param('code') code: string): Promise<Product> {
     return this.productService.getProductByCode(+code);
-  }
-
-  @Get('by-name/:name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductByName(@Param('name') name: string): Promise<Product> {
-    return this.productService.getProductByName(name);
   }
 
   @Post('by-categories')
@@ -110,5 +137,10 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteProduct(@Param() id: UUID) {
     return await this.productService.deleteProduct(id);
+  }
+
+  @Post('check-stock')
+  async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
+    return this.productService.checkProductsStockAvailability(dataToCheck);
   }
 }

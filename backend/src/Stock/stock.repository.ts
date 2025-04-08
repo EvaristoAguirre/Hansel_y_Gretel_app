@@ -18,6 +18,7 @@ import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class StockRepository {
@@ -69,6 +70,11 @@ export class StockRepository {
     if (!productId) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const stock = await this.stockRepository.findOne({
         where: { id: productId },
@@ -92,15 +98,23 @@ export class StockRepository {
   async getStockByIngredientId(
     ingredientId: string,
   ): Promise<StockSummaryResponseDTO> {
+    console.log('ingredientId', ingredientId);
     if (!ingredientId) {
       throw new BadRequestException('Either ID must be provided.');
     }
+    if (!isUUID(ingredientId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
       const stock = await this.stockRepository.findOne({
-        where: { id: ingredientId },
+        where: {
+          ingredient: { id: ingredientId },
+        },
         relations: ['ingredient', 'unitOfMeasure'],
       });
-
+      console.log('stock', stock);
       if (!stock) {
         throw new NotFoundException('Stock not found');
       }
@@ -218,6 +232,11 @@ export class StockRepository {
 
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
 
     if (!productId && !ingredientId) {

@@ -1,12 +1,11 @@
 import { ingredientsById } from "@/api/ingredients";
 import { addStock, editStock, getIdStockFromIngredient, getIdStockFromProduct, getStockByIngredient } from "@/api/stock"; // Se agrega editStock
-import { fetchUnits } from "@/api/unitOfMeasure";
-import { useAuth } from "@/app/context/authContext";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
 import { useProductos } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
-import { IUnitOfMeasure } from "@/components/Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import {
   Button,
   Dialog,
@@ -37,34 +36,22 @@ const initialState = {
   unitOfMeasure: "",
 };
 
+
+
 const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selectedItem, token }) => {
   const [formValues, setFormValues] = useState(initialState);
-  const [units, setUnits] = useState<IUnitOfMeasure[]>([]);
-  const { getAccessToken } = useAuth();
   const { fetchAndSetProducts } = useProductos();
   const { updateIngredient } = useIngredientsContext();
+  const { units } = useUnitContext()
 
   useEffect(() => {
-    if (!open) return;
-    const token = getAccessToken();
-    if (token) {
-      fetchUnits(token).then((fetchedUnits) => {
-
-        let updatedUnits = [...fetchedUnits];
-
-        let selectedUnit = fetchedUnits.find((u: IUnitOfMeasure) => u.name === selectedItem.unit);
-
-        setUnits(updatedUnits);
-
-        setFormValues({
-          quantityInStock: selectedItem?.stock?.toString() || "",
-          minimumStock: selectedItem?.min?.toString() || "",
-          unitOfMeasure: selectedUnit?.id || "",
-        });
-      });
-    }
-  }, [open, getAccessToken, selectedItem]);
-
+    let selectedUnit = units.find((u: IUnitOfMeasureForm) => u.name === selectedItem.unit);
+    setFormValues({
+      quantityInStock: selectedItem?.stock?.toString() || "",
+      minimumStock: selectedItem?.min?.toString() || "",
+      unitOfMeasure: selectedUnit?.id || "",
+    });
+  }, [selectedItem]);
 
 
   // Manejo de cambios en los TextField
@@ -84,8 +71,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   };
   /**
    * Función que se ejecuta cuando se hace clic en el boton "Guardar"
-   * Previamente se valida que los campos sean correctos
-   * y mas adelante explico como se hace las llamadas
+   * Previamente se valida que los campos sean correctos y se envian los datos
    */
   const handleSubmit = async () => {
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
@@ -108,9 +94,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           let idStock: string = ""
           if (selectedItem.type === StockModalType.PRODUCT) {
             try {
-              token && selectedItem.id && await getIdStockFromProduct(selectedItem.id, token).then((id) => {
-                idStock = id
-              })
+              selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
               fetchAndSetProducts(token);
               Swal.fire("Éxito", "Stock editado correctamente.", "success");
             } catch (error) {
@@ -119,31 +103,25 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           }
           if (selectedItem.type === StockModalType.INGREDIENT) {
             if (selectedItem.id) {
-              /**
-               * Recupero el id del stock del ingrediente
-               * Luego lo paso por props a editStock
-               * Por ultimo lo q se hace, es hacer un fetch a igredient/id y actualizarlo en el context
-               */
               try {
-                const ingredientData = await ingredientsById(selectedItem.id, token);
-                if (ingredientData?.stock) {
+                selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
+                const updatedIngredient = await ingredientsById(selectedItem.id, token);
+                updateIngredient(updatedIngredient);
+                Swal.fire("Éxito", "Stock editado correctamente.", "success");
 
-                  const idStock = ingredientData.stock.id;
-                  await editStock(idStock, payload, token);
-                  const updatedIngredient = await ingredientsById(selectedItem.id, token);
-                  updateIngredient(updatedIngredient);
-
-                  Swal.fire("Éxito", "Stock editado correctamente.", "success");
-                } else {
-                  console.error("No se encontró stock para el ingrediente");
-                }
               } catch (error) {
                 console.error("Error al obtener el id del stock:", error);
               }
             }
           }
         } else {
-          await addStock(payload, token);
+          // Si no hay stock, se agrega
+          const result = await addStock(payload, token);
+          if (selectedItem.type === StockModalType.PRODUCT) {
+            fetchAndSetProducts(token);
+          } else if (selectedItem.type === StockModalType.INGREDIENT) {
+            updateIngredient(result);
+          }
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
         }
         onSave();

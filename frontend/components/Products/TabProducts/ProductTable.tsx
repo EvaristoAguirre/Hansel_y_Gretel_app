@@ -8,9 +8,11 @@ import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from '../../Utils/ProductTable';
 import { useAuth } from "@/app/context/authContext";
 import { log } from 'console';
+import LoadingLottie from "@/components/Loader/Loading";
 
 export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
+  loading,
   onCreate,
   selectedCategoryId,
   onClearSelectedCategory,
@@ -58,17 +60,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const handleSearch = async (value: string, token: string) => {
     const searchTerm = value.trim();
     if (searchTerm.length > 0) {
-      console.log("Buscando productos al escribir");
       setSearchTerm(searchTerm);
       if (token) {
-        console.log("Buscando productos... con token");
-
         const results = await searchProducts(searchTerm, selectedCategoryId!, token);
         setSearchResults(results);
       }
     } else if (searchTerm.length === 0) {
-      console.log("Mostrando todos los productos sin token");
-
       setSearchResults(products);
     }
   };
@@ -102,16 +99,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           color="primary"
           sx={{ marginRight: 2, width: '20%' }}
           onClick={onCreate}
+          disabled={loading}
         >
-          + Nuevo Producto
+          {loading ? <LoadingLottie /> : '+ Nuevo Producto'}
         </Button>
 
         {/* Buscador de productos */}
-        <AutoCompleteProduct
-          options={selectedCategoryId ? searchResults : products}
-          onSearch={(value) => handleSearch(value, token!)}
-          onSelect={handleSelectProduct}
-        />
+        <div className="w-[60%] mr-3">
+          <AutoCompleteProduct
+
+            options={selectedCategoryId ? searchResults : products}
+            onSearch={(value) => handleSearch(value, token!)}
+            onSelect={handleSelectProduct}
+          />
+        </div>
 
         {/* Botón para limpiar búsqueda */}
         <Button

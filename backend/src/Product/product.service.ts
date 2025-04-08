@@ -4,6 +4,7 @@ import { CreateProductDto } from '../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @Injectable()
 export class ProductService {
@@ -93,5 +94,29 @@ export class ProductService {
       page,
       limit,
     );
+  }
+
+  async searchProductsToPromotion(
+    isActive: boolean,
+    page: number,
+    limit: number,
+    name?: string,
+    code?: number,
+  ): Promise<ProductResponseDto[]> {
+    return this.productRepository.searchProductsToPromotion(
+      isActive,
+      page,
+      limit,
+      name,
+      code,
+    );
+  }
+
+  async getSimpleAndCompositeProducts(page: number, limit: number) {
+    return this.productRepository.getSimpleAndCompositeProducts(page, limit);
+  }
+
+  async checkProductsStockAvailability(dataToCheck: CheckStockDto) {
+    return this.productRepository.checkProductsStockAvailability(dataToCheck);
   }
 }

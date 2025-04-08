@@ -3,12 +3,15 @@ import { FormType } from '@/components/Enums/Ingredients';
 import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional } from '../../api/unitOfMeasure';
+import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional, fetchUnitOfMass, fetchUnitOfVolume } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
+import { log } from 'console';
 
 
 type UnitContextType = {
   units: IUnitOfMeasureForm[];
+  unitsOfMass: IUnitOfMeasureForm[];
+  unitsOfVolume: IUnitOfMeasureForm[];
   formUnit: IUnitOfMeasureForm;
   setFormUnit: React.Dispatch<React.SetStateAction<IUnitOfMeasureForm>>;
   formOpenUnit: boolean;
@@ -19,12 +22,16 @@ type UnitContextType = {
   handleCreateUnit: () => Promise<void>;
   handleEditUnit: () => Promise<void>;
   handleCloseFormUnit: () => void;
-  conventionalUnits: IUnitOfMeasureResponse[]
-  noConventionalUnits: IUnitOfMeasureForm[]
+  conventionalUnits: IUnitOfMeasureResponse[];
+  noConventionalUnits: IUnitOfMeasureForm[];
+  fetchUnitsMass: () => Promise<IUnitOfMeasureForm[]>;
+  fetchUnitsVolume: () => Promise<IUnitOfMeasureForm[]>;
 }
 
 const UnitContext = createContext<UnitContextType>({
   units: [],
+  unitsOfMass: [],
+  unitsOfVolume: [],
   formUnit: {
     name: "",
     abbreviation: "",
@@ -40,7 +47,9 @@ const UnitContext = createContext<UnitContextType>({
   handleEditUnit: async () => { },
   handleCloseFormUnit: () => { },
   conventionalUnits: [],
-  noConventionalUnits: []
+  noConventionalUnits: [],
+  fetchUnitsMass: () => Promise.resolve([]),
+  fetchUnitsVolume: () => Promise.resolve([]),
 });
 
 export const useUnitContext = () => {
@@ -64,14 +73,17 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [units, setUnits] = useState<IUnitOfMeasureForm[]>([]);
   const [conventionalUnits, setConventionalUnits] = useState<IUnitOfMeasureResponse[]>([]);
   const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureForm[]>([]);
+  const [unitsOfMass, setUnitsOfMass] = useState<IUnitOfMeasureForm[]>([]);
+  const [unitsOfVolume, setUnitsOfVolume] = useState<IUnitOfMeasureForm[]>([]);
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
     setToken(token);
 
-    fetchUnits(token).then(dataUnit => {
+    fetchUnits(token, "1", "50").then(dataUnit => {
       if (dataUnit) setUnits(dataUnit);
+
     });
 
     allUnitsConventional(token).then(dataUnit => {
@@ -111,6 +123,25 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     }
   };
 
+  const fetchUnitsMass = async () => {
+    try {
+      const response = await fetchUnitOfMass(token as string);
+      setUnitsOfMass(response);
+      return response;
+    } catch (error) {
+      console.error("Error al obtener las unidades de masa:", error);
+    }
+  };
+
+  const fetchUnitsVolume = async () => {
+    try {
+      const response = await fetchUnitOfVolume(token as string);
+      setUnitsOfVolume(response);
+      return response;
+    } catch (error) {
+      console.error("Error al obtener las unidades de masa:", error);
+    }
+  };
 
   const handleEditUnit = async () => {
     /**
@@ -175,18 +206,23 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     <UnitContext.Provider
       value={{
         units,
+        unitsOfMass,
+        unitsOfVolume,
         formUnit,
         conventionalUnits,
         noConventionalUnits,
         formOpenUnit,
-        setFormUnit,
         formTypeUnit,
+        fetchUnitsMass,
+        fetchUnitsVolume,
+        setFormUnit,
         setFormOpenUnit,
         setFormTypeUnit,
         handleDeleteUnit,
         handleCreateUnit,
         handleEditUnit,
         handleCloseFormUnit,
+
 
       }}
     >

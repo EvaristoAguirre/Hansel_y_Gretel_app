@@ -12,12 +12,17 @@ import React, { useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { fetchUnits } from "@/api/unitOfMeasure";
+import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
+import { FormTypeProduct } from "@/components/Enums/view-products";
+import LoadingLottie from '@/components/Loader/Loading';
+import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
-
   const {
     loading,
+    setLoading,
     modalOpen,
     modalType,
     form,
@@ -36,27 +41,30 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     categories,
   } = useCategoryStore();
 
-  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
 
   const { getAccessToken } = useAuth();
+  const token = getAccessToken();
+  const { units } = useUnitContext()
 
   useEffect(() => {
-    const accessToken = getAccessToken();
-    if (accessToken) {
-      setToken(accessToken);
-    }
-  }, [getAccessToken]);
+    units.length === 0 ? setLoading(true) : setLoading(false);
+  }, [units]);
 
   const handleSave = () => {
     if (token) {
       if (modalType === "create") {
         return handleCreateProduct(token);
       } else {
-        return handleEdit(token!);
+        if (selectedCategoryId) {
+          return handleEdit(token, selectedCategoryId);
+
+        } else {
+          return handleEdit(token);
+        }
       }
     }
   };
@@ -93,13 +101,14 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: params.row.price,
                 cost: params.row.cost,
                 categories: params.row.categories,
-                ingredients: params.row.productIngredients,
-                products: params.row.promotionDetails,
+                ingredients: params.row.productIngredients || [],
+                products: params.row.promotionDetails || [],
                 isActive: true,
               });
-              setModalType("edit");
+              setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);
             }}
+            disabled={units.length === 0}
           >
             <FontAwesomeIcon icon={faEdit} />
           </Button>
@@ -116,9 +125,11 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     },
   ];
 
+
+
   return (
     <Box flex={1} p={2} overflow="auto">
-      {/* Product Table */}
+
       <ProductTable
         loading={loading}
         rows={products}
@@ -126,7 +137,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
         columns={columns}
         onClearSelectedCategory={onClearSelectedCategory}
         onCreate={() => {
-          setModalType("create");
+          setModalType(FormTypeProduct.CREATE);
           setModalOpen(true);
         }}
       />
@@ -136,6 +147,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
         <ProductCreationModal
           modalType={modalType}
           form={form}
+          units={units}
           open={modalOpen}
           onClose={handleCloseModal}
           onChange={handleChangeProductInfo}

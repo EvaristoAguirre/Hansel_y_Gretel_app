@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { Drawer, List, ListItem, ListItemText, ListItemButton } from "@mui/material";
-// import { useCategoryStore } from "@/components/Products/TabProductsCategory/useCategoryStore";
 import { useCategoryStore } from "../Categories/useCategoryStore";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
@@ -15,6 +14,7 @@ export const Sidebar: React.FC<{
   const handleCategoryClick = (category: ICategory | null) => {
     onCategorySelected(category?.id ?? null)
   };
+
 
   return (
     <Drawer

@@ -69,5 +69,24 @@ export const ingredientsById = async (id: string, token: string) => {
 };
 
 
+export const ingredientsByName = async (name: string, token: string,) => {
 
+  try {
+    const response = await fetch(`${URI_INGREDIENT}/by-name/${name}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { ok: false, status: response.status };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error(error);
+  }
+}
 
