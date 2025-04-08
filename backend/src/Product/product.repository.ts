@@ -1113,6 +1113,10 @@ export class ProductRepository {
           'product',
         );
       }
+      if (product.type === 'simple') {
+        const productId = product.id;
+        return this.checkStockAvailability(productId, quantityToSell, 'simple');
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1127,7 +1131,7 @@ export class ProductRepository {
   private async checkStockAvailability(
     id: string,
     quantityToSell: number,
-    type: 'product' | 'promotion',
+    type: 'product' | 'promotion' | 'simple',
   ) {
     const entity = await this.getEntityWithRelations(id, type);
 
@@ -1135,7 +1139,7 @@ export class ProductRepository {
       throw new NotFoundException(`${type} not found`);
     }
 
-    if (type === 'product') {
+    if (type === 'product' || type === 'simple') {
       return this.checkProductStock(entity, quantityToSell);
     } else {
       return this.checkPromotionStock(entity, quantityToSell);
@@ -1427,10 +1431,10 @@ export class ProductRepository {
 
   private async getEntityWithRelations(
     id: string,
-    type: 'product' | 'promotion',
+    type: 'product' | 'promotion' | 'simple',
   ) {
     const relations =
-      type === 'product'
+      type === 'product' || type === 'simple'
         ? [
             'productIngredients',
             'productIngredients.ingredient',
