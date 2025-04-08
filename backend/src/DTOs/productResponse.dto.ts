@@ -53,7 +53,7 @@ export class ProductResponseDto {
   @Expose()
   isActive?: boolean;
   @Expose()
-  type: 'product' | 'promotion';
+  type: 'product' | 'promotion' | 'simple';
 
   @Expose()
   @Type(() => CategoryResponseDto)

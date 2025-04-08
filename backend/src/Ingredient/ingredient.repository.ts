@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
@@ -90,7 +90,7 @@ export class IngredientRepository {
     }
     try {
       const ingredient = await this.ingredientRepository.findOne({
-        where: { name },
+        where: { name: ILike(name) },
       });
       if (!ingredient) {
         throw new NotFoundException(`Ingredient with name: ${name} not found`);
@@ -118,7 +118,7 @@ export class IngredientRepository {
     }
 
     const existingIngredient = await this.ingredientRepository.findOne({
-      where: { name: name },
+      where: { name: ILike(name) },
     });
     if (existingIngredient) {
       throw new ConflictException('Ingredient name already exists');
@@ -147,8 +147,6 @@ export class IngredientRepository {
           await this.unitOfMeasureService.getUnitOfMeasureById(
             unitOfMeasure.baseUnitId,
           );
-        console.log('unidad de base', unitOfMeasureBaseUnit);
-        console.log('unidad de base', unitOfMeasureBaseUnit.name);
         if (
           unitOfMeasureBaseUnit.name === 'Litro' ||
           unitOfMeasureBaseUnit.name === 'Mililitro' ||

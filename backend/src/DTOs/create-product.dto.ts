@@ -12,12 +12,13 @@ import {
   IsEnum,
 } from 'class-validator';
 import { ProductIngredientDto } from './productIngredient.dto';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PromotionProductDto } from './create-promotion.dto';
 
 export class CreateProductDto {
   @IsNotEmpty({ message: 'El nombre del producto es obligatorio' })
   @IsString()
+  @Transform(({ value }) => value.toLowerCase())
   name: string;
 
   @IsOptional()

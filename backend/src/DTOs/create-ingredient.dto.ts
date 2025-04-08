@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsNotEmpty,
@@ -10,6 +11,7 @@ import {
 export class CreateIngredientDto {
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }) => value.toLowerCase())
   name: string;
 
   @IsString()
