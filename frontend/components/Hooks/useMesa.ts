@@ -127,10 +127,8 @@ export const useMesa = (salaId: string) => {
     }
     try {
       const response = await editTable(id, data, token);
-      const updatedTable = await response.json();
-      updateTable(updatedTable);
+      updateTable(response);
       Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");
-      handleCloseModal();
     } catch (error) {
       console.error(error);
       Swal.fire("Error", "No se pudo actualizar la mesa.", "error");
