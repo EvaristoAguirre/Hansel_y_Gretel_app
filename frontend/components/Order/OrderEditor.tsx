@@ -38,8 +38,6 @@ const OrderEditor = ({
   const { productosDisponibles, products, setProductosDisponibles } =
     usePedido();
 
-
-
   const {
     selectedProducts,
     setSelectedProducts,
@@ -57,7 +55,7 @@ const OrderEditor = ({
 
   const { getAccessToken } = useAuth();
 
-  const { connectWebSocket, orders } = useOrderStore();
+  // const { connectWebSocket, orders } = useOrderStore();
 
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
@@ -81,7 +79,7 @@ const OrderEditor = ({
     const calcularSubtotal = () => {
       setSubtotal(
         selectedProducts.reduce((acc, item) => {
-          return acc + item.unitaryPrice * item.quantity;
+          return acc + (item.unitaryPrice ?? 0) * item.quantity;
         }, 0)
       );
     };
@@ -90,7 +88,7 @@ const OrderEditor = ({
     const calculateTotal = () => {
       setTotal(
         confirmedProducts.reduce((acc, item) => {
-          return acc + item.unitaryPrice * item.quantity;
+          return acc + (item.unitaryPrice ?? 0) * item.quantity;
         }, 0)
       );
     };
@@ -264,7 +262,7 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.unitaryPrice * item.quantity}
+                      ${item.unitaryPrice ?? 0 * item.quantity}
                     </Typography>
                     <IconButton
                       onClick={() =>
@@ -374,7 +372,7 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.unitaryPrice * item.quantity}
+                      ${item.unitaryPrice ?? 0 * item.quantity}
                     </Typography>
                     <IconButton
                       onClick={() =>
