@@ -383,7 +383,7 @@ export class StockRepository {
       });
       const unitOfMeasureId = unidad.id;
 
-      if (product.type === 'product') {
+      if (product.type === 'simple') {
         if (product.productIngredients.length === 0) {
           // Si el producto es simple, descontar directamente del stock
           if (!product.stock) {
@@ -407,6 +407,9 @@ export class StockRepository {
           product.stock.quantityInStock -= quantityToDeduct;
           await this.stockRepository.save(product.stock);
         }
+      }
+
+      if (product.type === 'product') {
         // Si el producto está compuesto por ingredientes, descontar los ingredientes
         if (
           product.productIngredients &&
@@ -430,7 +433,7 @@ export class StockRepository {
         // Si el producto es una promoción, descontar los productos que la componen
         const promotionProducts = await this.promotionProductRepository.find({
           where: { promotion: { id: productId } },
-          relations: ['product'],
+          relations: ['product', 'simple'],
         });
 
         for (const promotionProduct of promotionProducts) {
