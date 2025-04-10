@@ -41,7 +41,7 @@ export class ProductRepository {
     private readonly stockService: StockService,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-  ) {}
+  ) { }
 
   //---- Estandarizado  -------- con el dto nuevo
   async getAllProducts(
@@ -1133,6 +1133,8 @@ export class ProductRepository {
     quantityToSell: number,
     type: 'product' | 'promotion' | 'simple',
   ) {
+    console.log("repositorio");
+
     const entity = await this.getEntityWithRelations(id, type);
 
     if (!entity) {
@@ -1388,11 +1390,11 @@ export class ProductRepository {
             details: allIngredientsAvailable
               ? null
               : {
-                  message: 'Insufficient stock for some ingredients',
-                  ingredientDetails: ingredientChecks.filter(
-                    (check) => !check.available,
-                  ),
-                },
+                message: 'Insufficient stock for some ingredients',
+                ingredientDetails: ingredientChecks.filter(
+                  (check) => !check.available,
+                ),
+              },
           };
         }),
       );
@@ -1436,21 +1438,21 @@ export class ProductRepository {
     const relations =
       type === 'product' || type === 'simple'
         ? [
-            'productIngredients',
-            'productIngredients.ingredient',
-            'productIngredients.unitOfMeasure',
-            'stock',
-            'stock.unitOfMeasure',
-          ]
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
+          'stock',
+          'stock.unitOfMeasure',
+        ]
         : [
-            'promotionDetails',
-            'promotionDetails.product',
-            'promotionDetails.product.productIngredients',
-            'promotionDetails.product.productIngredients.ingredient',
-            'promotionDetails.product.productIngredients.unitOfMeasure',
-            'promotionDetails.product.stock',
-            'promotionDetails.product.stock.unitOfMeasure',
-          ];
+          'promotionDetails',
+          'promotionDetails.product',
+          'promotionDetails.product.productIngredients',
+          'promotionDetails.product.productIngredients.ingredient',
+          'promotionDetails.product.productIngredients.unitOfMeasure',
+          'promotionDetails.product.stock',
+          'promotionDetails.product.stock.unitOfMeasure',
+        ];
 
     return this.productRepository.findOne({
       where: { id, isActive: true, type },

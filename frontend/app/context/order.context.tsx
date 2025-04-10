@@ -10,6 +10,7 @@ import {
 } from "react";
 import Swal from "sweetalert2";
 import {
+  ICheckStock,
   ProductResponse,
   SelectedProductsI,
 } from "../../components/Interfaces/IProducts";
@@ -18,6 +19,7 @@ import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
+import { checkStock } from "@/api/products";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -50,22 +52,22 @@ type OrderContextType = {
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
-  setSelectedProducts: () => {},
+  setSelectedProducts: () => { },
   confirmedProducts: [],
-  setConfirmedProducts: () => {},
+  setConfirmedProducts: () => { },
   selectedOrderByTable: null,
-  setSelectedOrderByTable: () => {},
-  handleSelectedProducts: () => {},
-  handleDeleteSelectedProduct: () => {},
-  increaseProductNumber: () => {},
-  decreaseProductNumber: () => {},
-  clearSelectedProducts: () => {},
-  deleteConfirmProduct: () => {},
-  handleCreateOrder: async () => {},
-  handleEditOrder: async () => {},
-  handleDeleteOrder: async () => {},
-  handleResetSelectedOrder: () => {},
-  fetchOrderBySelectedTable: () => {},
+  setSelectedOrderByTable: () => { },
+  handleSelectedProducts: () => { },
+  handleDeleteSelectedProduct: () => { },
+  increaseProductNumber: () => { },
+  decreaseProductNumber: () => { },
+  clearSelectedProducts: () => { },
+  deleteConfirmProduct: () => { },
+  handleCreateOrder: async () => { },
+  handleEditOrder: async () => { },
+  handleDeleteOrder: async () => { },
+  handleResetSelectedOrder: () => { },
+  fetchOrderBySelectedTable: () => { },
 });
 
 export const useOrderContext = () => {
@@ -147,6 +149,19 @@ const OrderProvider = ({
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
 
+  const checkStockAvailability = async (productId: string, quantity: number) => {
+    const form: ICheckStock = {
+      productId: productId,
+      quantityToSell: quantity
+    }
+    try {
+      const stock = await checkStock(form, token!);
+      return stock
+    } catch (error) {
+      // handle error
+    }
+  };
+
   const handleSelectedProducts = (product: ProductResponse) => {
     const foundProduct = selectedProducts.find(
       (p: any) => p.productId === product.id
@@ -156,6 +171,7 @@ const OrderProvider = ({
       const updatedDetails = selectedProducts.map((p) =>
         p.productId === product.id ? { ...p, quantity: p.quantity + 1 } : p
       );
+
       setSelectedProducts(updatedDetails);
     } else {
       const newProduct = {

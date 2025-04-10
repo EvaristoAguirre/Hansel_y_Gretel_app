@@ -1,5 +1,5 @@
 import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
-import { ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
+import { ICheckStock, ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
 
 
 export const createProduct = async (form: ProductForm, token: string) => {
@@ -186,4 +186,17 @@ export const searchProductsNotProm = async (searchTerm: string, token: string, s
     console.error("❌ Error fetching searched products:", error);
     return [];
   }
+};
+
+export const checkStock = async (form: ICheckStock, token: string) => {
+  const response = await fetch(`${URI_PRODUCT}/check-stock`, {
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(form),
+  });
+
+  return await response.json();
 };
