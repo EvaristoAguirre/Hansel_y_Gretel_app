@@ -63,6 +63,12 @@ export class UnitOfMeasureService {
   }
 
   async convertUnit(fromUnitId: string, toUnitId: string, quantity: number) {
+    console.log(
+      '1 - dentro del servicio de conversion',
+      fromUnitId,
+      toUnitId,
+      quantity,
+    );
     return await this.unitOfMeasureRepository.convertUnit(
       fromUnitId,
       toUnitId,

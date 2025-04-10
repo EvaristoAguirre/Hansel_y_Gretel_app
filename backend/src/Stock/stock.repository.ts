@@ -98,7 +98,6 @@ export class StockRepository {
   async getStockByIngredientId(
     ingredientId: string,
   ): Promise<StockSummaryResponseDTO> {
-    console.log('ingredientId', ingredientId);
     if (!ingredientId) {
       throw new BadRequestException('Either ID must be provided.');
     }
@@ -114,7 +113,6 @@ export class StockRepository {
         },
         relations: ['ingredient', 'unitOfMeasure'],
       });
-      console.log('stock', stock);
       if (!stock) {
         throw new NotFoundException('Stock not found');
       }
