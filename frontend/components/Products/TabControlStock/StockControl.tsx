@@ -13,6 +13,7 @@ import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLe
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import LoadingLottie from "@/components/Loader/Loading";
+import { useStockStore } from "@/components/Stock/useStockStore";
 
 
 const StockControl = () => {
@@ -28,6 +29,7 @@ const StockControl = () => {
   const [noStock, setNoStock] = useState(false);
 
   const { ingredients } = useIngredientsContext();
+  const { stocks } = useStockStore();
 
   useEffect(() => {
     connectWebSocket();
@@ -39,7 +41,7 @@ const StockControl = () => {
       products.find((product) => product.id === selectedProduct.id) || selectedProduct
     );
     setSelectedProducts(updatedSelectedProducts);
-  }, [products]);
+  }, [products, stocks]);
 
 
   useEffect(() => {

@@ -1,5 +1,6 @@
-import { IStock } from "@/components/Interfaces/IStock";
+import { IStock, IStockOfProduct } from "@/components/Interfaces/IStock";
 import { URI_STOCK } from "@/components/URI/URI";
+import { useStockStore } from "@/components/Stock/useStockStore";
 
 export const addStock = async (formStock: IStock, token: string) => {
   const response = await fetch(URI_STOCK, {
@@ -11,7 +12,9 @@ export const addStock = async (formStock: IStock, token: string) => {
     body: JSON.stringify(formStock),
   });
 
-  return await response.json();
+  const data: IStockOfProduct = await response.json();
+  useStockStore.getState().addStock(data); // Actualiza el store con el nuevo stock
+  return data;
 };
 
 
