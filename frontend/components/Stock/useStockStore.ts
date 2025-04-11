@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { io } from "socket.io-client";
-import { IStock, IStockOfProduct, SelectedItem, StockModalType } from "../Interfaces/IStock";
+import { IStock, IStockOfProduct, SelectedItem } from "../Interfaces/IStock";
 
 interface StockState {
   stocks: IStockOfProduct[];
@@ -15,7 +15,7 @@ interface StockState {
 }
 
 export const useStockStore = create<StockState>((set) => {
-  const socket = io("http://localhost:3000"); // Ajusta la URL de tu backend
+  const socket = io("http://192.168.100.133:3000"); // Ajusta la URL de tu backend
 
   // Conexión WebSocket
   socket.on("connect", () => {
