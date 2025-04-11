@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useAuth } from "@/app/context/authContext";
 import ModalStock from "./ModalStock";
-import { StockModalType } from "@/components/Enums/view-products";
+import { StockModalType, TypeProduct } from "@/components/Enums/view-products";
 import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
@@ -19,11 +19,10 @@ import { useStockStore } from "@/components/Stock/useStockStore";
 const StockControl = () => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const [searchResults, setSearchResults] = useState(products);
+  const [productsSimple, setProductsSimple] = useState<ProductCreated[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [noStock, setNoStock] = useState(false);
@@ -35,10 +34,15 @@ const StockControl = () => {
     connectWebSocket();
   }, [connectWebSocket]);
 
+
+  useEffect(() => {
+    setProductsSimple(products.filter((product) => product.type === TypeProduct.SIMPLE));
+  }, [products]);
+
   // Actualizar los productos seleccionados al cambiar `products`
   useEffect(() => {
     const updatedSelectedProducts = selectedProducts.map((selectedProduct) =>
-      products.find((product) => product.id === selectedProduct.id) || selectedProduct
+      productsSimple.find((product) => product.id === selectedProduct.id) || selectedProduct
     );
     setSelectedProducts(updatedSelectedProducts);
   }, [products, stocks]);
@@ -51,7 +55,7 @@ const StockControl = () => {
   }, []);
 
 
-  const formattedProducts = products.map((product) => ({
+  const formattedProducts = productsSimple.map((product) => ({
     id: product.id,
     name: product.name,
     stock: Number(product.stock?.quantityInStock) || null,
@@ -153,9 +157,7 @@ const StockControl = () => {
     { field: "min", headerName: "Stock Minimo", flex: 1 },
     { field: "cost", headerName: "Costo", flex: 1 },
   ];
-  useEffect(() => {
-    setSearchResults(products);
-  }, [products]);
+
 
   //limpiar el modal
   const handleCloseModal = () => {

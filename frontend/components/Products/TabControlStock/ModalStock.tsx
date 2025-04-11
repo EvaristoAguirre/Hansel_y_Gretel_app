@@ -120,7 +120,9 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           if (selectedItem.type === StockModalType.PRODUCT) {
             fetchAndSetProducts(token);
           } else if (selectedItem.type === StockModalType.INGREDIENT) {
-            updateIngredient(result);
+            const updatedIngredient = selectedItem.id && await ingredientsById(selectedItem.id, token);
+
+            updateIngredient(updatedIngredient);
           }
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
         }

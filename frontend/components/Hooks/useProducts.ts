@@ -63,26 +63,24 @@ export const useProductos = () => {
   };
 
   const handleCreateProduct = async (token: string) => {
+    const preparedForm = {
+      ...form,
+      code: parseInt(form.code as any, 10),
+      price: parseFloat(form.price as any),
+      cost: parseFloat(form.cost as any),
+    };
+    if (form.ingredients.length === 0) {
+      delete (preparedForm as any).ingredients;
+      delete (preparedForm as any).isActive;
+    }
     try {
-      const preparedForm = {
-        ...form,
-        code: parseInt(form.code as any, 10),
-        price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),
-      };
-      if (form.ingredients.length === 0) {
-        delete (preparedForm as any).ingredients;
-        delete (preparedForm as any).isActive;
-      }
-      if (token) {
-        const newProduct = await createProduct(preparedForm, token!);
-        // addProduct(newProduct);
-        handleCloseModal();
-      } else {
-        throw new Error("Token no disponible");
-      }
+      if (!token) throw new Error("Token no disponible");
+      const newProduct = await createProduct(preparedForm, token);
+      // addProduct(newProduct);
+      handleCloseModal();
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
+
     } catch (error) {
       Swal.fire("Error", "No se pudo crear el producto.", "error");
       console.error(error);

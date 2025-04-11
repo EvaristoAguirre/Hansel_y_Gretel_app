@@ -25,6 +25,7 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
+import { query } from 'express';
 
 @Injectable()
 export class ProductRepository {
@@ -281,6 +282,7 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
@@ -568,7 +570,6 @@ export class ProductRepository {
         if (ingredient.cost) {
           savedProduct.cost += ingredient.cost * convertedQuantity;
         }
-
         return queryRunner.manager.save(productIngredient);
       });
 
@@ -596,7 +597,6 @@ export class ProductRepository {
     if (!productWithRelations) {
       throw new NotFoundException('Product not found after creation');
     }
-
     return productWithRelations;
   }
 
@@ -627,6 +627,7 @@ export class ProductRepository {
       ...productData,
       categories: categoryEntities,
       unitOfMeasure: unitToSimpleProduct,
+      type: 'simple',
     });
 
     const savedProduct = await queryRunner.manager.save(product);
@@ -659,7 +660,7 @@ export class ProductRepository {
         const existingProductByName = await queryRunner.manager.findOne(
           Product,
           {
-            where: { name: productData.name },
+            where: { name: ILike(productData.name) },
           },
         );
         if (existingProductByName) {
@@ -1012,7 +1013,10 @@ export class ProductRepository {
       }
 
       const offset = (page - 1) * limit;
-      const whereConditions: any = { isActive, type: 'product' };
+      const whereConditions: any = {
+        isActive,
+        type: In(['product', 'simple']),
+      };
       if (name) {
         whereConditions.name = ILike(`%${name}%`);
       } else if (code) {
@@ -1107,6 +1111,10 @@ export class ProductRepository {
           'product',
         );
       }
+      if (product.type === 'simple') {
+        const productId = product.id;
+        return this.checkStockAvailability(productId, quantityToSell, 'simple');
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1121,17 +1129,28 @@ export class ProductRepository {
   private async checkStockAvailability(
     id: string,
     quantityToSell: number,
-    type: 'product' | 'promotion',
+    type: 'product' | 'promotion' | 'simple',
   ) {
     const entity = await this.getEntityWithRelations(id, type);
-
+    console.log('1 - entrando al metodo de chequeo', id, quantityToSell);
+    console.log('1.1 - entrando al metodo de chequeo', entity);
     if (!entity) {
       throw new NotFoundException(`${type} not found`);
     }
 
-    if (type === 'product') {
+    if (entity.type === 'product' || entity.type === 'simple') {
+      console.log(
+        '2 - entrando a la derivacion de producto',
+        id,
+        quantityToSell,
+      );
       return this.checkProductStock(entity, quantityToSell);
     } else {
+      console.log(
+        '2.1 - entrando a la derivacion de promocion',
+        id,
+        quantityToSell,
+      );
       return this.checkPromotionStock(entity, quantityToSell);
     }
   }
@@ -1142,7 +1161,7 @@ export class ProductRepository {
       if (!productToCheck) {
         throw new NotFoundException('Product not found');
       }
-
+      console.log('3 - entrando a la derivacion', product, quantityToSell);
       if (
         !productToCheck.productIngredients ||
         productToCheck.productIngredients.length === 0
@@ -1179,6 +1198,9 @@ export class ProductRepository {
             const ingredientId = pi.ingredient.id;
             const stockOfIngredient =
               await this.stockService.getStockByIngredientId(ingredientId);
+            //---------------------------------------------------------------------
+            console.log('stock of ingredient.......', stockOfIngredient);
+            //---------------------------------------------------------------------
             if (!stockOfIngredient.quantityInStock) {
               return {
                 ingredientId: ingredientId,
@@ -1189,13 +1211,29 @@ export class ProductRepository {
             }
 
             let requiredQuantity = pi.quantityOfIngredient;
-
+            //---------------------------------------------------------------------
+            console.log(
+              'previo a la conversion.......',
+              pi.unitOfMeasure?.id,
+              stockOfIngredient.unitOfMeasure?.id,
+            );
+            //---------------------------------------------------------------------
             if (pi.unitOfMeasure?.id !== stockOfIngredient.unitOfMeasure?.id) {
               try {
+                console.log(
+                  'antes de entrar a la conversion',
+                  pi.unitOfMeasure.id,
+                  stockOfIngredient.unitOfMeasure.id,
+                  pi.quantityOfIngredient,
+                );
                 requiredQuantity = await this.unitOfMeasureService.convertUnit(
                   pi.unitOfMeasure.id,
                   stockOfIngredient.unitOfMeasure.id,
                   pi.quantityOfIngredient,
+                );
+                console.log(
+                  '4 - resultado de la conversion.......',
+                  requiredQuantity,
                 );
               } catch (error) {
                 return {
@@ -1206,7 +1244,10 @@ export class ProductRepository {
                 };
               }
             }
-
+            console.log(
+              '5- post resultado de la conversion....',
+              requiredQuantity,
+            );
             const totalRequired = requiredQuantity * quantityToSell;
             const availableQuantity = parseFloat(
               stockOfIngredient.quantityInStock,
@@ -1421,10 +1462,10 @@ export class ProductRepository {
 
   private async getEntityWithRelations(
     id: string,
-    type: 'product' | 'promotion',
+    type: 'product' | 'promotion' | 'simple',
   ) {
     const relations =
-      type === 'product'
+      type === 'product' || type === 'simple'
         ? [
             'productIngredients',
             'productIngredients.ingredient',
