@@ -14,6 +14,14 @@ export class PrinterController {
   async printText() {
     return await this.printerService.printTest();
   }
+  @Post('printTest2')
+  async printText2() {
+    return await this.printerService.printTest();
+  }
+  @Post('printTest3')
+  async printText3() {
+    return await this.printerService.printTest3();
+  }
 
   @Post('printRawTest')
   async printRawTest() {

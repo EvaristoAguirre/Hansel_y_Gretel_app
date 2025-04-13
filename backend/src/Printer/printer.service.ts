@@ -5,6 +5,7 @@ import {
   CharacterSet,
   BreakLine,
 } from 'node-thermal-printer';
+import { Star } from './commands';
 
 @Injectable()
 export class PrinterService {
@@ -22,6 +23,7 @@ export class PrinterService {
       //   vid: 0x067B,
       //   pid: 0x2305
       // },
+      width: 48,
       characterSet: CharacterSet.PC850_MULTILINGUAL,
       removeSpecialCharacters: false,
       lineCharacter: '=',
@@ -38,50 +40,6 @@ export class PrinterService {
     await this.printer.isPrinterConnected();
     return 'Impresora conectada testeo';
   }
-
-  // async printTest(): Promise<string> {
-  //   let execute = await this.printer.execute()
-  //   console.log("execute: ", execute);
-  //   // let raw = await this.printer.raw(Buffer.from("Hello world"));
-  //   this.printer.print("Hola");
-  //   return "execute";
-  // }
-
-  // async printTest(): Promise<string> {
-  //   try {
-  //     // 1. Verificar conexión primero
-  //     const isConnected = await this.printer.isPrinterConnected();
-  //     if (!isConnected) {
-  //       throw new Error('La impresora no está conectada');
-  //     }
-
-  //     // 2. Configurar la impresión
-  //     this.printer.clear(); // Limpiar buffer previo
-  //     this.printer.setCharacterSet(CharacterSet.PC850_MULTILINGUAL);
-  //     this.printer.alignCenter();
-
-  //     // 3. Añadir contenido
-  //     this.printer.bold(true);
-  //     this.printer.println('=== PRUEBA ===');
-  //     this.printer.bold(false);
-  //     this.printer.println('Hola mundo!');
-  //     this.printer.println(new Date().toLocaleString());
-  //     this.printer.println('--------------');
-  //     this.printer.alignLeft();
-  //     this.printer.println('Este es un ticket de prueba');
-  //     this.printer.beep();
-  //     this.printer.cut({ verticalTabAmount: 3 }); // Cortar papel (importante!)
-
-  //     // 4. Ejecutar la impresión (esto debe ir AL FINAL)
-  //     await this.printer.execute();
-  //     console.log('Buffer a imprimir:', this.printer.getText());
-
-  //     return 'Ticket impreso correctamente';
-  //   } catch (error) {
-  //     console.error('Error al imprimir:', error);
-  //     throw new Error(`Error al imprimir: ${error.message}`);
-  //   }
-  // }
 
   async printRawTest(): Promise<string> {
     const buffer = Buffer.from([
@@ -116,24 +74,27 @@ export class PrinterService {
       this.printer.println('Fecha: ' + new Date().toLocaleString());
       this.printer.newLine(); // Línea en blanco
 
+      this.printer.alignLeft();
       this.printer.println('Este es un ticket de prueba');
       this.printer.println('para verificar la conexión');
       this.printer.newLine();
 
       // Ejemplo de tabla
       this.printer.tableCustom([
-        { text: 'Artículo', align: 'LEFT', width: 0.1 },
-        { text: 'Cant.', align: 'CENTER', width: 0.1 },
-        { text: 'Precio', align: 'RIGHT', width: 0.1 },
+        { text: 'Artículo', align: 'LEFT', width: 0.25 },
+        { text: 'Cant.', align: 'CENTER', width: 0.25 },
+        { text: 'Precio', align: 'RIGHT', width: 0.25 },
       ]);
       this.printer.tableCustom([
-        { text: 'Producto 1', align: 'LEFT', width: 0.1 },
-        { text: '2', align: 'CENTER', width: 0.1 },
-        { text: '$10.00', align: 'RIGHT', width: 0.1 },
+        { text: 'Producto 1', align: 'LEFT', width: 0.25 },
+        { text: '2', align: 'CENTER', width: 0.25 },
+        { text: '$10.00', align: 'RIGHT', width: 0.25 },
       ]);
 
       this.printer.newLine();
       this.printer.println('Gracias por su visita!');
+      this.printer.add(Star.TXT_2HEIGHT);
+      this.printer.add(Buffer.from('Telefono: 123-456-7890'));
       this.printer.newLine();
       this.printer.newLine();
       this.printer.newLine();
@@ -142,6 +103,79 @@ export class PrinterService {
       await this.printer.execute();
 
       const buffer = Buffer.from([...Buffer.from('\x1B\x69')]);
+      // corto correctamente
+      // const buffer = Buffer.from([...Buffer.from(commands.PAPER_PART_CUT)]);
+      await this.printer.raw(buffer);
+      return 'Ticket de prueba impreso correctamente';
+    } catch (error) {
+      console.error('Error al imprimir ticket de prueba:', error);
+      throw new Error(`Error al imprimir: ${error.message}`);
+    }
+  }
+
+  // async printTest2() {
+  //   try {
+  //     //  1. Verificar conexión primero
+  //     const isConnected = await this.printer.isPrinterConnected();
+  //     if (!isConnected) {
+  //       throw new Error('La impresora no está conectada');
+  //     }
+  //     // Inicializar impresora
+  //     this.printer.append(Buffer.from(commands.HW_INIT));
+
+  //     // Centrar texto
+  //     this.printer.append(Buffer.from(commands.TXT_ALIGN_CT));
+
+  //     // Texto doble altura
+  //     this.printer.append(Buffer.from(commands.TXT_2HEIGHT));
+  //     this.printer.append(Buffer.from('TICKET EJEMPLO\n'));
+
+  //     // Volver a normal
+  //     this.printer.append(Buffer.from(commands.TXT_NORMAL));
+
+  //     // Cortar papel
+  //     // this.printer.append(Buffer.from(commands.PAPER_PART_CUT));
+  //     const buffer = Buffer.from([...Buffer.from(commands.PAPER_PART_CUT)]);
+  //     await this.printer.raw(buffer);
+  //     console.log('Ticket impreso correctamente');
+  //   } catch (error) {
+  //     console.error('Error al imprimir:', error);
+  //   }
+  // }
+
+  async printTest3(): Promise<string> {
+    try {
+      // 1. Verificar conexión primero
+      const isConnected = await this.printer.isPrinterConnected();
+      if (!isConnected) {
+        throw new Error('La impresora no está conectada');
+      }
+      // 2. Configurar la impresora
+      this.printer.add(Star.TXT_ALIGN_LT); // Centrar el texto
+
+      this.printer.add(Star.TXT_BOLD_ON); // Texto en negrita
+      this.printer.add(Buffer.from('=== PRUEBA ==='));
+      this.printer.add(Buffer.from(Star.TXT_BOLD_OFF)); // Desactivar negrita
+      this.printer.newLine(); // Línea en blanco
+      this.printer.add(Buffer.from('Tienda: MI TIENDA'));
+      this.printer.newLine(); // Línea en blanco
+      this.printer.add(Buffer.from('Fecha: ' + new Date().toLocaleString()));
+      this.printer.newLine(); // Línea en blanco
+      this.printer.newLine(); // Línea en blanco
+      this.printer.newLine(); // Línea en blanco
+      this.printer.newLine(); // Línea en blanco
+      this.printer.add(Star.TXT_2HEIGHT);
+      this.printer.add(Buffer.from('Telefono: 123-456-7890'));
+      this.printer.newLine();
+      this.printer.newLine();
+      this.printer.newLine();
+      this.printer.newLine();
+
+      await this.printer.execute();
+
+      const buffer = Buffer.from([...Buffer.from('\x1B\x69')]);
+      // corto correctamente
+      // const buffer = Buffer.from([...Buffer.from(commands.PAPER_PART_CUT)]);
       await this.printer.raw(buffer);
       return 'Ticket de prueba impreso correctamente';
     } catch (error) {
