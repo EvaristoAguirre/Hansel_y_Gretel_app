@@ -18,6 +18,7 @@ import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductSummary } from 'src/DTOs/productSummary.dto';
 import { StockService } from 'src/Stock/stock.service';
 import { isUUID } from 'class-validator';
+import { PrinterService } from 'src/Printer/printer.service';
 
 @Injectable()
 export class OrderRepository {
@@ -32,6 +33,7 @@ export class OrderRepository {
     private readonly productRepository: Repository<Product>,
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
+    private readonly printerService: PrinterService,
   ) {}
 
   async openOrder(
@@ -197,6 +199,8 @@ export class OrderRepository {
             products: newProducts,
             batchId,
           });
+
+          // await this.printerService.printComanda(dataToPrint);
           // this.eventEmitter.emit('order.updated', {
           //     orderId: order.id,
           //     products: newProducts,

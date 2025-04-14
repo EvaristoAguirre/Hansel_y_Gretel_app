@@ -1,30 +1,19 @@
-import { Controller, Post } from '@nestjs/common';
+// printer/printer.controller.ts
+import { Body, Controller, Post } from '@nestjs/common';
 import { PrinterService } from './printer.service';
+import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 
 @Controller('printer')
 export class PrinterController {
   constructor(private readonly printerService: PrinterService) {}
 
-  @Post('test')
-  async isConnect() {
-    return await this.printerService.isConnect();
-  }
+  // @Post('print-sample')
+  // async printSampleTicket() {
+  //   return await this.printerService.printSampleTicket();
+  // }
 
-  @Post('printTest')
-  async printText() {
-    return await this.printerService.printTest();
-  }
-  @Post('printTest2')
-  async printText2() {
-    return await this.printerService.printTest();
-  }
-  @Post('printTest3')
-  async printText3() {
-    return await this.printerService.printTest3();
-  }
-
-  @Post('printRawTest')
-  async printRawTest() {
-    return await this.printerService.printRawTest();
+  @Post('printComanda')
+  async printKitchenOrder(@Body() orderData: PrintComandaDTO): Promise<void> {
+    return this.printerService.printKitchenOrder(orderData);
   }
 }

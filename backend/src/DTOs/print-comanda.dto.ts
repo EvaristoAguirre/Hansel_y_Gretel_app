@@ -1,16 +1,18 @@
-import { IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsString } from 'class-validator';
 
 export class PrintComandaDTO {
   @IsString()
-  @IsOptional()
+  table: string;
+
+  @IsArray()
+  @Type(() => Details)
+  products: Details[];
+}
+
+class Details {
+  @IsString()
   name: string;
   @IsString()
-  @IsOptional()
-  description: string;
-  @IsString()
-  @IsOptional()
-  price: number;
-  @IsString()
-  @IsOptional()
   quantity: number;
 }

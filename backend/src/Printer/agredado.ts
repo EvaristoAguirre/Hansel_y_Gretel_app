@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as net from 'net';
+import * as fs from 'fs';
+import path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 
 @Injectable()
 export class PrinterService {
+  private readonly printerHost = '192.168.1.49';
+  private readonly printerPort = 9100;
   private counter: number = 0;
   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
-  private readonly printerHost = '192.168.1.49'; // Ajusta la IP de tu impresora
-  private readonly printerPort = 9100; // Puerto común para impresoras térmicas
-
   constructor() {
     this.loadCounter();
   }
@@ -50,13 +49,13 @@ export class PrinterService {
     return `${year}-${month}-${day}-${count}`;
   }
 
-  private async sendRawCommand(command: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const socket = net.createConnection({
-        host: this.printerHost,
-        port: this.printerPort,
-      });
+  async sendRawCommand(command: string): Promise<void> {
+    const socket = net.createConnection({
+      host: this.printerHost,
+      port: this.printerPort,
+    });
 
+    return new Promise((resolve, reject) => {
       socket.on('connect', () => {
         socket.write(command, (error) => {
           socket.end();
@@ -74,17 +73,44 @@ export class PrinterService {
     });
   }
 
+  async printSampleTicket(): Promise<void> {
+    // Comandos ESC/POS para imprimir un ticket básico
+    const commands = [
+      '\x1B\x40', // Inicializar impresora
+      '\x1B\x61\x01', // Centrar texto
+      'Hansel y Gretel\n\n',
+      '\x1B\x61\x00', // Alinear izquierda
+      '-----------------------------\n',
+      'Fecha: ' + new Date().toLocaleDateString() + '\n',
+      'Hora: ' + new Date().toLocaleTimeString() + '\n',
+      '-----------------------------\n',
+      'Producto      Cant  Precio\n',
+      'Coca Cola     2     $20\n',
+      'Sabritas      1     $15\n',
+      '-----------------------------\n',
+      '\x1B\x61\x02', // Alinear derecha
+      'Total: $35\n',
+      '\x1B\x61\x01', // Centrar texto
+      'Gracias por su compra!\n',
+      '\x1B\x42\x01\x05',
+      '\x1D\x56\x41\x50', // Cortar papel
+    ].join('');
+
+    return this.sendRawCommand(commands);
+  }
+
   async printKitchenOrder(orderData: PrintComandaDTO): Promise<void> {
     const now = new Date();
     const orderCode = this.generateOrderCode();
-    console.log('dataaaaaa.......', orderData);
 
+    // Función para formatear línea de producto
     const formatProductLine = (name: string, quantity: number) => {
-      const namePart = name.padEnd(20).substring(0, 20);
+      const namePart = name.padEnd(20).substring(0, 20); // Limita a 20 caracteres
       const quantityPart = `x${quantity.toString().padStart(2)}`;
       return `${namePart} ${quantityPart}\n`;
     };
 
+    // Comandos ESC/POS
     const commands = [
       '\x1B\x40', // Inicializar impresora
       '\x1B\x61\x01', // Centrar texto
