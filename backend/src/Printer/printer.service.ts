@@ -3,6 +3,7 @@ import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
+import { Order } from 'src/Order/order.entity';
 
 @Injectable()
 export class PrinterService {
@@ -102,7 +103,6 @@ export class PrinterService {
       const now = new Date();
       const orderCode = this.generateOrderCode();
 
-      // Preparar comandos ESC/POS
       const commands = [
         '\x1B\x40', // Inicializar impresora
         '\x1B\x74\x02', // Establecer codificación Windows-1252 (para caracteres latinos)
@@ -142,19 +142,12 @@ export class PrinterService {
     }
   }
 
-  async printTicketOrder(orderData: {
-    table: string;
-    products: Array<{
-      name: string;
-      quantity: number;
-      price: number;
-    }>;
-  }): Promise<string> {
-    if (!orderData?.products?.length) {
+  async printTicketOrder(order: Order): Promise<string> {
+    if (!order?.orderDetails?.length) {
       throw new Error('No hay productos para imprimir en el ticket');
     }
 
-    if (!orderData.table?.trim()) {
+    if (!order.table?.name?.trim()) {
       throw new Error('El nombre de la mesa es requerido');
     }
 
@@ -170,15 +163,24 @@ export class PrinterService {
         minute: '2-digit',
       });
 
-      // Calcular totales
-      const subtotal = orderData.products.reduce(
-        (sum, product) => sum + product.price * product.quantity,
+      const tableName = order.table.name;
+      const commandNumber = order.commandNumber || 'S/N';
+
+      const products = order.orderDetails
+        .filter((detail) => detail.isActive)
+        .map((detail) => ({
+          name: detail.product?.name || 'Producto no disponible',
+          quantity: detail.quantity,
+          price: Number(detail.unitaryPrice),
+        }));
+
+      const subtotal = order.orderDetails.reduce(
+        (sum, detail) => sum + Number(detail.unitaryPrice) * detail.quantity,
         0,
       );
-      const tip = subtotal * 0.1; // 10% de propina
+      const tip = subtotal * 0.1;
       const total = subtotal + tip;
 
-      // Formatear líneas de productos
       const formatProductLine = (product: {
         name: string;
         quantity: number;
@@ -193,7 +195,6 @@ export class PrinterService {
         return `${quantity} ${name} ${price} ${total}\n`;
       };
 
-      // Comandos ESC/POS
       const commands = [
         '\x1B\x40', // Inicializar impresora
         '\x1B\x74\x02', // Codificación Windows-1252
@@ -203,13 +204,14 @@ export class PrinterService {
         '\x1D\x21\x00', // Texto normal
         '-----------------------------\n',
         `${dateStr} - ${timeStr}\n`,
-        `Mesa: ${this.normalizeTextToTicket(orderData.table)}\n`,
+        `Mesa: ${this.normalizeTextToTicket(tableName)}\n`,
+        `Comanda: ${commandNumber}\n`,
         '-----------------------------\n',
         '\x1B\x45\x01', // Negrita ON
         'CANT PRODUCTO           P.UNIT  TOTAL\n',
         '\x1B\x45\x00', // Negrita OFF
         '-----------------------------\n',
-        ...orderData.products.map(formatProductLine),
+        ...products.map(formatProductLine),
         '-----------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
         `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
@@ -223,7 +225,8 @@ export class PrinterService {
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
         '-----------------------------\n',
-        'DOCUMENTO NO VÁLIDO COMO FACTURA\n',
+        'DOCUMENTO NO VALIDO COMO FACTURA\n',
+        'Solicite su factura en caja.\n',
         'Gracias por su visita!\n',
         '\x1B\x42\x01\x02', // Pitido
         '\x1D\x56\x41\x50', // Cortar papel con avance
@@ -244,7 +247,6 @@ export class PrinterService {
     }
   }
 
-  // Función auxiliar para normalizar texto (mantener del método original)
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }

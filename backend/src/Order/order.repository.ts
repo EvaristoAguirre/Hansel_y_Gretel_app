@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -71,10 +72,7 @@ export class OrderRepository {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -222,11 +220,7 @@ export class OrderRepository {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -343,7 +337,7 @@ export class OrderRepository {
         relations: ['product', 'order'],
       });
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -397,17 +391,11 @@ export class OrderRepository {
       await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
 
-      // Emitir evento para generar el ticket
-      // this.eventEmitter.emit('order.pendingPayment', { orderId: order.id });
-      console.log('estoy emitiendo el ticket de la orden', {
-        orderId: order.id,
-      });
-
-      // try {
-      //   await this.printerService.printTicketOrder(order);
-      // } catch (error) {
-      //   throw new Error(error.message);
-      // }
+      try {
+        await this.printerService.printTicketOrder(order);
+      } catch (error) {
+        throw new ConflictException(error.message);
+      }
 
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;
@@ -447,12 +435,10 @@ export class OrderRepository {
       }
 
       order.state = OrderState.CLOSED;
-      order.table.state = TableState.AVAILABLE; // Liberar la mesa
+      order.table.state = TableState.AVAILABLE;
       await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
 
-      // Emitir evento para notificar que la orden ha sido cerrada
-      // this.eventEmitter.emit('order.closed', { orderId: order.id });
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;
     } catch (error) {
