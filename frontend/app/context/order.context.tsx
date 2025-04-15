@@ -109,6 +109,7 @@ const OrderProvider = ({
     handleResetSelectedOrder();
   }, [selectedMesa]);
 
+
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
     setConfirmedProducts([]);
@@ -118,6 +119,7 @@ const OrderProvider = ({
   const fetchOrderBySelectedTable = useCallback(async () => {
     if (selectedMesa?.state === TableState.AVAILABLE) {
       return setSelectedOrderByTable(null);
+
     }
     if (selectedMesa && selectedMesa.orders) {
       try {
@@ -207,14 +209,6 @@ const OrderProvider = ({
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
   };
 
-  // const increaseProductNumber = (id: string) => {
-  //   setSelectedProducts(
-  //     selectedProducts.map((p) =>
-  //       p.productId === id ? { ...p, quantity: p.quantity + 1 } : p
-  //     )
-  //   );
-  // };
-
   const increaseProductNumber = async (id: string) => {
     const productToUpdate = selectedProducts.find((p) => p.productId === id);
     if (productToUpdate) {
@@ -236,16 +230,6 @@ const OrderProvider = ({
       );
     }
   };
-
-  // const decreaseProductNumber = (id: string) => {
-  //   setSelectedProducts(
-  //     selectedProducts.map((p) =>
-  //       p.productId === id && p.quantity > 1
-  //         ? { ...p, quantity: p.quantity - 1 }
-  //         : p
-  //     )
-  //   );
-  // };
 
   const decreaseProductNumber = async (id: string) => {
     const productToUpdate = selectedProducts.find((p) => p.productId === id);
@@ -313,6 +297,7 @@ const OrderProvider = ({
 
       setSelectedOrderByTable(newOrder);
 
+
       const updatedTable = {
         ...newOrder.table,
         room: selectedMesa.room,
@@ -373,7 +358,6 @@ const OrderProvider = ({
       handleSetProductsByOrder(productsByOrder);
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
-
       return updatedOrder;
     } catch (error) {
       console.error(error);
@@ -406,13 +390,6 @@ const OrderProvider = ({
       }
     }
   };
-
-  useEffect(() => {
-    if (selectedMesa) {
-      const order = orders.find((o) => o.table.id === selectedMesa.id);
-      setSelectedOrderByTable(order || null);
-    }
-  }, [orders, selectedMesa]);
 
   return (
     <OrderContext.Provider
