@@ -18,9 +18,11 @@ import { StockModule } from './Stock/stock.module';
 import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 import { PrinterModule } from './Printer/printer.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [typeorm],
