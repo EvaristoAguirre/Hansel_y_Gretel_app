@@ -151,7 +151,6 @@ export class OrderRepository {
         }
         order.table = table;
       }
-
       if (updateData.productsDetails) {
         const batchId = Date.now().toString();
         const newProducts = [];
@@ -167,13 +166,6 @@ export class OrderRepository {
               `Product with ID: ${productId} not found`,
             );
           }
-
-          //------descuento de stock ---------
-          console.log(
-            'ajusto antes del descuento de stock',
-            productId,
-            quantity,
-          );
           await this.stockService.deductStock(product.id, quantity);
 
           const newDetail = queryRunner.manager.create(OrderDetails, {
@@ -192,23 +184,35 @@ export class OrderRepository {
         }
 
         order.total = (Number(order.total) || 0) + total;
-
         if (newProducts.length > 0) {
-          console.log('emitiendo comanda para la tanda actual', {
-            orderId: order.id,
-            products: newProducts,
-            batchId,
-          });
+          try {
+            const printData = {
+              table: order.table?.name || 'SIN MESA',
+              products: updateData.productsDetails
+                .filter((detail) =>
+                  newProducts.some((p) => p.id === detail.productId),
+                )
+                .map((detail) => ({
+                  name:
+                    newProducts.find((p) => p.id === detail.productId)?.name ||
+                    'Producto',
+                  quantity: detail.quantity,
+                })),
+            };
 
-          // await this.printerService.printComanda(dataToPrint);
-          // this.eventEmitter.emit('order.updated', {
-          //     orderId: order.id,
-          //     products: newProducts,
-          //     batchId,
-          // });
+            this.printerService.logger.log(
+              `Attempting to print order for table ${printData.table}`,
+            );
+            await this.printerService.printKitchenOrder(printData);
+            this.printerService.logger.log('Print job sent successfully');
+          } catch (printError) {
+            this.printerService.logger.error(
+              'Failed to print kitchen order',
+              printError.stack,
+            );
+          }
         }
       }
-
       const updatedOrder = await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
@@ -228,6 +232,7 @@ export class OrderRepository {
 
       throw new InternalServerErrorException(
         'Error updating the order. Please try again later.',
+        error.message,
       );
     } finally {
       await queryRunner.release();

@@ -371,9 +371,9 @@ export class StockRepository {
           'productIngredients',
           'productIngredients.ingredient',
           'productIngredients.unitOfMeasure',
+          'promotionDetails',
         ],
       });
-
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found.`);
       }
@@ -384,58 +384,43 @@ export class StockRepository {
       const unitOfMeasureId = unidad.id;
 
       if (product.type === 'simple') {
-        if (product.productIngredients.length === 0) {
-          // Si el producto es simple, descontar directamente del stock
-          if (!product.stock) {
-            throw new NotFoundException(
-              `Product with ID ${productId} has no stock.`,
-            );
-          }
-          const stockUnitId = product.stock.unitOfMeasure.id;
-          const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
-            unitOfMeasureId,
-            stockUnitId,
-            quantity,
+        if (!product.stock) {
+          throw new NotFoundException(
+            `Product with ID ${productId} has no stock.`,
           );
-
-          if (product.stock.quantityInStock < quantityToDeduct) {
-            throw new BadRequestException(
-              `Insufficient stock for product ${product.name}.`,
-            );
-          }
-
-          product.stock.quantityInStock -= quantityToDeduct;
-          await this.stockRepository.save(product.stock);
         }
+        const stockUnitId = product.stock.unitOfMeasure.id;
+        const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
+          unitOfMeasureId,
+          stockUnitId,
+          quantity,
+        );
+
+        if (product.stock.quantityInStock < quantityToDeduct) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${product.name}.`,
+          );
+        }
+
+        product.stock.quantityInStock -= quantityToDeduct;
+        await this.stockRepository.save(product.stock);
       }
 
       if (product.type === 'product') {
-        // Si el producto está compuesto por ingredientes, descontar los ingredientes
-        if (
-          product.productIngredients &&
-          product.productIngredients.length > 0
-        ) {
-          for (const productIngredient of product.productIngredients) {
-            console.log(
-              'producto compuesto, descontando ingrediente....',
-              productIngredient.ingredient.id,
-              productIngredient.quantityOfIngredient,
-              productIngredient.unitOfMeasure.id,
-            );
-            await this.deductIngredientStock(
-              productIngredient.ingredient.id,
-              productIngredient.quantityOfIngredient * quantity,
-              productIngredient.unitOfMeasure.id,
-            );
-          }
+        for (const productIngredient of product.productIngredients) {
+          await this.deductIngredientStock(
+            productIngredient.ingredient.id,
+            productIngredient.quantityOfIngredient * quantity,
+            productIngredient.unitOfMeasure.id,
+          );
         }
-      } else if (product.type === 'promotion') {
-        // Si el producto es una promoción, descontar los productos que la componen
+      }
+
+      if (product.type === 'promotion') {
         const promotionProducts = await this.promotionProductRepository.find({
           where: { promotion: { id: productId } },
-          relations: ['product', 'simple'],
+          relations: ['product'],
         });
-
         for (const promotionProduct of promotionProducts) {
           await this.deductProductStock(
             promotionProduct.product.id,
@@ -453,13 +438,11 @@ export class StockRepository {
   }
 
   async deductStock(productId: string, quantity: number): Promise<string> {
-    console.log('pasando para descontar stock', productId, quantity);
     try {
       const product = await this.productRepository.findOne({
         where: { id: productId },
         relations: ['stock', 'stock.unitOfMeasure'],
       });
-
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found.`);
       }

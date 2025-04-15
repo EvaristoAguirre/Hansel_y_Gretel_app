@@ -13,7 +13,7 @@ export class PrinterController {
   // }
 
   @Post('printComanda')
-  async printKitchenOrder(@Body() orderData: PrintComandaDTO): Promise<void> {
+  async printKitchenOrder(@Body() orderData: PrintComandaDTO): Promise<string> {
     return this.printerService.printKitchenOrder(orderData);
   }
 }
