@@ -121,6 +121,7 @@ export class ProductController {
   async createProduct(
     @Body() productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
+    console.log('controlador', productToCreate);
     return await this.productService.createProduct(productToCreate);
   }
 

@@ -438,7 +438,13 @@ export class UnitOfMeasureRepository {
     fromUnitId: string,
     toUnitId: string,
     quantity: number,
+    visited: Set<string> = new Set(),
   ): Promise<number> {
+    const conversionKey = `${fromUnitId}-${toUnitId}`;
+    if (visited.has(conversionKey)) {
+      throw new BadRequestException('Circular unit conversion detected');
+    }
+    visited.add(conversionKey);
     if (!isUUID(fromUnitId) && !isUUID(toUnitId)) {
       throw new BadRequestException(
         'Invalid ID format. ID must be a valid UUID.',
@@ -455,6 +461,7 @@ export class UnitOfMeasureRepository {
       ],
       relations: ['fromUnit', 'toUnit'],
     });
+
     if (directConversion) {
       const result =
         directConversion.fromUnit.id === fromUnitId
@@ -468,6 +475,13 @@ export class UnitOfMeasureRepository {
       this.getUnitWithRelations(toUnitId),
     ]);
 
+    if (fromUnit?.baseUnit?.id === toUnitId) {
+      return quantity * (fromUnit.equivalenceToBaseUnit || 1);
+    }
+
+    if (toUnit?.baseUnit?.id === fromUnitId) {
+      return quantity / (toUnit.equivalenceToBaseUnit || 1);
+    }
     if (!fromUnit || !toUnit) {
       throw new NotFoundException('One or both units not found.');
     }
@@ -489,6 +503,8 @@ export class UnitOfMeasureRepository {
           toUnitId,
           quantity,
           fromUnit.baseUnit.id,
+          true,
+          visited,
         );
       }
 
@@ -499,6 +515,7 @@ export class UnitOfMeasureRepository {
           quantity,
           toUnit.baseUnit.id,
           true,
+          visited,
         );
       }
     } catch (e) {
@@ -559,24 +576,36 @@ export class UnitOfMeasureRepository {
     quantity: number,
     intermediateUnitId: string,
     inverse = false,
+    visited: Set<string>,
   ) {
     if (inverse) {
       const toIntermediate = await this.convertUnit(
         toUnitId,
         intermediateUnitId,
         1,
+        new Set(visited),
       );
       return (
-        (await this.convertUnit(fromUnitId, intermediateUnitId, quantity)) /
-        toIntermediate
+        (await this.convertUnit(
+          fromUnitId,
+          intermediateUnitId,
+          quantity,
+          new Set(visited),
+        )) / toIntermediate
       );
     }
     const toBase = await this.convertUnit(
       fromUnitId,
       intermediateUnitId,
       quantity,
+      new Set(visited),
     );
-    return this.convertUnit(intermediateUnitId, toUnitId, toBase);
+    return this.convertUnit(
+      intermediateUnitId,
+      toUnitId,
+      toBase,
+      new Set(visited),
+    );
   }
 
   async findConversionUnit() {
