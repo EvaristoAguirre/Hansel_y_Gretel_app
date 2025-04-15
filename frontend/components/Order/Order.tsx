@@ -49,7 +49,7 @@ const Order: React.FC<OrderProps> = ({
       if (confirmedProducts.length > 0) {
         setTotal(
           confirmedProducts.reduce((acc: number, item: SelectedProductsI) => {
-            return acc + item.unitaryPrice * item.quantity;
+            return acc + (item.unitaryPrice ?? 0) * item.quantity;
           }, 0)
         );
       }
@@ -91,8 +91,8 @@ const Order: React.FC<OrderProps> = ({
   return (
     <>
       {selectedMesa &&
-      (selectedMesa.state === TableState.OPEN ||
-        selectedMesa.state === TableState.PENDING_PAYMENT) ? (
+        (selectedMesa.state === TableState.OPEN ||
+          selectedMesa.state === TableState.PENDING_PAYMENT) ? (
         <div
           style={{
             width: "100%",

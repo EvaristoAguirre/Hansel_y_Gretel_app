@@ -19,6 +19,7 @@ import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
+import next from "next";
 import { checkStock } from "@/api/products";
 
 type OrderContextType = {
@@ -289,12 +290,25 @@ const OrderProvider = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error:", errorData);
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        if (response.status === 400) {
+          const errorData = await response.json();
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: errorData.message,
+          })
+          return
+        } else {
+          const errorData = await response.json();
+          console.error("Error:", errorData);
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
       }
 
       const updatedOrder = await response.json();
+
+      console.log(" 🚀 ~ updatedOrder", updatedOrder);
+
 
       const productsByOrder = updatedOrder.products;
 
@@ -305,9 +319,8 @@ const OrderProvider = ({
       return updatedOrder;
     } catch (error) {
       console.error(error);
+      return
     }
-
-    console.groupEnd();
   };
 
   const handleDeleteOrder = async (id: string | null) => {

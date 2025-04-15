@@ -23,6 +23,7 @@ const RoomModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
     }
     onSubmit({ id: sala?.id, name });
     onClose();
+    setName("");
   };
 
   return (

@@ -3,7 +3,7 @@ import { addStock, editStock, getIdStockFromIngredient, getIdStockFromProduct, g
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
-import { useProductos } from "@/components/Hooks/useProducts";
+import { useProducts } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import {
@@ -40,7 +40,7 @@ const initialState = {
 
 const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selectedItem, token }) => {
   const [formValues, setFormValues] = useState(initialState);
-  const { fetchAndSetProducts } = useProductos();
+  const { fetchAndSetProducts } = useProducts();
   const { updateIngredient } = useIngredientsContext();
   const { units } = useUnitContext()
 
