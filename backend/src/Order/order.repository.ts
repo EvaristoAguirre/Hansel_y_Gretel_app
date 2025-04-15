@@ -403,6 +403,12 @@ export class OrderRepository {
         orderId: order.id,
       });
 
+      // try {
+      //   await this.printerService.printTicketOrder(order);
+      // } catch (error) {
+      //   throw new Error(error.message);
+      // }
+
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;
     } catch (error) {

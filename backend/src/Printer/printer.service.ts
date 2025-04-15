@@ -1,175 +1,3 @@
-// import { Injectable } from '@nestjs/common';
-// import * as fs from 'fs';
-// import * as path from 'path';
-// import * as net from 'net';
-// import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
-
-// @Injectable()
-// export class PrinterService {
-//   private counter: number = 0;
-//   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
-//   private readonly printerHost = '192.168.1.49';
-//   private readonly printerPort = 9100;
-
-//   constructor() {
-//     this.loadCounter();
-//   }
-
-//   private loadCounter(): void {
-//     try {
-//       if (fs.existsSync(this.counterFilePath)) {
-//         const data = fs.readFileSync(this.counterFilePath, 'utf8');
-//         this.counter = JSON.parse(data).counter;
-//       }
-//     } catch (error) {
-//       console.error('Error loading counter:', error);
-//       this.counter = 0;
-//     }
-//   }
-
-//   private saveCounter(): void {
-//     try {
-//       fs.writeFileSync(
-//         this.counterFilePath,
-//         JSON.stringify({
-//           counter: this.counter,
-//         }),
-//       );
-//     } catch (error) {
-//       console.error('Error saving counter:', error);
-//     }
-//   }
-
-//   private generateOrderCode(): string {
-//     const now = new Date();
-//     const year = now.getFullYear();
-//     const month = String(now.getMonth() + 1).padStart(2, '0');
-//     const day = String(now.getDate()).padStart(2, '0');
-//     const count = String(this.counter++).padStart(4, '0');
-//     this.saveCounter();
-//     return `${year}-${month}-${day}-${count}`;
-//   }
-
-//   private async sendRawCommand(command: string): Promise<string> {
-//     return new Promise((resolve, reject) => {
-//       const socket = net.createConnection({
-//         host: this.printerHost,
-//         port: this.printerPort,
-//       });
-
-//       socket.on('connect', () => {
-//         socket.write(command, (error) => {
-//           socket.end();
-//           if (error) {
-//             reject(error);
-//           } else {
-//             resolve('comanda impresa correctamente');
-//           }
-//         });
-//       });
-
-//       socket.on('error', (error) => {
-//         reject(error);
-//       });
-//     });
-//   }
-
-//   // async printKitchenOrder(orderData: PrintComandaDTO): Promise<string> {
-//   //   const now = new Date();
-//   //   const orderCode = this.generateOrderCode();
-//   //   console.log('dataaaaaa.......', orderData);
-
-//   //   const formatProductLine = (name: string, quantity: number) => {
-//   //     const namePart = name.padEnd(20).substring(0, 20);
-//   //     const quantityPart = `x${quantity.toString().padStart(2)}`;
-//   //     return `${namePart} ${quantityPart}\n`;
-//   //   };
-
-//   //   const commands = [
-//   //     '\x1B\x40', // Inicializar impresora
-//   //     '\x1B\x61\x01', // Centrar texto
-//   //     '\x1D\x21\x01', // Texto doble altura
-//   //     'COMANDA COCINA\n',
-//   //     '\x1D\x21\x00', // Texto normal
-//   //     '-----------------------------\n',
-//   //     `Código: ${orderCode}\n`,
-//   //     `Mesa: ${orderData.table}\n`,
-//   //     `Hora: ${now.toLocaleTimeString()}\n`,
-//   //     '-----------------------------\n',
-//   //     '\x1B\x45\x01', // Negrita ON
-//   //     'PRODUCTO             CANT.\n',
-//   //     '\x1B\x45\x00', // Negrita OFF
-//   //     '-----------------------------\n',
-//   //     ...orderData.products.map((p) => formatProductLine(p.name, p.quantity)),
-//   //     '-----------------------------\n',
-//   //     '\x1B\x61\x01', // Centrar texto
-//   //     'Por favor preparar con cuidado\n',
-//   //     '\x1B\x42\x02\x02', // Doble pitido
-//   //     '\x1D\x56\x41\x50', // Cortar papel (con avance)
-//   //   ].join('');
-
-//   //   return this.sendRawCommand(commands);
-//   // }
-
-//   async printKitchenOrder(orderData: PrintComandaDTO): Promise<string> {
-//     if (!orderData.products || orderData.products.length === 0) {
-//       throw new Error('No hay productos para imprimir en la comanda');
-//     }
-//     const now = new Date();
-//     const orderCode = this.generateOrderCode();
-
-//     // Función para formatear líneas de productos
-//     const formatProductLine = (name: string, quantity: number) => {
-//       const namePart = name.padEnd(20).substring(0, 20); // Limita a 20 caracteres
-//       const quantityPart = `x${quantity.toString().padStart(2)}`;
-//       return `${namePart} ${quantityPart}\n`;
-//     };
-
-//     // Encabezado con información importante
-//     const header = [
-//       '\x1B\x40', // Inicializar impresora
-//       '\x1B\x61\x01', // Centrar texto
-//       '\x1D\x21\x01', // Texto doble altura
-//       'COMANDA COCINA\n',
-//       '\x1D\x21\x00', // Texto normal
-//       '-----------------------------\n',
-//       `Código: ${orderCode}\n`,
-//       `Mesa: ${orderData.table}\n`,
-//       `Hora: ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`,
-//       '-----------------------------\n',
-//       '\x1B\x45\x01', // Negrita ON
-//       'PRODUCTO             CANT.\n',
-//       '\x1B\x45\x00', // Negrita OFF
-//       '-----------------------------\n',
-//     ];
-
-//     // Cuerpo con los productos
-//     const body = orderData.products.map((p) =>
-//       formatProductLine(p.name, p.quantity),
-//     );
-
-//     // Pie de página
-//     const footer = [
-//       '-----------------------------\n',
-//       '\x1B\x61\x01', // Centrar texto
-//       'Por favor preparar con cuidado\n',
-//       '\x1B\x42\x02\x02', // Doble pitido
-//       '\x1D\x56\x41\x50', // Cortar papel (con avance)
-//     ];
-
-//     // Combinar todos los componentes
-//     const commands = [...header, ...body, ...footer].join('');
-
-//     try {
-//       await this.sendRawCommand(commands);
-//       return `Comanda impresa correctamente (${orderCode})`;
-//     } catch (error) {
-//       console.error('Error al imprimir comanda:', error);
-//       throw new Error('No se pudo imprimir la comanda');
-//     }
-//   }
-// }
-
 import { Injectable, Logger } from '@nestjs/common';
 import * as net from 'net';
 import * as fs from 'fs';
@@ -312,5 +140,112 @@ export class PrinterService {
       );
       throw new Error(`Error al imprimir: ${error.message}`);
     }
+  }
+
+  async printTicketOrder(orderData: {
+    table: string;
+    products: Array<{
+      name: string;
+      quantity: number;
+      price: number;
+    }>;
+  }): Promise<string> {
+    if (!orderData?.products?.length) {
+      throw new Error('No hay productos para imprimir en el ticket');
+    }
+
+    if (!orderData.table?.trim()) {
+      throw new Error('El nombre de la mesa es requerido');
+    }
+
+    try {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+      });
+      const timeStr = now.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Calcular totales
+      const subtotal = orderData.products.reduce(
+        (sum, product) => sum + product.price * product.quantity,
+        0,
+      );
+      const tip = subtotal * 0.1; // 10% de propina
+      const total = subtotal + tip;
+
+      // Formatear líneas de productos
+      const formatProductLine = (product: {
+        name: string;
+        quantity: number;
+        price: number;
+      }) => {
+        const name = this.normalizeTextToTicket(product.name)
+          .substring(0, 20)
+          .padEnd(20);
+        const quantity = `x${product.quantity.toString().padStart(2)}`;
+        const price = `$${product.price.toFixed(2).padStart(6)}`;
+        const total = `$${(product.price * product.quantity).toFixed(2).padStart(7)}`;
+        return `${quantity} ${name} ${price} ${total}\n`;
+      };
+
+      // Comandos ESC/POS
+      const commands = [
+        '\x1B\x40', // Inicializar impresora
+        '\x1B\x74\x02', // Codificación Windows-1252
+        '\x1B\x61\x01', // Centrar texto
+        '\x1D\x21\x11', // Texto doble tamaño
+        'HANSEL Y GRETEL\n',
+        '\x1D\x21\x00', // Texto normal
+        '-----------------------------\n',
+        `${dateStr} - ${timeStr}\n`,
+        `Mesa: ${this.normalizeTextToTicket(orderData.table)}\n`,
+        '-----------------------------\n',
+        '\x1B\x45\x01', // Negrita ON
+        'CANT PRODUCTO           P.UNIT  TOTAL\n',
+        '\x1B\x45\x00', // Negrita OFF
+        '-----------------------------\n',
+        ...orderData.products.map(formatProductLine),
+        '-----------------------------\n',
+        '\x1B\x61\x02', // Alinear derecha
+        `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
+        `Propina (10%): $${tip.toFixed(2).padStart(6)}\n`,
+        '\x1B\x61\x01', // Centrar texto
+        '\x1B\x45\x01', // Negrita ON
+        '-----------------------------\n',
+        '\x1B\x61\x02', // Alinear derecha
+        `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
+        `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
+        '\x1B\x45\x00', // Negrita OFF
+        '\x1B\x61\x01', // Centrar texto
+        '-----------------------------\n',
+        'DOCUMENTO NO VÁLIDO COMO FACTURA\n',
+        'Gracias por su visita!\n',
+        '\x1B\x42\x01\x02', // Pitido
+        '\x1D\x56\x41\x50', // Cortar papel con avance
+      ].join('');
+
+      const printSuccess = await this.sendRawCommand(commands);
+      if (!printSuccess) {
+        throw new Error('Error al enviar comando de impresión');
+      }
+
+      return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
+    } catch (error) {
+      this.logger.error(
+        `Error al imprimir ticket: ${error.message}`,
+        error.stack,
+      );
+      throw new Error(`Error al imprimir ticket: ${error.message}`);
+    }
+  }
+
+  // Función auxiliar para normalizar texto (mantener del método original)
+  private normalizeTextToTicket(text: string): string {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 }
