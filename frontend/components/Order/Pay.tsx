@@ -18,7 +18,7 @@ export interface PayOrderProps {
 }
 
 const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
-  const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } =
+  const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts, fetchOrderBySelectedTable } =
     useOrderContext();
   const { selectedMesa, setSelectedMesa } = useRoomContext();
   const { updateTable } = useTableStore();
@@ -67,6 +67,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     if (tableEdited) {
       setSelectedMesa(tableEdited);
       updateTable(tableEdited);
+      setSelectedOrderByTable(null);
+      fetchOrderBySelectedTable();
     }
     handleComplete();
   };
@@ -75,7 +77,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     pending_payment: "PENDIENTE DE PAGO",
     open: "ORDEN ABIERTA",
     cancelled: "ORDEN CANCELADA",
-    closed: "ORDEN PAGADA",
+    closed: "ORDEN PAGADA/CERRADA",
   };
   const orderStyles = {
     pending_payment: "text-red-500",
@@ -191,7 +193,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               (selectedMesa &&
                 orderStates[
                 selectedOrderByTable?.state as keyof typeof orderStates
-                ] === "ORDEN PAGADA") ? (
+                ] === "ORDEN PAGADA/CERRADA") ? (
               <Button
                 fullWidth
                 variant="outlined"

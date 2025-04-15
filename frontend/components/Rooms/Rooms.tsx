@@ -44,7 +44,7 @@ const Rooms = () => {
     <>
       {/* Barra de navegación con Tabs */}
       <AppBar
-        position="sticky"
+        position="relative"
         sx={{
           backgroundColor: "#f3d49ab8",
           color: "black",
