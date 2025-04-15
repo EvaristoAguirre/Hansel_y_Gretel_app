@@ -329,7 +329,7 @@ export class StockRepository {
 
       if (!ingredient || !ingredient.stock) {
         throw new NotFoundException(
-          `Ingredient with ID ${ingredientId} not found or has no stock.`,
+          `El ingrediente con ID ${ingredientId} no se encontró o no tiene stock.`,
         );
       }
 
@@ -343,7 +343,7 @@ export class StockRepository {
 
       if (ingredient.stock.quantityInStock < quantityToDeduct) {
         throw new BadRequestException(
-          `Insufficient stock for ingredient ${ingredient.name}.`,
+          `Stock insuficiente para el ingrediente: ${ingredient.name}.`,
         );
       }
 

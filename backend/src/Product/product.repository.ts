@@ -41,7 +41,7 @@ export class ProductRepository {
     private readonly stockService: StockService,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-  ) { }
+  ) {}
 
   //---- Estandarizado  -------- con el dto nuevo
   async getAllProducts(
@@ -1131,28 +1131,14 @@ export class ProductRepository {
     quantityToSell: number,
     type: 'product' | 'promotion' | 'simple',
   ) {
-    console.log("repositorio");
-
     const entity = await this.getEntityWithRelations(id, type);
-    console.log('1 - entrando al metodo de chequeo', id, quantityToSell);
-    console.log('1.1 - entrando al metodo de chequeo', entity);
     if (!entity) {
       throw new NotFoundException(`${type} not found`);
     }
 
     if (entity.type === 'product' || entity.type === 'simple') {
-      console.log(
-        '2 - entrando a la derivacion de producto',
-        id,
-        quantityToSell,
-      );
       return this.checkProductStock(entity, quantityToSell);
     } else {
-      console.log(
-        '2.1 - entrando a la derivacion de promocion',
-        id,
-        quantityToSell,
-      );
       return this.checkPromotionStock(entity, quantityToSell);
     }
   }
@@ -1163,7 +1149,6 @@ export class ProductRepository {
       if (!productToCheck) {
         throw new NotFoundException('Product not found');
       }
-      console.log('3 - entrando a la derivacion', product, quantityToSell);
       if (
         !productToCheck.productIngredients ||
         productToCheck.productIngredients.length === 0
@@ -1171,7 +1156,7 @@ export class ProductRepository {
         if (!productToCheck.stock) {
           return {
             available: false,
-            message: 'Product has no stock information',
+            message: 'El producto no tiene información de stock',
           };
         }
 
@@ -1181,7 +1166,7 @@ export class ProductRepository {
         } else {
           return {
             available: false,
-            message: `Insufficient stock. Available: ${availableQuantity}, Required: ${quantityToSell}`,
+            message: `Stock insuficiente. Disponible: ${availableQuantity}, Requerido: ${quantityToSell}`,
             details: {
               available: availableQuantity,
               required: quantityToSell,
@@ -1200,42 +1185,23 @@ export class ProductRepository {
             const ingredientId = pi.ingredient.id;
             const stockOfIngredient =
               await this.stockService.getStockByIngredientId(ingredientId);
-            //---------------------------------------------------------------------
-            console.log('stock of ingredient.......', stockOfIngredient);
-            //---------------------------------------------------------------------
             if (!stockOfIngredient.quantityInStock) {
               return {
                 ingredientId: ingredientId,
                 ingredientName: stockOfIngredient.ingredient.name,
                 available: false,
-                message: 'Ingredient has no stock information',
+                message: 'El ingrediente no tiene información de stock',
               };
             }
 
             let requiredQuantity = pi.quantityOfIngredient;
-            //---------------------------------------------------------------------
-            console.log(
-              'previo a la conversion.......',
-              pi.unitOfMeasure?.id,
-              stockOfIngredient.unitOfMeasure?.id,
-            );
-            //---------------------------------------------------------------------
+
             if (pi.unitOfMeasure?.id !== stockOfIngredient.unitOfMeasure?.id) {
               try {
-                console.log(
-                  'antes de entrar a la conversion',
-                  pi.unitOfMeasure.id,
-                  stockOfIngredient.unitOfMeasure.id,
-                  pi.quantityOfIngredient,
-                );
                 requiredQuantity = await this.unitOfMeasureService.convertUnit(
                   pi.unitOfMeasure.id,
                   stockOfIngredient.unitOfMeasure.id,
                   pi.quantityOfIngredient,
-                );
-                console.log(
-                  '4 - resultado de la conversion.......',
-                  requiredQuantity,
                 );
               } catch (error) {
                 return {
@@ -1246,10 +1212,7 @@ export class ProductRepository {
                 };
               }
             }
-            console.log(
-              '5- post resultado de la conversion....',
-              requiredQuantity,
-            );
+
             const totalRequired = requiredQuantity * quantityToSell;
             const availableQuantity = parseFloat(
               stockOfIngredient.quantityInStock,
@@ -1280,7 +1243,7 @@ export class ProductRepository {
           );
           return {
             available: false,
-            message: 'Insufficient stock for some ingredients',
+            message: 'Stock insuficiente para algunos ingredientes',
             details: insufficientIngredients,
           };
         }
@@ -1328,7 +1291,7 @@ export class ProductRepository {
                 productId: product.id,
                 productName: product.name,
                 available: false,
-                message: 'Product has no stock information',
+                message: 'El producto no cuenta con información de stock',
               };
             }
             const availableQuantity = product.stock.quantityInStock;
@@ -1343,7 +1306,7 @@ export class ProductRepository {
                 productId: product.id,
                 productName: product.name,
                 available: false,
-                message: `Insufficient stock. Available: ${availableQuantity}, Required: ${requiredQuantity}`,
+                message: `Stock insuficiente. Disponible: ${availableQuantity}, Requerido: ${requiredQuantity}`,
                 details: {
                   available: availableQuantity,
                   required: requiredQuantity,
@@ -1364,7 +1327,7 @@ export class ProductRepository {
                   ingredientId: ingredientId,
                   ingredientName: stockOfIngredient.ingredient.name,
                   available: false,
-                  message: 'Ingredient has no stock information',
+                  message: 'El ingrediente no tiene información de stock',
                 };
               }
 
@@ -1421,11 +1384,11 @@ export class ProductRepository {
             details: allIngredientsAvailable
               ? null
               : {
-                message: 'Insufficient stock for some ingredients',
-                ingredientDetails: ingredientChecks.filter(
-                  (check) => !check.available,
-                ),
-              },
+                  message: 'Stock insuficiente para algunos ingredientes',
+                  ingredientDetails: ingredientChecks.filter(
+                    (check) => !check.available,
+                  ),
+                },
           };
         }),
       );
@@ -1442,11 +1405,12 @@ export class ProductRepository {
         );
         return {
           available: false,
-          message: 'Insufficient stock for some products in the promotion',
+          message:
+            'Stock insuficiente para algunos productos de esta promoción',
           details: unavailableProducts.map((up) => ({
             productId: up.productId,
             productName: up.productName,
-            reason: up.message || 'Insufficient ingredients',
+            reason: up.message || 'Ingrediente insuficiente',
             details: up.details,
           })),
         };
@@ -1469,21 +1433,21 @@ export class ProductRepository {
     const relations =
       type === 'product' || type === 'simple'
         ? [
-          'productIngredients',
-          'productIngredients.ingredient',
-          'productIngredients.unitOfMeasure',
-          'stock',
-          'stock.unitOfMeasure',
-        ]
+            'productIngredients',
+            'productIngredients.ingredient',
+            'productIngredients.unitOfMeasure',
+            'stock',
+            'stock.unitOfMeasure',
+          ]
         : [
-          'promotionDetails',
-          'promotionDetails.product',
-          'promotionDetails.product.productIngredients',
-          'promotionDetails.product.productIngredients.ingredient',
-          'promotionDetails.product.productIngredients.unitOfMeasure',
-          'promotionDetails.product.stock',
-          'promotionDetails.product.stock.unitOfMeasure',
-        ];
+            'promotionDetails',
+            'promotionDetails.product',
+            'promotionDetails.product.productIngredients',
+            'promotionDetails.product.productIngredients.ingredient',
+            'promotionDetails.product.productIngredients.unitOfMeasure',
+            'promotionDetails.product.stock',
+            'promotionDetails.product.stock.unitOfMeasure',
+          ];
 
     return this.productRepository.findOne({
       where: { id, isActive: true, type },
