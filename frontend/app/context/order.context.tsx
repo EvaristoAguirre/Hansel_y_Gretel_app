@@ -10,6 +10,7 @@ import {
 } from "react";
 import Swal from "sweetalert2";
 import {
+  ICheckStock,
   ProductResponse,
   SelectedProductsI,
 } from "../../components/Interfaces/IProducts";
@@ -18,7 +19,7 @@ import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
-import next from "next";
+import { checkStock } from "@/api/products";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -148,14 +149,42 @@ const OrderProvider = ({
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
 
-  const handleSelectedProducts = (product: ProductResponse) => {
+  const checkStockAvailability = async (productId: string, quantity: number) => {
+    const form: ICheckStock = {
+      productId: productId,
+      quantityToSell: quantity
+    }
+    try {
+      const stock = await checkStock(form, token!);
+
+      return stock
+
+    } catch (error) {
+      console.error("Error al obtener el stock:", error);
+    }
+  };
+
+  const handleSelectedProducts = async (product: ProductResponse) => {
     const foundProduct = selectedProducts.find(
-      (p: any) => p.productId === product.id
+      (p) => p.productId === product.id
     );
+
+    const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
+
+    const stockResponse = await checkStockAvailability(product.id, newQuantity);
+
+    if (!stockResponse?.available) {
+      Swal.fire({
+        icon: "error",
+        title: "Stock insuficiente",
+        text: stockResponse.message,
+      });
+      return;
+    }
 
     if (foundProduct) {
       const updatedDetails = selectedProducts.map((p) =>
-        p.productId === product.id ? { ...p, quantity: p.quantity + 1 } : p
+        p.productId === product.id ? { ...p, quantity: newQuantity } : p
       );
       setSelectedProducts(updatedDetails);
     } else {
@@ -169,6 +198,7 @@ const OrderProvider = ({
     }
   };
 
+
   const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
     setConfirmedProducts(confirmedProducts);
   };
@@ -177,22 +207,66 @@ const OrderProvider = ({
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
   };
 
-  const increaseProductNumber = (id: string) => {
-    setSelectedProducts(
-      selectedProducts.map((p) =>
-        p.productId === id ? { ...p, quantity: p.quantity + 1 } : p
-      )
-    );
+  // const increaseProductNumber = (id: string) => {
+  //   setSelectedProducts(
+  //     selectedProducts.map((p) =>
+  //       p.productId === id ? { ...p, quantity: p.quantity + 1 } : p
+  //     )
+  //   );
+  // };
+
+  const increaseProductNumber = async (id: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+    if (productToUpdate) {
+      const newQuantity = productToUpdate.quantity + 1;
+      // Verifica el stock antes de actualizar
+      const stockResponse = await checkStockAvailability(id, newQuantity);
+      if (!stockResponse?.available) {
+        Swal.fire({
+          icon: "error",
+          title: "Stock insuficiente",
+          text: stockResponse.message,
+        });
+        return;
+      }
+      setSelectedProducts(
+        selectedProducts.map((p) =>
+          p.productId === id ? { ...p, quantity: newQuantity } : p
+        )
+      );
+    }
   };
 
-  const decreaseProductNumber = (id: string) => {
-    setSelectedProducts(
-      selectedProducts.map((p) =>
-        p.productId === id && p.quantity > 1
-          ? { ...p, quantity: p.quantity - 1 }
-          : p
-      )
-    );
+  // const decreaseProductNumber = (id: string) => {
+  //   setSelectedProducts(
+  //     selectedProducts.map((p) =>
+  //       p.productId === id && p.quantity > 1
+  //         ? { ...p, quantity: p.quantity - 1 }
+  //         : p
+  //     )
+  //   );
+  // };
+
+  const decreaseProductNumber = async (id: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+    if (productToUpdate) {
+      const newQuantity = productToUpdate.quantity - 1;
+      // Verifica el stock antes de actualizar
+      const stockResponse = await checkStockAvailability(id, newQuantity);
+      if (!stockResponse?.available) {
+        Swal.fire({
+          icon: "error",
+          title: "Stock insuficiente",
+          text: stockResponse.message,
+        });
+        return;
+      }
+      setSelectedProducts(
+        selectedProducts.map((p) =>
+          p.productId === id ? { ...p, quantity: newQuantity } : p
+        )
+      );
+    }
   };
 
   const clearSelectedProducts = () => {
