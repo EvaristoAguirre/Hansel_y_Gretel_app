@@ -102,3 +102,8 @@ export interface IConfirmedProducts {
   batchId: string;
 };
 
+export interface ICheckStock {
+  productId: string;
+  quantityToSell: number;
+};
+

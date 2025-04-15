@@ -3,7 +3,7 @@ import { Button, Box } from "@mui/material";
 import { getProductsByCategory, searchProducts } from "@/api/products";
 import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
-import { useProductos } from "@/components/Hooks/useProducts";
+import { useProducts } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from '../../Utils/ProductTable';
 import { useAuth } from "@/app/context/authContext";
@@ -19,7 +19,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   const { getAccessToken } = useAuth();
   const { products, setProducts } = useProductStore();
-  const { fetchAndSetProducts } = useProductos();
+  const { fetchAndSetProducts } = useProducts();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
   const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
