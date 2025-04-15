@@ -1,5 +1,5 @@
 'use client';
-import { Box, Typography, Card, CardContent, TextField, Autocomplete, Button } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
 import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
@@ -12,7 +12,6 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import LoadingLottie from "@/components/Loader/Loading";
 
 
 const StockControl = () => {
@@ -184,12 +183,20 @@ const StockControl = () => {
   const filteredIngredients = filterByStock(formattedIngredients);
 
   useEffect(() => {
-    const hasNullStock = filteredProducts.some((product) => (product.stock === null || product.stock === undefined || product.stock === 0));
-    const hasNullStockIngredients = filteredIngredients.some((ingredient) => (ingredient.stock === null || ingredient.stock === undefined || ingredient.stock === 0));
+    const hasNullStock = filteredProducts.some((product) =>
+      product.stock === null || product.stock === undefined || product.stock === 0
+    );
+    const hasNullStockIngredients = filteredIngredients.some((ingredient) =>
+      ingredient.stock === null || ingredient.stock === undefined || ingredient.stock === 0
+    );
+
     if (hasNullStock || hasNullStockIngredients) {
       setNoStock(true);
+    } else {
+      setNoStock(false);
     }
-  }, [filteredProducts]);
+  }, [filteredProducts, filteredIngredients]);
+
 
 
   return (
@@ -210,31 +217,26 @@ const StockControl = () => {
           <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#856d5e59", p: 1 }}>
             PRODUCTOS
           </Typography>
-          {
-            filteredProducts.length === 0 ? (
-              <LoadingLottie />
-            ) :
-              <DataGrid
-                rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
-                columns={productColumns}
-                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-                initialState={{
-                  pagination: { paginationModel: { page: 1, pageSize: 5 } },
-                  sorting: { sortModel: [{ field: "name", sort: "asc" }] },
-                }}
-                pageSizeOptions={[5, 7, 10]}
-                sx={{
-                  height: "100%",
-                  "& .MuiDataGrid-row": {
-                    cursor: "pointer",
-                  },
-                  "& .MuiDataGrid-row:hover": {
-                    backgroundColor: "#f3d49a66",
-                  },
-                }}
-                onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
-              />
-          }
+          <DataGrid
+            rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
+            columns={productColumns}
+            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            initialState={{
+              pagination: { paginationModel: { page: 1, pageSize: 5 } },
+              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+            }}
+            pageSizeOptions={[5, 7, 10]}
+            sx={{
+              height: "100%",
+              "& .MuiDataGrid-row": {
+                cursor: "pointer",
+              },
+              "& .MuiDataGrid-row:hover": {
+                backgroundColor: "#f3d49a66",
+              },
+            }}
+            onRowClick={(params) => handleEditProduct(params.row, StockModalType.PRODUCT)}
+          />
         </Box>
 
         {/* DataGrid de Ingredientes */}
@@ -242,23 +244,18 @@ const StockControl = () => {
           <Typography variant="h6" align="center" sx={{ mb: 1, bgcolor: "#f3d49a66", p: 1 }}>
             INGREDIENTES
           </Typography>
-          {
-            filteredIngredients.length === 0 ? (
-              <LoadingLottie />
-            ) :
-              <DataGrid
-                rows={filteredIngredients}
-                columns={ingredientColumns}
-                localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-                initialState={{
-                  pagination: { paginationModel: { page: 1, pageSize: 5 } },
-                  sorting: { sortModel: [{ field: "name", sort: "asc" }] },
-                }}
-                pageSizeOptions={[5, 7, 10]}
-                sx={{ height: "100%" }}
-                onRowClick={(params) => handleEditProduct(params.row, StockModalType.INGREDIENT)}
-              />
-          }
+          <DataGrid
+            rows={filteredIngredients}
+            columns={ingredientColumns}
+            localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+            initialState={{
+              pagination: { paginationModel: { page: 1, pageSize: 5 } },
+              sorting: { sortModel: [{ field: "name", sort: "asc" }] },
+            }}
+            pageSizeOptions={[5, 7, 10]}
+            sx={{ height: "100%" }}
+            onRowClick={(params) => handleEditProduct(params.row, StockModalType.INGREDIENT)}
+          />
         </Box>
       </Box>
       {/* Modal para agregar stock */}
