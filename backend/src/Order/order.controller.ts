@@ -56,7 +56,7 @@ export class OrderController {
     return order;
   }
   @Post('cancel/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async cancelOrder(@Param('id') id: string): Promise<Order> {
     return await this.orderService.cancelOrder(id);
   }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { Order } from './order.entity';
-import { DataSource, In, LessThan } from 'typeorm';
+import { Between, DataSource, In } from 'typeorm';
 import { ArchivedOrder } from './archived_order.entity';
 import { Cron } from '@nestjs/schedule';
 import { OrderState } from 'src/Enums/states.enum';
@@ -16,7 +16,7 @@ export class ArchiveService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron('30 16 * * 3')
+  @Cron('10 21 * * 0')
   async archiveOrders() {
     const maxAttempts = 3;
     const delayBetweenAttempts = 60000;
@@ -34,7 +34,10 @@ export class ArchiveService {
                 OrderState.CANCELLED,
                 OrderState.PENDING_PAYMENT,
               ]),
-              date: LessThan(this.getLastSunday()),
+              date: Between(
+                this.getLastWeekRange().start,
+                this.getLastWeekRange().end,
+              ),
             },
             relations: ['orderDetails'],
           });
@@ -63,10 +66,7 @@ export class ArchiveService {
             return archived;
           });
 
-          // 3. Guardar en tabla de archivado
           await manager.save(ArchivedOrder, archivedOrders);
-
-          // 4. Eliminar órdenes originales
           await manager.remove(Order, ordersToArchive);
 
           this.logger.log(`Archivadas ${archivedOrders.length} órdenes`);
@@ -90,10 +90,14 @@ export class ArchiveService {
     }
   }
 
-  private getLastSunday(): Date {
-    const date = new Date();
-    date.setDate(date.getDate() - (date.getDay() || 7)); // Si es domingo, resta 7 días
-    date.setHours(0, 0, 0, 0); // Normalizar a inicio del día
-    return date;
+  private getLastWeekRange(): { start: Date; end: Date } {
+    const end = new Date();
+    end.setDate(end.getDate() - (end.getDay() || 7));
+    end.setHours(0, 0, 0, 0);
+
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
+
+    return { start, end };
   }
 }
