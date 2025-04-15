@@ -10,7 +10,6 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import usePedido from "../Hooks/usePedido";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
@@ -18,7 +17,8 @@ import "../../styles/pedidoEditor.css";
 import { deleteOrder } from "@/api/order";
 import Swal from "sweetalert2";
 import { useAuth } from "@/app/context/authContext";
-import { useOrderStore } from "./useOrderStore";
+import { useProducts } from "../Hooks/useProducts";
+import useOrder from '../Hooks/useOrder';
 
 export interface Product {
   price: number;
@@ -31,12 +31,16 @@ interface Props {
   handleNextStep: () => void;
   handleCompleteStep: () => void;
 }
-const OrderEditor = ({
-  handleNextStep,
-  handleCompleteStep,
-}: Props) => {
-  const { productosDisponibles, products, setProductosDisponibles } =
-    usePedido();
+const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
+
+  const { productosDisponibles, setProductosDisponibles } = useOrder();
+  const { fetchAndSetProducts, products } = useProducts();
+  const { getAccessToken } = useAuth();
+
+  useEffect(() => {
+    const token = getAccessToken();
+    token && fetchAndSetProducts(token);
+  }, []);
 
   const {
     selectedProducts,
@@ -52,16 +56,10 @@ const OrderEditor = ({
     handleEditOrder,
   } = useOrderContext();
 
-
-  const { getAccessToken } = useAuth();
-
-  // const { connectWebSocket, orders } = useOrderStore();
-
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
 
   const confirmarPedido = () => {
-
     if (selectedOrderByTable) {
       handleEditOrder(
         selectedOrderByTable.id,
@@ -111,20 +109,6 @@ const OrderEditor = ({
       text: "El pedido ha sido eliminado con éxito.",
     });
   };
-
-
-  // useEffect(() => {
-  //   if (orders && orders.length > 0) {
-  //     // Verifica si hay un pedido seleccionado y actualiza su estado si es necesario
-  //     const updatedOrder = orders.find(order => order.id === selectedOrderByTable?.id);
-
-  //     if (updatedOrder) {
-  //       setSelectedOrderByTable(updatedOrder);
-  //     }
-  //   }
-  // }, [orders]); // Se ejecuta cada vez que orders cambia
-
-
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
@@ -262,7 +246,7 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.unitaryPrice ?? 0 * item.quantity}
+                      ${(item.unitaryPrice ?? 0) * item.quantity}
                     </Typography>
                     <IconButton
                       onClick={() =>
@@ -372,7 +356,7 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${item.unitaryPrice ?? 0 * item.quantity}
+                      ${(item.unitaryPrice ?? 0) * item.quantity}
                     </Typography>
                     <IconButton
                       onClick={() =>
@@ -407,19 +391,7 @@ const OrderEditor = ({
               Total: ${total}
             </Typography>
           </Box>
-          {/* Botones de confirmar y cancelar */}
           <div>
-            {/* <Button
-              fullWidth
-              variant="contained"
-              sx={{
-                backgroundColor: "#7e9d8a",
-                "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-              }}
-              onClick={confirmarPedido}
-            >
-              CONFIRMAR PRODUCTOS A COMANDA
-            </Button> */}
             {confirmedProducts.length > 0 && selectedOrderByTable && (
               <Button
                 fullWidth
@@ -442,6 +414,3 @@ const OrderEditor = ({
 };
 
 export default OrderEditor;
-function setInputValue(arg0: string) {
-  throw new Error("Function not implemented.");
-}

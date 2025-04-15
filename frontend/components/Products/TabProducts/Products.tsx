@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/app/context/authContext";
 
-import { useProductos } from "@/components/Hooks/useProducts";
+import { useProducts } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -35,7 +35,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     handleDelete,
     handleCloseModal,
     connectWebSocket,
-  } = useProductos();
+  } = useProducts();
 
   const {
     categories,

@@ -1,7 +1,7 @@
 import { Box } from "@mui/system";
 import { useEffect } from "react";
 import { Tab } from "../Enums/view-products";
-import { useProductos } from "../Hooks/useProducts";
+import { useProducts } from "../Hooks/useProducts";
 import { Sidebar } from "./Sidebar";
 import StockControl from "./TabControlStock/StockControl";
 import Ingredients from "./TabIngredients/Ingredients";
@@ -24,7 +24,7 @@ const ProductsContent: React.FC<ProductsContentProps> = ({
   onClearSelectedCategory,
   getAccessToken,
 }) => {
-  const { connectWebSocket } = useProductos();
+  const { connectWebSocket } = useProducts();
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
