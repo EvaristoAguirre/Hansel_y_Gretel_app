@@ -77,7 +77,7 @@ export class OrderService {
     return orderClose;
   }
 
-  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
+  async cancelOrder(id: string): Promise<Order> {
     return await this.orderRepository.cancelOrder(id);
   }
 }

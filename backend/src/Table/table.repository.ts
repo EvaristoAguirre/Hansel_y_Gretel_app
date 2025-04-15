@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,7 +12,7 @@ import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Room } from 'src/Room/room.entity';
-import { OrderState } from 'src/Enums/states.enum';
+import { OrderState, TableState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class TableRepository {
@@ -252,6 +253,15 @@ export class TableRepository {
         throw error;
       }
       throw new InternalServerErrorException('Error fetching the table', error);
+    }
+  }
+
+  async updateTableState(tableId: string, state: TableState) {
+    try {
+      await this.tableRepository.update(tableId, { state });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Error updating the table', error);
     }
   }
 }

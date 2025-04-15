@@ -44,6 +44,13 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const { updateIngredient } = useIngredientsContext();
   const { units } = useUnitContext()
 
+
+  useEffect(() => {
+    console.log({ selectedItem });
+
+  })
+
+
   useEffect(() => {
     let selectedUnit = units.find((u: IUnitOfMeasureForm) => u.name === selectedItem.unit);
     setFormValues({
@@ -89,9 +96,8 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
 
     if (token) {
       try {
-        // Si existe stock en el selectedItem, se edita, de lo contrario se agrega.
-        if (selectedItem?.stock) {
-          let idStock: string = ""
+        // Si existe stock o min o unit en el selectedItem, se edita, de lo contrario se agrega.
+        if ((selectedItem?.stock) || (selectedItem?.min) || (selectedItem?.unit)) {
           if (selectedItem.type === StockModalType.PRODUCT) {
             try {
               selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);

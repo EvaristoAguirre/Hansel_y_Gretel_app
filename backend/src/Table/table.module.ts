@@ -12,5 +12,6 @@ import { UserModule } from 'src/User/user.module';
   imports: [TypeOrmModule.forFeature([Table, Room]), UserModule],
   controllers: [TableController],
   providers: [TableService, TableRepository, RoomRepository],
+  exports: [TableService],
 })
 export class TableModule {}

@@ -4,6 +4,7 @@ import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Table } from './table.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TableState } from 'src/Enums/states.enum';
 
 @Injectable()
 export class TableService {
@@ -49,5 +50,9 @@ export class TableService {
 
   async getTableByNumber(number: string): Promise<Table> {
     return this.tableRepository.getTableByNumber(number);
+  }
+
+  async updateTableState(tableId: string, state: TableState) {
+    await this.tableRepository.updateTableState(tableId, state);
   }
 }
