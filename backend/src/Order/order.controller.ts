@@ -55,9 +55,9 @@ export class OrderController {
     const order = await this.orderService.updateOrder(id, updateData);
     return order;
   }
-  @Patch('cancel/:id')
+  @Post('cancel/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async cancelOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+  async cancelOrder(@Param('id') id: string): Promise<Order> {
     return await this.orderService.cancelOrder(id);
   }
 

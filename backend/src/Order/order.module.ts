@@ -28,6 +28,7 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { PrinterService } from 'src/Printer/printer.service';
+import { TableService } from 'src/Table/table.service';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { PrinterService } from 'src/Printer/printer.service';
     IngredientService,
     IngredientRepository,
     PrinterService,
+    TableService,
   ],
 })
 export class OrderModule {}

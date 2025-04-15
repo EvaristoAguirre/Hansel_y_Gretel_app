@@ -20,6 +20,7 @@ import { ProductSummary } from 'src/DTOs/productSummary.dto';
 import { StockService } from 'src/Stock/stock.service';
 import { isUUID } from 'class-validator';
 import { PrinterService } from 'src/Printer/printer.service';
+import { TableService } from 'src/Table/table.service';
 
 @Injectable()
 export class OrderRepository {
@@ -35,6 +36,7 @@ export class OrderRepository {
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
+    private readonly tableService: TableService,
   ) {}
 
   async openOrder(
@@ -457,37 +459,65 @@ export class OrderRepository {
     }
   }
 
-  async cancelOrder(id: string): Promise<OrderSummaryResponseDto> {
+  async cancelOrder(id: string): Promise<Order> {
     if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
+      throw new BadRequestException('Order ID must be provided.');
     }
     if (!isUUID(id)) {
       throw new BadRequestException(
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
     try {
-      const order = await this.orderRepository.findOne({
+      await queryRunner.startTransaction();
+
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
 
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
-      if (order.state !== OrderState.CLOSED) {
-        order.state = OrderState.CANCELLED;
-      }
+
       if (order.state === OrderState.CLOSED) {
         throw new ConflictException(
           'This order is closed. It cannot be cancelled.',
         );
       }
 
-      await this.orderRepository.save(order);
-      const responseAdapted = await this.adaptResponse(order);
-      return responseAdapted;
+      const previousTableId = order.table?.id;
+      if (order.table) {
+        order.table = null;
+      }
+
+      order.state = OrderState.CANCELLED;
+
+      const updatedOrder = await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
+
+      if (previousTableId) {
+        await this.tableService.updateTableState(
+          previousTableId,
+          TableState.AVAILABLE,
+        );
+      }
+
+      return updatedOrder;
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       if (
         error instanceof BadRequestException ||
         error instanceof NotFoundException ||
@@ -498,9 +528,10 @@ export class OrderRepository {
       throw new InternalServerErrorException(
         'Error canceling the order. Please try again later.',
       );
+    } finally {
+      await queryRunner.release();
     }
   }
-
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
     const productSummary: Record<string, ProductSummary> =
       order.orderDetails.reduce(

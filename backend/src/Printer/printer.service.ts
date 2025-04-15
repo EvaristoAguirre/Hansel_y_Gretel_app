@@ -215,7 +215,7 @@ export class PrinterService {
         '-----------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
         `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
-        `Propina (10%): $${tip.toFixed(2).padStart(6)}\n`,
+        `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
         '\x1B\x61\x01', // Centrar texto
         '\x1B\x45\x01', // Negrita ON
         '-----------------------------\n',
