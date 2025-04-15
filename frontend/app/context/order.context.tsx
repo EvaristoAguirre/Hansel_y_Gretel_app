@@ -20,6 +20,8 @@ import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";
+import { cancelOrder } from "@/api/order";
+import { useTableStore } from "@/components/Table/useTableStore";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -48,6 +50,7 @@ type OrderContextType = {
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
   fetchOrderBySelectedTable: () => void;
+  handleCancelOrder: (orderId: string) => Promise<void>;
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -68,6 +71,7 @@ const OrderContext = createContext<OrderContextType>({
   handleDeleteOrder: async () => { },
   handleResetSelectedOrder: () => { },
   fetchOrderBySelectedTable: () => { },
+  handleCancelOrder: async () => { },
 });
 
 export const useOrderContext = () => {
@@ -81,8 +85,9 @@ const OrderProvider = ({
   const { getAccessToken } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
+  const { tables } = useTableStore();
   const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
-  const { selectedMesa, handleSelectMesa } = useRoomContext();
+  const { selectedMesa, setSelectedMesa, handleSelectMesa } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
     []
   );
@@ -349,10 +354,6 @@ const OrderProvider = ({
       }
 
       const updatedOrder = await response.json();
-
-      console.log(" 🚀 ~ updatedOrder", updatedOrder);
-
-
       const productsByOrder = updatedOrder.products;
 
       handleSetProductsByOrder(productsByOrder);
@@ -364,6 +365,40 @@ const OrderProvider = ({
       return
     }
   };
+
+  const handleCancelOrder = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, anular",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        const cancelledOrder = await cancelOrder(id, token!);
+        if (cancelledOrder) {
+          removeOrder(id);
+          setSelectedOrderByTable(null);
+          setConfirmedProducts([]);
+          setSelectedMesa({
+            ...selectedMesa,
+            orders: [],
+            state: TableState.AVAILABLE
+          } as MesaInterface);
+          Swal.fire({
+            icon: "success",
+            title: "Pedido cancelado",
+            text: "El pedido ha sido cancelado con éxito.",
+          });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 
   const handleDeleteOrder = async (id: string | null) => {
     if (!id) {
@@ -391,6 +426,8 @@ const OrderProvider = ({
     }
   };
 
+
+
   return (
     <OrderContext.Provider
       value={{
@@ -411,6 +448,7 @@ const OrderProvider = ({
         handleDeleteOrder,
         handleResetSelectedOrder,
         fetchOrderBySelectedTable,
+        handleCancelOrder
       }}
     >
       {children}

@@ -56,3 +56,20 @@ export const deleteOrder = async (id: string, token: string) => {
     throw new Error(`Error: ${responseText}`);
   }
 };
+
+export const cancelOrder = async (id: string, token: string) => {
+  const response = await fetch(`${URI_ORDER}/cancel/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+};

@@ -25,18 +25,20 @@ export interface OrderProps {
   selectedMesa: MesaInterface;
   handleNextStep: () => void;
   handleCompleteStep: () => void;
+  handleReset: () => void;
 }
 
 const Order: React.FC<OrderProps> = ({
   handleNextStep,
   handleCompleteStep,
+  handleReset
 }) => {
   const {
     selectedOrderByTable,
     setSelectedOrderByTable,
     confirmedProducts,
     setConfirmedProducts,
-    handleDeleteOrder,
+    handleCancelOrder,
   } = useOrderContext();
   const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
@@ -46,9 +48,9 @@ const Order: React.FC<OrderProps> = ({
 
   useEffect(() => {
     const calcularTotal = () => {
-      if (confirmedProducts.length > 0) {
+      if (confirmedProducts?.length > 0) {
         setTotal(
-          confirmedProducts.reduce((acc: number, item: SelectedProductsI) => {
+          confirmedProducts?.reduce((acc: number, item: SelectedProductsI) => {
             return acc + (item.unitaryPrice ?? 0) * item.quantity;
           }, 0)
         );
@@ -86,6 +88,15 @@ const Order: React.FC<OrderProps> = ({
     handleCompleteStep();
     handleNextStep();
   };
+
+  const cancelOrder = async (orderId: string) => {
+    const token = getAccessToken();
+    if (!token) return;
+    const deletedOrder = await handleCancelOrder(orderId);
+    setSelectedOrderByTable(null);
+    setConfirmedProducts([]);
+    handleReset();
+  }
 
 
   return (
@@ -130,7 +141,7 @@ const Order: React.FC<OrderProps> = ({
                 marginTop: "0.5rem",
               }}
             >
-              {confirmedProducts.map((item: any, index: number) => (
+              {confirmedProducts?.map((item: any, index: number) => (
                 <ListItem
                   key={index}
                   style={{
@@ -199,7 +210,7 @@ const Order: React.FC<OrderProps> = ({
                 fontWeight: "bold",
               }}
             >
-              Cantidad de productos: {confirmedProducts.length}
+              Cantidad de productos: {confirmedProducts?.length}
             </Typography>
           </div>
           <div>
@@ -222,7 +233,7 @@ const Order: React.FC<OrderProps> = ({
                 </Button>
             }
 
-            {confirmedProducts.length > 0 && (
+            {confirmedProducts?.length > 0 && (
               <Button
                 fullWidth
                 color="error"
@@ -232,7 +243,7 @@ const Order: React.FC<OrderProps> = ({
                   boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                 }}
                 onClick={() =>
-                  handleDeleteOrder(selectedOrderByTable?.id || null)
+                  cancelOrder(selectedOrderByTable?.id!)
                 }
               >
                 Anular Pedido
