@@ -142,6 +142,7 @@ export class ProductController {
 
   @Post('check-stock')
   async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
+    console.log('controlador');
     return this.productService.checkProductsStockAvailability(dataToCheck);
   }
 }

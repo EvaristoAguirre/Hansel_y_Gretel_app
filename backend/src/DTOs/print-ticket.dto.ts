@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsArray, IsString } from 'class-validator';
 
-export class PrintComandaDTO {
+export class PrintTicketDTO {
   @IsString()
   table: string;
 
@@ -15,4 +15,6 @@ class Details {
   name: string;
   @IsString()
   quantity: number;
+  @IsString()
+  price: string;
 }

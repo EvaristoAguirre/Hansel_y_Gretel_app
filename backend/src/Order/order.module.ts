@@ -27,6 +27,8 @@ import { Stock } from 'src/Stock/stock.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
+import { PrinterService } from 'src/Printer/printer.service';
+import { TableService } from 'src/Table/table.service';
 
 @Module({
   imports: [
@@ -61,6 +63,8 @@ import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
     StockRepository,
     IngredientService,
     IngredientRepository,
+    PrinterService,
+    TableService,
   ],
 })
 export class OrderModule {}
