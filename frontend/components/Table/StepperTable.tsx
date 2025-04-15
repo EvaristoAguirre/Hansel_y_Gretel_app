@@ -97,6 +97,9 @@ export const StepperTable: React.FC<Props> = ({
         return selectedMesa.state === TableState.OPEN ? (
           <OrderEditor
             handleNextStep={handleNextStep}
+
+            handleBackStep={handleBack}
+            handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
           />
         ) : selectedMesa.state === TableState.PENDING_PAYMENT ? (
@@ -120,6 +123,7 @@ export const StepperTable: React.FC<Props> = ({
             handleDeleteOrder={handleReset}
             selectedMesa={selectedMesa}
             handleNextStep={handleNextStep}
+            handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
           />
         ) : (
