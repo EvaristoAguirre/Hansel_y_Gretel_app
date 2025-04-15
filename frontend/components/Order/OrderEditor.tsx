@@ -97,6 +97,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     const token = getAccessToken();
     if (!token) return;
     const deletedOrder = await deleteOrder(orderId, token);
+
     if (deletedOrder) {
       setSelectedOrderByTable(null);
     }
@@ -358,13 +359,6 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                     <Typography style={{ color: "black" }}>
                       ${(item.unitaryPrice ?? 0) * item.quantity}
                     </Typography>
-                    <IconButton
-                      onClick={() =>
-                        handleDeleteSelectedProduct(item.productId)
-                      }
-                    >
-                      <Delete />
-                    </IconButton>
                   </ListItem>
                 ))}
               </List>
