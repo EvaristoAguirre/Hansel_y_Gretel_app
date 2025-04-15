@@ -18,6 +18,7 @@ import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
 import { useAuth } from "./authContext";
+import next from "next";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -50,22 +51,22 @@ type OrderContextType = {
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
-  setSelectedProducts: () => {},
+  setSelectedProducts: () => { },
   confirmedProducts: [],
-  setConfirmedProducts: () => {},
+  setConfirmedProducts: () => { },
   selectedOrderByTable: null,
-  setSelectedOrderByTable: () => {},
-  handleSelectedProducts: () => {},
-  handleDeleteSelectedProduct: () => {},
-  increaseProductNumber: () => {},
-  decreaseProductNumber: () => {},
-  clearSelectedProducts: () => {},
-  deleteConfirmProduct: () => {},
-  handleCreateOrder: async () => {},
-  handleEditOrder: async () => {},
-  handleDeleteOrder: async () => {},
-  handleResetSelectedOrder: () => {},
-  fetchOrderBySelectedTable: () => {},
+  setSelectedOrderByTable: () => { },
+  handleSelectedProducts: () => { },
+  handleDeleteSelectedProduct: () => { },
+  increaseProductNumber: () => { },
+  decreaseProductNumber: () => { },
+  clearSelectedProducts: () => { },
+  deleteConfirmProduct: () => { },
+  handleCreateOrder: async () => { },
+  handleEditOrder: async () => { },
+  handleDeleteOrder: async () => { },
+  handleResetSelectedOrder: () => { },
+  fetchOrderBySelectedTable: () => { },
 });
 
 export const useOrderContext = () => {
@@ -273,12 +274,25 @@ const OrderProvider = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error:", errorData);
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        if (response.status === 400) {
+          const errorData = await response.json();
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: errorData.message,
+          })
+          return
+        } else {
+          const errorData = await response.json();
+          console.error("Error:", errorData);
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
       }
 
       const updatedOrder = await response.json();
+
+      console.log(" 🚀 ~ updatedOrder", updatedOrder);
+
 
       const productsByOrder = updatedOrder.products;
 
@@ -289,9 +303,8 @@ const OrderProvider = ({
       return updatedOrder;
     } catch (error) {
       console.error(error);
+      return
     }
-
-    console.groupEnd();
   };
 
   const handleDeleteOrder = async (id: string | null) => {
