@@ -25,7 +25,7 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     setForm,
   } = useMesa(salaId);
 
-  const { tables } = useTableStore();  
+  const { tables } = useTableStore();
 
   const { selectedMesa } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
@@ -47,7 +47,6 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     if (selectedMesa) {
       setForm({ ...form, id: selectedMesa.id });
     }
-    console.log("Renderizado");
   }, [selectedMesa, tables]);
 
   return (
