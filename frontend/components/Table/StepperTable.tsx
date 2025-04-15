@@ -12,6 +12,7 @@ import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
 import { TableState } from '../Enums/Enums';
 import OrderEditor from '../Order/OrderEditor';
+import { useEffect } from 'react';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 
@@ -32,12 +33,7 @@ export const StepperTable: React.FC<Props> = ({
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>(
     {}
   );
-
   const { confirmedProducts, handleResetSelectedOrder } = useOrderContext();
-
-  const { selectedOrderByTable, fetchOrderBySelectedTable } = useOrderContext();
-
-  // const { connectWebSocket } = useOrderStore();
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -99,12 +95,10 @@ export const StepperTable: React.FC<Props> = ({
         );
       case 1:
         return selectedMesa.state === TableState.OPEN ? (
-          selectedOrderByTable && (
-            <OrderEditor
-              handleNextStep={handleNextStep}
-              handleCompleteStep={handleCompleteStep}
-            />
-          )
+          <OrderEditor
+            handleNextStep={handleNextStep}
+            handleCompleteStep={handleCompleteStep}
+          />
         ) : selectedMesa.state === TableState.PENDING_PAYMENT ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
             Orden pendiente de pago, cobrar y luego iniciar una nueva orden.
