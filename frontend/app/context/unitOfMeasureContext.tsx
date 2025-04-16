@@ -3,7 +3,7 @@ import { FormType } from '@/components/Enums/Ingredients';
 import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional, fetchUnitOfMass, fetchUnitOfVolume } from '../../api/unitOfMeasure';
+import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional, fetchUnitOfMass, fetchUnitOfVolume, fetchUnitOfUnit } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
 import { log } from 'console';
 
@@ -12,6 +12,7 @@ type UnitContextType = {
   units: IUnitOfMeasureForm[];
   unitsOfMass: IUnitOfMeasureForm[];
   unitsOfVolume: IUnitOfMeasureForm[];
+  unitsOfUnit: IUnitOfMeasureForm[];
   formUnit: IUnitOfMeasureForm;
   setFormUnit: React.Dispatch<React.SetStateAction<IUnitOfMeasureForm>>;
   formOpenUnit: boolean;
@@ -26,12 +27,14 @@ type UnitContextType = {
   noConventionalUnits: IUnitOfMeasureForm[];
   fetchUnitsMass: () => Promise<IUnitOfMeasureForm[]>;
   fetchUnitsVolume: () => Promise<IUnitOfMeasureForm[]>;
+  fetchUnitsUnit: () => Promise<IUnitOfMeasureForm[]>;
 }
 
 const UnitContext = createContext<UnitContextType>({
   units: [],
   unitsOfMass: [],
   unitsOfVolume: [],
+  unitsOfUnit: [],
   formUnit: {
     name: "",
     abbreviation: "",
@@ -50,6 +53,7 @@ const UnitContext = createContext<UnitContextType>({
   noConventionalUnits: [],
   fetchUnitsMass: () => Promise.resolve([]),
   fetchUnitsVolume: () => Promise.resolve([]),
+  fetchUnitsUnit: () => Promise.resolve([]),
 });
 
 export const useUnitContext = () => {
@@ -75,6 +79,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [noConventionalUnits, setNoConventionalUnits] = useState<IUnitOfMeasureForm[]>([]);
   const [unitsOfMass, setUnitsOfMass] = useState<IUnitOfMeasureForm[]>([]);
   const [unitsOfVolume, setUnitsOfVolume] = useState<IUnitOfMeasureForm[]>([]);
+  const [unitsOfUnit, setUnitsOfUnit] = useState<IUnitOfMeasureForm[]>([]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -137,6 +142,16 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     try {
       const response = await fetchUnitOfVolume(token as string);
       setUnitsOfVolume(response);
+      return response;
+    } catch (error) {
+      console.error("Error al obtener las unidades de masa:", error);
+    }
+  };
+
+  const fetchUnitsUnit = async () => {
+    try {
+      const response = await fetchUnitOfUnit(token as string);
+      setUnitsOfUnit(response);
       return response;
     } catch (error) {
       console.error("Error al obtener las unidades de masa:", error);
@@ -208,6 +223,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         units,
         unitsOfMass,
         unitsOfVolume,
+        unitsOfUnit,
         formUnit,
         conventionalUnits,
         noConventionalUnits,
@@ -215,6 +231,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         formTypeUnit,
         fetchUnitsMass,
         fetchUnitsVolume,
+        fetchUnitsUnit,
         setFormUnit,
         setFormOpenUnit,
         setFormTypeUnit,
