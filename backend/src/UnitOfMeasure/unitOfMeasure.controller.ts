@@ -89,6 +89,11 @@ export class UnitOfMeasureController {
   async getUnitOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
     return await this.unitOfMeasureService.getUnitsOfMass();
   }
+  @Get('unit-of-unit')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getUnitOfUnit(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureService.getUnitOfUnit();
+  }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)

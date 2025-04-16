@@ -25,7 +25,6 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
-import { query } from 'express';
 
 @Injectable()
 export class ProductRepository {

@@ -112,7 +112,7 @@ export class PrinterService {
         '\x1D\x21\x00', // Texto normal
         '------------------------------\n',
         `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR')}\n`,
-        `MESA: ${this.normalizeText(orderData.table)}\n`,
+        `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
         '------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
         `${'PRODUCTO'.padEnd(22)}CANT\n`,

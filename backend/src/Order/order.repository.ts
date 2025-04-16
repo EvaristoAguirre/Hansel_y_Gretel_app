@@ -187,6 +187,7 @@ export class OrderRepository {
         if (newProducts.length > 0) {
           try {
             const printData = {
+              numberCustomers: order.numberCustomers,
               table: order.table?.name || 'SIN MESA',
               products: updateData.productsDetails
                 .filter((detail) =>
