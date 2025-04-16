@@ -25,8 +25,12 @@ export class ArchiveService {
     while (attempts < maxAttempts) {
       try {
         attempts++;
-
+        console.log(
+          `Intento ${attempts} de ${maxAttempts}, archivando órdenes...`,
+        );
         await this.dataSource.transaction(async (manager) => {
+          const { start, end } = this.getPreviousWeekRange();
+
           const ordersToArchive = await manager.find(Order, {
             where: {
               state: In([
@@ -34,10 +38,7 @@ export class ArchiveService {
                 OrderState.CANCELLED,
                 OrderState.PENDING_PAYMENT,
               ]),
-              date: Between(
-                this.getLastWeekRange().start,
-                this.getLastWeekRange().end,
-              ),
+              date: Between(start, end),
             },
             relations: ['orderDetails'],
           });
@@ -90,13 +91,16 @@ export class ArchiveService {
     }
   }
 
-  private getLastWeekRange(): { start: Date; end: Date } {
-    const end = new Date();
-    end.setDate(end.getDate() - (end.getDay() || 7));
-    end.setHours(0, 0, 0, 0);
+  private getPreviousWeekRange(): { start: Date; end: Date } {
+    const now = new Date();
+    const end = new Date(now);
+
+    end.setDate(now.getDate() - now.getDay() - 1);
+    end.setHours(23, 59, 59, 999);
 
     const start = new Date(end);
-    start.setDate(start.getDate() - 7);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
 
     return { start, end };
   }
