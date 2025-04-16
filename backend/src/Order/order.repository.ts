@@ -1,18 +1,26 @@
 import {
   BadRequestException,
+  ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './order.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
-import { TableState } from 'src/Enums/states.enum';
+import { OrderState, TableState } from 'src/Enums/states.enum';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { ProductSummary } from 'src/DTOs/productSummary.dto';
+import { StockService } from 'src/Stock/stock.service';
+import { isUUID } from 'class-validator';
+import { PrinterService } from 'src/Printer/printer.service';
+import { TableService } from 'src/Table/table.service';
 
 @Injectable()
 export class OrderRepository {
@@ -25,11 +33,16 @@ export class OrderRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly dataSource: DataSource,
+    private readonly stockService: StockService,
+    private readonly printerService: PrinterService,
+    private readonly tableService: TableService,
   ) {}
 
-  async createOrder(orderToCreate: CreateOrderDto): Promise<Order> {
-    const { tableId, numberCustomers, productsDetails, comment } =
-      orderToCreate;
+  async openOrder(
+    orderToCreate: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
+    const { tableId, numberCustomers, comment } = orderToCreate;
 
     try {
       const tableInUse = await this.tableRepository.findOne({
@@ -40,7 +53,11 @@ export class OrderRepository {
         throw new NotFoundException(`Table with ID: ${tableId} not found`);
       }
 
-      tableInUse.state = TableState.OPEN; //pasar por updateTable
+      if (tableInUse.state !== TableState.AVAILABLE) {
+        throw new ConflictException(`Table with ID: ${tableId} not available`);
+      }
+
+      tableInUse.state = TableState.OPEN;
       await this.tableRepository.save(tableInUse);
 
       const newOrder = this.orderRepository.create({
@@ -50,37 +67,14 @@ export class OrderRepository {
         table: tableInUse,
         comment: comment,
         orderDetails: [],
+        isActive: true,
       });
 
-      let total = 0;
-
-      for (const { productId, quantity } of productsDetails) {
-        const productFinded = await this.productRepository.findOne({
-          where: { id: productId, isActive: true },
-        });
-
-        if (!productFinded) {
-          throw new NotFoundException(
-            `Product with ID: ${productId} not found`,
-          );
-        }
-
-        const newOrderDetail = this.orderDetailsRepository.create({
-          quantity: quantity,
-          unitaryPrice: productFinded.price,
-          subtotal: quantity * productFinded.price,
-          product: productFinded,
-        });
-        total += newOrderDetail.subtotal;
-        newOrder.orderDetails.push(newOrderDetail);
-      }
-
-      newOrder.total = total;
-      return await this.orderRepository.save(newOrder);
+      await this.orderRepository.save(newOrder);
+      const responseAdapted = await this.adaptResponse(newOrder);
+      return responseAdapted;
     } catch (error) {
-      console.error(`[CreateOrder Error]: ${error.message}`, error);
-
-      if (error instanceof NotFoundException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -90,27 +84,64 @@ export class OrderRepository {
     }
   }
 
-  async updateOrder(id: string, updateData: UpdateOrderDto): Promise<Order> {
-    console.log(id);
+  async updateOrder(
+    id: string,
+    updateData: UpdateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');
     }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      const order = await this.orderRepository.findOne({
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
 
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
 
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException(
+          'This order is closed. It cannot be modified.',
+        );
+      }
+
+      if (updateData.state && updateData.state !== OrderState.OPEN) {
+        throw new ConflictException(
+          'Only orders with state "open" can be modified.',
+        );
+      }
+
       if (updateData.state) {
         order.state = updateData.state;
       }
+
+      if (updateData.numberCustomers) {
+        order.numberCustomers = updateData.numberCustomers;
+      }
+
+      if (updateData.comment) {
+        order.comment = updateData.comment;
+      }
+
       if (updateData.tableId) {
-        const table = await this.tableRepository.findOne({
+        const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
         });
         if (!table) {
@@ -120,13 +151,13 @@ export class OrderRepository {
         }
         order.table = table;
       }
-
       if (updateData.productsDetails) {
-        const updatedDetails = [];
+        const batchId = Date.now().toString();
+        const newProducts = [];
         let total = 0;
 
         for (const { productId, quantity } of updateData.productsDetails) {
-          const product = await this.productRepository.findOne({
+          const product = await queryRunner.manager.findOne(Product, {
             where: { id: productId, isActive: true },
           });
 
@@ -135,57 +166,84 @@ export class OrderRepository {
               `Product with ID: ${productId} not found`,
             );
           }
+          await this.stockService.deductStock(product.id, quantity);
 
-          const existingDetail = order.orderDetails.find(
-            (detail) => detail.product && detail.product.id === productId,
-          );
+          const newDetail = queryRunner.manager.create(OrderDetails, {
+            quantity,
+            unitaryPrice: product.price,
+            subtotal: quantity * product.price,
+            product,
+            order,
+            batchId,
+          });
 
-          if (existingDetail) {
-            if (quantity > 0) {
-              existingDetail.quantity = quantity;
-              existingDetail.unitaryPrice = product.price;
-              existingDetail.subtotal = quantity * product.price;
-              updatedDetails.push(existingDetail);
-            } else {
-              await this.orderDetailsRepository.remove(existingDetail);
-            }
-          } else if (quantity > 0) {
-            const newDetail = this.orderDetailsRepository.create({
-              quantity,
-              unitaryPrice: product.price,
-              subtotal: quantity * product.price,
-              product,
-              order,
-            });
-            updatedDetails.push(newDetail);
-          }
+          order.orderDetails.push(newDetail);
+          newProducts.push(product);
 
-          if (quantity > 0) {
-            total += quantity * product.price;
-          }
+          total += quantity * product.price;
         }
 
-        order.orderDetails = updatedDetails;
-        order.total = total;
+        order.total = (Number(order.total) || 0) + total;
+        if (newProducts.length > 0) {
+          try {
+            const printData = {
+              numberCustomers: order.numberCustomers,
+              table: order.table?.name || 'SIN MESA',
+              products: updateData.productsDetails
+                .filter((detail) =>
+                  newProducts.some((p) => p.id === detail.productId),
+                )
+                .map((detail) => ({
+                  name:
+                    newProducts.find((p) => p.id === detail.productId)?.name ||
+                    'Producto',
+                  quantity: detail.quantity,
+                })),
+            };
+
+            this.printerService.logger.log(
+              `Attempting to print order for table ${printData.table}`,
+            );
+            await this.printerService.printKitchenOrder(printData);
+            this.printerService.logger.log('Print job sent successfully');
+          } catch (printError) {
+            this.printerService.logger.error(
+              'Failed to print kitchen order',
+              printError.stack,
+            );
+          }
+        }
       }
+      const updatedOrder = await queryRunner.manager.save(order);
 
-      return await this.orderRepository.save(order);
+      await queryRunner.commitTransaction();
+
+      const responseAdapted = await this.adaptResponse(updatedOrder);
+      return responseAdapted;
     } catch (error) {
-      console.error(`[UpdateOrder Error]: ${error.message}`, error);
+      await queryRunner.rollbackTransaction();
 
-      if (error instanceof NotFoundException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
       throw new InternalServerErrorException(
         'Error updating the order. Please try again later.',
+        error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
   async deleteOrder(id: string): Promise<string> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const result = await this.orderRepository.update(id, { isActive: false });
@@ -194,6 +252,12 @@ export class OrderRepository {
       }
       return 'Order successfully deleted';
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error deleting the order.',
         error.message,
@@ -215,6 +279,7 @@ export class OrderRepository {
         relations: ['orderDetails', 'orderDetails.product', 'table'],
       });
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -222,20 +287,38 @@ export class OrderRepository {
     }
   }
 
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
     }
     try {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails'],
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
       });
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
-      return order;
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       throw new InternalServerErrorException(
         'Error fetching the order',
         error.message,
@@ -257,6 +340,7 @@ export class OrderRepository {
         relations: ['product', 'order'],
       });
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error fetching orders',
         error.message,
@@ -279,5 +363,214 @@ export class OrderRepository {
         error.message,
       );
     }
+  }
+
+  async markOrderAsPendingPayment(
+    id: string,
+  ): Promise<OrderSummaryResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state !== OrderState.OPEN) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in an open state`,
+        );
+      }
+
+      order.state = OrderState.PENDING_PAYMENT;
+      order.table.state = TableState.PENDING_PAYMENT;
+      await this.tableRepository.save(order.table);
+      await this.orderRepository.save(order);
+
+      try {
+        await this.printerService.printTicketOrder(order);
+      } catch (error) {
+        throw new ConflictException(error.message);
+      }
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error marking order as pending payment. Please try again later.',
+      );
+    }
+  }
+
+  async closeOrder(id: string): Promise<OrderSummaryResponseDto> {
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['orderDetails', 'table', 'orderDetails.product'],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state !== OrderState.PENDING_PAYMENT) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in a pending payment state`,
+        );
+      }
+
+      order.state = OrderState.CLOSED;
+      order.table.state = TableState.AVAILABLE;
+      await this.tableRepository.save(order.table);
+      await this.orderRepository.save(order);
+
+      const responseAdapted = await this.adaptResponse(order);
+      return responseAdapted;
+    } catch (error) {
+      console.error(`[CloseOrder Error]: ${error.message}`, error);
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error closing the order. Please try again later.',
+      );
+    }
+  }
+
+  async cancelOrder(id: string): Promise<Order> {
+    if (!id) {
+      throw new BadRequestException('Order ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    try {
+      await queryRunner.startTransaction();
+
+      const order = await queryRunner.manager.findOne(Order, {
+        where: { id, isActive: true },
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException(
+          'This order is closed. It cannot be cancelled.',
+        );
+      }
+
+      const previousTableId = order.table?.id;
+      if (order.table) {
+        order.table = null;
+      }
+
+      order.state = OrderState.CANCELLED;
+
+      const updatedOrder = await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
+
+      if (previousTableId) {
+        await this.tableService.updateTableState(
+          previousTableId,
+          TableState.AVAILABLE,
+        );
+      }
+
+      return updatedOrder;
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error canceling the order. Please try again later.',
+      );
+    } finally {
+      await queryRunner.release();
+    }
+  }
+  async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
+    const productSummary: Record<string, ProductSummary> =
+      order.orderDetails.reduce(
+        (acc, detail) => {
+          const productId = detail.product.id;
+          const unitaryPrice = Number(detail.unitaryPrice);
+          const subtotal = Number(detail.subtotal);
+          if (!acc[productId]) {
+            acc[productId] = {
+              productId: detail.product.id,
+              productName: detail.product.name,
+              quantity: 0,
+              unitaryPrice: unitaryPrice,
+              subtotal: 0,
+            };
+          }
+          acc[productId].quantity += detail.quantity;
+          acc[productId].subtotal += subtotal;
+          return acc;
+        },
+        {} as Record<string, ProductSummary>,
+      );
+
+    const productSummaryArray: ProductSummary[] = Object.values(productSummary);
+
+    const response = new OrderSummaryResponseDto();
+    response.id = order.id;
+    response.state = order.state;
+    response.numberCustomers = order.numberCustomers;
+    response.comment = order.comment;
+    response.table = {
+      id: order.table.id,
+      name: order.table.name,
+      state: order.table.state,
+    };
+    response.total = order.total;
+    response.products = productSummaryArray;
+
+    return response;
   }
 }

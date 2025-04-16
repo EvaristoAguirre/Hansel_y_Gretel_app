@@ -1,34 +1,58 @@
-import { createProduct, fetchProducts } from "@/helpers/products";
+import { createProduct, fetchProducts, getProductsByCategory } from "@/api/products";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
 import { URI_PRODUCT } from "../URI/URI";
-import { editProduct } from '../../helpers/products';
+import { editProduct } from "../../api/products";
+import { ProductForm } from "../Interfaces/IProducts";
+import { useAuth } from "@/app/context/authContext";
+import { FormTypeProduct, TypeProduct } from "../Enums/view-products";
 
-export const useProductos = () => {
+export const useProducts = () => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
+  const {
+    products,
+    setProducts,
+    removeProduct,
+    updateProduct,
+    connectWebSocket,
+  } = useProductStore();
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [modalType, setModalType] = useState<FormTypeProduct>(FormTypeProduct.CREATE);
   const [loading, setLoading] = useState<boolean>(true);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductForm>({
     id: "",
-    code: 0,
+    code: null,
     name: "",
     description: "",
-    price: 0,
-    cost: 0,
-    inActive: true,
+    type: TypeProduct.PRODUCT,
+    price: null,
+    cost: null,
+    categories: [],
+    ingredients: [],
+    products: [],
+    isActive: true,
   });
 
-  // Estado global desde el store
-  const { products, setProducts, addProduct, removeProduct, updateProduct, connectWebSocket } = useProductStore();
+  // Llamada inicial para cargar productos
+  useEffect(() => {
+    const getToken = getAccessToken();
+    if (!token) return;
+    setToken(getToken);
+    if (token) {
+      fetchAndSetProducts(token);
+    }
+  }, []);
 
- // Llamada inicial para cargar productos
-useEffect(() => {
-  const fetchAndSetProducts = async () => {
+  const fetchAndSetProducts = async (token: string) => {
     setLoading(true);
+
     try {
-      const fetchedProducts = await fetchProducts(); 
-      setProducts(fetchedProducts); 
+      if (!token) return;
+      const fetchedProducts = await fetchProducts("1", "50", token);
+
+      setProducts(fetchedProducts);
     } catch (error) {
       console.error("Error al cargar los productos:", error);
     } finally {
@@ -36,55 +60,61 @@ useEffect(() => {
     }
   };
 
-  fetchAndSetProducts();
-}, [connectWebSocket]);
-  const handleCreate = async () => {
-    
+  const handleCreateProduct = async (token: string) => {
+    const preparedForm = {
+      ...form,
+      code: parseInt(form.code as any, 10),
+      price: parseFloat(form.price as any),
+      cost: parseFloat(form.cost as any),
+    };
+    if (form.ingredients.length === 0) {
+      delete (preparedForm as any).ingredients;
+      delete (preparedForm as any).isActive;
+    }
     try {
-      const preparedForm = {
-        ...form,
-        code: parseInt(form.code as any, 10),
-        price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),        
-      };
-
-      const newProduct = await createProduct(preparedForm); 
-
-      addProduct(newProduct);
+      if (!token) throw new Error("Token no disponible");
+      const newProduct = await createProduct(preparedForm, token);
+      // addProduct(newProduct);
+      handleCloseModal();
 
       Swal.fire("Éxito", "Producto creado correctamente.", "success");
 
-      handleCloseModal(); 
     } catch (error) {
       Swal.fire("Error", "No se pudo crear el producto.", "error");
       console.error(error);
     }
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (token: string, selectedCategoryId?: string) => {
     try {
+      if (!token) throw new Error("Token no disponible");
+
       const preparedForm = {
         ...form,
-        code: parseInt(form.code as any, 10), 
-        price: parseFloat(form.price as any),
-        cost: parseFloat(form.cost as any),   
+        code: Number(form.code),
+        price: Number(form.price),
+        cost: Number(form.cost),
         id: form.id,
       };
-      const updatedProduct = await editProduct(preparedForm); 
-      updateProduct(updatedProduct);
-  
-      Swal.fire("Éxito", "Producto editado correctamente.", "success");
-  
-      handleCloseModal(); 
 
-    } catch (error) {
-      Swal.fire("Error", "No se pudo editar el producto.", "error");
+      const updatedProduct = await editProduct(preparedForm, token);
+
+      updateProduct(updatedProduct);
+
+      Swal.fire("Éxito", "Producto editado correctamente.", "success");
+
+      if (selectedCategoryId) {
+        const data = await getProductsByCategory(selectedCategoryId, token);
+        setProducts(data);
+      }
+      handleCloseModal();
+    } catch (error: any) {
+      Swal.fire("Error", error.message || "No se pudo editar el producto.", "error");
       console.error(error);
     }
   };
-  
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, token: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -96,7 +126,13 @@ useEffect(() => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_PRODUCT}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_PRODUCT}/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
         removeProduct(id);
         Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
       } catch (error) {
@@ -110,17 +146,22 @@ useEffect(() => {
     setModalOpen(false);
     setForm({
       id: "",
-      code: 0,
+      code: null,
       name: "",
       description: "",
-      price: 0,
-      cost: 0,
-      inActive: true,
+      type: TypeProduct.PRODUCT,
+      price: null,
+      cost: null,
+      categories: [],
+      ingredients: [],
+      products: [],
+      isActive: true,
     });
   };
 
   return {
     loading,
+    setLoading,
     modalOpen,
     modalType,
     form,
@@ -128,11 +169,11 @@ useEffect(() => {
     setModalOpen,
     setModalType,
     setForm,
-    handleCreate,
+    handleCreateProduct,
     handleEdit,
     handleDelete,
     handleCloseModal,
-    fetchProducts,
+    fetchAndSetProducts,
     connectWebSocket,
   };
 };

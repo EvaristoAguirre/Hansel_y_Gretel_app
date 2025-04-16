@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductRepository } from './product.repository';
 import { CreateProductDto } from '../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
-import { Product } from './product.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @Injectable()
 export class ProductService {
@@ -12,7 +13,10 @@ export class ProductService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async getAllProducts(page: number, limit: number) {
+  async getAllProducts(
+    page: number,
+    limit: number,
+  ): Promise<ProductResponseDto[]> {
     return await this.productRepository.getAllProducts(page, limit);
   }
 
@@ -23,7 +27,13 @@ export class ProductService {
     return await this.productRepository.getProductByCode(code);
   }
 
-  async getProductsByCategories(categories: string[]): Promise<Product[]> {
+  async getProductByName(name: string) {
+    return this.productRepository.getProductByName(name);
+  }
+
+  async getProductsByCategories(
+    categories: string[],
+  ): Promise<ProductResponseDto[]> {
     const products =
       await this.productRepository.getProductsByCategories(categories);
     if (products.length === 0) {
@@ -34,7 +44,9 @@ export class ProductService {
     return products;
   }
 
-  async createProduct(productToCreate: CreateProductDto): Promise<Product> {
+  async createProduct(
+    productToCreate: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     const productCreated =
       await this.productRepository.createProduct(productToCreate);
 
@@ -44,7 +56,10 @@ export class ProductService {
     return productCreated;
   }
 
-  async updateProduct(id: string, updateData: UpdateProductDto) {
+  async updateProduct(
+    id: string,
+    updateData: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,
@@ -61,5 +76,47 @@ export class ProductService {
       product: productDeleted,
     });
     return productDeleted;
+  }
+
+  async searchProducts(
+    name?: string,
+    code?: string,
+    categories?: string[],
+    isActive?: boolean,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<ProductResponseDto[]> {
+    return this.productRepository.searchProducts(
+      name,
+      code,
+      categories,
+      isActive,
+      page,
+      limit,
+    );
+  }
+
+  async searchProductsToPromotion(
+    isActive: boolean,
+    page: number,
+    limit: number,
+    name?: string,
+    code?: number,
+  ): Promise<ProductResponseDto[]> {
+    return this.productRepository.searchProductsToPromotion(
+      isActive,
+      page,
+      limit,
+      name,
+      code,
+    );
+  }
+
+  async getSimpleAndCompositeProducts(page: number, limit: number) {
+    return this.productRepository.getSimpleAndCompositeProducts(page, limit);
+  }
+
+  async checkProductsStockAvailability(dataToCheck: CheckStockDto) {
+    return this.productRepository.checkProductsStockAvailability(dataToCheck);
   }
 }

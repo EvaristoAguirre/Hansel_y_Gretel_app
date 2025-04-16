@@ -11,6 +11,7 @@ import { Category } from './category.entity';
 import { Repository } from 'typeorm';
 import { CreateCategoryDto } from 'src/DTOs/create-category.dto';
 import { UpdateCategoryDto } from 'src/DTOs/update-category.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class CategoryRepository {
@@ -21,7 +22,7 @@ export class CategoryRepository {
   async createCategory(category: CreateCategoryDto): Promise<Category> {
     try {
       const categoryExists = await this.categoryRepository.findOne({
-        where: { name: category.name, isActive: true },
+        where: { name: category.name },
       });
       if (categoryExists) {
         throw new ConflictException(
@@ -30,6 +31,7 @@ export class CategoryRepository {
       }
       return await this.categoryRepository.save(category);
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to create category',
         error,
@@ -46,12 +48,16 @@ export class CategoryRepository {
         where: { id },
       });
       if (!existingCategory) {
-        throw new BadRequestException('Category not found');
+        throw new NotFoundException('Category not found');
       }
       Object.assign(existingCategory, category);
       return await this.categoryRepository.save(existingCategory);
     } catch (error) {
-      throw new NotFoundException(`Category with ID ${id} not found`, error);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Failed to update category',
+        error,
+      );
     }
   }
 
@@ -64,6 +70,7 @@ export class CategoryRepository {
       await this.categoryRepository.update(id, { isActive: false });
       return 'Category successfully deleted';
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to deactivate category',
         error,
@@ -79,24 +86,61 @@ export class CategoryRepository {
         take: limit,
       });
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Failed to retrieve all categories',
-        error,
+        'Error fetching orders',
+        error.message,
       );
     }
   }
 
   async getCategoryById(id: string): Promise<Category> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
     try {
-      const categoryFinded = await this.categoryRepository.findOneOrFail({
+      const categoryFinded = await this.categoryRepository.findOne({
         where: { id },
       });
-      if (categoryFinded.isActive === false) {
-        throw new NotFoundException(`Category with ID ${id} is disabled`);
-      }
       if (!categoryFinded) {
         throw new NotFoundException(`Category with ID ${id} not found`);
       }
+      if (categoryFinded && categoryFinded.isActive === false) {
+        throw new ConflictException(`Category with ID ${id} is disabled`);
+      }
+      return categoryFinded;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the category',
+        error.message,
+      );
+    }
+  }
+  async getCategoryByName(name: string): Promise<Category> {
+    try {
+      const categoryFinded = await this.categoryRepository
+        .createQueryBuilder('category')
+        .where('LOWER(category.name) = LOWER(:name)', { name })
+        .getOne();
+
+      // 1. Primero verificar si existe
+      if (!categoryFinded) {
+        throw new NotFoundException(`Category with name "${name}" not found`);
+      }
+
+      // 2. Luego verificar si está activa
+      if (categoryFinded.isActive === false) {
+        throw new ConflictException(`Category with name "${name}" is disabled`);
+      }
+
       return categoryFinded;
     } catch (error) {
       if (error instanceof HttpException) {

@@ -99,6 +99,7 @@ export class ProviderService {
         relations: ['products'],
       });
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Error getting providers', error);
     }
   }

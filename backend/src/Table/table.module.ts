@@ -6,10 +6,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TableRepository } from './table.repository';
 import { Room } from 'src/Room/room.entity';
 import { RoomRepository } from 'src/Room/room.repository';
+import { UserModule } from 'src/User/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Table, Room])],
+  imports: [TypeOrmModule.forFeature([Table, Room]), UserModule],
   controllers: [TableController],
   providers: [TableService, TableRepository, RoomRepository],
+  exports: [TableService],
 })
 export class TableModule {}

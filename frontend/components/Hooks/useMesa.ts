@@ -4,18 +4,24 @@ import { TableState } from "../Enums/Enums";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { MesaForm } from "../Interfaces/Cafe_interfaces";
-import { useTableStore } from "../Mesa/useTableStore";
+import { useTableStore } from "../Table/useTableStore";
+import { useOrderStore } from "../Order/useOrderStore";
+import { editTable } from "@/api/tables";
+import { useAuth } from "@/app/context/authContext";
 
 export const useMesa = (salaId: string) => {
+  const { getAccessToken } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit">("create");
 
   const [form, setForm] = useState<MesaForm>({
+    id: "",
     name: "",
-    number: 0,
+    number: null,
     coment: "",
-    // state: TableState.AVAILABLE,
+    state: TableState.AVAILABLE,
   });
 
   const {
@@ -27,14 +33,24 @@ export const useMesa = (salaId: string) => {
     connectWebSocket,
   } = useTableStore();
 
+  const { orders } = useOrderStore();
   const handleOpenModal = (type: "create" | "edit", mesa?: MesaInterface) => {
     setModalType(type);
-    if (mesa) {
+    if (type === "edit" && mesa) {
       setForm({
+        id: mesa.id,
         name: mesa.name,
         number: mesa.number,
         coment: mesa.coment,
-        // state: mesa.state,
+        state: mesa.state,
+      });
+    } else {
+      setForm({
+        id: "",
+        name: "",
+        number: null,
+        coment: "",
+        state: TableState.AVAILABLE,
       });
     }
     setModalOpen(true);
@@ -43,17 +59,24 @@ export const useMesa = (salaId: string) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
-      number: 0,
+      number: null,
       coment: "",
-      // state: TableState.AVAILABLE,
+      state: TableState.AVAILABLE,
     });
     setModalOpen(false);
   };
 
   useEffect(() => {
+    const token = getAccessToken();
+    if (token) {
+      setToken(token);
+    }
     async function fetchTables() {
       try {
-        const response = await fetch(URI_TABLE, { method: "GET" });
+        const response = await fetch(URI_TABLE, {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${token}`, },
+        });
         const data = await response.json();
         setTables(data);
       } catch (error) {
@@ -64,13 +87,17 @@ export const useMesa = (salaId: string) => {
 
     fetchTables();
     connectWebSocket();
-  }, [setTables, connectWebSocket]);
+  }, [setTables, connectWebSocket, orders]);
 
-  const handleCreate = async () => {
+  const handleCreate = async (mesaData: MesaForm) => {
+
     try {
       const response = await fetch(URI_TABLE, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAccessToken()}`,
+        },
         body: JSON.stringify({ ...form, roomId: salaId }),
       });
 
@@ -81,7 +108,7 @@ export const useMesa = (salaId: string) => {
       }
 
       const newTable = await response.json();
-      addTable(newTable);
+      // addTable(newTable);
 
       Swal.fire("Éxito", "Mesa creada correctamente.", "success");
 
@@ -91,28 +118,17 @@ export const useMesa = (salaId: string) => {
     }
   };
 
-  const handleEdit = async (id: string) => {
+  const handleEdit = async (id: string, data: MesaForm) => {
+    const token = getAccessToken();
+    if (!token) return;
     if (!id) {
       Swal.fire("Error", "ID de la mesa no válido.", "error");
       return;
     }
     try {
-      const response = await fetch(`${URI_TABLE}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error:", errorData);
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-
-      const updatedTable = await response.json();
-      updateTable(updatedTable);
+      const response = await editTable(id, data, token);
+      updateTable(response);
       Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");
-      handleCloseModal();
     } catch (error) {
       console.error(error);
       Swal.fire("Error", "No se pudo actualizar la mesa.", "error");
@@ -131,7 +147,13 @@ export const useMesa = (salaId: string) => {
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_TABLE}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_TABLE}/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${getAccessToken()}`,
+          }
+        });
         removeTable(id);
         setSelectedMesa(null);
         Swal.fire("Eliminado", "Mesa eliminada correctamente.", "success");

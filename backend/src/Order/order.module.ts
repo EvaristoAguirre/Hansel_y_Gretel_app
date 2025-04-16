@@ -17,6 +17,18 @@ import { RoomRepository } from 'src/Room/room.repository';
 import { Room } from 'src/Room/room.entity';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
+import { UserModule } from 'src/User/user.module';
+import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
+import { StockService } from 'src/Stock/stock.service';
+import { StockRepository } from 'src/Stock/stock.repository';
+import { Stock } from 'src/Stock/stock.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
+import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
+import { PrinterService } from 'src/Printer/printer.service';
+import { TableService } from 'src/Table/table.service';
 
 @Module({
   imports: [
@@ -29,7 +41,13 @@ import { Category } from 'src/Category/category.entity';
       ArchivedOrderDetails,
       Room,
       Category,
+      UnitOfMeasure,
+      PromotionProduct,
+      Stock,
+      Ingredient,
     ]),
+    UserModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [OrderController],
   providers: [
@@ -41,6 +59,12 @@ import { Category } from 'src/Category/category.entity';
     NotificationService,
     RoomRepository,
     CategoryRepository,
+    StockService,
+    StockRepository,
+    IngredientService,
+    IngredientRepository,
+    PrinterService,
+    TableService,
   ],
 })
 export class OrderModule {}

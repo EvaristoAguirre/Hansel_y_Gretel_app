@@ -2,6 +2,7 @@ import { Table } from 'src/Table/table.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -17,7 +18,7 @@ export class Order {
   @Column()
   date: Date;
 
-  @Column({ type: 'enum', enum: OrderState, default: OrderState.PENDING })
+  @Column({ type: 'enum', enum: OrderState, default: OrderState.OPEN })
   state: OrderState;
 
   @Column({ default: true })
@@ -35,11 +36,15 @@ export class Order {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
-  @ManyToOne(() => Table, (table) => table.orders)
+  @ManyToOne(() => Table, (table) => table.orders, {
+    onDelete: 'SET NULL',
+  })
   table: Table;
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {
     cascade: true,
+    eager: false,
   })
+  @JoinColumn({ name: 'orders_orderDetails' })
   orderDetails: OrderDetails[];
 }

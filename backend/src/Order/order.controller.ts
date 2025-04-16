@@ -7,36 +7,68 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { Order } from './order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
+import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
+import { Roles } from 'src/Decorators/roles.decorator';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @Controller('order')
+@UseGuards(RolesGuard)
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Post()
-  createOrder(@Body() order: CreateOrderDto): Promise<Order> {
-    return this.orderService.createOrder(order);
+  @Post('open')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  openOrder(
+    @Body() openOrder: CreateOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
+    return this.orderService.openOrder(openOrder);
   }
 
-  @Patch(':id')
-  updateOrder(
+  @Post('close/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  closeOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+    return this.orderService.closeOrder(id);
+  }
+
+  @Post('pending/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  markOrderAsPendingPayment(
+    @Param('id') id: string,
+  ): Promise<OrderSummaryResponseDto> {
+    return this.orderService.markOrderAsPendingPayment(id);
+  }
+
+  @Patch('update/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
-  ): Promise<Order> {
-    return this.orderService.updateOrder(id, updateData);
+  ): Promise<OrderSummaryResponseDto> {
+    const order = await this.orderService.updateOrder(id, updateData);
+    return order;
+  }
+  @Post('cancel/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async cancelOrder(@Param('id') id: string): Promise<Order> {
+    return await this.orderService.cancelOrder(id);
   }
 
-  @Delete()
+  @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   deleteOrder(@Param('id') id: string): Promise<string> {
     return this.orderService.deleteOrder(id);
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getAllOrders(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -44,11 +76,12 @@ export class OrderController {
     return this.orderService.getAllOrders(page, limit);
   }
   @Get('active')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
     return await this.orderService.getOrdersForOpenOrPendingTables();
   }
-
   @Get('order_detail')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getOrderDetails(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -57,7 +90,15 @@ export class OrderController {
   }
 
   @Get(':id')
-  getOrderById(@Param('id') id: string): Promise<Order> {
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getOrderById(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
+    console.log(id);
     return this.orderService.getOrderById(id);
   }
+
+  // @Post('print')
+  // async printerOrder(@Body() orderToPrint: PrinterOrderDto) {
+  //   await this.printerService.printerOrder(orderToPrint);
+  //   return 'Order printed successfully';
+  // }
 }
