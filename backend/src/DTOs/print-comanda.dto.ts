@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PrintComandaDTO {
   @IsString()
@@ -8,6 +8,10 @@ export class PrintComandaDTO {
   @IsArray()
   @Type(() => Details)
   products: Details[];
+
+  @IsNumber()
+  @IsOptional()
+  numberCustomers?: number;
 }
 
 class Details {

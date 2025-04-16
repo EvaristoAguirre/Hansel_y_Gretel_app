@@ -92,4 +92,8 @@ export class UnitOfMeasureService {
   async getUnitsOfMass(): Promise<EspecialUnitMeasureResponseDto[]> {
     return await this.unitOfMeasureRepository.getUnitsOfMass();
   }
+
+  async getUnitOfUnit(): Promise<EspecialUnitMeasureResponseDto[]> {
+    return await this.unitOfMeasureRepository.getUnitOfUnit();
+  }
 }

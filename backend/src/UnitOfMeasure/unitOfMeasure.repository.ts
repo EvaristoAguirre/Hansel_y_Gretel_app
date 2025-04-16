@@ -321,6 +321,39 @@ export class UnitOfMeasureRepository {
       );
     }
   }
+  async getUnitOfUnit(): Promise<EspecialUnitMeasureResponseDto[]> {
+    try {
+      const units = await this.unitOfMeasureRepository.find({
+        where: { baseUnit: { name: ILike('%Unidad%') } },
+        relations: ['baseUnit'],
+        select: {
+          id: true,
+          name: true,
+          abbreviation: true,
+          baseUnit: { id: true, name: true, abbreviation: true },
+        },
+      });
+
+      return units.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        abbreviation: unit.abbreviation,
+        baseUnit: unit.baseUnit
+          ? {
+              id: unit.baseUnit.id,
+              name: unit.baseUnit.name,
+              abbreviation: unit.baseUnit.abbreviation,
+            }
+          : null,
+      }));
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching units',
+        error.message,
+      );
+    }
+  }
 
   // ---------------   estandarizada con el nuevo dto
   async updateUnitOfMeasure(
