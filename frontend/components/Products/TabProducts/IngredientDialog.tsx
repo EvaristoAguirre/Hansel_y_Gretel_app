@@ -26,6 +26,7 @@ import { TabProductKey } from "@/components/Enums/view-products";
 import { useIngredientsContext } from '../../../app/context/ingredientsContext';
 import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
 import { useUnitContext } from '../../../app/context/unitOfMeasureContext';
+import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 
 interface IngredientDialogProps {
   onSave: (ingredientsForm: IingredientForm[]) => void;
@@ -37,7 +38,7 @@ interface IngredientDialogProps {
 const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units, handleSetDisableTabs }) => {
   const { getAccessToken } = useAuth();
   const { ingredients } = useIngredientsContext();
-  const { unitsOfMass, unitsOfVolume, fetchUnitsMass, fetchUnitsVolume } = useUnitContext()
+  const { unitsOfMass, unitsOfVolume, unitsOfUnit, fetchUnitsMass, fetchUnitsVolume, fetchUnitsUnit } = useUnitContext()
   const [selectedIngredients, setSelectedIngredients] = useState<IingredientForm[]>([]);
   const [newIngredient, setNewIngredient] = useState<IingredientForm>({
     name: "",
@@ -66,6 +67,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
     }
     fetchUnitsMass();
     fetchUnitsVolume();
+    fetchUnitsUnit();
   }, []);
 
   useEffect(() => {
@@ -143,6 +145,15 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
       setEditIngredient(null);
     }
   };
+
+  const unitsMapping = {
+    [TypeBaseUnitIngredient.MASS]: unitsOfMass,
+    [TypeBaseUnitIngredient.VOLUME]: unitsOfVolume,
+    [TypeBaseUnitIngredient.UNIT]: unitsOfUnit,
+  };
+  const unitsToShow = newIngredient.type && unitsMapping[newIngredient.type] || [];
+  const unitsForEdit = editIngredient?.type && unitsMapping[editIngredient.type] || [];
+
   return (
     <>
       <DialogContent sx={{ padding: 0 }}>
@@ -173,26 +184,44 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
             >
               {ingredients.map((ingredient) => (
                 <MenuItem key={ingredient.id} value={ingredient.id}>
-                  {ingredient.name}
+                  {capitalizeFirstLetter(ingredient.name)}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-
           <TextField
             label="Cantidad"
             type="number"
             margin="dense"
-            value={newIngredient.quantityOfIngredient}
+            value={newIngredient.quantityOfIngredient ?? ""}
             onChange={(e) => {
-              let value = parseFloat(e.target.value);
+              const val = e.target.value;
+
+              if (val === "") {
+                setNewIngredient({ ...newIngredient, quantityOfIngredient: null });
+                return;
+              }
+
+              const value = parseFloat(val);
               if (isNaN(value) || value <= 0) return;
+
               setNewIngredient({ ...newIngredient, quantityOfIngredient: value });
             }}
-            inputProps={{ min: 1, step: "any" }}
+
+            onBlur={(e) => {
+              const value = parseFloat(e.target.value);
+              if (isNaN(value) || value <= 0) {
+                setNewIngredient({ ...newIngredient, quantityOfIngredient: null });
+              } else {
+                setNewIngredient({ ...newIngredient, quantityOfIngredient: value });
+              }
+            }}
+
+            inputProps={{ min: 0, step: 0.1 }}
             sx={{ width: "25%" }}
             size="small"
           />
+
 
           <FormControl variant="outlined" sx={{ minWidth: 120, width: "45%" }} size="small">
             <InputLabel sx={{}}>Unidad de Medida</InputLabel>
@@ -211,20 +240,11 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
                 },
               }}
             >
-              {
-
-                newIngredient.type === TypeBaseUnitIngredient.MASS ?
-                  (unitsOfMass.map((u) => (
-                    <MenuItem key={u.id} value={u.id}>
-                      {u.name}
-                    </MenuItem>
-                  ))) :
-                  (unitsOfVolume.map((u) => (
-                    <MenuItem key={u.id} value={u.id}>
-                      {u.name}
-                    </MenuItem>
-                  )))
-              }
+              {unitsToShow.map((unit) => (
+                <MenuItem key={unit.id} value={unit.id}>
+                  {unit.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </FormControl>
@@ -277,7 +297,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
                     margin="dense"
                     label="Nombre"
                     type="string"
-                    value={editIngredient.name}
+                    value={capitalizeFirstLetter(editIngredient.name)}
                     onChange={(e) => {
                       setEditIngredient({
                         ...editIngredient,
@@ -286,6 +306,7 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
 
                     }
                     }
+                    InputProps={{ readOnly: true }}
                     size="small"
                   />
                   <TextField
@@ -293,15 +314,32 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
                     margin="dense"
                     label="Cantidad"
                     type="number"
-                    value={editIngredient.quantityOfIngredient}
+                    value={editIngredient.quantityOfIngredient ?? ""}
                     onChange={(e) => {
-                      let value = parseFloat(e.target.value);
+                      const val = e.target.value;
+
+                      if (val === "") {
+                        setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
+                        return;
+                      }
+
+                      const value = parseFloat(val);
                       if (isNaN(value) || value <= 0) return;
+
                       setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
                     }}
-                    inputProps={{ min: 1, step: "any" }}
+                    onBlur={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (isNaN(value) || value <= 0) {
+                        setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
+                      } else {
+                        setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
+                      }
+                    }}
+                    inputProps={{ min: 0, step: 0.1 }}
                     size="small"
                   />
+
                   <FormControl fullWidth margin="dense" size="small"
                     sx={{ width: "40%" }}>
                     <InputLabel>Unidad</InputLabel>
@@ -315,19 +353,11 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
                       }
                       size="small"
                     >
-                      {
-                        editIngredient.type === TypeBaseUnitIngredient.MASS ?
-                          (unitsOfMass.map((u) => (
-                            <MenuItem key={u.id} value={u.id}>
-                              {u.name}
-                            </MenuItem>
-                          ))) :
-                          (unitsOfVolume.map((u) => (
-                            <MenuItem key={u.id} value={u.id}>
-                              {u.name}
-                            </MenuItem>
-                          )))
-                      }
+                      {unitsForEdit.map((u: IUnitOfMeasureForm) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </div>
