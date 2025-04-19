@@ -60,8 +60,8 @@ export class UpdateProductDto {
   ingredients?: ProductIngredientDto[];
 
   @IsOptional()
-  @IsEnum(['product', 'promotion'])
-  type?: 'product' | 'promotion';
+  @IsEnum(['product', 'promotion', 'simple'])
+  type?: 'product' | 'promotion' | 'simple';
 
   @IsArray()
   @IsOptional()

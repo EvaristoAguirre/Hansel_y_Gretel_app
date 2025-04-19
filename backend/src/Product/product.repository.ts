@@ -298,7 +298,7 @@ export class ProductRepository {
         return promotion;
       }
 
-      if (updateData.type === 'product') {
+      if (updateData.type === 'product' || updateData.type === 'simple') {
         const product = await this.updateNormalProduct(
           queryRunner,
           id,
@@ -775,7 +775,7 @@ export class ProductRepository {
       }
 
       Object.assign(product, otherAttributes);
-      product.cost = otherAttributes.cost || 0;
+      product.cost = 0;
 
       if (categories) {
         if (categories.length > 0) {
@@ -799,7 +799,7 @@ export class ProductRepository {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const existingIngredientIds = product.productIngredients.map(
-        (pi) => (pi.id, console.log('existingIngredientIds...', pi.id)),
+        (pi) => pi.id,
       );
       const newIngredientIds = ingredients.map((i) => i.ingredientId);
 
