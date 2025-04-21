@@ -196,10 +196,10 @@ export const useProductStore = create<ProductState>((set) => {
         categories: parseCategories(updatedProduct.categories),
         productIngredients: updatedProduct.productIngredients && updatedProduct.productIngredients.length > 0
           ? updatedProduct.productIngredients.map((ingredient) => ({
-            name: ingredient.ingredient.name,
-            ingredientId: ingredient.id,
-            unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
-            quantityOfIngredient: ingredient.quantityOfIngredient,
+            name: ingredient?.ingredient.name,
+            ingredientId: ingredient?.ingredient.id,
+            unitOfMeasureId: ingredient?.unitOfMeasure.id ?? '',
+            quantityOfIngredient: ingredient?.quantityOfIngredient,
           }))
           : null,
         promotionDetails: updatedProduct.promotionDetails ? updatedProduct.promotionDetails : null,
