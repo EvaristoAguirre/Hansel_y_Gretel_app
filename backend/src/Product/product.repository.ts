@@ -298,7 +298,7 @@ export class ProductRepository {
         return promotion;
       }
 
-      if (updateData.type === 'product') {
+      if (updateData.type === 'product' || updateData.type === 'simple') {
         const product = await this.updateNormalProduct(
           queryRunner,
           id,
@@ -775,7 +775,7 @@ export class ProductRepository {
       }
 
       Object.assign(product, otherAttributes);
-      product.cost = otherAttributes.cost || 0;
+      product.cost = 0;
 
       if (categories) {
         if (categories.length > 0) {
@@ -796,37 +796,43 @@ export class ProductRepository {
           product.categories = [];
         }
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const existingIngredientIds = product.productIngredients.map(
-        (pi) => (pi.id, console.log('existingIngredientIds...', pi.id)),
+        (pi) => pi.ingredient.id,
       );
       const newIngredientIds = ingredients.map((i) => i.ingredientId);
 
       const ingredientsToRemove = product.productIngredients.filter(
-        (pi) => !newIngredientIds.includes(pi.id),
+        (pi) => !newIngredientIds.includes(pi.ingredient.id),
       );
 
-      await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
+      if (ingredientsToRemove.length > 0) {
+        await queryRunner.manager.remove(
+          ProductIngredient,
+          ingredientsToRemove,
+        );
+      }
 
       const updatedIngredients = await Promise.all(
         ingredients.map(async (ingredientDto) => {
           const ingredient = await queryRunner.manager.findOne(Ingredient, {
-            where: { id: ingredientDto.ingredientId },
+            where: {
+              id: ingredientDto.ingredientId,
+              isActive: true,
+            },
             relations: ['unitOfMeasure'],
           });
 
           if (!ingredient) {
             throw new BadRequestException(
-              `Ingredient with id ${ingredientDto.ingredientId} does not exist`,
+              `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
             );
           }
+
           const unitOfMeasure = await queryRunner.manager.findOne(
             UnitOfMeasure,
-            {
-              where: { id: ingredientDto.unitOfMeasureId },
-            },
+            { where: { id: ingredientDto.unitOfMeasureId } },
           );
+
           if (!unitOfMeasure) {
             throw new BadRequestException(
               `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
@@ -839,17 +845,17 @@ export class ProductRepository {
             ingredientDto.quantityOfIngredient,
           );
 
-          const existing = product.productIngredients.find(
-            (pi) => pi.id === ingredientDto.ingredientId,
+          const existingRelation = product.productIngredients.find(
+            (pi) => pi.ingredient.id === ingredientDto.ingredientId,
           );
 
-          if (existing) {
-            existing.quantityOfIngredient = convertedQuantity;
-            existing.unitOfMeasure = unitOfMeasure;
+          if (existingRelation) {
+            existingRelation.quantityOfIngredient = convertedQuantity;
+            existingRelation.unitOfMeasure = unitOfMeasure;
             product.cost += ingredient.cost * convertedQuantity;
-            return queryRunner.manager.save(existing);
+            return queryRunner.manager.save(existingRelation);
           } else {
-            const newIngredient = queryRunner.manager.create(
+            const newProductIngredient = queryRunner.manager.create(
               ProductIngredient,
               {
                 product,
@@ -859,7 +865,7 @@ export class ProductRepository {
               },
             );
             product.cost += ingredient.cost * convertedQuantity;
-            return queryRunner.manager.save(newIngredient);
+            return queryRunner.manager.save(newProductIngredient);
           }
         }),
       );
