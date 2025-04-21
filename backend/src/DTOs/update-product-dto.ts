@@ -73,7 +73,7 @@ export class UpdateProductDto {
 export class ProductIngredientDto {
   @IsNotEmpty()
   @IsString()
-  id: string;
+  ingredientId: string;
 
   @IsNotEmpty()
   @IsNumber()

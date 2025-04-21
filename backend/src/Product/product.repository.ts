@@ -750,158 +750,158 @@ export class ProductRepository {
       //------- cierre de la actualizacion de producto simple
     } else {
       //producto compuesto
-      // if (!ingredients) {
-      //   throw new BadRequestException(
-      //     'Ingredients are required for composite products',
-      //   );
-      // }
-      // const product = await queryRunner.manager.findOne(Product, {
-      //   where: { id: id, isActive: true },
-      //   relations: [
-      //     'categories',
-      //     'productIngredients',
-      //     'productIngredients.ingredient',
-      //     'productIngredients.unitOfMeasure',
-      //     'promotionDetails',
-      //     'promotionDetails.product',
-      //     'stock',
-      //     'stock.unitOfMeasure',
-      //   ],
-      // });
-      // if (!product) {
-      //   throw new NotFoundException(`Product with ID: ${id} not found`);
-      // }
-      // Object.assign(product, otherAttributes);
-      // product.cost = 0;
-      // if (categories) {
-      //   if (categories.length > 0) {
-      //     const categoryEntities = await queryRunner.manager.find(Category, {
-      //       where: { id: In(categories), isActive: true },
-      //     });
-      //     const foundIds = categoryEntities.map((cat) => cat.id);
-      //     const invalidIds = categories.filter((id) => !foundIds.includes(id));
-      //     if (invalidIds.length > 0) {
-      //       throw new BadRequestException(
-      //         `Invalid category IDs: ${invalidIds.join(', ')}`,
-      //       );
-      //     }
-      //     product.categories = categoryEntities;
-      //   } else {
-      //     product.categories = [];
-      //   }
-      // }
-      // // Mapear los IDs de ProductIngredient que vienen del frontend
-      // const incomingProductIngredientIds = ingredients
-      //   .filter((i) => i.id) // Solo los que tienen ID (existentes)
-      //   .map((i) => i.id);
-      // // Encontrar ingredientes a eliminar (los que no están en la nueva lista)
-      // const ingredientsToRemove = product.productIngredients.filter(
-      //   (pi) => !incomingProductIngredientIds.includes(pi.id),
-      // );
-      // // Eliminar los que ya no están
-      // if (ingredientsToRemove.length > 0) {
-      //   await queryRunner.manager.remove(
-      //     ProductIngredient,
-      //     ingredientsToRemove,
-      //   );
-      // }
-      // // Procesar cada ingrediente del request
-      // const updatedIngredients = await Promise.all(
-      //   ingredients.map(async (ingredientDto) => {
-      //     // Si tiene ID, es una actualización de ProductIngredient existente
-      //     if (ingredientDto.id) {
-      //       const existingPI = product.productIngredients.find(
-      //         (pi) => pi.id === ingredientDto.id,
-      //       );
-      //       if (!existingPI) {
-      //         throw new BadRequestException(
-      //           `ProductIngredient with id ${ingredientDto.id} not found in product`,
-      //         );
-      //       }
-      //       // Verificar que el ingrediente exista y esté activo
-      //       const ingredient = await queryRunner.manager.findOne(Ingredient, {
-      //         where: {
-      //           id: ingredientDto.ingredientId,
-      //           isActive: true,
-      //         },
-      //         relations: ['unitOfMeasure'],
-      //       });
-      //       if (!ingredient) {
-      //         throw new BadRequestException(
-      //           `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
-      //         );
-      //       }
-      //       const unitOfMeasure = await queryRunner.manager.findOne(
-      //         UnitOfMeasure,
-      //         { where: { id: ingredientDto.unitOfMeasureId } },
-      //       );
-      //       if (!unitOfMeasure) {
-      //         throw new BadRequestException(
-      //           `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
-      //         );
-      //       }
-      //       const convertedQuantity =
-      //         await this.unitOfMeasureService.convertUnit(
-      //           ingredientDto.unitOfMeasureId,
-      //           ingredient.unitOfMeasure.id,
-      //           ingredientDto.quantityOfIngredient,
-      //         );
-      //       // Actualizar el ProductIngredient existente
-      //       existingPI.ingredient = ingredient;
-      //       existingPI.quantityOfIngredient = convertedQuantity;
-      //       existingPI.unitOfMeasure = unitOfMeasure;
-      //       product.cost += ingredient.cost * convertedQuantity;
-      //       return queryRunner.manager.save(existingPI);
-      //     }
-      //     // Si no tiene ID, es un nuevo ingrediente
-      //     else {
-      //       const ingredient = await queryRunner.manager.findOne(Ingredient, {
-      //         where: {
-      //           id: ingredientDto.ingredientId,
-      //           isActive: true,
-      //         },
-      //         relations: ['unitOfMeasure'],
-      //       });
-      //       if (!ingredient) {
-      //         throw new BadRequestException(
-      //           `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
-      //         );
-      //       }
-      //       const unitOfMeasure = await queryRunner.manager.findOne(
-      //         UnitOfMeasure,
-      //         { where: { id: ingredientDto.unitOfMeasureId } },
-      //       );
-      //       if (!unitOfMeasure) {
-      //         throw new BadRequestException(
-      //           `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
-      //         );
-      //       }
-      //       const convertedQuantity =
-      //         await this.unitOfMeasureService.convertUnit(
-      //           ingredientDto.unitOfMeasureId,
-      //           ingredient.unitOfMeasure.id,
-      //           ingredientDto.quantityOfIngredient,
-      //         );
-      //       const newProductIngredient = queryRunner.manager.create(
-      //         ProductIngredient,
-      //         {
-      //           product,
-      //           ingredient,
-      //           quantityOfIngredient: convertedQuantity,
-      //           unitOfMeasure,
-      //         },
-      //       );
-      //       product.cost += ingredient.cost * convertedQuantity;
-      //       return queryRunner.manager.save(newProductIngredient);
-      //     }
-      //   }),
-      // );
-      // product.productIngredients = updatedIngredients;
-      // const updatedProduct = await queryRunner.manager.save(product);
-      // const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
-      //   excludeExtraneousValues: true,
-      // });
-      // return instanceToPlain(productDto) as ProductResponseDto;
+      if (!ingredients) {
+        throw new BadRequestException(
+          'Ingredients are required for composite products',
+        );
+      }
+      const product = await queryRunner.manager.findOne(Product, {
+        where: { id: id, isActive: true },
+        relations: [
+          'categories',
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
+          'promotionDetails',
+          'promotionDetails.product',
+          'stock',
+          'stock.unitOfMeasure',
+        ],
+      });
+      if (!product) {
+        throw new NotFoundException(`Product with ID: ${id} not found`);
+      }
+      Object.assign(product, otherAttributes);
+      product.cost = 0;
+      if (categories) {
+        if (categories.length > 0) {
+          const categoryEntities = await queryRunner.manager.find(Category, {
+            where: { id: In(categories), isActive: true },
+          });
+          const foundIds = categoryEntities.map((cat) => cat.id);
+          const invalidIds = categories.filter((id) => !foundIds.includes(id));
+          if (invalidIds.length > 0) {
+            throw new BadRequestException(
+              `Invalid category IDs: ${invalidIds.join(', ')}`,
+            );
+          }
+          product.categories = categoryEntities;
+        } else {
+          product.categories = [];
+        }
+      }
+      // Mapear los IDs de ProductIngredient que vienen del frontend
+      const incomingProductIngredientIds = ingredients
+        .filter((i) => i.ingredientId) // Solo los que tienen ID (existentes)
+        .map((i) => i.ingredientId);
+      // Encontrar ingredientes a eliminar (los que no están en la nueva lista)
+      const ingredientsToRemove = product.productIngredients.filter(
+        (pi) => !incomingProductIngredientIds.includes(pi.id),
+      );
+      // Eliminar los que ya no están
+      if (ingredientsToRemove.length > 0) {
+        await queryRunner.manager.remove(
+          ProductIngredient,
+          ingredientsToRemove,
+        );
+      }
+      // Procesar cada ingrediente del request
+      const updatedIngredients = await Promise.all(
+        ingredients.map(async (ingredientDto) => {
+          // Si tiene ID, es una actualización de ProductIngredient existente
+          if (ingredientDto.ingredientId) {
+            const existingPI = product.productIngredients.find(
+              (pi) => pi.id === ingredientDto.ingredientId,
+            );
+            if (!existingPI) {
+              throw new BadRequestException(
+                `ProductIngredient with id ${ingredientDto.ingredientId} not found in product`,
+              );
+            }
+            // Verificar que el ingrediente exista y esté activo
+            const ingredient = await queryRunner.manager.findOne(Ingredient, {
+              where: {
+                id: ingredientDto.ingredientId,
+                isActive: true,
+              },
+              relations: ['unitOfMeasure'],
+            });
+            if (!ingredient) {
+              throw new BadRequestException(
+                `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
+              );
+            }
+            const unitOfMeasure = await queryRunner.manager.findOne(
+              UnitOfMeasure,
+              { where: { id: ingredientDto.unitOfMeasureId } },
+            );
+            if (!unitOfMeasure) {
+              throw new BadRequestException(
+                `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+              );
+            }
+            const convertedQuantity =
+              await this.unitOfMeasureService.convertUnit(
+                ingredientDto.unitOfMeasureId,
+                ingredient.unitOfMeasure.id,
+                ingredientDto.quantityOfIngredient,
+              );
+            // Actualizar el ProductIngredient existente
+            existingPI.ingredient = ingredient;
+            existingPI.quantityOfIngredient = convertedQuantity;
+            existingPI.unitOfMeasure = unitOfMeasure;
+            product.cost += ingredient.cost * convertedQuantity;
+            return queryRunner.manager.save(existingPI);
+          }
+          // Si no tiene ID, es un nuevo ingrediente
+          else {
+            const ingredient = await queryRunner.manager.findOne(Ingredient, {
+              where: {
+                id: ingredientDto.ingredientId,
+                isActive: true,
+              },
+              relations: ['unitOfMeasure'],
+            });
+            if (!ingredient) {
+              throw new BadRequestException(
+                `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
+              );
+            }
+            const unitOfMeasure = await queryRunner.manager.findOne(
+              UnitOfMeasure,
+              { where: { id: ingredientDto.unitOfMeasureId } },
+            );
+            if (!unitOfMeasure) {
+              throw new BadRequestException(
+                `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+              );
+            }
+            const convertedQuantity =
+              await this.unitOfMeasureService.convertUnit(
+                ingredientDto.unitOfMeasureId,
+                ingredient.unitOfMeasure.id,
+                ingredientDto.quantityOfIngredient,
+              );
+            const newProductIngredient = queryRunner.manager.create(
+              ProductIngredient,
+              {
+                product,
+                ingredient,
+                quantityOfIngredient: convertedQuantity,
+                unitOfMeasure,
+              },
+            );
+            product.cost += ingredient.cost * convertedQuantity;
+            return queryRunner.manager.save(newProductIngredient);
+          }
+        }),
+      );
+      product.productIngredients = updatedIngredients;
+      const updatedProduct = await queryRunner.manager.save(product);
+      const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
+        excludeExtraneousValues: true,
+      });
+      return instanceToPlain(productDto) as ProductResponseDto;
     }
   }
   private async updatePromotion(
