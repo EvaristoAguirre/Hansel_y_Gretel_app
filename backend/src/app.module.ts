@@ -17,7 +17,7 @@ import { IngredientModule } from './Ingredient/ingredient.module';
 import { StockModule } from './Stock/stock.module';
 import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
-import { PrinterModule } from './Printer/printer.module';
+
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -47,7 +47,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     StockModule,
     SeederModule,
     UnitOfMeasurenModule,
-    PrinterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

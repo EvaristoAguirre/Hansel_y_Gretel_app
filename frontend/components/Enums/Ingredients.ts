@@ -6,4 +6,5 @@ export enum FormType {
 export enum TypeBaseUnitIngredient {
   MASS = 'masa',
   VOLUME = 'volumen',
+  UNIT = 'unidad'
 }

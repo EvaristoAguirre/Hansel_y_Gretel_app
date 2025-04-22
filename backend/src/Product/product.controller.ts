@@ -136,13 +136,12 @@ export class ProductController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  async deleteProduct(@Param() id: UUID) {
+  async deleteProduct(@Param('id') id: UUID) {
     return await this.productService.deleteProduct(id);
   }
 
   @Post('check-stock')
   async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
-    console.log('controlador');
     return this.productService.checkProductsStockAvailability(dataToCheck);
   }
 }

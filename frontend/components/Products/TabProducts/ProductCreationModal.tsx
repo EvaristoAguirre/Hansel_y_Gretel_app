@@ -25,6 +25,7 @@ import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
+import { NumericFormat } from "react-number-format";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -254,7 +255,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
       <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab
@@ -276,50 +277,71 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         <Grid container spacing={1} mt={1}>
           {fieldsToRender.map((field, index) => (
             <Grid item xs={12} sm={6} key={field}>
-              <TextField
-                fullWidth
-                label={fieldLabels[field]}
-                type={field === "price" || field === "cost" ? "number" : "text"}
-                inputProps={{
-                  onKeyDown: (e) => {
-                    if (
-                      (field === "price" || field === "cost" || field === "code") &&
-                      (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
-                    ) {
-                      e.preventDefault();
-                    }
-                  },
-                }}
-                value={form[field] ?? ""}
-                onChange={(e) => {
-                  const value = ["price", "cost"].includes(field)
-                    ? e.target.value === ""
-                      ? null
-                      : parseFloat(e.target.value)
-                    : ["code"].includes(field)
+              {(field === 'price' || field === 'cost') ? (
+                <NumericFormat
+                  customInput={TextField}
+                  label={fieldLabels[field]}
+                  value={form[field] != null ? form[field] : ''}
+                  // separadores
+                  thousandSeparator='.'
+                  decimalSeparator=','
+                  decimalScale={2}
+                  allowNegative={false}
+                  type='text'
+                  fullWidth
+                  size='small'
+                  onValueChange={(values) => {
+                    const num = values.floatValue ?? null;
+                    onChange(field as keyof ProductForm, num);
+                    validateField(field, num);
+                  }}
+                />
+              ) : (
+                <TextField
+                  fullWidth
+                  label={fieldLabels[field]}
+                  type={field === "price" || field === "cost" ? "number" : "text"}
+                  inputProps={{
+                    onKeyDown: (e) => {
+                      if (
+                        (field === "price" || field === "cost" || field === "code") &&
+                        (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
+                      ) {
+                        e.preventDefault();
+                      }
+                    },
+                  }}
+                  value={form[field] ?? ""}
+                  onChange={(e) => {
+                    const value = ["price", "cost"].includes(field)
                       ? e.target.value === ""
                         ? null
-                        : parseInt(e.target.value, 10)
-                      : e.target.value;
-                  onChange(field as keyof ProductForm, value);
-                  if (!["code", "name"].includes(field)) {
-                    validateField(field, value);
-                  }
-                }}
-                onBlur={(e) => {
-                  if (field === "code" || field === "name") {
-                    validateField(field, e.target.value);
-                  }
-                }}
-                error={!!errors[field as keyof ProductForm]}
-                helperText={
-                  isCheckingCode && field === "code"
-                    ? "Verificando código..."
-                    : errors[field as keyof ProductForm]
-                } variant="outlined"
-                size="small"
+                        : parseFloat(e.target.value)
+                      : ["code"].includes(field)
+                        ? e.target.value === ""
+                          ? null
+                          : parseInt(e.target.value, 10)
+                        : e.target.value;
+                    onChange(field as keyof ProductForm, value);
+                    if (!["code", "name"].includes(field)) {
+                      validateField(field, value);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (field === "code" || field === "name") {
+                      validateField(field, e.target.value);
+                    }
+                  }}
+                  error={!!errors[field as keyof ProductForm]}
+                  helperText={
+                    isCheckingCode && field === "code"
+                      ? "Verificando código..."
+                      : errors[field as keyof ProductForm]
+                  } variant="outlined"
+                  size="small"
 
-              />
+                />
+              )}
             </Grid>
           ))}
           <Grid item xs={12}>

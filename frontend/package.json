@@ -24,6 +24,7 @@
     "next": "15.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-number-format": "^5.4.4",
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.14.5",
     "tabulator-tables": "^6.3.0",

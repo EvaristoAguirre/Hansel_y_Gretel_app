@@ -66,6 +66,18 @@ export const fetchUnitOfVolume = async (token: string) => {
   return data;
 };
 
+export const fetchUnitOfUnit = async (token: string) => {
+  const response = await fetch(`${URI_UNIT_OF_MEASURE}/unit-of-unit`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
 
 export const createUnit = async (form: IUnitOfMeasureForm, token: string) => {
   const response = await fetch(URI_UNIT_OF_MEASURE, {
