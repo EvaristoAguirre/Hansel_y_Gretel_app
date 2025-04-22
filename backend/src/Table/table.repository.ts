@@ -73,7 +73,7 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { id, isActive: true },
-        relations: ['room'],
+        relations: ['room', 'orders'],
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);

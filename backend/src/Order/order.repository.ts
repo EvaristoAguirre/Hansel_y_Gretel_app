@@ -205,6 +205,7 @@ export class OrderRepository {
         //       `Attempting to print order for table ${printData.table}`,
         //     );
         //     await this.printerService.printKitchenOrder(printData);
+        //     await this.printerService.printKitchenOrder(printData);
         //     this.printerService.logger.log('Print job sent successfully');
         //   } catch (printError) {
         //     this.printerService.logger.error(
