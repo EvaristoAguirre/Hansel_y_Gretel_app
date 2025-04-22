@@ -111,13 +111,16 @@ export class PrinterService {
         'COMANDA COCINA\n\n',
         '\x1D\x21\x00', // Texto normal
         '------------------------------\n',
+        '\x1D\x21\x11', // Texto doble tamaño
         `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR')}\n`,
+        '\x1D\x21\x00', // Texto normal
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
         '------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
         `${'PRODUCTO'.padEnd(22)}CANT\n`,
         '\x1B\x45\x00', // Negrita OFF
         '------------------------------\n',
+        '\x1D\x21\x11', // Texto doble tamaño
         ...orderData.products.map(
           (p) =>
             `${this.normalizeText(p.name).substring(0, 22).padEnd(22)}x ${p.quantity.toString().padStart(2)}\n`,
@@ -220,6 +223,7 @@ export class PrinterService {
         '\x1B\x45\x01', // Negrita ON
         '-----------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
+        '\x1D\x21\x11', // Texto doble tamaño
         `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
         `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
         '\x1B\x45\x00', // Negrita OFF

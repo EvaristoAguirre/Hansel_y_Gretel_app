@@ -32,4 +32,3 @@ export class OrderWSListener {
     this.broadcastService.broadcast('orderUpdatedClose', event.order);
   }
 }
-
