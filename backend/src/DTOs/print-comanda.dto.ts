@@ -12,6 +12,10 @@ export class PrintComandaDTO {
   @IsNumber()
   @IsOptional()
   numberCustomers?: number;
+
+  @IsString()
+  @IsOptional()
+  comment?: string;
 }
 
 class Details {

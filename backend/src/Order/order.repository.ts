@@ -199,12 +199,12 @@ export class OrderRepository {
         //             'Producto',
         //           quantity: detail.quantity,
         //         })),
+        //       comment: order.comment? || null,
         //     };
 
         //     this.printerService.logger.log(
         //       `Attempting to print order for table ${printData.table}`,
         //     );
-        //     await this.printerService.printKitchenOrder(printData);
         //     await this.printerService.printKitchenOrder(printData);
         //     this.printerService.logger.log('Print job sent successfully');
         //   } catch (printError) {
