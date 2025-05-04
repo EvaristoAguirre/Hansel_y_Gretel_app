@@ -54,10 +54,6 @@ export class PrinterService {
     return `${datePart}-${count}`;
   }
 
-  private normalizeText(text: string): string {
-    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-
   private async sendRawCommand(command: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       const socket = net.createConnection(this.printerConfig);
@@ -123,8 +119,23 @@ export class PrinterService {
         '\x1D\x21\x11', // Texto doble tamaño
         ...orderData.products.map(
           (p) =>
-            `${this.normalizeText(p.name).substring(0, 22).padEnd(22)}x ${p.quantity.toString().padStart(2)}\n`,
+            `${this.normalizeText(p.name).substring(0, 35).padEnd(35)} x ${p.quantity.toString().padStart(2)}\n`,
         ),
+        '------------------------------\n',
+        '\x1D\x21\x00', // Texto normal
+        `\x1B\x61\x00`, // Alinear izquierda
+        ...(orderData.comment
+          ? [
+              '\x1B\x61\x00', // Alinear izquierda
+              ...this.splitCommentWithPrefix(
+                orderData.comment,
+                40, // Máximo 40 caracteres por línea (para 80mm)
+                'OBSERVACIONES: ',
+              ).map((line) => `${line}\n`),
+              '\n',
+            ]
+          : []),
+        '\x1B\x61\x01', // Centrar texto
         '------------------------------\n',
         '\x1B\x42\x01\x02', // Pitido
         '\x1D\x56\x41\x30', // Cortar papel
@@ -143,6 +154,10 @@ export class PrinterService {
       );
       throw new Error(`Error al imprimir: ${error.message}`);
     }
+  }
+
+  private normalizeText(text: string): string {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
   async printTicketOrder(order: Order): Promise<string> {
@@ -190,9 +205,9 @@ export class PrinterService {
         price: number;
       }) => {
         const name = this.normalizeTextToTicket(product.name)
-          .substring(0, 20)
-          .padEnd(20);
-        const quantity = `x${product.quantity.toString().padStart(2)}`;
+          .substring(0, 35)
+          .padEnd(35);
+        const quantity = `x ${product.quantity.toString().padStart(2)}`;
         const price = `$${product.price.toFixed(2).padStart(6)}`;
         const total = `$${(product.price * product.quantity).toFixed(2).padStart(7)}`;
         return `${quantity} ${name} ${price} ${total}\n`;
@@ -253,5 +268,75 @@ export class PrinterService {
 
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  private splitCommentWithPrefix(
+    comment: string,
+    maxLineLength: number,
+    prefix: string,
+  ): string[] {
+    const prefixLength = prefix.length;
+    const remainingLineLength = maxLineLength - prefixLength;
+    const normalizedComment = this.normalizeText(comment);
+
+    if (!normalizedComment) return [prefix];
+
+    const lines: string[] = [];
+    let firstLineContent = '';
+    const words = normalizedComment.split(/(\s+)/);
+
+    for (const word of words) {
+      if ((firstLineContent + word).length <= remainingLineLength) {
+        firstLineContent += word;
+      } else {
+        break;
+      }
+    }
+
+    lines.push(`${prefix}${firstLineContent.trim()}`);
+
+    const remainingText = normalizedComment
+      .substring(firstLineContent.length)
+      .trim();
+    if (remainingText) {
+      const remainingLines = this.splitTextIntoLines(
+        remainingText,
+        maxLineLength,
+      );
+      lines.push(...remainingLines);
+    }
+
+    return lines;
+  }
+
+  private splitTextIntoLines(
+    text: string,
+    maxLength: number,
+    prefix: string = '',
+  ): string[] {
+    const words = this.normalizeText(text).split(/(\s+)/);
+    let currentLine = prefix;
+    const lines = [];
+
+    for (let word of words) {
+      if ((currentLine + word).length > maxLength) {
+        if (currentLine === prefix) {
+          while (word.length > 0) {
+            const chunk = word.substring(0, maxLength - prefix.length);
+            lines.push(prefix + chunk);
+            word = word.substring(maxLength - prefix.length);
+          }
+          continue;
+        }
+        lines.push(currentLine.trim());
+        currentLine = prefix;
+      }
+      currentLine += word;
+    }
+
+    if (currentLine !== prefix) {
+      lines.push(currentLine.trim());
+    }
+
+    return lines;
   }
 }
