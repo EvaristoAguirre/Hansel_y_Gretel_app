@@ -52,6 +52,7 @@ export class OrderController {
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
+    console.log('updateData', updateData);
     const order = await this.orderService.updateOrder(id, updateData);
     return order;
   }
@@ -92,7 +93,6 @@ export class OrderController {
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getOrderById(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
-    console.log(id);
     return this.orderService.getOrderById(id);
   }
 
