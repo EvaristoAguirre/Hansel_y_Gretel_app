@@ -242,7 +242,7 @@ const OrderEditor = ({
                           WebkitBoxOrient: "vertical",
                           WebkitLineClamp: 1,
                           overflow: "hidden",
-                          maxWidth: "5rem",
+                          maxWidth: "20rem",
                         }}
                         primary={item.productName}
                       />
