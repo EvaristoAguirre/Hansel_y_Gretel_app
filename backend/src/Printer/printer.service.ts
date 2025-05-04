@@ -141,8 +141,10 @@ export class PrinterService {
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');
 
-      const printSuccess = await this.sendRawCommand(commands);
-      if (!printSuccess) {
+      const firstPrintSuccess = await this.sendRawCommand(commands);
+      const secondPrintSuccess = await this.sendRawCommand(commands);
+
+      if (!firstPrintSuccess || !secondPrintSuccess) {
         throw new Error('Print command failed');
       }
 
@@ -251,9 +253,11 @@ export class PrinterService {
         '\x1D\x56\x41\x50', // Cortar papel con avance
       ].join('');
 
-      const printSuccess = await this.sendRawCommand(commands);
-      if (!printSuccess) {
-        throw new Error('Error al enviar comando de impresión');
+      const firstPrintSuccess = await this.sendRawCommand(commands);
+      const secondPrintSuccess = await this.sendRawCommand(commands);
+
+      if (!firstPrintSuccess || !secondPrintSuccess) {
+        throw new Error('Print command failed');
       }
 
       return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
