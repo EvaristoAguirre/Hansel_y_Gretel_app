@@ -57,7 +57,7 @@
 //     }));
 //   },
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://localhost:3000");
+//     const socket = new WebSocket("ws://192.168.0.50:3000");
 
 //     socket.onmessage = (event) => {
 //       const { action, data } = JSON.parse(event.data);
@@ -106,7 +106,7 @@ const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
 
 export const useProductStore = create<ProductState>((set) => {
-  const socket = io("http://localhost:3000"); // Usa la IP de tu backend
+  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Products");

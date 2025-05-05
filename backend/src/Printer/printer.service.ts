@@ -11,7 +11,7 @@ export class PrinterService {
   private counter: number = 0;
   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
   private readonly printerConfig = {
-    host: '192.168.1.49',
+    host: '192.168.0.51',
     port: 9100,
     timeout: 5000,
   };
@@ -121,8 +121,8 @@ export class PrinterService {
           (p) =>
             `${this.normalizeText(p.name).substring(0, 35).padEnd(35)} x ${p.quantity.toString().padStart(2)}\n`,
         ),
-        '------------------------------\n',
         '\x1D\x21\x00', // Texto normal
+        '------------------------------\n',
         `\x1B\x61\x00`, // Alinear izquierda
         ...(orderData.comment
           ? [

@@ -184,38 +184,38 @@ export class OrderRepository {
         }
 
         order.total = (Number(order.total) || 0) + total;
-        // if (newProducts.length > 0) {
-        //   try {
-        //     const printData = {
-        //       numberCustomers: order.numberCustomers,
-        //       table: order.table?.name || 'SIN MESA',
-        //       products: updateData.productsDetails
-        //         .filter((detail) =>
-        //           newProducts.some((p) => p.id === detail.productId),
-        //         )
-        //         .map((detail) => ({
-        //           name:
-        //             newProducts.find((p) => p.id === detail.productId)?.name ||
-        //             'Producto',
-        //           quantity: detail.quantity,
-        //         })),
-        //       comment: order.comment ?? null,
-        //     };
+        if (newProducts.length > 0) {
+          try {
+            const printData = {
+              numberCustomers: order.numberCustomers,
+              table: order.table?.name || 'SIN MESA',
+              products: updateData.productsDetails
+                .filter((detail) =>
+                  newProducts.some((p) => p.id === detail.productId),
+                )
+                .map((detail) => ({
+                  name:
+                    newProducts.find((p) => p.id === detail.productId)?.name ||
+                    'Producto',
+                  quantity: detail.quantity,
+                })),
+              comment: order.comment ?? null,
+            };
 
-        //     this.printerService.logger.log(
-        //       `Attempting to print order for table ${printData.table}`,
-        //     );
-        //     const commandNumber =
-        //       await this.printerService.printKitchenOrder(printData);
-        //     order.commandNumber = commandNumber;
-        //     this.printerService.logger.log('Print job sent successfully');
-        //   } catch (printError) {
-        //     this.printerService.logger.error(
-        //       'Failed to print kitchen order',
-        //       printError.stack,
-        //     );
-        //   }
-        // }
+            this.printerService.logger.log(
+              `Attempting to print order for table ${printData.table}`,
+            );
+            const commandNumber =
+              await this.printerService.printKitchenOrder(printData);
+            order.commandNumber = commandNumber;
+            this.printerService.logger.log('Print job sent successfully');
+          } catch (printError) {
+            this.printerService.logger.error(
+              'Failed to print kitchen order',
+              printError.stack,
+            );
+          }
+        }
       }
       const updatedOrder = await queryRunner.manager.save(order);
 
@@ -397,11 +397,11 @@ export class OrderRepository {
       await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
 
-      // try {
-      //   await this.printerService.printTicketOrder(order);
-      // } catch (error) {
-      //   throw new ConflictException(error.message);
-      // }
+      try {
+        await this.printerService.printTicketOrder(order);
+      } catch (error) {
+        throw new ConflictException(error.message);
+      }
 
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;
