@@ -19,6 +19,7 @@ import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
+import { DailyCashModule } from './daily-cash/daily-cash.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     StockModule,
     SeederModule,
     UnitOfMeasurenModule,
+    DailyCashModule,
   ],
   controllers: [AppController],
   providers: [AppService],
