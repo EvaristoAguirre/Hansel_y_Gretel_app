@@ -29,6 +29,7 @@ import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { PrinterService } from 'src/Printer/printer.service';
 import { TableService } from 'src/Table/table.service';
+import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { TableService } from 'src/Table/table.service';
       PromotionProduct,
       Stock,
       Ingredient,
+      DailyCash,
     ]),
     UserModule,
     UnitOfMeasurenModule,
