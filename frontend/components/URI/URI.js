@@ -31,6 +31,10 @@ export const URI_ORDER_OPEN = "http://192.168.0.50:3000/order/open";
 
 export const URI_ORDER = "http://192.168.0.50:3000/order";
 
+//PRINTS TICKETS
+
+export const URI_TICKET = "http://192.168.0.50:3000/printer/printTicket";
+
 //USERS
 
 export const URI_USER = "http://192.168.0.50:3000/user";
