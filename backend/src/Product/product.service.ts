@@ -83,8 +83,8 @@ export class ProductService {
     code?: string,
     categories?: string[],
     isActive?: boolean,
-    page: number = 1,
-    limit: number = 10,
+    page?: number,
+    limit?: number,
   ): Promise<ProductResponseDto[]> {
     return this.productRepository.searchProducts(
       name,
