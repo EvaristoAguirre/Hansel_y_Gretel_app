@@ -102,6 +102,9 @@ export class PrinterService {
       const commands = [
         '\x1B\x40', // Inicializar impresora
         '\x1B\x74\x02', // Establecer codificación Windows-1252 (para caracteres latinos)
+        '\x1B\x61\x02', // Alinear derecha
+        '\x1D\x21\x11', // Texto doble tamaño
+        `${orderData.isPriority ? 'PEDIDO PRIORITARIO' : null} \n`,
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x11', // Texto doble tamaño
         'COMANDA COCINA\n\n',
