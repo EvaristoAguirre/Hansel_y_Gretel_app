@@ -29,8 +29,8 @@ export class OrderDetails {
   @Column()
   batchId: string;
 
-  // @Column({nullable: true})
-  // comment: string;
+  @Column({ nullable: true })
+  commentOfProduct: string;
 
   //--------------- Relaciones ---------------- //
 
