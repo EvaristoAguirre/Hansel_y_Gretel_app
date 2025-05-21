@@ -200,7 +200,7 @@ export class OrderRepository {
                   quantity: detail.quantity,
                   commentOfProduct: detail.commentOfProduct,
                 })),
-              comment: order.comment ?? null,
+              isPriority: updateData.isPriority,
             };
 
             this.printerService.logger.log(

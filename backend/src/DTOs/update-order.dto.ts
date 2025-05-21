@@ -42,4 +42,8 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsArray()
   productsDetails?: OrderDetailsDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  isPriority?: boolean;
 }
