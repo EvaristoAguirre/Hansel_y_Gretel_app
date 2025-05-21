@@ -18,6 +18,7 @@ import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
+import { CloseOrderDto } from 'src/DTOs/close-order.dto';
 
 @Controller('order')
 @UseGuards(RolesGuard)
@@ -34,8 +35,11 @@ export class OrderController {
 
   @Post('close/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  closeOrder(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
-    return this.orderService.closeOrder(id);
+  closeOrder(
+    @Param('id') id: string,
+    @Body() closeOrderDto: CloseOrderDto,
+  ): Promise<OrderSummaryResponseDto> {
+    return this.orderService.closeOrder(id, closeOrderDto);
   }
 
   @Post('pending/:id')

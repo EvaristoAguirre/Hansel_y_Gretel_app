@@ -9,5 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [TypeOrmModule.forFeature([DailyCash])],
   controllers: [DailyCashController],
   providers: [DailyCashService, DailyCashRepository],
+  exports: [DailyCashService, DailyCashRepository],
 })
 export class DailyCashModule {}

@@ -2,7 +2,6 @@
 // import { TableState } from "../Enums/Enums";
 // import { ISala } from "../Interfaces/Cafe_interfaces";
 
-
 // export interface TableCreated {
 //   id: string;
 //   name: string;
@@ -106,7 +105,7 @@ interface TableStateZustand {
 }
 
 export const useTableStore = create<TableStateZustand>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket");

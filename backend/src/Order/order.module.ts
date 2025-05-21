@@ -30,6 +30,8 @@ import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { PrinterService } from 'src/Printer/printer.service';
 import { TableService } from 'src/Table/table.service';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
+import { DailyCashRepository } from 'src/daily-cash/daily-cash.repository';
+import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { DailyCash } from 'src/daily-cash/daily-cash.entity';
     ]),
     UserModule,
     UnitOfMeasurenModule,
+    DailyCashModule,
   ],
   controllers: [OrderController],
   providers: [
@@ -67,6 +70,7 @@ import { DailyCash } from 'src/daily-cash/daily-cash.entity';
     IngredientRepository,
     PrinterService,
     TableService,
+    DailyCashRepository,
   ],
 })
 export class OrderModule {}

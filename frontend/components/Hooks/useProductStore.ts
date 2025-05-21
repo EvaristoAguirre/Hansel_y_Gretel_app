@@ -96,17 +96,20 @@
 //   },
 // }));
 
-
 import { create } from "zustand";
 import { io } from "socket.io-client";
 import { ICategory } from "../Interfaces/ICategories";
-import { ProductCreated, ProductResponse, ProductState } from "../Interfaces/IProducts";
+import {
+  ProductCreated,
+  ProductResponse,
+  ProductState,
+} from "../Interfaces/IProducts";
 
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
 
 export const useProductStore = create<ProductState>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Products");
@@ -120,14 +123,15 @@ export const useProductStore = create<ProductState>((set) => {
         const parsedProduct: ProductCreated = {
           ...data,
           categories: parseCategories(data.categories),
-          productIngredients: data.productIngredients && data.productIngredients.length > 0
-            ? data.productIngredients.map((ingredient) => ({
-              name: ingredient.ingredient.name,
-              ingredientId: ingredient.ingredient.id,
-              unitOfMeasureId: ingredient.unitOfMeasure?.id ?? '',
-              quantityOfIngredient: ingredient.quantityOfIngredient,
-            }))
-            : [],
+          productIngredients:
+            data.productIngredients && data.productIngredients.length > 0
+              ? data.productIngredients.map((ingredient) => ({
+                  name: ingredient.ingredient.name,
+                  ingredientId: ingredient.ingredient.id,
+                  unitOfMeasureId: ingredient.unitOfMeasure?.id ?? "",
+                  quantityOfIngredient: ingredient.quantityOfIngredient,
+                }))
+              : [],
           promotionDetails: data.promotionDetails ?? null,
         };
 
@@ -163,12 +167,14 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct = products.map((product: ProductResponse) => ({
         ...product,
         categories: parseCategories(product.categories),
-        productIngredients: product.productIngredients.length > 0 && product.productIngredients.map((ingredient) => ({
-          name: ingredient.ingredient.name,
-          ingredientId: ingredient.ingredient.id,
-          unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
-          quantityOfIngredient: ingredient.quantityOfIngredient,
-        })),
+        productIngredients:
+          product.productIngredients.length > 0 &&
+          product.productIngredients.map((ingredient) => ({
+            name: ingredient.ingredient.name,
+            ingredientId: ingredient.ingredient.id,
+            unitOfMeasureId: ingredient.unitOfMeasure.id ?? "",
+            quantityOfIngredient: ingredient.quantityOfIngredient,
+          })),
       }));
       set({ products: parsedProduct });
     },
@@ -176,12 +182,14 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct: ProductCreated = {
         ...product,
         categories: parseCategories(product.categories),
-        productIngredients: product.productIngredients.length > 0 && product.productIngredients.map((ingredient) => ({
-          name: ingredient.ingredient.name,
-          ingredientId: ingredient.ingredient.id,
-          unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
-          quantityOfIngredient: ingredient.quantityOfIngredient,
-        })),
+        productIngredients:
+          product.productIngredients.length > 0 &&
+          product.productIngredients.map((ingredient) => ({
+            name: ingredient.ingredient.name,
+            ingredientId: ingredient.ingredient.id,
+            unitOfMeasureId: ingredient.unitOfMeasure.id ?? "",
+            quantityOfIngredient: ingredient.quantityOfIngredient,
+          })),
         promotionDetails: product.promotionDetails,
       };
       set((state) => ({ products: [...state.products, parsedProduct] }));
@@ -194,24 +202,27 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct: ProductCreated = {
         ...updatedProduct,
         categories: parseCategories(updatedProduct.categories),
-        productIngredients: updatedProduct.productIngredients && updatedProduct.productIngredients.length > 0
-          ? updatedProduct.productIngredients.map((ingredient) => ({
-            name: ingredient?.ingredient.name,
-            ingredientId: ingredient?.ingredient.id,
-            unitOfMeasureId: ingredient?.unitOfMeasure.id ?? '',
-            quantityOfIngredient: ingredient?.quantityOfIngredient,
-          }))
+        productIngredients:
+          updatedProduct.productIngredients &&
+          updatedProduct.productIngredients.length > 0
+            ? updatedProduct.productIngredients.map((ingredient) => ({
+                name: ingredient?.ingredient.name,
+                ingredientId: ingredient?.ingredient.id,
+                unitOfMeasureId: ingredient?.unitOfMeasure.id ?? "",
+                quantityOfIngredient: ingredient?.quantityOfIngredient,
+              }))
+            : null,
+        promotionDetails: updatedProduct.promotionDetails
+          ? updatedProduct.promotionDetails
           : null,
-        promotionDetails: updatedProduct.promotionDetails ? updatedProduct.promotionDetails : null,
       };
       set((state) => ({
         products: state.products.map((product) =>
           product.id === parsedProduct.id ? parsedProduct : product
         ),
-
       }));
       console.log("✅ Producto actualizado:", parsedProduct);
     },
-    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    connectWebSocket: () => {}, // La conexión se establece al cargar el store
   };
 });

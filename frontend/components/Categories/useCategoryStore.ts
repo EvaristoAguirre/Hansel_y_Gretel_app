@@ -12,7 +12,7 @@ interface CategoryState {
 }
 
 export const useCategoryStore = create<CategoryState>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP del backend
+  const socket = io("http://localhost:3000"); // Usa la IP del backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Categorías");
@@ -35,7 +35,9 @@ export const useCategoryStore = create<CategoryState>((set) => {
   socket.on("categoryDeleted", (data) => {
     console.log("🔴 Categoría eliminada:", data);
     set((state) => ({
-      categories: state.categories.filter((category) => category.id !== data.id),
+      categories: state.categories.filter(
+        (category) => category.id !== data.id
+      ),
     }));
   });
 
@@ -46,9 +48,12 @@ export const useCategoryStore = create<CategoryState>((set) => {
   return {
     categories: [],
     setCategories: (categories) => set({ categories }),
-    addCategory: (category) => set((state) => ({ categories: [...state.categories, category] })),
+    addCategory: (category) =>
+      set((state) => ({ categories: [...state.categories, category] })),
     removeCategory: (id) =>
-      set((state) => ({ categories: state.categories.filter((c) => c.id !== id) })),
+      set((state) => ({
+        categories: state.categories.filter((c) => c.id !== id),
+      })),
     updateCategory: (updatedCategory) =>
       set((state) => ({
         categories: state.categories.map((c) =>

@@ -35,11 +35,12 @@ export class OrderRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(DailyCash)
+    private readonly dailyCashRepository: Repository<DailyCash>,
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
     private readonly tableService: TableService,
-    private readonly dailyCashRepository: Repository<DailyCash>,
   ) {}
 
   async openOrder(
