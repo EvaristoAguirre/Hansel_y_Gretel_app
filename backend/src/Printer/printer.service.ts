@@ -119,22 +119,12 @@ export class PrinterService {
         '\x1D\x21\x11', // Texto doble tamaño
         ...orderData.products.map(
           (p) =>
-            `${this.normalizeText(p.name).substring(0, 35).padEnd(35)} x ${p.quantity.toString().padStart(2)}\n`,
+            `${this.normalizeText(p.name).substring(0, 35).padEnd(35)} x ${p.quantity.toString().padStart(2)}\n
+              ${this.normalizeText(p.commentOfProduct || '')}`,
         ),
         '\x1D\x21\x00', // Texto normal
         '------------------------------\n',
         `\x1B\x61\x00`, // Alinear izquierda
-        ...(orderData.comment
-          ? [
-              '\x1B\x61\x00', // Alinear izquierda
-              ...this.splitCommentWithPrefix(
-                orderData.comment,
-                40, // Máximo 40 caracteres por línea (para 80mm)
-                'OBSERVACIONES: ',
-              ).map((line) => `${line}\n`),
-              '\n',
-            ]
-          : []),
         '\x1B\x61\x01', // Centrar texto
         '------------------------------\n',
         '\x1B\x42\x01\x02', // Pitido
