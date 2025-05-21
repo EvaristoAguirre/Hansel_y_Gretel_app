@@ -15,7 +15,7 @@ export class PrintComandaDTO {
 
   @IsString()
   @IsOptional()
-  comment?: string;
+  commentOfProduct?: string;
 }
 
 class Details {
@@ -23,4 +23,8 @@ class Details {
   name: string;
   @IsString()
   quantity: number;
+
+  @IsString()
+  @IsOptional()
+  commentOfProduct?: string;
 }
