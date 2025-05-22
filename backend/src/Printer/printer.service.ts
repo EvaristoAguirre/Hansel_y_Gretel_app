@@ -104,15 +104,14 @@ export class PrinterService {
         '\x1B\x74\x02', // Establecer codificación Windows-1252 (para caracteres latinos)
         '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
-        `${orderData.isPriority ? 'PEDIDO PRIORITARIO' : null} \n`,
+        `${orderData.isPriority ? '- PEDIDO PRIORITARIO -' : ' '} \n\n`,
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x11', // Texto doble tamaño
         'COMANDA COCINA\n\n',
         '\x1D\x21\x00', // Texto normal
         '------------------------------\n',
-        '\x1D\x21\x11', // Texto doble tamaño
-        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR')}\n`,
         '\x1D\x21\x00', // Texto normal
+        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}\n`,
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
         '------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
@@ -135,9 +134,15 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      const secondPrintSuccess = await this.sendRawCommand(commands);
+      // const secondPrintSuccess = await this.sendRawCommand(commands);
 
-      if (!firstPrintSuccess || !secondPrintSuccess) {
+      // if (!firstPrintSuccess || !secondPrintSuccess) {
+      //   throw new Error('Print command failed');
+      // }
+
+      // sudo ifconfig en0 -alias 192.168.0.100
+
+      if (!firstPrintSuccess) {
         throw new Error('Print command failed');
       }
 
