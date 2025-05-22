@@ -31,7 +31,7 @@
 //       ),
 //     })),
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://192.168.0.50:3000");
+//     const socket = new WebSocket("ws://localhost:3000");
 
 //     socket.onmessage = (event) => {
 //       const { action, data } = JSON.parse(event.data);
@@ -87,7 +87,7 @@ interface OrderStateZustand {
 
 export const useOrderStore = create<OrderStateZustand>((set, get) => {
 
-  const socket = io("http://192.168.0.50:3000");
+  const socket = io("http://localhost:3000");
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Order");
@@ -115,7 +115,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
       ),
     }));
   });
-  
+
   socket.on("orderUpdatedClose", (data) => {
     console.log("🟢 Orden marcada como cerrada:", data);
     set((state) => ({
@@ -124,7 +124,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
       ),
     }));
   });
-  
+
 
   socket.on("orderDeleted", (data) => {
     console.log("🔴 Orden eliminada:", data);
@@ -154,6 +154,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
           order.id === updatedOrder.id ? updatedOrder : order
         ),
       })),
-    connectWebSocket: () => {},
+    connectWebSocket: () => { },
   };
 });
