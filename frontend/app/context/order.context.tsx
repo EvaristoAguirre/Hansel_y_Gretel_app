@@ -34,6 +34,7 @@ type OrderContextType = {
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
   decreaseProductNumber: (productId: string) => void;
+  productComment: (id: string, comment: string) => void;
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (
@@ -64,6 +65,7 @@ const OrderContext = createContext<OrderContextType>({
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
+  productComment: () => { },
   clearSelectedProducts: () => { },
   deleteConfirmProduct: () => { },
   handleCreateOrder: async () => { },
@@ -113,7 +115,6 @@ const OrderProvider = ({
   useEffect(() => {
     handleResetSelectedOrder();
   }, [selectedMesa]);
-
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -253,6 +254,17 @@ const OrderProvider = ({
       setSelectedProducts(
         selectedProducts.map((p) =>
           p.productId === id ? { ...p, quantity: newQuantity } : p
+        )
+      );
+    }
+  };
+
+  const productComment = async (id: string, comment: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+    if (productToUpdate) {
+      setSelectedProducts(
+        selectedProducts.map((p) =>
+          p.productId === id ? { ...p, commentOfProduct: comment } : p
         )
       );
     }
@@ -441,6 +453,7 @@ const OrderProvider = ({
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,
+        productComment,
         clearSelectedProducts,
         deleteConfirmProduct,
         handleCreateOrder,
