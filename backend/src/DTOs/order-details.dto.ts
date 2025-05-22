@@ -9,5 +9,5 @@ export class OrderDetailsDto {
 
   @IsString()
   @IsOptional()
-  comment?: string;
+  commentOfProduct?: string;
 }

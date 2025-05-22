@@ -136,9 +136,9 @@ export class OrderRepository {
         order.numberCustomers = updateData.numberCustomers;
       }
 
-      if (updateData.comment) {
-        order.comment = updateData.comment;
-      }
+      // if (updateData.comment) {
+      //   order.comment = updateData.comment;
+      // }
 
       if (updateData.tableId) {
         const table = await queryRunner.manager.findOne(Table, {
@@ -198,8 +198,9 @@ export class OrderRepository {
                     newProducts.find((p) => p.id === detail.productId)?.name ||
                     'Producto',
                   quantity: detail.quantity,
+                  commentOfProduct: detail.commentOfProduct,
                 })),
-              comment: order.comment ?? null,
+              isPriority: updateData.isPriority,
             };
 
             this.printerService.logger.log(

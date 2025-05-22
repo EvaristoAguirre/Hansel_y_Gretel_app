@@ -358,37 +358,30 @@ export class ProductRepository {
     code?: string,
     categories?: string[],
     isActive: boolean = true,
-    page: number = 1,
-    limit: number = 10,
+    page?: number,
+    limit?: number,
   ): Promise<ProductResponseDto[]> {
     try {
-      if (!name && !code) {
+      if (!name && !code && !categories) {
         throw new BadRequestException(
-          'At least a name or a code must be provided for search.',
+          'At least a name, code, or category must be provided for search.',
         );
       }
 
-      let filteredProducts: ProductResponseDto[] = [];
-      if (categories && categories.length > 0) {
-        filteredProducts = await this.getProductsByCategories(categories);
-      }
-
-      const offset = (page - 1) * limit;
+      const offset = page && limit ? (page - 1) * limit : undefined;
       const whereConditions: any = { isActive };
+
       if (name) {
         whereConditions.name = ILike(`%${name}%`);
       } else if (code) {
         whereConditions.code = Raw(
           (alias) => `CAST(${alias} AS TEXT) ILIKE :code`,
-          {
-            code: `%${code}%`,
-          },
+          { code: `%${code}%` },
         );
       }
 
-      if (filteredProducts.length > 0) {
-        const productIds = filteredProducts.map((product) => product.id);
-        whereConditions.id = In(productIds);
+      if (categories && categories.length > 0) {
+        whereConditions.categories = { id: In(categories) };
       }
 
       const [products] = await this.productRepository.findAndCount({
@@ -407,9 +400,16 @@ export class ProductRepository {
         take: limit,
       });
 
+      // Manejar caso sin resultados
       if (products.length === 0) {
-        const searchCriteria = name ? `name: ${name}` : `code: ${code}`;
-        throw new NotFoundException(`No products found with ${searchCriteria}`);
+        const searchCriteriaParts = [];
+        if (name) searchCriteriaParts.push(`name: ${name}`);
+        if (code) searchCriteriaParts.push(`code: ${code}`);
+        if (categories?.length)
+          searchCriteriaParts.push(`categories: ${categories.join(', ')}`);
+        throw new NotFoundException(
+          `No products found with ${searchCriteriaParts.join(', ')}`,
+        );
       }
 
       return products;
@@ -417,9 +417,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-
       throw new InternalServerErrorException(
-        'Error fetching the products',
+        'Error fetching products',
         error.message,
       );
     }
