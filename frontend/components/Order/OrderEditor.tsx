@@ -9,6 +9,8 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  FormGroup,
+  Checkbox,
   FormControlLabel,
   Switch,
 } from "@mui/material";
@@ -26,6 +28,11 @@ import { IOrderDetails } from "../Interfaces/IOrderDetails";
 import { SelectedProductsI } from "../Interfaces/IProducts";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import AutoGrowTextarea from "../Utils/Textarea";
+import { fetchCategories } from "@/api/categories";
+import { ICategory } from "../Interfaces/ICategories";
+import { searchProducts } from "@/api/products";
+import SearchBar from "../Utils/Autocomplete";
+import AutoCompleteProduct from "../Utils/Autocomplete";
 
 export interface Product {
   price: number;
@@ -76,8 +83,14 @@ const OrderEditor = ({
   const [loading, setLoading] = useState(false);
   const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  // const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
 
+  useEffect(() => {
+    token && fetchCategories(token).then((categories = []) => setCategories(categories));
+  }, []);
   const confirmarPedido: () => Promise<void> = async () => {
     if (selectedOrderByTable) {
       setLoading(true);
@@ -126,7 +139,7 @@ const OrderEditor = ({
   };
 
   /**
-   * 
+   *
    * @param productId - El ID del producto a eliminar
    * @returns La función `handleDeleteProductAndComment` elimina un producto del contexto y su comentario asociado en el estado local.
    * Si el producto eliminado estaba siendo editado, se cancela la edición.
@@ -139,6 +152,31 @@ const OrderEditor = ({
       return newCommentInputs;
     });
   };
+
+  /**
+   * Fracción de código para buscar productos en base a nombre,
+   * código o categorías seleccionadas.
+   */
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
+
+  const searchProductsFiltered = async (term: string, categories: string[]) => {
+    const trimmedTerm = term.trim();
+    const results = token && await searchProducts(trimmedTerm, token, categories.join(','));
+    if (results) setProductosDisponibles(results);
+  };
+
+  const handleSearch = (value: string) => {
+    const trimmedValue = value.trim();
+    setSearchTerm(trimmedValue);
+    searchProductsFiltered(trimmedValue, selectedCats);
+  };
+
+  useEffect(() => {
+    searchProductsFiltered(searchTerm, selectedCats);
+  }, [selectedCats]);
+
+
   return loading ? (
     <LoadingLottie />
   ) : (
@@ -176,38 +214,33 @@ const OrderEditor = ({
             <h2>Seleccionar productos</h2>
           </div>
           <Box sx={{ borderRadius: "5px" }}>
-            <Autocomplete
-              options={productosDisponibles}
-              getOptionLabel={(producto) =>
-                `${producto.name} - $${producto.price} (Código: ${producto.code})`
-              }
-              onInputChange={(event, value, reason) => {
-                const searchTerm = value.toLowerCase();
-                setProductosDisponibles(
-                  products.filter(
-                    (producto) =>
-                      producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code
-                        ?.toString()
-                        .toLowerCase()
-                        .includes(searchTerm)
-                  )
-                );
-              }}
-              onChange={(event, selectedProducto) => {
-                if (selectedProducto) {
-                  handleSelectedProducts(selectedProducto);
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Buscar productos por nombre o código"
-                  variant="outlined"
-                  fullWidth
-                  sx={{ label: { color: "black", fontSize: "1rem" } }}
+            <FormGroup row>
+              {categories.map((cat) => (
+                <FormControlLabel
+                  key={cat.id}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={selectedCats.includes(cat.id)}
+                      onChange={(e) => {
+                        setSelectedCats((prev) =>
+                          e.target.checked
+                            ? [...prev, cat.id]
+                            : prev.filter((c) => c !== cat.id)
+                        );
+                      }}
+                    />
+
+                  }
+                  label={capitalizeFirstLetter(cat.name)}
                 />
-              )}
+              ))}
+            </FormGroup>
+
+            <AutoCompleteProduct
+              options={productosDisponibles}
+              onSearch={(value) => handleSearch(value)}
+              onSelect={handleSelectedProducts}
             />
 
             {/* PRODUCTOS PRE-SELECCIONADOS */}
@@ -393,7 +426,7 @@ const OrderEditor = ({
                 }}
               >
                 <div
-                  className="w-2/4flex items-center 
+                  className="w-2/4flex items-center
                       justify-start m-2 text-[#856D5E]"
                 >
                   <h5>Productos confirmados:</h5>
