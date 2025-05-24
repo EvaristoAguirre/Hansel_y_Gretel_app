@@ -10,8 +10,9 @@ import {
   IconButton,
   Tooltip,
   FormGroup,
-  FormControlLabel,
   Checkbox,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Add, Remove, Delete, Comment } from "@mui/icons-material";
 import { Box } from "@mui/system";
@@ -85,12 +86,12 @@ const OrderEditor = ({
   const [categories, setCategories] = useState<ICategory[]>([]);
   // const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const token = getAccessToken();
+  const [isPriority, setIsPriority] = useState<boolean>(false);
 
   useEffect(() => {
     token && fetchCategories(token).then((categories = []) => setCategories(categories));
   }, []);
-
-  const confirmarPedido = async () => {
+  const confirmarPedido: () => Promise<void> = async () => {
     if (selectedOrderByTable) {
       setLoading(true);
       try {
@@ -98,7 +99,8 @@ const OrderEditor = ({
           selectedOrderByTable.id,
           selectedProducts,
           selectedOrderByTable.numberCustomers,
-          selectedOrderByTable.comment
+          selectedOrderByTable.comment,
+          isPriority
         );
         setSelectedProducts([]);
         handleCompleteStep();
@@ -370,16 +372,30 @@ const OrderEditor = ({
                 No hay productos pre-seleccionados.
               </Typography>
             )}
-            <Typography
-              style={{
-                width: "50%",
-                margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
-              }}
-            >
-              Subtotal: ${subtotal}
-            </Typography>
+
+
+            <div style={{ display: "flex", justifyContent: "space-between", flexDirection: "row" }}>
+              <Typography
+                style={{
+                  width: "50%",
+                  margin: "1rem 0",
+                  color: "black",
+                  fontWeight: "bold",
+                }}
+              >
+                Subtotal: ${subtotal}
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isPriority}
+                    onChange={(event) => setIsPriority(event.target.checked)}
+                  />
+                }
+                label="Orden Prioritaria"
+                style={{ fontSize: "0.8rem", color: `${isPriority ? "red" : "gray"}`, fontWeight: "bold" }}
+              />
+            </div>
             <div>
               <Button
                 fullWidth
