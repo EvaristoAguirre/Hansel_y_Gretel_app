@@ -46,7 +46,8 @@ type OrderContextType = {
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => Promise<void>;
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
@@ -330,7 +331,8 @@ const OrderProvider = ({
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => {
     if (!id) {
       return;
@@ -346,6 +348,7 @@ const OrderProvider = ({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,
           comment: comment,
+          isPriority: isPriority
         }),
       });
 

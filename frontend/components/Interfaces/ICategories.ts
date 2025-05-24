@@ -1,5 +1,5 @@
 export interface ICategory {
-  id: string | null;
+  id: string;
   name: string;
   isActive: boolean;
 }
