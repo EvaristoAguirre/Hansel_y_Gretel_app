@@ -124,11 +124,13 @@ export class PrinterService {
         '\x1D\x21\x00', // Tamaño normal para productos
         '\x1B\x4D\x00', // Tipografía estándar
         ...orderData.products.map((p) => {
-          const name = this.normalizeText(p.name);
+          const name = this.normalizeText(p.name.toLocaleUpperCase());
           const comment = this.normalizeText(p.commentOfProduct || '');
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
           const lines = [];
+
+          lines.push('\x1B\x45\x01'); // Negrita ON
 
           if (name.length + quantityText.length + 1 <= maxLineLength) {
             lines.push(
@@ -144,11 +146,15 @@ export class PrinterService {
             lines.push(nameLine2);
           }
 
+          lines.push('\x1B\x45\x00'); // Negrita OFF
+
           if (comment) {
+            lines.push('\x1B\x61\x00'); // Alinear izquierda
             lines.push(comment);
+            lines.push('\x1B\x61\x01'); // Centrar
           }
 
-          lines.push(''); // espacio entre productos
+          lines.push(' '); // espacio entre productos
           return lines.join('\n');
         }),
         '\x1B\x61\x01', // Centrar
