@@ -101,46 +101,64 @@ export class PrinterService {
 
       const commands = [
         '\x1B\x40', // Inicializar impresora
-        '\x1B\x74\x02', // Establecer codificación Windows-1252 (para caracteres latinos)
+        '\x1B\x74\x02', // Codificación Windows-1252
         '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
         `${orderData.isPriority ? '- PEDIDO PRIORITARIO -' : ' '} \n\n`,
-        '\x1B\x61\x01', // Centrar texto
+        '\x1B\x61\x01', // Centrar
         '\x1D\x21\x11', // Texto doble tamaño
-        'COMANDA COCINA\n\n',
-        '\x1D\x21\x00', // Texto normal
-        '------------------------------\n',
-        '\x1D\x21\x00', // Texto normal
-        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}\n`,
+        '=== COMANDA COCINA ===\n',
+        '\x1D\x21\x00', // Tamaño normal
+        '----------------------------------------\n',
+        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })}\n`,
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
-        '------------------------------\n',
+        '----------------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
-        `${'PRODUCTO'.padEnd(22)}CANT\n`,
+        `PRODUCTO${' '.repeat(35)}CANT\n`,
         '\x1B\x45\x00', // Negrita OFF
-        '------------------------------\n',
-        '\x1D\x21\x11', // Texto doble tamaño
-        ...orderData.products.map(
-          (p) =>
-            `${this.normalizeText(p.name).substring(0, 35).padEnd(35)} x ${p.quantity.toString().padStart(2)}\n
-              ${this.normalizeText(p.commentOfProduct || '')}`,
-        ),
-        '\x1D\x21\x00', // Texto normal
-        '------------------------------\n',
-        `\x1B\x61\x00`, // Alinear izquierda
-        '\x1B\x61\x01', // Centrar texto
-        '------------------------------\n',
+        '----------------------------------------\n',
+        '\x1D\x21\x00', // Tamaño normal para productos
+        '\x1B\x4D\x00', // Tipografía estándar
+        ...orderData.products.map((p) => {
+          const name = this.normalizeText(p.name);
+          const comment = this.normalizeText(p.commentOfProduct || '');
+          const quantityText = `x${p.quantity.toString().padStart(2)}`;
+          const maxLineLength = 48;
+          const lines = [];
+
+          if (name.length + quantityText.length + 1 <= maxLineLength) {
+            lines.push(
+              name.padEnd(maxLineLength - quantityText.length) + quantityText,
+            );
+          } else {
+            const nameLine1 = name.substring(0, maxLineLength);
+            const nameLine2 =
+              name
+                .substring(maxLineLength, maxLineLength * 2)
+                .padEnd(maxLineLength - quantityText.length) + quantityText;
+            lines.push(nameLine1);
+            lines.push(nameLine2);
+          }
+
+          if (comment) {
+            lines.push(comment);
+          }
+
+          lines.push(''); // espacio entre productos
+          return lines.join('\n');
+        }),
+        '\x1B\x61\x01', // Centrar
+        '----------------------------------------\n',
         '\x1B\x42\x01\x02', // Pitido
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
       // const secondPrintSuccess = await this.sendRawCommand(commands);
-
-      // if (!firstPrintSuccess || !secondPrintSuccess) {
-      //   throw new Error('Print command failed');
-      // }
-
-      // sudo ifconfig en0 -alias 192.168.0.100
 
       if (!firstPrintSuccess) {
         throw new Error('Print command failed');
@@ -220,30 +238,30 @@ export class PrinterService {
         '\x1D\x21\x11', // Texto doble tamaño
         'HANSEL Y GRETEL\n',
         '\x1D\x21\x00', // Texto normal
-        '-----------------------------\n',
+        '-----------------------------------\n',
         `${dateStr} - ${timeStr}\n`,
         `Mesa: ${this.normalizeTextToTicket(tableName)}\n`,
         `Comanda: ${commandNumber}\n`,
-        '-----------------------------\n',
+        '-----------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
         'CANT PRODUCTO           P.UNIT  TOTAL\n',
         '\x1B\x45\x00', // Negrita OFF
-        '-----------------------------\n',
+        '-----------------------------------\n',
         ...products.map(formatProductLine),
-        '-----------------------------\n',
+        '-----------------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
         `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
         `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
         '\x1B\x61\x01', // Centrar texto
         '\x1B\x45\x01', // Negrita ON
-        '-----------------------------\n',
+        '-----------------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
         `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
         `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
-        '-----------------------------\n',
+        '-----------------------------------\n',
         'DOCUMENTO NO VALIDO COMO FACTURA\n',
         'Solicite su factura en caja.\n',
         'Gracias por su visita!\n',
