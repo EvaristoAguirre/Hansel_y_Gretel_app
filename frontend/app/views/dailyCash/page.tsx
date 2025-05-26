@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import { UserRole } from '@/components/Enums/user';
 import LoadingLottie from '@/components/Loader/Loading';
