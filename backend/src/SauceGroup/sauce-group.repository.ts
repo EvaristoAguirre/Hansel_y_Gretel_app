@@ -1,6 +1,9 @@
 import { SauceGroup } from './sauce-group.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,20 +11,48 @@ import {
 import { Repository } from 'typeorm';
 import { CreateSauceGroupDto } from 'src/DTOs/create-sauce-group.dto';
 import { UpdateSauceGroupDto } from 'src/DTOs/update-sauce-group.dto';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
 
 @Injectable()
 export class SauceGroupRepository {
   constructor(
     @InjectRepository(SauceGroup)
     private readonly sauceGroupRepository: Repository<SauceGroup>,
+    private readonly ingredientService: IngredientService,
   ) {}
 
   async createSauceGroup(
     createSauceGroupDto: CreateSauceGroupDto,
   ): Promise<SauceGroup> {
+    const { name, sauces } = createSauceGroupDto;
+    const existingGroup = await this.sauceGroupRepository.findOne({
+      where: { name: createSauceGroupDto.name, isActive: true },
+    });
+    if (existingGroup) {
+      throw new ConflictException(
+        `Sauce group with name "${createSauceGroupDto.name}" already exists`,
+      );
+    }
+    if (!name) {
+      throw new BadRequestException('Name is required for sauce group');
+    }
+    if (!sauces || sauces.length === 0) {
+      throw new BadRequestException(
+        'At least one sauce is required for the group',
+      );
+    }
     try {
-      return await this.sauceGroupRepository.save(createSauceGroupDto);
+      const sauceGroup = new SauceGroup();
+      sauceGroup.name = name;
+      for (const sauce of sauces) {
+        const existingSauce = await this.ingredientRepository.findOne({
+          where: { id: sauce, isActive: true },
+        });
+      }
+      return await this.sauceGroupRepository.save(sauceGroup);
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error creating sauce group',
         error,

@@ -33,5 +33,5 @@ export class CreateIngredientDto {
 
   @IsBoolean()
   @IsOptional()
-  isTopping?: boolean;
+  isSauce?: boolean;
 }

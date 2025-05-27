@@ -52,34 +52,6 @@ export class IngredientRepository {
   }
 
   // ------- con envio de stock estandarizado
-  async getAllToppings(
-    page: number,
-    limit: number,
-  ): Promise<IngredientResponseDTO[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-
-    try {
-      const ingredients = await this.ingredientRepository.find({
-        where: { isActive: true, isTopping: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
-      });
-      return await this.adaptIngredientsResponse(ingredients);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching ingredients',
-        error.message,
-      );
-    }
-  }
-
-  // ------- con envio de stock estandarizado
   async getIngredientById(id: string): Promise<IngredientResponseDTO> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -162,10 +134,14 @@ export class IngredientRepository {
 
     try {
       const ingredient = this.ingredientRepository.create(createData);
+      if (createData.isSauce === true) {
+        ingredient.isSauce = true;
+      } else {
+        ingredient.isSauce = false;
+      }
       if (unitOfMeasureId) {
         const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
-        console.log(unitOfMeasure);
         if (!unitOfMeasure) {
           throw new BadRequestException('Unit of measure not found');
         }
@@ -289,6 +265,89 @@ export class IngredientRepository {
       }
       throw new InternalServerErrorException(
         'Error deleting the ingredient',
+        error.message,
+      );
+    }
+  }
+
+  // ------- con envio de stock estandarizado
+  async getAllSauces(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+
+    try {
+      const ingredients = await this.ingredientRepository.find({
+        where: { isActive: true, isSauce: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
+      });
+      return await this.adaptIngredientsResponse(ingredients);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching ingredients',
+        error.message,
+      );
+    }
+  }
+
+  async getSauceById(id: string): Promise<IngredientResponseDTO> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const sauce = await this.ingredientRepository.findOne({
+        where: { id, isActive: true, isSauce: true },
+        relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
+      });
+      if (!sauce) {
+        throw new NotFoundException(`Sauce with ID: ${id} not found`);
+      }
+      return await this.adaptIngredientResponse(sauce);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the sauce',
+        error.message,
+      );
+    }
+  }
+
+  async getSauceByName(name: string): Promise<IngredientResponseDTO> {
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('Name parameter is required');
+    }
+    try {
+      const sauce = await this.ingredientRepository.findOne({
+        where: { name: ILike(name), isSauce: true },
+      });
+      if (!sauce) {
+        throw new NotFoundException(`Sauce with name: ${name} not found`);
+      }
+      return await this.adaptIngredientResponse(sauce);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the sauce',
         error.message,
       );
     }
