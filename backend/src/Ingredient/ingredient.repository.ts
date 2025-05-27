@@ -52,6 +52,34 @@ export class IngredientRepository {
   }
 
   // ------- con envio de stock estandarizado
+  async getAllToppings(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+
+    try {
+      const ingredients = await this.ingredientRepository.find({
+        where: { isActive: true, isTopping: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
+      });
+      return await this.adaptIngredientsResponse(ingredients);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching ingredients',
+        error.message,
+      );
+    }
+  }
+
+  // ------- con envio de stock estandarizado
   async getIngredientById(id: string): Promise<IngredientResponseDTO> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -274,6 +302,7 @@ export class IngredientRepository {
       description: ingredient.description,
       cost: ingredient.cost,
       type: ingredient.type,
+      isTopping: ingredient.isTopping,
       unitOfMeasure: ingredient.unitOfMeasure
         ? {
             id: ingredient.unitOfMeasure.id,

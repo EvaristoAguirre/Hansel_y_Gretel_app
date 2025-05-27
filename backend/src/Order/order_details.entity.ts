@@ -26,9 +26,6 @@ export class OrderDetails {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column()
-  batchId: string;
-
   @Column({ nullable: true })
   commentOfProduct: string;
 

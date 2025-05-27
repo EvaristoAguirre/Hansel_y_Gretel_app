@@ -12,4 +12,5 @@ export class IngredientResponseDTO {
   stock?: StockResponseDTO | null;
   type: 'masa' | 'volumen';
   unitOfMeasure?: UnitOfMeasureResponseDTO | null;
+  isTopping: boolean;
 }

@@ -20,6 +20,13 @@ export class IngredientService {
     return this.ingredientRepository.getAllIngredients(page, limit);
   }
 
+  async getAllToppings(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
+    return this.ingredientRepository.getAllToppings(page, limit);
+  }
+
   async getIngredientById(id: string): Promise<IngredientResponseDTO> {
     return await this.ingredientRepository.getIngredientById(id);
   }
