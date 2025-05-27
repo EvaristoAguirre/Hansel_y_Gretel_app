@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  Autocomplete,
-  TextField,
   Button,
   List,
   ListItem,
@@ -9,8 +7,6 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  FormGroup,
-  Checkbox,
   FormControlLabel,
   Switch,
 } from "@mui/material";
@@ -18,21 +14,17 @@ import { Add, Remove, Delete, Comment } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
-import { cancelOrder, deleteOrder } from "@/api/order";
-import Swal from "sweetalert2";
-import { useAuth } from "@/app/context/authContext";
 import { useProducts } from "../Hooks/useProducts";
 import useOrder from "../Hooks/useOrder";
 import LoadingLottie from "../Loader/Loading";
-import { IOrderDetails } from "../Interfaces/IOrderDetails";
-import { SelectedProductsI } from "../Interfaces/IProducts";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import AutoGrowTextarea from "../Utils/Textarea";
 import { fetchCategories } from "@/api/categories";
 import { ICategory } from "../Interfaces/ICategories";
 import { searchProducts } from "@/api/products";
-import SearchBar from "../Utils/Autocomplete";
 import AutoCompleteProduct from "../Utils/Autocomplete";
+import { CategorySelector } from "./filterCategories";
+import { useAuth } from "@/app/context/authContext";
 
 export interface Product {
   price: number;
@@ -91,6 +83,7 @@ const OrderEditor = ({
   useEffect(() => {
     token && fetchCategories(token).then((categories = []) => setCategories(categories));
   }, []);
+
   const confirmarPedido: () => Promise<void> = async () => {
     if (selectedOrderByTable) {
       setLoading(true);
@@ -176,6 +169,11 @@ const OrderEditor = ({
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
+  const [showCategories, setShowCategories] = useState(false);
+
+  const handleToggle = () => {
+    setShowCategories((prev) => !prev);
+  };
 
   return loading ? (
     <LoadingLottie />
@@ -214,28 +212,12 @@ const OrderEditor = ({
             <h2>Seleccionar productos</h2>
           </div>
           <Box sx={{ borderRadius: "5px" }}>
-            <FormGroup row>
-              {categories.map((cat) => (
-                <FormControlLabel
-                  key={cat.id}
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={selectedCats.includes(cat.id)}
-                      onChange={(e) => {
-                        setSelectedCats((prev) =>
-                          e.target.checked
-                            ? [...prev, cat.id]
-                            : prev.filter((c) => c !== cat.id)
-                        );
-                      }}
-                    />
+            <CategorySelector
+              categories={categories}
+              selected={selectedCats}
+              onChangeSelected={setSelectedCats}
+            />
 
-                  }
-                  label={capitalizeFirstLetter(cat.name)}
-                />
-              ))}
-            </FormGroup>
 
             <AutoCompleteProduct
               options={productosDisponibles}
