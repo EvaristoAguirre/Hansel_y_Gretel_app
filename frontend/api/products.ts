@@ -137,7 +137,10 @@ export const searchProducts = async (searchTerm: string, token: string, selected
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ "categories": [selectedCategoryId] })
+      body: JSON.stringify(
+        selectedCategoryId ? { categories: [selectedCategoryId] } : {}
+      )
+
     });
 
     if (!response.ok) {
@@ -156,7 +159,7 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 };
 
 
-export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
+export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string[] | null) => {
   try {
     const isNumeric = !isNaN(Number(searchTerm));
     const queryParams = new URLSearchParams({
@@ -170,7 +173,7 @@ export const searchProductsNotProm = async (searchTerm: string, token: string, s
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ "categories": [selectedCategoryId] })
+      body: JSON.stringify({ "categories": selectedCategoryId })
     });
 
     if (!response.ok) {

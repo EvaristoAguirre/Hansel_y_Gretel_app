@@ -4,6 +4,7 @@ import TextField from "@mui/material/TextField";
 import { ProductCreated } from "../Interfaces/IProducts";
 import { Iingredient } from "../Interfaces/Ingredients";
 import { use } from 'react';
+import { capitalizeFirstLetter } from "./CapitalizeFirstLetter";
 
 interface AutoCompleteProductProps {
   options: ProductCreated[];
@@ -36,7 +37,7 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
       )}
       renderOption={(props, product) => (
         <li {...props} key={String(product.id)}>
-          {`${product.name} - (Código: ${product.code})`}
+          {`${capitalizeFirstLetter(product.name)}  - (Código: ${product.code})`}
         </li>
       )}
     />

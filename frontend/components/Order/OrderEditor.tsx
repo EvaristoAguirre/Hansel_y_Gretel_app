@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  Autocomplete,
-  TextField,
   Button,
   List,
   ListItem,
@@ -9,21 +7,24 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Add, Remove, Delete, Comment } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
-import { cancelOrder, deleteOrder } from "@/api/order";
-import Swal from "sweetalert2";
-import { useAuth } from "@/app/context/authContext";
 import { useProducts } from "../Hooks/useProducts";
 import useOrder from "../Hooks/useOrder";
 import LoadingLottie from "../Loader/Loading";
-import { IOrderDetails } from "../Interfaces/IOrderDetails";
-import { SelectedProductsI } from "../Interfaces/IProducts";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import AutoGrowTextarea from "../Utils/Textarea";
+import { fetchCategories } from "@/api/categories";
+import { ICategory } from "../Interfaces/ICategories";
+import { searchProducts } from "@/api/products";
+import AutoCompleteProduct from "../Utils/Autocomplete";
+import { CategorySelector } from "./filterCategories";
+import { useAuth } from "@/app/context/authContext";
 
 export interface Product {
   price: number;
@@ -74,9 +75,16 @@ const OrderEditor = ({
   const [loading, setLoading] = useState(false);
   const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  // const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const token = getAccessToken();
+  const [isPriority, setIsPriority] = useState<boolean>(false);
 
+  useEffect(() => {
+    token && fetchCategories(token).then((categories = []) => setCategories(categories));
+  }, []);
 
-  const confirmarPedido = async () => {
+  const confirmarPedido: () => Promise<void> = async () => {
     if (selectedOrderByTable) {
       setLoading(true);
       try {
@@ -84,7 +92,8 @@ const OrderEditor = ({
           selectedOrderByTable.id,
           selectedProducts,
           selectedOrderByTable.numberCustomers,
-          selectedOrderByTable.comment
+          selectedOrderByTable.comment,
+          isPriority
         );
         setSelectedProducts([]);
         handleCompleteStep();
@@ -123,7 +132,7 @@ const OrderEditor = ({
   };
 
   /**
-   * 
+   *
    * @param productId - El ID del producto a eliminar
    * @returns La función `handleDeleteProductAndComment` elimina un producto del contexto y su comentario asociado en el estado local.
    * Si el producto eliminado estaba siendo editado, se cancela la edición.
@@ -136,6 +145,36 @@ const OrderEditor = ({
       return newCommentInputs;
     });
   };
+
+  /**
+   * Fracción de código para buscar productos en base a nombre,
+   * código o categorías seleccionadas.
+   */
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
+
+  const searchProductsFiltered = async (term: string, categories: string[]) => {
+    const trimmedTerm = term.trim();
+    const results = token && await searchProducts(trimmedTerm, token, categories.join(','));
+    if (results) setProductosDisponibles(results);
+  };
+
+  const handleSearch = (value: string) => {
+    const trimmedValue = value.trim();
+    setSearchTerm(trimmedValue);
+    searchProductsFiltered(trimmedValue, selectedCats);
+  };
+
+  useEffect(() => {
+    searchProductsFiltered(searchTerm, selectedCats);
+  }, [selectedCats]);
+
+  const [showCategories, setShowCategories] = useState(false);
+
+  const handleToggle = () => {
+    setShowCategories((prev) => !prev);
+  };
+
   return loading ? (
     <LoadingLottie />
   ) : (
@@ -173,38 +212,17 @@ const OrderEditor = ({
             <h2>Seleccionar productos</h2>
           </div>
           <Box sx={{ borderRadius: "5px" }}>
-            <Autocomplete
+            <CategorySelector
+              categories={categories}
+              selected={selectedCats}
+              onChangeSelected={setSelectedCats}
+            />
+
+
+            <AutoCompleteProduct
               options={productosDisponibles}
-              getOptionLabel={(producto) =>
-                `${producto.name} - $${producto.price} (Código: ${producto.code})`
-              }
-              onInputChange={(event, value, reason) => {
-                const searchTerm = value.toLowerCase();
-                setProductosDisponibles(
-                  products.filter(
-                    (producto) =>
-                      producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code
-                        ?.toString()
-                        .toLowerCase()
-                        .includes(searchTerm)
-                  )
-                );
-              }}
-              onChange={(event, selectedProducto) => {
-                if (selectedProducto) {
-                  handleSelectedProducts(selectedProducto);
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Buscar productos por nombre o código"
-                  variant="outlined"
-                  fullWidth
-                  sx={{ label: { color: "black", fontSize: "1rem" } }}
-                />
-              )}
+              onSearch={(value) => handleSearch(value)}
+              onSelect={handleSelectedProducts}
             />
 
             {/* PRODUCTOS PRE-SELECCIONADOS */}
@@ -336,16 +354,30 @@ const OrderEditor = ({
                 No hay productos pre-seleccionados.
               </Typography>
             )}
-            <Typography
-              style={{
-                width: "50%",
-                margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
-              }}
-            >
-              Subtotal: ${subtotal}
-            </Typography>
+
+
+            <div style={{ display: "flex", justifyContent: "space-between", flexDirection: "row" }}>
+              <Typography
+                style={{
+                  width: "50%",
+                  margin: "1rem 0",
+                  color: "black",
+                  fontWeight: "bold",
+                }}
+              >
+                Subtotal: ${subtotal}
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isPriority}
+                    onChange={(event) => setIsPriority(event.target.checked)}
+                  />
+                }
+                label="Orden Prioritaria"
+                style={{ fontSize: "0.8rem", color: `${isPriority ? "red" : "gray"}`, fontWeight: "bold" }}
+              />
+            </div>
             <div>
               <Button
                 fullWidth
@@ -376,7 +408,7 @@ const OrderEditor = ({
                 }}
               >
                 <div
-                  className="w-2/4flex items-center 
+                  className="w-2/4flex items-center
                       justify-start m-2 text-[#856D5E]"
                 >
                   <h5>Productos confirmados:</h5>
