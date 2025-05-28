@@ -2,7 +2,6 @@ import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { OrderDetails } from 'src/Order/order_details.entity';
-import { Provider } from 'src/Provider/provider.entity';
 import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,
@@ -71,11 +70,6 @@ export class Product {
   })
   @JoinTable({ name: 'product_categories' })
   categories: Category[];
-
-  @ManyToOne(() => Provider, (provider) => provider.products, {
-    nullable: true,
-  })
-  provider: Provider;
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.product)
   orderDetails: OrderDetails[];
