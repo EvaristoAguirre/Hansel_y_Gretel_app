@@ -48,10 +48,6 @@ export class TableService {
     return this.tableRepository.getTableByName(name);
   }
 
-  async getTableByNumber(number: string): Promise<Table> {
-    return this.tableRepository.getTableByNumber(number);
-  }
-
   async updateTableState(tableId: string, state: TableState) {
     await this.tableRepository.updateTableState(tableId, state);
   }

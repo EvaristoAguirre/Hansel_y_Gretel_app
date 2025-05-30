@@ -25,12 +25,7 @@ export class TableRepository {
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
-    const existingTableByNumber = await this.tableRepository.findOne({
-      where: { number: tableData.number },
-    });
-    if (existingTableByNumber) {
-      throw new ConflictException('Table number already exists');
-    }
+
     const existingTableByName = await this.tableRepository.findOne({
       where: { name: tableData.name },
     });
@@ -144,8 +139,6 @@ export class TableRepository {
       const result = tables.map((table) => ({
         id: table.id,
         name: table.name,
-        coment: table.coment,
-        number: table.number,
         isActive: table.isActive,
         state: table.state,
         room: {
@@ -208,36 +201,6 @@ export class TableRepository {
       });
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
-      }
-      table.orders = table.orders.filter(
-        (order) =>
-          order.state === OrderState.OPEN ||
-          order.state === OrderState.PENDING_PAYMENT,
-      );
-      return table;
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error fetching the table', error);
-    }
-  }
-
-  async getTableByNumber(number: string): Promise<Table> {
-    const numberType = Number(number);
-    if (!number) {
-      throw new BadRequestException('Either number must be provided.');
-    }
-    try {
-      const table = await this.tableRepository.findOne({
-        where: { number: numberType },
-        relations: ['orders'],
-      });
-      if (!table) {
-        throw new NotFoundException(`Table with ID: ${number} not found`);
       }
       table.orders = table.orders.filter(
         (order) =>
