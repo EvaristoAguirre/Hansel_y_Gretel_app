@@ -1,5 +1,4 @@
 "use client";
-import { MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
 import {
   createContext,
@@ -22,6 +21,7 @@ import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";
 import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
+import { TableCreated } from "@/components/Interfaces/ITable";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -38,7 +38,7 @@ type OrderContextType = {
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (
-    mesa: MesaInterface,
+    mesa: TableCreated,
     cantidadPersonas: number,
     comentario: string
   ) => Promise<void>;
@@ -282,7 +282,7 @@ const OrderProvider = ({
   };
 
   const handleCreateOrder = async (
-    selectedMesa: MesaInterface,
+    selectedMesa: TableCreated,
     cantidadPersonas: number,
     comentario: string
   ) => {
@@ -402,7 +402,7 @@ const OrderProvider = ({
             ...selectedMesa,
             orders: [],
             state: TableState.AVAILABLE
-          } as MesaInterface);
+          } as TableCreated);
           Swal.fire({
             icon: "success",
             title: "Pedido cancelado",

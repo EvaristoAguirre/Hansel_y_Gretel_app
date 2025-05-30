@@ -1,5 +1,5 @@
-import { OrderState, TableState } from "../Enums/Enums";
-import { TableModalType } from "../Enums/table";
+import { OrderState } from "../Enums/Enums";
+import { TableCreated } from "./ITable";
 
 export interface PedidoInterface {
   id: string;
@@ -15,36 +15,6 @@ export interface MozoInterface {
 
 export interface IOrder {
   id: string;
-}
-
-export interface MesaInterface {
-  id: string;
-  name: string;
-  number: number | null;
-  coment: string;
-  state?: TableState;
-  room: ISala;
-  orders?: string[] | null;
-}
-
-export interface MesaForm {
-  id?: string;
-  name: string;
-  number: null | number;
-  coment: string;
-  state?: TableState;
-}
-
-export interface MesaCardProps {
-  mesa: MesaInterface;
-  handleOpenModal: (type: TableModalType, mesa?: MesaInterface) => void;
-  handleDelete: (id: string) => void;
-  setSelectedMesa: (mesa: MesaInterface) => void;
-}
-
-export interface MesaProps {
-  salaId: string;
-  onSelectMesa: (mesa: MesaInterface) => void;
 }
 
 export interface ISala {
@@ -64,6 +34,6 @@ export interface IOrder {
   date: Date;
   state: OrderState;
   isActive: boolean;
-  table: MesaInterface;
+  table: TableCreated;
 }
 

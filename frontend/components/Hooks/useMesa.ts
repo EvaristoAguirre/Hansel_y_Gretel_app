@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "../Order/useOrderStore";
 import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
-import { TableForm } from "../Interfaces/ITable";
+import { TableCreated, TableForm } from "../Interfaces/ITable";
 import { TableModalType } from "../Enums/table";
 
 const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const { getAccessToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [selectedMesa, setSelectedMesa] = useState<TableCreated | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<TableModalType>(TableModalType.CREATE);
   const [form, setForm] = useState<TableForm>({
@@ -28,7 +26,7 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   } = useTableStore();
 
   const { orders } = useOrderStore();
-  const handleOpenModal = (type: TableModalType, mesa?: MesaInterface) => {
+  const handleOpenModal = (type: TableModalType, mesa?: TableCreated) => {
     setModalType(type);
     if (type === TableModalType.EDIT && mesa) {
       setForm({
@@ -56,9 +54,6 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
 
   useEffect(() => {
     const token = getAccessToken();
-    if (token) {
-      setToken(token);
-    }
     async function fetchTables() {
       try {
         const response = await fetch(URI_TABLE, {

@@ -1,8 +1,7 @@
 'useClient';
 import React, { useState } from "react";
-import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
-import { TableCreated, useTableStore } from "./useTableStore";
+import { useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 import TablesStatus from "./TablesStatus";
@@ -12,8 +11,14 @@ import { useAuth } from "@/app/context/authContext";
 import { useNameTableForm } from "./useNameTableForm";
 import TableModal from "./TableModal";
 import { TableModalType } from "../Enums/table";
+import { TableCreated } from "../Interfaces/ITable";
 
-const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
+export interface TableProps {
+  salaId: string;
+  onSelectMesa: (mesa: TableCreated) => void;
+}
+
+const Table: React.FC<TableProps> = ({ salaId, onSelectMesa }) => {
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
@@ -27,12 +32,10 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     handleCreateTable,
     handleEdit,
     handleDelete,
-    // setForm,
   } = useMesa(salaId, setNameTable);
 
   const { tables } = useTableStore();
 
-  const { selectedMesa } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
   const { userRoleFromToken } = useAuth();
   const role = userRoleFromToken();

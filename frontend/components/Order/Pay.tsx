@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
 import { TableState } from "../Enums/Enums";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";
+import { TableCreated } from "../Interfaces/ITable";
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -39,7 +39,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     if (selectedOrderByTable && selectedMesa) {
       const paidOrder = await orderToClosed(selectedOrderByTable.id, token);
       const closedTable = await editTable(
-        selectedMesa.id,
         { ...selectedMesa, state: TableState.CLOSED },
         token
       );
@@ -56,11 +55,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   };
 
   const handleTableAvailable = async (
-    selectedMesa: MesaInterface,
+    selectedMesa: TableCreated,
     token: string
   ) => {
     const tableEdited = await editTable(
-      selectedMesa.id,
       { ...selectedMesa, state: TableState.AVAILABLE },
       token
     );

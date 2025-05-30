@@ -1,6 +1,5 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { MesaCardProps, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -10,8 +9,9 @@ import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
 import { TableModalType } from "../Enums/table";
+import { TableCardProps, TableCreated } from "../Interfaces/ITable";
 
-const TableCard: React.FC<MesaCardProps> = ({
+const TableCard: React.FC<TableCardProps> = ({
   mesa, handleOpenModal, handleDelete
 }) => {
   const mesaColors = {
@@ -20,7 +20,7 @@ const TableCard: React.FC<MesaCardProps> = ({
     pending_payment: "#f9b32d",
     closed: "#1f7cad",
   };
-  const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
+  const { handleSelectMesa, selectedMesa } = useRoomContext();
   const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
   const { userRoleFromToken } = useAuth();
   const [role, setRole] = useState<string | null>(null);
@@ -29,12 +29,10 @@ const TableCard: React.FC<MesaCardProps> = ({
     setRole(userRoleFromToken());
   }, []);
 
-  const handleClickMesa = (table: MesaInterface) => {
+  const handleClickMesa = (table: TableCreated) => {
     const isTheSameTable: boolean = table?.id === selectedMesa?.id;
     return selectedMesa && isTheSameTable ? handleSelectMesa(null) : handleSelectMesa(table);
   };
-
-
 
   return (
     <div

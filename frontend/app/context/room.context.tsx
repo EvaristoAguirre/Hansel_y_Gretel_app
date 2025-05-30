@@ -1,13 +1,15 @@
-import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
+import { ISala } from '@/components/Interfaces/Cafe_interfaces';
+import { TableCreated } from '@/components/Interfaces/ITable';
 import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from './authContext';
+
 type RoomContextType = {
   salas: ISala[];
   selectedSala: ISala | null;
-  selectedMesa: MesaInterface | null;
-  setSelectedMesa: (mesa: MesaInterface | null) => void;
+  selectedMesa: TableCreated | null;
+  setSelectedMesa: (mesa: TableCreated | null) => void;
   view: "mesaEditor" | "pedidoEditor" | null;
   modalOpen: boolean;
   editingSala: ISala | null;
@@ -18,7 +20,7 @@ type RoomContextType = {
   handleSelectSala: (sala: ISala | null) => void;
   handleSaveSala: (sala: { id?: string; name: string }) => void;
   handleDeleteSala: () => void;
-  handleSelectMesa: (mesa: MesaInterface | null) => void;
+  handleSelectMesa: (mesa: TableCreated | null) => void;
   handleAbrirPedido: () => void;
   handleVolverAMesaEditor: () => void;
   handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, sala: ISala) => void;
@@ -59,13 +61,12 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const [token, setToken] = useState<string | null>(null);
   const [salas, setSalas] = useState<ISala[]>([]);
   const [selectedSala, setSelectedSala] = useState<ISala | null>(null);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [selectedMesa, setSelectedMesa] = useState<TableCreated | null>(null);
   const [view, setView] = useState<"mesaEditor" | "pedidoEditor" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSala, setEditingSala] = useState<ISala | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuSala, setMenuSala] = useState<ISala | null>(null);
-
 
   useEffect(() => {
     const token = getAccessToken();
@@ -195,7 +196,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
    * Se setea la orden de la mesa en `selectedOrderByTable`.
    * Se limpia la información de la mesa saliente mediante `handleResetSelectedOrder`.
    */
-  const handleSelectMesa = async (mesa: MesaInterface | null) => {
+  const handleSelectMesa = async (mesa: TableCreated | null) => {
     setSelectedMesa(mesa);
   };
 
@@ -204,7 +205,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     setSelectedMesa({
       ...selectedMesa,
       orders: newOrder,
-    } as MesaInterface);
+    } as TableCreated);
   };
 
   const handleAbrirPedido = () => {

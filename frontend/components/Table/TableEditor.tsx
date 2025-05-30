@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
 import { useOrderContext } from "../../app/context/order.context";
 import { editTable } from "@/api/tables";
@@ -10,6 +9,7 @@ import { useRoomContext } from "../../app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
+import { TableCreated } from "../Interfaces/ITable";
 
 
 
@@ -61,11 +61,10 @@ const TableEditor = ({
    * se llama al endopoint para abrir la mesa
    * este cambia estado de la mesa a 'OPEN'
    */
-  const handleOpenTable = async (selectedMesa: MesaInterface) => {
+  const handleOpenTable = async (selectedMesa: TableCreated) => {
     const token = getAccessToken();
     if (!token) return;
     const tableEdited = await editTable(
-      selectedMesa.id,
       { ...selectedMesa, state: TableState.OPEN },
       token
     );
@@ -78,7 +77,7 @@ const TableEditor = ({
   useEffect(() => {
     connectWebSocket();
   }, []);
-  
+
   return (
     <div
       style={{
@@ -170,7 +169,7 @@ const TableEditor = ({
                     handleOpenTable(selectedMesa);
                     handleCompleteStep();
                     handleNextStep();
-                   
+
                   } else {
                     if (selectedOrderByTable?.id) {
 
