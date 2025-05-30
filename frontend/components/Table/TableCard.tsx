@@ -9,6 +9,7 @@ import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
 import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
+import { TableModalType } from "../Enums/table";
 
 const TableCard: React.FC<MesaCardProps> = ({
   mesa, handleOpenModal, handleDelete
@@ -103,7 +104,7 @@ const TableCard: React.FC<MesaCardProps> = ({
                   sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleOpenModal("edit", mesa);
+                    handleOpenModal(TableModalType.EDIT, mesa);
                   }}
                 >
                   <EditIcon />

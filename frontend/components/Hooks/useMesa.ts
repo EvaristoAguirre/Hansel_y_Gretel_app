@@ -1,57 +1,47 @@
 import { useEffect, useState } from "react";
 import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-import { TableState } from "../Enums/Enums";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
-import { MesaForm } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "../Order/useOrderStore";
 import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
+import { TableForm } from "../Interfaces/ITable";
+import { TableModalType } from "../Enums/table";
 
-export const useMesa = (salaId: string) => {
+const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
   const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"create" | "edit">("create");
-
-  const [form, setForm] = useState<MesaForm>({
-    id: "",
-    name: "",
-    number: null,
-    coment: "",
-    state: TableState.AVAILABLE,
+  const [modalType, setModalType] = useState<TableModalType>(TableModalType.CREATE);
+  const [form, setForm] = useState<TableForm>({
+    name: ""
   });
 
   const {
     tables,
     setTables,
-    addTable,
     removeTable,
     updateTable,
     connectWebSocket,
   } = useTableStore();
 
   const { orders } = useOrderStore();
-  const handleOpenModal = (type: "create" | "edit", mesa?: MesaInterface) => {
+  const handleOpenModal = (type: TableModalType, mesa?: MesaInterface) => {
     setModalType(type);
-    if (type === "edit" && mesa) {
+    if (type === TableModalType.EDIT && mesa) {
       setForm({
         id: mesa.id,
         name: mesa.name,
-        number: mesa.number,
-        coment: mesa.coment,
-        state: mesa.state,
       });
+      setNameTable(mesa.name);
     } else {
       setForm({
         id: "",
         name: "",
-        number: null,
-        coment: "",
-        state: TableState.AVAILABLE,
       });
+      setNameTable("")
     }
     setModalOpen(true);
   };
@@ -59,11 +49,9 @@ export const useMesa = (salaId: string) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
-      number: null,
-      coment: "",
-      state: TableState.AVAILABLE,
     });
     setModalOpen(false);
+    setNameTable("")
   };
 
   useEffect(() => {
@@ -89,8 +77,7 @@ export const useMesa = (salaId: string) => {
     connectWebSocket();
   }, [setTables, connectWebSocket, orders]);
 
-  const handleCreate = async (mesaData: MesaForm) => {
-
+  const handleCreateTable = async (name: string, roomId: string) => {
     try {
       const response = await fetch(URI_TABLE, {
         method: "POST",
@@ -98,40 +85,42 @@ export const useMesa = (salaId: string) => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${getAccessToken()}`,
         },
-        body: JSON.stringify({ ...form, roomId: salaId }),
+        body: JSON.stringify({ name, roomId }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error:", errorData);
+        handleCloseModal();
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
-
-      const newTable = await response.json();
-      // addTable(newTable);
-
       Swal.fire("Éxito", "Mesa creada correctamente.", "success");
-
       handleCloseModal();
     } catch (error) {
       Swal.fire("Error", "No se pudo crear la mesa.", "error");
     }
   };
 
-  const handleEdit = async (id: string, data: MesaForm) => {
+  const handleEdit = async (data: TableForm) => {
     const token = getAccessToken();
     if (!token) return;
-    if (!id) {
-      Swal.fire("Error", "ID de la mesa no válido.", "error");
-      return;
-    }
     try {
-      const response = await editTable(id, data, token);
-      updateTable(response);
-      Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");
+      const response = await editTable(data, token);
+
+      if (!response.ok) {
+        handleCloseModal();
+      } else {
+        updateTable(response);
+        Swal.fire("Éxito", "Mesa actualizada correctamente.", "success");
+        handleCloseModal();
+      }
+
     } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "No se pudo actualizar la mesa.", "error");
+      if (error instanceof Error && error.message.includes('Next.js')) {
+        console.error(error);
+      } else {
+        Swal.fire("Error", "No se pudo actualizar la mesa.", "error");
+      }
+      handleCloseModal();
     }
   };
 
@@ -173,7 +162,7 @@ export const useMesa = (salaId: string) => {
     setForm,
     handleOpenModal,
     handleCloseModal,
-    handleCreate,
+    handleCreateTable,
     handleEdit,
     setSelectedMesa,
     handleDelete,

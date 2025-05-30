@@ -1,8 +1,7 @@
 'useClient';
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { MesaProps } from "../Interfaces/Cafe_interfaces";
 import useMesa from "../Hooks/useMesa";
-import MesaModal from "./TableModal";
 import { TableCreated, useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
@@ -10,20 +9,26 @@ import TablesStatus from "./TablesStatus";
 import TableCard from "./TableCard";
 import { UserRole } from "../Enums/user";
 import { useAuth } from "@/app/context/authContext";
+import { useNameTableForm } from "./useNameTableForm";
+import TableModal from "./TableModal";
+import { TableModalType } from "../Enums/table";
 
 const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
+  const { getAccessToken } = useAuth();
+  const token = getAccessToken();
 
+  const { nameTable, setNameTable, errorNameTable } = useNameTableForm(token);
   const {
     modalOpen,
     modalType,
     form,
     handleOpenModal,
     handleCloseModal,
-    handleCreate,
+    handleCreateTable,
     handleEdit,
     handleDelete,
-    setForm,
-  } = useMesa(salaId);
+    // setForm,
+  } = useMesa(salaId, setNameTable);
 
   const { tables } = useTableStore();
 
@@ -43,11 +48,7 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
   );
 
 
-  useEffect(() => {
-    if (selectedMesa) {
-      setForm({ ...form, id: selectedMesa.id });
-    }
-  }, [selectedMesa, tables]);
+  const { selectedSala } = useRoomContext();
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -58,7 +59,7 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
               variant="outlined"
               color="primary"
               className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
-              onClick={() => handleOpenModal("create")}
+              onClick={() => handleOpenModal(TableModalType.CREATE)}
             >
               + Agregar mesa
             </Button>
@@ -91,24 +92,21 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
             No hay mesas en este estado
           </p>
         )}
-        <MesaModal
+        <TableModal
           open={modalOpen}
-          type={modalType}
-          form={form}
           onClose={handleCloseModal}
-          onSave={(dataToSend) => {
-            if (modalType === "create") {
-              handleCreate(dataToSend);
-            } else if (modalType === "edit" && form.id) {
-              handleEdit(form.id, dataToSend);
-            }
-          }}
-          onChange={(field, value) =>
-            setForm((prev) => ({
-              ...prev,
-              [field]: field === "number" ? Number(value) : value,
-            }))
+          onSave={
+            modalType === TableModalType.CREATE
+              ? () => handleCreateTable(nameTable, salaId)
+              : (modalType === TableModalType.EDIT && form?.id)
+                ? () => handleEdit(form ?? {})
+                : () => Promise.resolve() // valor por defecto
           }
+          nombre={nameTable}
+          room={selectedSala?.name ?? ''}
+          setNombre={setNameTable}
+          errorNombre={errorNameTable}
+          modalType={modalType}
         />
       </div>
     </div>
