@@ -63,10 +63,4 @@ export class TableController {
   async getTableByName(@Param('name') name: string): Promise<Table> {
     return this.tableService.getTableByName(name);
   }
-
-  @Get('by-number/:number')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getTableByNumber(@Param('number') number: string): Promise<Table> {
-    return this.tableService.getTableByNumber(number);
-  }
 }
