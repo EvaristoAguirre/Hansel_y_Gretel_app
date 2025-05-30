@@ -1,6 +1,5 @@
 import { OrderState, TableState } from "../Enums/Enums";
-import { TableCreated } from "../Table/useTableStore";
-// import { OrderDetailsCreated } from "../Order/useOrderDetailsStore";
+import { TableModalType } from "../Enums/table";
 
 export interface PedidoInterface {
   id: string;
@@ -16,7 +15,6 @@ export interface MozoInterface {
 
 export interface IOrder {
   id: string;
-  // state: OrderState;
 }
 
 export interface MesaInterface {
@@ -29,7 +27,6 @@ export interface MesaInterface {
   orders?: string[] | null;
 }
 
-
 export interface MesaForm {
   id?: string;
   name: string;
@@ -40,35 +37,19 @@ export interface MesaForm {
 
 export interface MesaCardProps {
   mesa: MesaInterface;
-  handleOpenModal: (type: "create" | "edit", mesa?: MesaInterface) => void;
+  handleOpenModal: (type: TableModalType, mesa?: MesaInterface) => void;
   handleDelete: (id: string) => void;
   setSelectedMesa: (mesa: MesaInterface) => void;
 }
 
-export interface MesaModalProps {
-  open: boolean;
-  type: "create" | "edit";
-  form: MesaForm;
-  onClose: () => void;
-  onSave: (data: MesaForm) => void;
-  onChange: (field: keyof MesaForm, value: any) => void;
-}
-
-// export interface MesaProps {
-//   salaId: string;
-//   onSelectMesa: (mesa: MesaInterface) => void;
-// }
 export interface MesaProps {
   salaId: string;
-  // onSelectMesa: (mesaId: string) => void;
   onSelectMesa: (mesa: MesaInterface) => void;
 }
 
 export interface ISala {
   id: string;
   name: string;
-  // isActive: boolean;
-  // tables: MesaInterface[];
 }
 
 export interface SalaModalProps {
@@ -84,7 +65,5 @@ export interface IOrder {
   state: OrderState;
   isActive: boolean;
   table: MesaInterface;
-  // orderDetails: OrderDetailsCreated[];
 }
 
-//---------------------------------------------------------------------
