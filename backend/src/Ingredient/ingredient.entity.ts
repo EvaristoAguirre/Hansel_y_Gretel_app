@@ -13,7 +13,7 @@ import {
 import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, IsOptional, Min } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { SauceGroup } from 'src/SauceGroup/sauce-group.entity';
+import { SauceGroup } from 'src/ToppingsGroup/toppings-group.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {

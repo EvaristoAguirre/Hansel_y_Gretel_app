@@ -16,7 +16,7 @@ import {
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { SauceGroup } from 'src/SauceGroup/sauce-group.entity';
+import { SauceGroup } from 'src/ToppingsGroup/toppings-group.entity';
 
 @Entity({ name: 'products' })
 export class Product {

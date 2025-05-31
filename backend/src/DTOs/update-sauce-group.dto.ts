@@ -1,1 +1,1 @@
-export class UpdateSauceGroupDto {}
+export class UpdateToppingsGroupDto {}

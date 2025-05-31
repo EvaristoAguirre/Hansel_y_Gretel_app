@@ -1,9 +1,9 @@
 import { IsArray, IsString } from 'class-validator';
 
-export class CreateSauceGroupDto {
+export class CreateToppingsGroupDto {
   @IsString()
   name: string;
 
   @IsArray()
-  sauces: string[];
+  toppings: string[];
 }

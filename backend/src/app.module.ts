@@ -18,6 +18,7 @@ import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
+import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     StockModule,
     SeederModule,
     UnitOfMeasurenModule,
+    ToppingsGroupsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,8 +2,8 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { Product } from 'src/Product/product.entity';
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({ name: 'sauce_groups' })
-export class SauceGroup {
+@Entity({ name: 'toppings_groups' })
+export class ToppingsGroup {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -13,9 +13,9 @@ export class SauceGroup {
   @Column({ default: true })
   isActive: boolean;
 
-  @ManyToMany(() => Ingredient, (sauce) => sauce.sauceGroups)
-  sauces: Ingredient[];
+  @ManyToMany(() => Ingredient, (sauce) => sauce.toppingsGroups)
+  toppings: Ingredient[];
 
-  @ManyToMany(() => Product, (product) => product.availableSauceGroups)
+  @ManyToMany(() => Product, (product) => product.availableToppingsGroups)
   products: Product[];
 }
