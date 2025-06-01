@@ -17,6 +17,7 @@ import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
+import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 
 @Controller('ingredient')
 @UseGuards(RolesGuard)
@@ -30,14 +31,6 @@ export class IngredientController {
     @Query('limit') limit: number = 100,
   ): Promise<IngredientResponseDTO[]> {
     return await this.ingredientService.getAllIngredients(page, limit);
-  }
-  @Get('toppings')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getAllToppings(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
-  ): Promise<IngredientResponseDTO[]> {
-    return await this.ingredientService.getAllToppings(page, limit);
   }
 
   @Get('by-name')
@@ -75,5 +68,28 @@ export class IngredientController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteIngredient(@Param('id') id: string) {
     return await this.ingredientService.deleteIngredient(id);
+  }
+
+  // -------------------- TOPPINGS --------------------
+  @Get('toppings')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getAllToppings(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ): Promise<ToppingResponseDto[]> {
+    return await this.ingredientService.getAllToppings(page, limit);
+  }
+
+  @Get('toppings/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getToppingById(@Param('id') id: string): Promise<ToppingResponseDto> {
+    return await this.ingredientService.getToppingById(id);
+  }
+  @Get('toppings/by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getToppingByName(
+    @Query('name') name: string,
+  ): Promise<ToppingResponseDto> {
+    return await this.ingredientService.getToppingByName(name);
   }
 }

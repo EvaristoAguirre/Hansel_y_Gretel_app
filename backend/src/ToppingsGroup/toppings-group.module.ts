@@ -7,6 +7,7 @@ import { Product } from 'src/Product/product.entity';
 import { ToppingsGroup } from './toppings-group.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ToppingsGroupsService } from './toppings-group.service';
+import { ToppingsGroupRepository } from './toppings-group.repository';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ToppingsGroupsService } from './toppings-group.service';
     IngredientModule,
   ],
   controllers: [ToppingsGroupsController],
-  providers: [ToppingsGroupsService],
+  providers: [ToppingsGroupsService, ToppingsGroupRepository],
   exports: [ToppingsGroupsService],
 })
 export class ToppingsGroupsModule {}

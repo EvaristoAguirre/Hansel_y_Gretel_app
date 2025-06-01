@@ -5,5 +5,5 @@ export class CreateToppingsGroupDto {
   name: string;
 
   @IsArray()
-  toppings: string[];
+  toppingsIds: string[];
 }

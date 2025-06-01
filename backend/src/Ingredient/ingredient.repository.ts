@@ -14,6 +14,7 @@ import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
+import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 
 @Injectable()
 export class IngredientRepository {
@@ -134,10 +135,10 @@ export class IngredientRepository {
 
     try {
       const ingredient = this.ingredientRepository.create(createData);
-      if (createData.isSauce === true) {
-        ingredient.isSauce = true;
+      if (createData.isTopping === true) {
+        ingredient.isTopping = true;
       } else {
-        ingredient.isSauce = false;
+        ingredient.isTopping = false;
       }
       if (unitOfMeasureId) {
         const unitOfMeasure =
@@ -270,11 +271,12 @@ export class IngredientRepository {
     }
   }
 
+  // --------------------- TOPPINGS ----------------
   // ------- con envio de stock estandarizado
-  async getAllSauces(
+  async getAllToppings(
     page: number,
     limit: number,
-  ): Promise<IngredientResponseDTO[]> {
+  ): Promise<ToppingResponseDto[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
@@ -282,13 +284,13 @@ export class IngredientRepository {
     }
 
     try {
-      const ingredients = await this.ingredientRepository.find({
-        where: { isActive: true, isSauce: true },
+      const toppings = await this.ingredientRepository.find({
+        where: { isActive: true, isTopping: true },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
-      return await this.adaptIngredientsResponse(ingredients);
+      return await this.adaptToppingsResponse(toppings);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -298,7 +300,7 @@ export class IngredientRepository {
     }
   }
 
-  async getSauceById(id: string): Promise<IngredientResponseDTO> {
+  async getToppingById(id: string): Promise<ToppingResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
@@ -308,14 +310,14 @@ export class IngredientRepository {
       );
     }
     try {
-      const sauce = await this.ingredientRepository.findOne({
-        where: { id, isActive: true, isSauce: true },
+      const topping = await this.ingredientRepository.findOne({
+        where: { id, isActive: true, isTopping: true },
         relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
       });
-      if (!sauce) {
-        throw new NotFoundException(`Sauce with ID: ${id} not found`);
+      if (!topping) {
+        throw new NotFoundException(`topping with ID: ${id} not found`);
       }
-      return await this.adaptIngredientResponse(sauce);
+      return await this.adaptToppingResponse(topping);
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -330,18 +332,18 @@ export class IngredientRepository {
     }
   }
 
-  async getSauceByName(name: string): Promise<IngredientResponseDTO> {
+  async getToppingByName(name: string): Promise<ToppingResponseDto> {
     if (!name || name.trim().length === 0) {
       throw new BadRequestException('Name parameter is required');
     }
     try {
-      const sauce = await this.ingredientRepository.findOne({
-        where: { name: ILike(name), isSauce: true },
+      const topping = await this.ingredientRepository.findOne({
+        where: { name: ILike(name), isTopping: true },
       });
-      if (!sauce) {
-        throw new NotFoundException(`Sauce with name: ${name} not found`);
+      if (!topping) {
+        throw new NotFoundException(`topping with name: ${name} not found`);
       }
-      return await this.adaptIngredientResponse(sauce);
+      return await this.adaptToppingResponse(topping);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -353,6 +355,39 @@ export class IngredientRepository {
     }
   }
 
+  async findToppingById(id: string): Promise<Ingredient> {
+    if (!id) {
+      throw new BadRequestException('ID must be provided');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const topping = await this.ingredientRepository.findOne({
+        where: { id, isActive: true, isTopping: true },
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
+      });
+      if (!topping) {
+        throw new NotFoundException(`Topping with ID: ${id} not found`);
+      }
+      return topping;
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the topping',
+        error.message,
+      );
+    }
+  }
+
+  // --------------------- Ajuste de respuesta ----------------
   private adaptIngredientResponse(ingredient: any): IngredientResponseDTO {
     return {
       id: ingredient.id,
@@ -390,5 +425,45 @@ export class IngredientRepository {
     ingredients: any[],
   ): IngredientResponseDTO[] {
     return ingredients.map(this.adaptIngredientResponse);
+  }
+
+  private adaptToppingResponse(topping: any): ToppingResponseDto {
+    return {
+      id: topping.id,
+      name: topping.name,
+      isActive: topping.isActive,
+      description: topping.description,
+      cost: topping.cost,
+      type: topping.type,
+      isTopping: topping.isTopping,
+      extraCost: topping.extraCost ?? null,
+      toppingsGroupId: topping.toppingsGroupId ?? null,
+      toppingsGroupName: topping.toppingsGroupName ?? null,
+      unitOfMeasure: topping.unitOfMeasure
+        ? {
+            id: topping.unitOfMeasure.id,
+            name: topping.unitOfMeasure.name,
+            abbreviation: topping.unitOfMeasure.abbreviation,
+          }
+        : null,
+      stock: topping.stock
+        ? {
+            id: topping.stock.id,
+            quantityInStock: topping.stock.quantityInStock,
+            minimumStock: topping.stock.minimumStock,
+            unitOfMeasure: topping.stock.unitOfMeasure
+              ? {
+                  id: topping.stock.unitOfMeasure.id,
+                  name: topping.stock.unitOfMeasure.name,
+                  abbreviation: topping.stock.unitOfMeasure.abbreviation,
+                }
+              : null,
+          }
+        : null,
+    };
+  }
+
+  private adaptToppingsResponse(toppings: any[]): ToppingResponseDto[] {
+    return toppings.map(this.adaptToppingResponse);
   }
 }

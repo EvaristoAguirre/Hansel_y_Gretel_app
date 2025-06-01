@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Ingredient } from 'src/Ingredient/ingredient.entity';
+// import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { CreateToppingsGroupDto } from 'src/DTOs/create-sauce-group.dto';
 import { UpdateToppingsGroupDto } from 'src/DTOs/update-sauce-group.dto';
@@ -25,7 +25,7 @@ export class ToppingsGroupRepository {
   async createToppingsGroup(
     createToppingsGroupDto: CreateToppingsGroupDto,
   ): Promise<ToppingsGroup> {
-    const { name, toppings } = createToppingsGroupDto;
+    const { name, toppingsIds } = createToppingsGroupDto;
     const existingGroup = await this.toppingsGroupRepository.findOne({
       where: { name: createToppingsGroupDto.name, isActive: true },
     });
@@ -37,20 +37,23 @@ export class ToppingsGroupRepository {
     if (!name) {
       throw new BadRequestException('Name is required for toppings group');
     }
-    if (!toppings || toppings.length === 0) {
+    if (!toppingsIds || toppingsIds.length === 0) {
       throw new BadRequestException(
         'At least one topping is required for the group',
       );
     }
     try {
-      const sauceGroup = new ToppingsGroup();
-      sauceGroup.name = name;
-      for (const topping of toppings) {
-        const existingTopping = await this.ingredientService.findOne({
-          where: { id: topping, isActive: true },
-        });
+      const toppingsGroup = new ToppingsGroup();
+      toppingsGroup.name = name;
+      for (const toppingId of toppingsIds) {
+        const existingTopping =
+          await this.ingredientService.findToppingById(toppingId);
+        if (!existingTopping) {
+          throw new NotFoundException(`Topping with ID ${toppingId} not found`);
+        }
+        toppingsGroup.toppings.push(existingTopping);
       }
-      return await this.toppingsGroupRepository.save(sauceGroup);
+      return await this.toppingsGroupRepository.save(toppingsGroup);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
