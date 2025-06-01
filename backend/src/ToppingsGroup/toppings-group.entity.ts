@@ -13,6 +13,10 @@ export class ToppingsGroup {
   @Column({ default: true })
   isActive: boolean;
 
+  // @Column({ type: 'decimal', precision: 10, scale: 2 })
+  // quantityOftopping: number;
+
+  // ------------------------  Relaciones --------------
   @ManyToMany(() => Ingredient, (sauce) => sauce.toppingsGroups)
   toppings: Ingredient[];
 

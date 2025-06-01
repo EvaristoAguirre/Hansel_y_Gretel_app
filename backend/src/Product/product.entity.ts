@@ -16,7 +16,8 @@ import {
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { SauceGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ProductTopping } from 'src/Ingredient/toppingProduct.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -54,10 +55,10 @@ export class Product {
   type: 'product' | 'promotion' | 'simple';
 
   @Column({ default: false })
-  allowsSauces: boolean; // Determina si el producto acepta salsas
+  allowsToppings: boolean; // Determina si el producto acepta salsas
 
   @Column({ type: 'json', nullable: true })
-  sauceSettings?: {
+  toppingsSettings?: {
     maxSelection: number; // Máximo de salsas elegibles (ej: 3)
     isOptional: boolean; // Si es obligatorio elegir al menos 1
     chargeExtra: boolean; // Si las salsas tienen costo adicional
@@ -100,6 +101,12 @@ export class Product {
   })
   unitOfMeasure: UnitOfMeasure;
 
-  @ManyToMany(() => SauceGroup, (group) => group.products)
-  availableSauceGroups: SauceGroup[];
+  @ManyToMany(() => ToppingsGroup, (group) => group.products)
+  availableToppingsGroups: ToppingsGroup[];
+
+  @OneToMany(
+    () => ProductIngredient,
+    (productIngredient) => productIngredient.product,
+  )
+  productToppings: ProductTopping[];
 }

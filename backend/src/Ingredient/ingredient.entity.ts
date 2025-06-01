@@ -13,7 +13,8 @@ import {
 import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, IsOptional, Min } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { SauceGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ProductTopping } from './toppingProduct.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {
@@ -39,7 +40,7 @@ export class Ingredient {
   type: 'masa' | 'volumen' | 'unidad';
 
   @Column({ default: false })
-  isSauce: boolean;
+  isTopping: boolean;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   @IsOptional()
@@ -59,6 +60,9 @@ export class Ingredient {
   @JoinColumn({ name: 'unitOfMeasureId' })
   unitOfMeasure: UnitOfMeasure;
 
-  @ManyToMany(() => SauceGroup, (group) => group.sauces)
-  sauceGroups: SauceGroup[];
+  @ManyToMany(() => ToppingsGroup, (group) => group.toppings)
+  toppingsGroups: ToppingsGroup[];
+
+  @OneToMany(() => ProductTopping, (productToppings) => productToppings.topping)
+  productToppings: ProductTopping[];
 }
