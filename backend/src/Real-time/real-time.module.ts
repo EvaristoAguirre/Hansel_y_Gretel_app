@@ -33,6 +33,7 @@ import { ToppingsGroupWSListener } from './listeners/toppingsGroup-events.listen
     OrderDetailsWSListener,
     StockWSListener,
     IngredientWSListener,
+    ToppingsGroupWSListener,
   ],
 })
 export class RealTimeModule {
