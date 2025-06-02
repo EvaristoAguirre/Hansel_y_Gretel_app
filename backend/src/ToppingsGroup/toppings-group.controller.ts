@@ -11,8 +11,8 @@ import { ToppingsGroupsService } from './toppings-group.service';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { ToppingsGroup } from './toppings-group.entity';
-import { CreateToppingsGroupDto } from 'src/DTOs/create-sauce-group.dto';
-import { UpdateToppingsGroupDto } from 'src/DTOs/update-sauce-group.dto';
+import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
+import { UpdateToppingsGroupDto } from 'src/DTOs/update-toppings-group.dto';
 
 @Controller('toppings-group')
 export class ToppingsGroupsController {

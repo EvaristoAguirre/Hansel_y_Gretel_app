@@ -13,7 +13,7 @@ export default registerAs('typeorm', () => ({
   autoLoadEntities: true,
   synchronize: true, // pasar a false en producción
   dropSchema: false,
-  logging: ['all'],
+  logging: ['error'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],

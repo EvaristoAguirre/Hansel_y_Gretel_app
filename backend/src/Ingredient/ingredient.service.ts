@@ -59,6 +59,20 @@ export class IngredientService {
 
   // -------------------- TOPPINGS --------------------
 
+  async updateTopping(
+    id: string,
+    updateData: UpdateIngredientDto,
+  ): Promise<Ingredient> {
+    const toppingUpdated = await this.ingredientRepository.updateTopping(
+      id,
+      updateData,
+    );
+    await this.eventEmitter.emit('topping.updated', {
+      topping: toppingUpdated,
+    });
+    return toppingUpdated;
+  }
+
   async getAllToppings(
     page: number,
     limit: number,

@@ -15,6 +15,7 @@ import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
+import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
 
 @Injectable()
 export class IngredientRepository {
@@ -277,6 +278,7 @@ export class IngredientRepository {
     page: number,
     limit: number,
   ): Promise<ToppingResponseDto[]> {
+    console.log('getAllToppings called with page:', page, 'and limit:', limit);
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
@@ -294,7 +296,7 @@ export class IngredientRepository {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching ingredients',
+        'Error fetching toppings',
         error.message,
       );
     }
@@ -333,25 +335,32 @@ export class IngredientRepository {
   }
 
   async getToppingByName(name: string): Promise<ToppingResponseDto> {
-    if (!name || name.trim().length === 0) {
-      throw new BadRequestException('Name parameter is required');
+    if (!name || typeof name !== 'string') {
+      throw new BadRequestException('Valid name parameter is required');
     }
+
+    const trimmedName = name.trim();
+    if (trimmedName.length === 0) {
+      throw new BadRequestException('Name cannot be empty');
+    }
+
     try {
       const topping = await this.ingredientRepository.findOne({
-        where: { name: ILike(name), isTopping: true },
+        where: {
+          name: ILike(trimmedName),
+          isTopping: true,
+        },
       });
+
       if (!topping) {
-        throw new NotFoundException(`topping with name: ${name} not found`);
+        throw new NotFoundException(
+          `Topping with name "${trimmedName}" not found`,
+        );
       }
-      return await this.adaptToppingResponse(topping);
+      return this.adaptToppingResponse(topping);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the sauce',
-        error.message,
-      );
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Error fetching topping');
     }
   }
 
@@ -382,6 +391,64 @@ export class IngredientRepository {
       }
       throw new InternalServerErrorException(
         'Error fetching the topping',
+        error.message,
+      );
+    }
+  }
+
+  async updateTopping(
+    id: string,
+    updateToppingDto: UpdateToppingDto,
+  ): Promise<Ingredient> {
+    if (!id) {
+      throw new BadRequestException('ID is required to update topping');
+    }
+
+    const topping = await this.ingredientRepository.findOne({
+      where: { id, isTopping: true },
+      relations: ['unitOfMeasure'],
+    });
+
+    if (!topping) {
+      throw new NotFoundException(`Topping with ID ${id} not found`);
+    }
+
+    if (updateToppingDto.name && updateToppingDto.name !== topping.name) {
+      const existing = await this.ingredientRepository.findOne({
+        where: { name: updateToppingDto.name, isTopping: true },
+      });
+      if (existing) {
+        throw new ConflictException(
+          `Topping with name "${updateToppingDto.name}" already exists`,
+        );
+      }
+    }
+
+    try {
+      Object.assign(topping, updateToppingDto);
+
+      if (updateToppingDto.unitOfMeasureId) {
+        const unit = await this.unitOfMeasureService.getUnitOfMeasureById(
+          updateToppingDto.unitOfMeasureId,
+        );
+
+        if (!unit) {
+          throw new NotFoundException(
+            `Unit of measure with ID ${updateToppingDto.unitOfMeasureId} not found`,
+          );
+        }
+        topping.unitOfMeasure = unit;
+      }
+
+      return await this.ingredientRepository.save(topping);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      if (error.code === '23505') {
+        throw new ConflictException('Topping name must be unique');
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to update topping',
         error.message,
       );
     }
@@ -437,8 +504,6 @@ export class IngredientRepository {
       type: topping.type,
       isTopping: topping.isTopping,
       extraCost: topping.extraCost ?? null,
-      toppingsGroupId: topping.toppingsGroupId ?? null,
-      toppingsGroupName: topping.toppingsGroupName ?? null,
       unitOfMeasure: topping.unitOfMeasure
         ? {
             id: topping.unitOfMeasure.id,

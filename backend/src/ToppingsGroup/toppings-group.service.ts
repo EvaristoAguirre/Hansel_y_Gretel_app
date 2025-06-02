@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ToppingsGroupRepository } from './toppings-group.repository';
 import { ToppingsGroup } from './toppings-group.entity';
-import { CreateToppingsGroupDto } from 'src/DTOs/create-sauce-group.dto';
+import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()

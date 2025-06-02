@@ -1,6 +1,12 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { Product } from 'src/Product/product.entity';
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ name: 'toppings_groups' })
 export class ToppingsGroup {
@@ -13,11 +19,13 @@ export class ToppingsGroup {
   @Column({ default: true })
   isActive: boolean;
 
-  // @Column({ type: 'decimal', precision: 10, scale: 2 })
-  // quantityOftopping: number;
-
   // ------------------------  Relaciones --------------
-  @ManyToMany(() => Ingredient, (sauce) => sauce.toppingsGroups)
+  @ManyToMany(() => Ingredient)
+  @JoinTable({
+    name: 'toppings_groups_ingredients',
+    joinColumn: { name: 'toppings_group_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'ingredient_id', referencedColumnName: 'id' },
+  })
   toppings: Ingredient[];
 
   @ManyToMany(() => Product, (product) => product.availableToppingsGroups)

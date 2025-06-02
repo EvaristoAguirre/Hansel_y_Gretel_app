@@ -14,6 +14,4 @@ export class ToppingResponseDto {
   unitOfMeasure?: UnitOfMeasureResponseDTO | null;
   isTopping: boolean;
   extraCost?: number | null;
-  toppingsGroupId?: string[] | null;
-  toppingsGroupName?: string | null;
 }

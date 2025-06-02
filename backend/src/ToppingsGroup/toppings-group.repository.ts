@@ -11,8 +11,8 @@ import {
 import { Repository } from 'typeorm';
 // import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
-import { CreateToppingsGroupDto } from 'src/DTOs/create-sauce-group.dto';
-import { UpdateToppingsGroupDto } from 'src/DTOs/update-sauce-group.dto';
+import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
+import { UpdateToppingsGroupDto } from 'src/DTOs/update-toppings-group.dto';
 
 @Injectable()
 export class ToppingsGroupRepository {
@@ -26,38 +26,46 @@ export class ToppingsGroupRepository {
     createToppingsGroupDto: CreateToppingsGroupDto,
   ): Promise<ToppingsGroup> {
     const { name, toppingsIds } = createToppingsGroupDto;
+
     const existingGroup = await this.toppingsGroupRepository.findOne({
-      where: { name: createToppingsGroupDto.name, isActive: true },
+      where: { name, isActive: true },
     });
     if (existingGroup) {
       throw new ConflictException(
-        `Toppings group with name "${createToppingsGroupDto.name}" already exists`,
+        `Toppings group with name "${name}" already exists`,
       );
     }
-    if (!name) {
-      throw new BadRequestException('Name is required for toppings group');
-    }
-    if (!toppingsIds || toppingsIds.length === 0) {
-      throw new BadRequestException(
-        'At least one topping is required for the group',
-      );
-    }
+
+    if (!name) throw new BadRequestException('Name is required');
+    if (!toppingsIds?.length)
+      throw new BadRequestException('At least one topping is required');
+
     try {
       const toppingsGroup = new ToppingsGroup();
       toppingsGroup.name = name;
+      toppingsGroup.toppings = [];
+
       for (const toppingId of toppingsIds) {
-        const existingTopping =
-          await this.ingredientService.findToppingById(toppingId);
-        if (!existingTopping) {
+        const topping = await this.ingredientService.findToppingById(toppingId);
+        if (!topping)
           throw new NotFoundException(`Topping with ID ${toppingId} not found`);
-        }
-        toppingsGroup.toppings.push(existingTopping);
+        toppingsGroup.toppings.push(topping);
       }
-      return await this.toppingsGroupRepository.save(toppingsGroup);
+
+      await this.toppingsGroupRepository.save(toppingsGroup);
+
+      const savedGroup = await this.toppingsGroupRepository.findOne({
+        where: { id: toppingsGroup.id },
+        relations: ['toppings'],
+      });
+
+      if (!savedGroup)
+        throw new InternalServerErrorException('Failed to load created group');
+      return savedGroup;
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error creating sauce group',
+        'Error creating toppings group',
         error,
       );
     }
@@ -67,25 +75,69 @@ export class ToppingsGroupRepository {
     id: string,
     updateToppingsGroupDto: UpdateToppingsGroupDto,
   ): Promise<ToppingsGroup> {
-    if (!id) {
-      throw new BadRequestException('ID is required to update toppings group');
+    if (!id) throw new BadRequestException('ID is required');
+
+    const { name, toppingsIds } = updateToppingsGroupDto;
+
+    if (!name && !toppingsIds) {
+      throw new BadRequestException(
+        'At least one field (name or toppingsIds) is required',
+      );
     }
-    if (
-      !updateToppingsGroupDto ||
-      Object.keys(updateToppingsGroupDto).length === 0
-    ) {
-      throw new BadRequestException('Update data is required');
-    }
+
     try {
-      const toppingsGroup = await this.getToppingsGroupById(id);
-      if (!toppingsGroup) {
-        throw new NotFoundException(`toppings group with ID ${id} not found`);
+      const existingGroup = await this.toppingsGroupRepository.findOne({
+        where: { id, isActive: true },
+        relations: ['toppings'],
+      });
+
+      if (!existingGroup) {
+        throw new NotFoundException(`Toppings group with ID ${id} not found`);
       }
-      Object.assign(toppingsGroup, updateToppingsGroupDto);
-      return await this.toppingsGroupRepository.save(toppingsGroup);
+
+      if (name && name !== existingGroup.name) {
+        const nameConflict = await this.toppingsGroupRepository.findOne({
+          where: { name, isActive: true },
+        });
+        if (nameConflict) {
+          throw new ConflictException(
+            `Toppings group with name "${name}" already exists`,
+          );
+        }
+        existingGroup.name = name;
+      }
+
+      if (toppingsIds) {
+        existingGroup.toppings = [];
+
+        for (const toppingId of toppingsIds) {
+          const topping =
+            await this.ingredientService.findToppingById(toppingId);
+          if (!topping) {
+            throw new NotFoundException(
+              `Topping with ID ${toppingId} not found`,
+            );
+          }
+          existingGroup.toppings.push(topping);
+        }
+      }
+
+      await this.toppingsGroupRepository.save(existingGroup);
+
+      const updatedGroup = await this.toppingsGroupRepository.findOne({
+        where: { id },
+        relations: ['toppings'],
+      });
+
+      if (!updatedGroup)
+        throw new InternalServerErrorException('Failed to load updated group');
+      return updatedGroup;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Error updating toppings group');
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error updating toppings group',
+        error.message,
+      );
     }
   }
 
@@ -96,6 +148,7 @@ export class ToppingsGroupRepository {
     try {
       const toppingsGroup = await this.toppingsGroupRepository.findOne({
         where: { id, isActive: true },
+        relations: ['toppings'],
       });
       if (!toppingsGroup) {
         throw new NotFoundException(`toppings group with ID ${id} not found`);
