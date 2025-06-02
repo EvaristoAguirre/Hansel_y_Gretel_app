@@ -30,8 +30,24 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const config = configService.get('typeorm');
-        return config;
+        const dbConfig = configService.get('typeorm');
+        const isDev = process.env.NODE_ENV !== 'production';
+
+        return {
+          type: dbConfig.type,
+          host: dbConfig.host,
+          port: dbConfig.port,
+          username: dbConfig.username,
+          password: dbConfig.password,
+          database: dbConfig.database,
+          autoLoadEntities: true,
+          synchronize: isDev, // solo true en desarrollo
+          dropSchema: false, // nunca true salvo que lo necesites puntualmente
+          logging: isDev ? ['query', 'error'] : ['error'],
+          schema: dbConfig.schema,
+          entities: dbConfig.entities,
+          migrations: dbConfig.migrations,
+        };
       },
     }),
     EventEmitterModule.forRoot(),
