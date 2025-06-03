@@ -2,7 +2,6 @@ import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { OrderDetails } from 'src/Order/order_details.entity';
-import { Provider } from 'src/Provider/provider.entity';
 import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,
@@ -17,6 +16,8 @@ import {
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ProductTopping } from 'src/Ingredient/toppingProduct.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -53,6 +54,16 @@ export class Product {
   @Column({ type: 'enum', enum: ['product', 'promotion', 'simple'] })
   type: 'product' | 'promotion' | 'simple';
 
+  @Column({ default: false })
+  allowsToppings: boolean; // Determina si el producto acepta salsas
+
+  @Column({ type: 'json', nullable: true })
+  toppingsSettings?: {
+    maxSelection: number; // Máximo de salsas elegibles (ej: 3)
+    isOptional: boolean; // Si es obligatorio elegir al menos 1
+    chargeExtra: boolean; // Si las salsas tienen costo adicional
+  };
+
   // ---------       Relaciones   -----------
 
   @ManyToMany(() => Category, (category) => category.products, {
@@ -60,11 +71,6 @@ export class Product {
   })
   @JoinTable({ name: 'product_categories' })
   categories: Category[];
-
-  @ManyToOne(() => Provider, (provider) => provider.products, {
-    nullable: true,
-  })
-  provider: Provider;
 
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.product)
   orderDetails: OrderDetails[];
@@ -94,4 +100,13 @@ export class Product {
     nullable: true,
   })
   unitOfMeasure: UnitOfMeasure;
+
+  @ManyToMany(() => ToppingsGroup, (group) => group.products)
+  availableToppingsGroups: ToppingsGroup[];
+
+  @OneToMany(
+    () => ProductIngredient,
+    (productIngredient) => productIngredient.product,
+  )
+  productToppings: ProductTopping[];
 }
