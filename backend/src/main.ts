@@ -38,7 +38,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
   await app.listen(3000, '0.0.0.0');
- 
+
   const port = app.getHttpServer().address().port;
   console.log(`Server listening on http://localhost:${port}`);
 }

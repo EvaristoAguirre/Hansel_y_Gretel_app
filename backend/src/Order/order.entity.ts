@@ -36,6 +36,8 @@ export class Order {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
+  //--------------- Relaciones ---------------- //
+
   @ManyToOne(() => Table, (table) => table.orders, {
     onDelete: 'SET NULL',
   })

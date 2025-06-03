@@ -3,11 +3,13 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   RelationId,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Exclude } from 'class-transformer';
+import { OrderDetailSauce } from './order_details_sauces.entity';
 
 @Entity({ name: 'order_details' })
 export class OrderDetails {
@@ -26,9 +28,6 @@ export class OrderDetails {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column()
-  batchId: string;
-
   @Column({ nullable: true })
   commentOfProduct: string;
 
@@ -45,4 +44,9 @@ export class OrderDetails {
 
   @RelationId((orderDetails: OrderDetails) => orderDetails.order)
   orderId: string;
+
+  @OneToMany(() => OrderDetailSauce, (sauce) => sauce.orderDetails, {
+    cascade: true,
+  })
+  sauces: OrderDetailSauce[];
 }

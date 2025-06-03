@@ -152,7 +152,6 @@ export class OrderRepository {
         order.table = table;
       }
       if (updateData.productsDetails) {
-        const batchId = Date.now().toString();
         const newProducts = [];
         let total = 0;
 
@@ -174,7 +173,6 @@ export class OrderRepository {
             subtotal: quantity * product.price,
             product,
             order,
-            batchId,
           });
 
           order.orderDetails.push(newDetail);

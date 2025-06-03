@@ -3,7 +3,7 @@ import {
   UnitOfMeasureResponseDTO,
 } from './stockResponse.dto';
 
-export class IngredientResponseDTO {
+export class ToppingResponseDto {
   id: string;
   name: string;
   isActive: boolean;
