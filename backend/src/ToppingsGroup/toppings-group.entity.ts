@@ -1,10 +1,11 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { Product } from 'src/Product/product.entity';
+import { ProductAvailableTopping } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import {
   Column,
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -28,6 +29,12 @@ export class ToppingsGroup {
   })
   toppings: Ingredient[];
 
-  @ManyToMany(() => Product, (product) => product.availableToppingsGroups)
-  products: Product[];
+  // @ManyToMany(() => Product, (product) => product.availableToppingsGroups)
+  // products: Product[];
+
+  @OneToMany(
+    () => ProductAvailableTopping,
+    (productTopping) => productTopping.toppingGroup,
+  )
+  productsAvailableIn: ProductAvailableTopping[];
 }

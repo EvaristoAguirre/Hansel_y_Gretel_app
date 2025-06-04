@@ -14,7 +14,7 @@ import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, IsOptional, Min } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
-import { ProductTopping } from './toppingProduct.entity';
+import { ProductTopping } from './productAvailableToppingsGroup.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {

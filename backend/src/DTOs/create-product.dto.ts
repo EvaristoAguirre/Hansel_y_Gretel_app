@@ -10,6 +10,8 @@ import {
   IsNotEmpty,
   ValidateNested,
   IsEnum,
+  IsBoolean,
+  IsJSON,
 } from 'class-validator';
 import { ProductIngredientDto } from './productIngredient.dto';
 import { Transform, Type } from 'class-transformer';
@@ -47,10 +49,6 @@ export class CreateProductDto {
   categories?: string[];
 
   @IsOptional()
-  @IsString()
-  providerId?: string;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductIngredientDto)
@@ -65,4 +63,34 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => PromotionProductDto)
   products?: PromotionProductDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  allowsToppings?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductToppingsGroupDto)
+  availableToppingGroups?: ProductToppingsGroupDto[];
+}
+
+export class ProductToppingsGroupDto {
+  @IsUUID()
+  toppingsGroupId: string;
+
+  @IsOptional()
+  @IsNumber()
+  quantityOfTopping: number;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasureId?: string;
+
+  @IsOptional()
+  @IsJSON()
+  settings?: {
+    maxSelection: number;
+    chargeExtra: boolean;
+  };
 }
