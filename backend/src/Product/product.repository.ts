@@ -27,6 +27,7 @@ import { StockService } from 'src/Stock/stock.service';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { ProductMapper } from './productMapper';
 
 @Injectable()
 export class ProductRepository {
@@ -55,7 +56,7 @@ export class ProductRepository {
       );
     }
     try {
-      return await this.productRepository.find({
+      const products = await this.productRepository.find({
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
@@ -68,8 +69,12 @@ export class ProductRepository {
           'promotionDetails.product',
           'stock',
           'stock.unitOfMeasure',
+          'availableToppingGroups',
+          'availableToppingGroups.toppingGroup',
+          'availableToppingGroups.toppingGroup.toppings',
         ],
       });
+      return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -183,6 +188,10 @@ export class ProductRepository {
         .leftJoinAndSelect('promotionDetails.product', 'promotionProduct')
         .leftJoinAndSelect('product.stock', 'stock')
         .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasureStock')
+        .leftJoinAndSelect(
+          'product.availableToppingGroups',
+          'availableToppingGroups',
+        )
         .where((qb) => {
           const subQuery = qb
             .subQuery()
@@ -198,7 +207,7 @@ export class ProductRepository {
         })
         .andWhere('product.isActive = :isActive', { isActive: true })
         .getMany();
-      return products;
+      return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
@@ -221,7 +230,13 @@ export class ProductRepository {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { categories, ingredients, type, ...productData } = productToCreate;
+      const {
+        categories,
+        ingredients,
+        type,
+        availableToppingGroups,
+        ...productData
+      } = productToCreate;
       await this.checkProductUniqueness(queryRunner, productData);
 
       if (type === 'promotion') {
@@ -397,6 +412,9 @@ export class ProductRepository {
           'promotionDetails.product',
           'stock',
           'stock.unitOfMeasure',
+          'availableToppingGroups',
+          'availableToppingGroups.toppingGroup',
+          'availableToppingGroups.toppingGroup.toppings',
         ],
         skip: offset,
         take: limit,
@@ -414,7 +432,7 @@ export class ProductRepository {
         );
       }
 
-      return products;
+      return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -490,6 +508,8 @@ export class ProductRepository {
         'promotionDetails.product',
         'stock',
         'stock.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
       ],
     });
 
@@ -497,7 +517,7 @@ export class ProductRepository {
       throw new NotFoundException('Promotion not found after creation');
     }
 
-    return promotionWithDetails;
+    return ProductMapper.toResponseDto(promotionWithDetails);
   }
 
   private async createCompositeProduct(
@@ -586,16 +606,10 @@ export class ProductRepository {
         'stock',
         'stock.unitOfMeasure',
         'unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
       );
-    }
-
-    const productWithRelations = await queryRunner.manager.findOne(Product, {
-      where: { id: savedProduct.id },
-      relations: relationsToLoad,
-    });
-
-    if (!productWithRelations) {
-      throw new NotFoundException('Product not found after creation');
     }
 
     if (
@@ -626,7 +640,7 @@ export class ProductRepository {
         const association = queryRunner.manager.create(
           ProductAvailableToppingGroup,
           {
-            product: productWithRelations,
+            product: savedProduct,
             toppingGroup: group,
             quantityOfTopping: groupDto.quantityOfTopping,
             unitOfMeasure: unit,
@@ -637,7 +651,16 @@ export class ProductRepository {
       }
     }
 
-    return productWithRelations;
+    const productWithRelations = await this.getProductWithRelations(
+      savedProduct.id,
+      'product',
+    );
+
+    if (!productWithRelations) {
+      throw new NotFoundException('Product not found after creation');
+    }
+
+    return ProductMapper.toResponseDto(productWithRelations);
   }
 
   private async createSimpleProduct(
@@ -672,20 +695,6 @@ export class ProductRepository {
 
     const savedProduct = await queryRunner.manager.save(product);
 
-    const productWithRelations = await queryRunner.manager.findOne(Product, {
-      where: { id: savedProduct.id },
-      relations: [
-        'categories',
-        'stock',
-        'stock.unitOfMeasure',
-        'unitOfMeasure',
-      ],
-    });
-
-    if (!productWithRelations) {
-      throw new NotFoundException('Product not found after creation');
-    }
-
     if (
       productToCreate.allowsToppings &&
       productToCreate.availableToppingGroups?.length
@@ -714,7 +723,7 @@ export class ProductRepository {
         const association = queryRunner.manager.create(
           ProductAvailableToppingGroup,
           {
-            product: productWithRelations,
+            product: savedProduct,
             toppingGroup: group,
             quantityOfTopping: groupDto.quantityOfTopping,
             unitOfMeasure: unit,
@@ -723,6 +732,26 @@ export class ProductRepository {
         );
         await queryRunner.manager.save(association);
       }
+    }
+    const productWithRelations = await queryRunner.manager.findOne(Product, {
+      where: { id: savedProduct.id },
+      relations: [
+        'categories',
+        'stock',
+        'stock.unitOfMeasure',
+        'unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
+      ],
+    });
+
+    // const productWithRelations = await this.getProductWithRelations(
+    //   savedProduct.id,
+    //   'simple',
+    // );
+
+    if (!productWithRelations) {
+      throw new NotFoundException('Product not found after creation');
     }
 
     await queryRunner.manager.save(Product, productWithRelations);
@@ -777,22 +806,10 @@ export class ProductRepository {
       );
     }
     const { categories, ingredients, ...otherAttributes } = updateData;
-    console.log('update data....', updateData);
+
     //producto simple
     if (!updateData.ingredients || updateData.ingredients.length === 0) {
-      const product = await queryRunner.manager.findOne(Product, {
-        where: { id: id, isActive: true },
-        relations: [
-          'categories',
-          'productIngredients',
-          'productIngredients.ingredient',
-          'productIngredients.unitOfMeasure',
-          'promotionDetails',
-          'promotionDetails.product',
-          'stock',
-          'stock.unitOfMeasure',
-        ],
-      });
+      const product = await this.getProductWithRelations(id, 'simple');
 
       if (!product) {
         throw new NotFoundException(`Product with ID: ${id} not found`);
@@ -820,12 +837,17 @@ export class ProductRepository {
         }
       }
 
+      if (updateData.availableToppingGroups) {
+        await queryRunner.manager.delete(ProductAvailableToppingGroup, {
+          product: { id: product.id },
+        });
+
+        await this.updateToppingsGroups(updateData, product, queryRunner);
+      }
+
       const updatedProduct = await queryRunner.manager.save(product);
 
-      const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
-        excludeExtraneousValues: true,
-      });
-      return instanceToPlain(productDto) as ProductResponseDto;
+      return ProductMapper.toResponseDto(updatedProduct);
 
       //------- cierre de la actualizacion de producto simple
     } else {
@@ -836,23 +858,7 @@ export class ProductRepository {
         );
       }
 
-      const product = await queryRunner.manager.findOne(Product, {
-        where: { id: id, isActive: true },
-        relations: [
-          'categories',
-          'productIngredients',
-          'productIngredients.ingredient',
-          'productIngredients.unitOfMeasure',
-          'promotionDetails',
-          'promotionDetails.product',
-          'stock',
-          'stock.unitOfMeasure',
-        ],
-      });
-
-      if (!product) {
-        throw new NotFoundException(`Product with ID: ${id} not found`);
-      }
+      const product = await this.getProductWithRelations(id, 'product');
 
       Object.assign(product, otherAttributes);
       product.cost = 0;
@@ -951,12 +957,18 @@ export class ProductRepository {
       );
 
       product.productIngredients = updatedIngredients;
+
+      if (updateData.availableToppingGroups) {
+        await queryRunner.manager.delete(ProductAvailableToppingGroup, {
+          product: { id: product.id },
+        });
+
+        await this.updateToppingsGroups(updateData, product, queryRunner);
+      }
+
       const updatedProduct = await queryRunner.manager.save(product);
 
-      const productDto = plainToInstance(ProductResponseDto, updatedProduct, {
-        excludeExtraneousValues: true,
-      });
-      return instanceToPlain(productDto) as ProductResponseDto;
+      return ProductMapper.toResponseDto(updatedProduct);
     }
   }
   private async updatePromotion(
@@ -979,6 +991,8 @@ export class ProductRepository {
         'promotionDetails.product',
         'stock',
         'stock.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
       ],
     });
     if (!promotion) {
@@ -1077,9 +1091,12 @@ export class ProductRepository {
         'promotionDetails.product',
         'stock',
         'stock.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
       ],
     });
-    return updatedPromotion;
+    return ProductMapper.toResponseDto(updatedPromotion);
   }
 
   //---- Estandarizado  -------- con el dto nuevo
@@ -1125,7 +1142,7 @@ export class ProductRepository {
         throw new NotFoundException(`No products found with ${searchCriteria}`);
       }
 
-      return products;
+      return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1146,7 +1163,10 @@ export class ProductRepository {
     }
     try {
       return await this.productRepository.find({
-        where: { type: 'product', isActive: true },
+        where: {
+          type: In(['product', 'simple']),
+          isActive: true,
+        },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['stock', 'stock.unitOfMeasure'],
@@ -1216,7 +1236,7 @@ export class ProductRepository {
     quantityToSell: number,
     type: 'product' | 'promotion' | 'simple',
   ) {
-    const entity = await this.getEntityWithRelations(id, type);
+    const entity = await this.getProductWithRelations(id, type);
     if (!entity) {
       throw new NotFoundException(`${type} not found`);
     }
@@ -1511,18 +1531,24 @@ export class ProductRepository {
     }
   }
 
-  private async getEntityWithRelations(
+  private async getProductWithRelations(
     id: string,
     type: 'product' | 'promotion' | 'simple',
-  ) {
+  ): Promise<Product> {
     const relations =
       type === 'product' || type === 'simple'
         ? [
+            'categories',
             'productIngredients',
             'productIngredients.ingredient',
             'productIngredients.unitOfMeasure',
+            'promotionDetails',
+            'promotionDetails.product',
             'stock',
             'stock.unitOfMeasure',
+            'availableToppingGroups',
+            'availableToppingGroups.toppingGroup',
+            // 'availableToppingGroups.toppingGroup.toppings',
           ]
         : [
             'promotionDetails',
@@ -1534,9 +1560,72 @@ export class ProductRepository {
             'promotionDetails.product.stock.unitOfMeasure',
           ];
 
-    return this.productRepository.findOne({
+    const product = await this.productRepository.findOne({
       where: { id, isActive: true, type },
       relations,
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID: ${id} not found`);
+    }
+
+    return product;
+  }
+
+  private async updateToppingsGroups(
+    updateData: UpdateProductDto,
+    product: Product,
+    queryRunner: QueryRunner,
+  ) {
+    const toppingRelations = await Promise.all(
+      updateData.availableToppingGroups.map(async (groupDto) => {
+        const toppingGroup = await queryRunner.manager.findOne(ToppingsGroup, {
+          where: { id: groupDto.toppingsGroupId, isActive: true },
+        });
+
+        if (!toppingGroup) {
+          throw new BadRequestException(
+            `ToppingsGroup with ID ${groupDto.toppingsGroupId} not found or inactive.`,
+          );
+        }
+
+        let unitOfMeasure: UnitOfMeasure | null = null;
+        if (groupDto.unitOfMeasureId) {
+          unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
+            where: { id: groupDto.unitOfMeasureId },
+          });
+
+          if (!unitOfMeasure) {
+            throw new BadRequestException(
+              `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
+            );
+          }
+        }
+
+        const toppingRelation = queryRunner.manager.create(
+          ProductAvailableToppingGroup,
+          {
+            product,
+            toppingGroup,
+            quantityOfTopping: groupDto.quantityOfTopping || 1,
+            unitOfMeasure: unitOfMeasure || undefined,
+            settings: groupDto.settings ?? null,
+          },
+        );
+
+        return queryRunner.manager.save(toppingRelation);
+      }),
+    );
+
+    product.availableToppingGroups = toppingRelations;
+    await queryRunner.manager.save(product);
+    return queryRunner.manager.findOne(Product, {
+      where: { id: product.id },
+      relations: [
+        'availableToppingGroups',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.unitOfMeasure',
+      ],
     });
   }
 }

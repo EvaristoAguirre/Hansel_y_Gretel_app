@@ -1,5 +1,5 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { ProductAvailableTopping } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import {
   Column,
   Entity,
@@ -33,8 +33,8 @@ export class ToppingsGroup {
   // products: Product[];
 
   @OneToMany(
-    () => ProductAvailableTopping,
+    () => ProductAvailableToppingGroup,
     (productTopping) => productTopping.toppingGroup,
   )
-  productsAvailableIn: ProductAvailableTopping[];
+  productsAvailableIn: ProductAvailableToppingGroup[];
 }

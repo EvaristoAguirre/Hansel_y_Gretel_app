@@ -11,7 +11,6 @@ import {
   ValidateNested,
   IsEnum,
   IsBoolean,
-  IsJSON,
 } from 'class-validator';
 import { ProductIngredientDto } from './productIngredient.dto';
 import { Transform, Type } from 'class-transformer';
@@ -88,7 +87,6 @@ export class ProductToppingsGroupDto {
   unitOfMeasureId?: string;
 
   @IsOptional()
-  @IsJSON()
   settings?: {
     maxSelection: number;
     chargeExtra: boolean;

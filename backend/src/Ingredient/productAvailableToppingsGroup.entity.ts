@@ -26,7 +26,7 @@ export class ProductAvailableToppingGroup {
   // ------------------------  Relaciones --------------
   @ManyToOne(
     () => UnitOfMeasure,
-    (unitOfMeasure) => unitOfMeasure.productToppings,
+    (unitOfMeasure) => unitOfMeasure.ProductAvailableToppingGroup,
   )
   @JoinColumn({ name: 'unitOfMeasureId' })
   unitOfMeasure: UnitOfMeasure;

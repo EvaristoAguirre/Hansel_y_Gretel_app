@@ -68,6 +68,16 @@ export class UpdateProductDto {
   @ValidateNested({ each: true })
   @Type(() => PromotionProductDto)
   products?: PromotionProductDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  allowsToppings?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductToppingsGroupDto)
+  availableToppingGroups?: ProductToppingsGroupDto[];
 }
 
 export class ProductIngredientDto {
@@ -82,4 +92,23 @@ export class ProductIngredientDto {
   @IsNotEmpty()
   @IsString()
   unitOfMeasureId: string;
+}
+
+export class ProductToppingsGroupDto {
+  @IsUUID()
+  toppingsGroupId: string;
+
+  @IsOptional()
+  @IsNumber()
+  quantityOfTopping: number;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasureId?: string;
+
+  @IsOptional()
+  settings?: {
+    maxSelection: number;
+    chargeExtra: boolean;
+  };
 }

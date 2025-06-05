@@ -16,7 +16,7 @@ import {
 } from 'typeorm';
 import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { ProductAvailableTopping } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -104,8 +104,8 @@ export class Product {
   // availableToppingsGroups: ToppingsGroup[];
 
   @OneToMany(
-    () => ProductAvailableTopping,
+    () => ProductAvailableToppingGroup,
     (availableTopping) => availableTopping.product,
   )
-  availableToppingGroups: ProductAvailableTopping[];
+  availableToppingGroups: ProductAvailableToppingGroup[];
 }
