@@ -86,7 +86,7 @@ export class ProductRepository {
     }
   }
 
-  async getProductById(id: string): Promise<Product> {
+  async getProductById(id: string): Promise<ProductResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
     }
@@ -98,12 +98,24 @@ export class ProductRepository {
     try {
       const product = await this.productRepository.findOne({
         where: { id, isActive: true },
-        relations: ['categories'],
+        relations: [
+          'categories',
+          'productIngredients',
+          'productIngredients.ingredient',
+          'productIngredients.unitOfMeasure',
+          'promotionDetails',
+          'promotionDetails.product',
+          'stock',
+          'stock.unitOfMeasure',
+          'availableToppingGroups',
+          'availableToppingGroups.toppingGroup',
+          'availableToppingGroups.toppingGroup.toppings',
+        ],
       });
       if (!product) {
         throw new NotFoundException(`Product not found with  id: ${id}`);
       }
-      return product;
+      return await ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -253,6 +265,7 @@ export class ProductRepository {
           !productToCreate.ingredients ||
           productToCreate.ingredients.length === 0
         ) {
+          console.log('entro a producto simple');
           const product = await this.createSimpleProduct(
             queryRunner,
             productToCreate,
@@ -260,6 +273,7 @@ export class ProductRepository {
           await queryRunner.commitTransaction();
           return product;
         } else {
+          console.log('entro a producto compuesto');
           const product = await this.createCompositeProduct(
             queryRunner,
             productToCreate,
@@ -525,6 +539,7 @@ export class ProductRepository {
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const { categories, ingredients, ...productData } = productToCreate;
+    console.log('adentro de crear producto compuesto:......', productToCreate);
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
       categoryEntities = await queryRunner.manager.find(Category, {
@@ -651,10 +666,12 @@ export class ProductRepository {
       }
     }
 
-    const productWithRelations = await this.getProductWithRelations(
-      savedProduct.id,
-      'product',
-    );
+    const productWithRelations =
+      await this.getProductWithRelationsByQueryRunner(
+        queryRunner,
+        savedProduct.id,
+        'product',
+      );
 
     if (!productWithRelations) {
       throw new NotFoundException('Product not found after creation');
@@ -806,9 +823,12 @@ export class ProductRepository {
       );
     }
     const { categories, ingredients, ...otherAttributes } = updateData;
-
     //producto simple
-    if (!updateData.ingredients || updateData.ingredients.length === 0) {
+    if (
+      !updateData.ingredients ||
+      updateData.ingredients.length === 0 ||
+      updateData.type === 'simple'
+    ) {
       const product = await this.getProductWithRelations(id, 'simple');
 
       if (!product) {
@@ -846,8 +866,15 @@ export class ProductRepository {
       }
 
       const updatedProduct = await queryRunner.manager.save(product);
-
-      return ProductMapper.toResponseDto(updatedProduct);
+      const updatedProductWithRelations = await this.getProductWithRelations(
+        updatedProduct.id,
+        updatedProduct.type,
+      );
+      console.log(
+        'updatedProduct:.....producto simple',
+        updatedProductWithRelations,
+      );
+      return ProductMapper.toResponseDto(updatedProductWithRelations);
 
       //------- cierre de la actualizacion de producto simple
     } else {
@@ -857,8 +884,7 @@ export class ProductRepository {
           'Ingredients are required for composite products',
         );
       }
-
-      const product = await this.getProductWithRelations(id, 'product');
+      const product = await this.getProductWithRelations(id, updateData.type);
 
       Object.assign(product, otherAttributes);
       product.cost = 0;
@@ -957,18 +983,27 @@ export class ProductRepository {
       );
 
       product.productIngredients = updatedIngredients;
-
+      console.log(
+        'updateData.availableToppingGroups: ...............',
+        updateData.availableToppingGroups,
+      );
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
           product: { id: product.id },
         });
-
+        console.log(
+          'updateData.availableToppingGroups:................ ',
+          updateData.availableToppingGroups,
+        );
         await this.updateToppingsGroups(updateData, product, queryRunner);
       }
-
+      console.log('product:................ ', product);
       const updatedProduct = await queryRunner.manager.save(product);
-
-      return ProductMapper.toResponseDto(updatedProduct);
+      const updatedProductWithRelations = await this.getProductWithRelations(
+        updatedProduct.id,
+        updatedProduct.type,
+      );
+      return ProductMapper.toResponseDto(updatedProductWithRelations);
     }
   }
   private async updatePromotion(
@@ -1535,6 +1570,7 @@ export class ProductRepository {
     id: string,
     type: 'product' | 'promotion' | 'simple',
   ): Promise<Product> {
+    console.log('getProductWithRelations:..... ', id, type);
     const relations =
       type === 'product' || type === 'simple'
         ? [
@@ -1548,7 +1584,7 @@ export class ProductRepository {
             'stock.unitOfMeasure',
             'availableToppingGroups',
             'availableToppingGroups.toppingGroup',
-            // 'availableToppingGroups.toppingGroup.toppings',
+            'availableToppingGroups.toppingGroup.toppings',
           ]
         : [
             'promotionDetails',
@@ -1561,14 +1597,55 @@ export class ProductRepository {
           ];
 
     const product = await this.productRepository.findOne({
-      where: { id, isActive: true, type },
+      where: { id, isActive: true },
       relations,
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID: ${id} not found`);
     }
+    return product;
+  }
 
+  private async getProductWithRelationsByQueryRunner(
+    queryRunner: QueryRunner,
+    id: string,
+    type: 'product' | 'promotion' | 'simple',
+  ): Promise<Product> {
+    console.log('getProductWithRelations:..... ', id, type);
+    const relations =
+      type === 'product' || type === 'simple'
+        ? [
+            'categories',
+            'productIngredients',
+            'productIngredients.ingredient',
+            'productIngredients.unitOfMeasure',
+            'promotionDetails',
+            'promotionDetails.product',
+            'stock',
+            'stock.unitOfMeasure',
+            'availableToppingGroups',
+            'availableToppingGroups.toppingGroup',
+            'availableToppingGroups.toppingGroup.toppings',
+          ]
+        : [
+            'promotionDetails',
+            'promotionDetails.product',
+            'promotionDetails.product.productIngredients',
+            'promotionDetails.product.productIngredients.ingredient',
+            'promotionDetails.product.productIngredients.unitOfMeasure',
+            'promotionDetails.product.stock',
+            'promotionDetails.product.stock.unitOfMeasure',
+          ];
+
+    const product = await queryRunner.manager.findOne(Product, {
+      where: { id, isActive: true },
+      relations,
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID: ${id} not found`);
+    }
     return product;
   }
 

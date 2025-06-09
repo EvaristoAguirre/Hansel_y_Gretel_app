@@ -8,6 +8,10 @@ import {
 export class ProductMapper {
   static toResponseDto(product: Product): ProductResponseDto {
     console.log('Mapping product to response DTO:', product);
+    console.log(
+      'En mapping, a ver los toppingGroups:',
+      product.availableToppingGroups,
+    );
 
     const dto = plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,

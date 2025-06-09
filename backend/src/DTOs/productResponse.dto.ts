@@ -114,21 +114,6 @@ export class PromotionProductResponseDto {
   @Type(() => PromotionResponse)
   promotion: PromotionResponse;
 }
-
-export class ToppingGroupResponseDto {
-  @Expose()
-  id?: string;
-
-  @Expose()
-  name?: string;
-
-  @Expose()
-  description?: string;
-
-  @Expose()
-  toppings?: ToppingResponseDto[];
-}
-
 export class AvailableToppingGroupDto {
   @Expose()
   id?: string;
@@ -147,6 +132,20 @@ export class AvailableToppingGroupDto {
 
   @Expose()
   toppingsGroup?: ToppingGroupResponseDto[];
+}
+
+export class ToppingGroupResponseDto {
+  @Expose()
+  id?: string;
+
+  @Expose()
+  name?: string;
+
+  @Expose()
+  description?: string;
+
+  @Expose()
+  toppings?: ToppingResponseDto[];
 }
 
 export class ToppingResponseDto {
