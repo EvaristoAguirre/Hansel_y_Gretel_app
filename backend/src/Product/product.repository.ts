@@ -265,7 +265,6 @@ export class ProductRepository {
           !productToCreate.ingredients ||
           productToCreate.ingredients.length === 0
         ) {
-          console.log('entro a producto simple');
           const product = await this.createSimpleProduct(
             queryRunner,
             productToCreate,
@@ -273,7 +272,6 @@ export class ProductRepository {
           await queryRunner.commitTransaction();
           return product;
         } else {
-          console.log('entro a producto compuesto');
           const product = await this.createCompositeProduct(
             queryRunner,
             productToCreate,
@@ -539,7 +537,6 @@ export class ProductRepository {
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const { categories, ingredients, ...productData } = productToCreate;
-    console.log('adentro de crear producto compuesto:......', productToCreate);
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
       categoryEntities = await queryRunner.manager.find(Category, {
@@ -750,30 +747,19 @@ export class ProductRepository {
         await queryRunner.manager.save(association);
       }
     }
-    const productWithRelations = await queryRunner.manager.findOne(Product, {
-      where: { id: savedProduct.id },
-      relations: [
-        'categories',
-        'stock',
-        'stock.unitOfMeasure',
-        'unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.toppingGroup',
-      ],
-    });
 
-    // const productWithRelations = await this.getProductWithRelations(
-    //   savedProduct.id,
-    //   'simple',
-    // );
+    const productWithRelations =
+      await this.getProductWithRelationsByQueryRunner(
+        queryRunner,
+        savedProduct.id,
+        'product',
+      );
 
     if (!productWithRelations) {
       throw new NotFoundException('Product not found after creation');
     }
 
-    await queryRunner.manager.save(Product, productWithRelations);
-
-    return productWithRelations;
+    return ProductMapper.toResponseDto(productWithRelations);
   }
 
   private async checkProductUniqueness(
@@ -866,14 +852,13 @@ export class ProductRepository {
       }
 
       const updatedProduct = await queryRunner.manager.save(product);
-      const updatedProductWithRelations = await this.getProductWithRelations(
-        updatedProduct.id,
-        updatedProduct.type,
-      );
-      console.log(
-        'updatedProduct:.....producto simple',
-        updatedProductWithRelations,
-      );
+      const updatedProductWithRelations =
+        await this.getProductWithRelationsByQueryRunner(
+          queryRunner,
+          updatedProduct.id,
+          updatedProduct.type,
+        );
+
       return ProductMapper.toResponseDto(updatedProductWithRelations);
 
       //------- cierre de la actualizacion de producto simple
@@ -983,26 +968,20 @@ export class ProductRepository {
       );
 
       product.productIngredients = updatedIngredients;
-      console.log(
-        'updateData.availableToppingGroups: ...............',
-        updateData.availableToppingGroups,
-      );
+
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
           product: { id: product.id },
         });
-        console.log(
-          'updateData.availableToppingGroups:................ ',
-          updateData.availableToppingGroups,
-        );
         await this.updateToppingsGroups(updateData, product, queryRunner);
       }
-      console.log('product:................ ', product);
       const updatedProduct = await queryRunner.manager.save(product);
-      const updatedProductWithRelations = await this.getProductWithRelations(
-        updatedProduct.id,
-        updatedProduct.type,
-      );
+      const updatedProductWithRelations =
+        await this.getProductWithRelationsByQueryRunner(
+          queryRunner,
+          updatedProduct.id,
+          updatedProduct.type,
+        );
       return ProductMapper.toResponseDto(updatedProductWithRelations);
     }
   }
