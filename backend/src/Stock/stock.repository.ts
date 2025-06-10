@@ -457,6 +457,21 @@ export class StockRepository {
     }
   }
 
+  async stockToExport() {
+    try {
+      const stockToExport = await this.stockRepository.find({
+        relations: ['ingredient', 'product', 'unitOfMeasure'],
+      });
+      return stockToExport;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error with stock to export',
+        error.message,
+      );
+    }
+  }
+
   private adaptStockResponse(stock: any): StockSummaryResponseDTO {
     return {
       id: stock.id,

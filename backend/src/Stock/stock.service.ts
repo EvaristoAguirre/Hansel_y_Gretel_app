@@ -51,12 +51,15 @@ export class StockService {
   }
 
   async deductStock(productId: string, quantity: number) {
-    console.log('adentro del descuento', productId, quantity);
     const stockDeducted = await this.stockRepository.deductStock(
       productId,
       quantity,
     );
     await this.eventEmitter.emit('stock.updated', { stockDeducted });
     return stockDeducted;
+  }
+
+  async stockToExport() {
+    return await this.stockRepository.stockToExport();
   }
 }
