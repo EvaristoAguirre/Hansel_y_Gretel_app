@@ -5,6 +5,7 @@ import {
   HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DailyCash } from './daily-cash.entity';
@@ -47,14 +48,13 @@ export class DailyCashRepository {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error openning the daily cash reposrt. Please try again later.',
+        'Error openning the daily cash report. Please try again later.',
         error.message,
       );
     }
-    return await this.dailyCashRepository.save(createDailyCashDto);
   }
 
-  async getAllDailysCash(page: number, limit: number) {
+  async getAllDailysCash(page: number, limit: number): Promise<DailyCash[]> {
     if (page <= 0 || limit <= 0) {
       throw new BadRequestException(
         'Page and limit must be positive integers.',
@@ -77,7 +77,7 @@ export class DailyCashRepository {
     }
   }
 
-  async getDailyCashById(id: string) {
+  async getDailyCashById(id: string): Promise<DailyCash> {
     if (!id) {
       throw new BadRequestException('Daily cash report ID must be provided.');
     }
@@ -87,22 +87,44 @@ export class DailyCashRepository {
       );
     }
     try {
-      return await this.dailyCashRepository.findOne({
+      const dailyCash = await this.dailyCashRepository.findOne({
         where: { id },
       });
+      if (!dailyCash) {
+        throw new BadRequestException('Daily cash report not found.');
+      }
+      return dailyCash;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error updating the order. Please try again later.',
+        'Daily cash not found. Please try again later.',
         error.message,
       );
     }
   }
 
   async updateDailyCash(id: number, updateDailyCashDto: UpdateDailyCashDto) {
-    return await this.dailyCashRepository.update(id, updateDailyCashDto);
+    if (!id) {
+      throw new BadRequestException('Daily cash report ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.dailyCashRepository.update(id, updateDailyCashDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Daily cash not found. Please try again later.',
+        error.message,
+      );
+    }
   }
 
   async closeDailyCash(
@@ -120,7 +142,7 @@ export class DailyCashRepository {
     try {
       const dailyCash = await this.getDailyCashById(id);
       if (!dailyCash) {
-        throw new BadRequestException('Daily cash report not found.');
+        throw new NotFoundException('Daily cash report not found.');
       }
       if (dailyCash.state === DailyCashState.CLOSED) {
         throw new ConflictException('Daily cash report is already closed.');

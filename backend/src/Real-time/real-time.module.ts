@@ -22,6 +22,7 @@ import { DailyCashWSListener } from './listeners/daily-cash.listener';
     OrderDetailsWSListener,
     StockWSListener,
     IngredientWSListener,
+    DailyCashWSListener,
   ],
   exports: [
     BroadcastService,
