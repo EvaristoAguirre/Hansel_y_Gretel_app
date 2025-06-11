@@ -19,6 +19,7 @@ import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
+import { ExportModule } from './ExportPdf/export.module';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
           autoLoadEntities: true,
           synchronize: isDev, // solo true en desarrollo
           dropSchema: false, // nunca true salvo que lo necesites puntualmente
-          logging: isDev ? ['query', 'error'] : ['error'],
+          logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,
           migrations: dbConfig.migrations,
@@ -63,6 +64,7 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
     SeederModule,
     UnitOfMeasurenModule,
     ToppingsGroupsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

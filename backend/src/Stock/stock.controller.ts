@@ -18,6 +18,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { DeductStockDto } from 'src/DTOs/deduct-stock.dto';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
+import { StockToExportResponseDTO } from 'src/DTOs/stockToExportResponse.dto';
 
 @Controller('stock')
 @UseGuards(RolesGuard)
@@ -34,6 +35,11 @@ export class StockController {
     @Param('limit') limit: number = 10,
   ): Promise<StockSummaryResponseDTO[]> {
     return await this.stockService.getAllStocks(page, limit);
+  }
+
+  @Get('stock-to-export')
+  async stockToExport(): Promise<StockToExportResponseDTO[]> {
+    return await this.stockService.stockToExport();
   }
 
   @Get('/product/:id')
