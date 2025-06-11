@@ -1,26 +1,20 @@
-export class StockSummaryResponseDTO {
-  id: string;
+export class StockToExportResponseDTO {
   quantityInStock: string;
-  minimumStock: string;
   ingredient: IngredientResponseDTO | null;
   product: ProductResponseDTO;
   unitOfMeasure: UnitOfMeasureResponseDTO;
 }
 export class UnitOfMeasureResponseDTO {
-  id: string;
   name: string;
   abbreviation: string;
 }
 
 export class IngredientResponseDTO {
-  id: string;
   name: string;
-  cost: number;
-  isTopping: boolean;
+  cost: string;
 }
 
 export class ProductResponseDTO {
-  id: string;
   name: string;
-  cost: number;
+  cost: string;
 }
