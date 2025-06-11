@@ -4,14 +4,17 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProductIngredient } from './ingredientProduct.entity';
-import { IsNumber, Min } from 'class-validator';
+import { IsNumber, IsOptional, Min } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { ProductTopping } from './toppingProduct.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {
@@ -36,6 +39,13 @@ export class Ingredient {
   @Column({ type: 'enum', enum: ['masa', 'volumen', 'unidad'] })
   type: 'masa' | 'volumen' | 'unidad';
 
+  @Column({ default: false })
+  isTopping: boolean;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @IsOptional()
+  extraCost: number;
+
   // -------------- Relaciones -----------------//
   @OneToOne(() => Stock, (stock) => stock.ingredient)
   stock: Stock;
@@ -49,4 +59,10 @@ export class Ingredient {
   @ManyToOne(() => UnitOfMeasure, (unitOfMesure) => unitOfMesure.ingredients)
   @JoinColumn({ name: 'unitOfMeasureId' })
   unitOfMeasure: UnitOfMeasure;
+
+  @ManyToMany(() => ToppingsGroup, (group) => group.toppings)
+  toppingsGroups: ToppingsGroup[];
+
+  @OneToMany(() => ProductTopping, (productToppings) => productToppings.topping)
+  productToppings: ProductTopping[];
 }

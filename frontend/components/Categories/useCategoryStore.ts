@@ -60,6 +60,6 @@ export const useCategoryStore = create<CategoryState>((set) => {
           c.id === updatedCategory.id ? updatedCategory : c
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece automáticamente al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece automáticamente al cargar el store
   };
 });

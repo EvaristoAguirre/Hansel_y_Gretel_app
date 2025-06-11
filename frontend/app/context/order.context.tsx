@@ -34,6 +34,7 @@ type OrderContextType = {
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
   decreaseProductNumber: (productId: string) => void;
+  productComment: (id: string, comment: string) => void;
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (
@@ -45,7 +46,8 @@ type OrderContextType = {
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => Promise<void>;
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
@@ -64,6 +66,7 @@ const OrderContext = createContext<OrderContextType>({
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
+  productComment: () => { },
   clearSelectedProducts: () => { },
   deleteConfirmProduct: () => { },
   handleCreateOrder: async () => { },
@@ -113,7 +116,6 @@ const OrderProvider = ({
   useEffect(() => {
     handleResetSelectedOrder();
   }, [selectedMesa]);
-
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -258,6 +260,17 @@ const OrderProvider = ({
     }
   };
 
+  const productComment = async (id: string, comment: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+    if (productToUpdate) {
+      setSelectedProducts(
+        selectedProducts.map((p) =>
+          p.productId === id ? { ...p, commentOfProduct: comment } : p
+        )
+      );
+    }
+  };
+
   const clearSelectedProducts = () => {
     setSelectedProducts([]);
   };
@@ -318,7 +331,8 @@ const OrderProvider = ({
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => {
     if (!id) {
       return;
@@ -334,6 +348,7 @@ const OrderProvider = ({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,
           comment: comment,
+          isPriority: isPriority
         }),
       });
 
@@ -441,6 +456,7 @@ const OrderProvider = ({
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,
+        productComment,
         clearSelectedProducts,
         deleteConfirmProduct,
         handleCreateOrder,

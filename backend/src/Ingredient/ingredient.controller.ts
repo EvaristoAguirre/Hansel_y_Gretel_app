@@ -17,6 +17,8 @@ import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
+import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
+import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
 
 @Controller('ingredient')
 @UseGuards(RolesGuard)
@@ -32,10 +34,27 @@ export class IngredientController {
     return await this.ingredientService.getAllIngredients(page, limit);
   }
 
+  @Get('toppings/by-name')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getToppingByName(
+    @Query('name') name: string,
+  ): Promise<ToppingResponseDto> {
+    return await this.ingredientService.getToppingByName(name);
+  }
+
   @Get('by-name')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getIngredientByName(@Query('name') name: string): Promise<Ingredient> {
     return await this.ingredientService.getIngredientByName(name);
+  }
+
+  @Get('toppings')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getAllToppings(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ): Promise<ToppingResponseDto[]> {
+    return await this.ingredientService.getAllToppings(page, limit);
   }
 
   @Get(':id')
@@ -67,5 +86,20 @@ export class IngredientController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteIngredient(@Param('id') id: string) {
     return await this.ingredientService.deleteIngredient(id);
+  }
+
+  @Get('toppings/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getToppingById(@Param('id') id: string): Promise<ToppingResponseDto> {
+    return await this.ingredientService.getToppingById(id);
+  }
+
+  @Patch('toppings/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async updateTopping(
+    @Param('id') id: string,
+    @Body() updateToppingDto: UpdateToppingDto,
+  ) {
+    return this.ingredientService.updateTopping(id, updateToppingDto);
   }
 }

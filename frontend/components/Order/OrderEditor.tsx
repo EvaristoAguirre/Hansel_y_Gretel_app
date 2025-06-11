@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  Autocomplete,
-  TextField,
   Button,
   List,
   ListItem,
@@ -9,17 +7,24 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
-import { Add, Remove, Delete } from "@mui/icons-material";
+import { Add, Remove, Delete, Comment } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
-import { cancelOrder, deleteOrder } from "@/api/order";
-import Swal from "sweetalert2";
-import { useAuth } from "@/app/context/authContext";
 import { useProducts } from "../Hooks/useProducts";
 import useOrder from "../Hooks/useOrder";
 import LoadingLottie from "../Loader/Loading";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
+import AutoGrowTextarea from "../Utils/Textarea";
+import { fetchCategories } from "@/api/categories";
+import { ICategory } from "../Interfaces/ICategories";
+import { searchProducts } from "@/api/products";
+import AutoCompleteProduct from "../Utils/Autocomplete";
+import { CategorySelector } from "./filterCategories";
+import { useAuth } from "@/app/context/authContext";
 
 export interface Product {
   price: number;
@@ -61,14 +66,25 @@ const OrderEditor = ({
     handleDeleteSelectedProduct,
     increaseProductNumber,
     decreaseProductNumber,
+    productComment,
     handleEditOrder,
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
+  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  // const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const token = getAccessToken();
+  const [isPriority, setIsPriority] = useState<boolean>(false);
 
-  const confirmarPedido = async () => {
+  useEffect(() => {
+    token && fetchCategories(token).then((categories = []) => setCategories(categories));
+  }, []);
+
+  const confirmarPedido: () => Promise<void> = async () => {
     if (selectedOrderByTable) {
       setLoading(true);
       try {
@@ -76,7 +92,8 @@ const OrderEditor = ({
           selectedOrderByTable.id,
           selectedProducts,
           selectedOrderByTable.numberCustomers,
-          selectedOrderByTable.comment
+          selectedOrderByTable.comment,
+          isPriority
         );
         setSelectedProducts([]);
         handleCompleteStep();
@@ -106,6 +123,57 @@ const OrderEditor = ({
     };
     calculateTotal();
   }, [selectedProducts, confirmedProducts]);
+
+  const toggleCommentInput = (productId: string) => {
+    setVisibleCommentInputs((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
+  /**
+   *
+   * @param productId - El ID del producto a eliminar
+   * @returns La función `handleDeleteProductAndComment` elimina un producto del contexto y su comentario asociado en el estado local.
+   * Si el producto eliminado estaba siendo editado, se cancela la edición.
+   */
+  const handleDeleteProductAndComment = (productId: string) => {
+    handleDeleteSelectedProduct(productId)
+    setCommentInputs((prevCommentInputs) => {
+      const newCommentInputs = { ...prevCommentInputs };
+      delete newCommentInputs[productId];
+      return newCommentInputs;
+    });
+  };
+
+  /**
+   * Fracción de código para buscar productos en base a nombre,
+   * código o categorías seleccionadas.
+   */
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
+
+  const searchProductsFiltered = async (term: string, categories: string[]) => {
+    const trimmedTerm = term.trim();
+    const results = token && await searchProducts(trimmedTerm, token, categories.join(','));
+    if (results) setProductosDisponibles(results);
+  };
+
+  const handleSearch = (value: string) => {
+    const trimmedValue = value.trim();
+    setSearchTerm(trimmedValue);
+    searchProductsFiltered(trimmedValue, selectedCats);
+  };
+
+  useEffect(() => {
+    searchProductsFiltered(searchTerm, selectedCats);
+  }, [selectedCats]);
+
+  const [showCategories, setShowCategories] = useState(false);
+
+  const handleToggle = () => {
+    setShowCategories((prev) => !prev);
+  };
 
   return loading ? (
     <LoadingLottie />
@@ -144,38 +212,17 @@ const OrderEditor = ({
             <h2>Seleccionar productos</h2>
           </div>
           <Box sx={{ borderRadius: "5px" }}>
-            <Autocomplete
+            <CategorySelector
+              categories={categories}
+              selected={selectedCats}
+              onChangeSelected={setSelectedCats}
+            />
+
+
+            <AutoCompleteProduct
               options={productosDisponibles}
-              getOptionLabel={(producto) =>
-                `${producto.name} - $${producto.price} (Código: ${producto.code})`
-              }
-              onInputChange={(event, value, reason) => {
-                const searchTerm = value.toLowerCase();
-                setProductosDisponibles(
-                  products.filter(
-                    (producto) =>
-                      producto.name.toLowerCase().includes(searchTerm) ||
-                      producto.code
-                        ?.toString()
-                        .toLowerCase()
-                        .includes(searchTerm)
-                  )
-                );
-              }}
-              onChange={(event, selectedProducto) => {
-                if (selectedProducto) {
-                  handleSelectedProducts(selectedProducto);
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Buscar productos por nombre o código"
-                  variant="outlined"
-                  fullWidth
-                  sx={{ label: { color: "black", fontSize: "1rem" } }}
-                />
-              )}
+              onSearch={(value) => handleSearch(value)}
+              onSelect={handleSelectedProducts}
             />
 
             {/* PRODUCTOS PRE-SELECCIONADOS */}
@@ -183,83 +230,118 @@ const OrderEditor = ({
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "12rem",
+                  maxHeight: "16rem",
                   overflowY: "auto",
                   border: "2px solid #856D5E",
                   borderRadius: "5px",
                   marginTop: "0.5rem",
                   fontSize: "0.8rem",
+                  padding: "0.5rem",
                 }}
               >
-                <div
-                  className="w-2/4flex items-center 
-                      justify-start m-2 text-[#856D5E]"
-                >
+                <div className="w-full flex items-center justify-start mb-2 text-[#856D5E]">
                   <h5>Productos sin confirmar:</h5>
                 </div>
+
                 {selectedProducts.map((item, index) => (
                   <ListItem
                     key={index}
                     style={{
                       display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      height: "2.3rem",
-                      margin: "0.3rem 0",
-                      color: "#ffffff",
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                      width: "100%",
                       borderBottom: "1px solid #856D5E",
-                      justifyContent: "space-between",
+                      paddingBottom: "0.5rem",
+                      marginBottom: "0.5rem",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <IconButton
-                        onClick={() => decreaseProductNumber(item.productId)}
-                      >
-                        <Remove color="error" />
-                      </IconButton>
-                      <Typography
-                        sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                        style={{
-                          color: "black",
-                          width: "2rem",
-                          textAlign: "center",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        {item.quantity}
-                      </Typography>
-                      <IconButton
-                        onClick={() => increaseProductNumber(item.productId)}
-                      >
-                        <Add color="success" />
-                      </IconButton>
-                    </div>
-                    <Tooltip title={item.productName} arrow>
-                      <ListItemText
-                        style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 1,
-                          overflow: "hidden",
-                          maxWidth: "20rem",
-                        }}
-                        primary={item.productName}
-                      />
-                    </Tooltip>
-                    <Typography style={{ color: "black" }}>
-                      ${(item.unitaryPrice ?? 0) * item.quantity}
-                    </Typography>
-                    <IconButton
-                      onClick={() =>
-                        handleDeleteSelectedProduct(item.productId)
-                      }
+                    {/* Línea principal de datos del producto */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        color: "#ffffff",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                      }}
                     >
-                      <Delete />
-                    </IconButton>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <IconButton onClick={() => decreaseProductNumber(item.productId)}>
+                          <Remove color="error" />
+                        </IconButton>
+                        <Typography
+                          sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
+                          style={{
+                            color: "black",
+                            width: "2rem",
+                            textAlign: "center",
+                            borderRadius: "5px",
+                          }}
+                        >
+                          {item.quantity}
+                        </Typography>
+                        <IconButton onClick={() => increaseProductNumber(item.productId)}>
+                          <Add color="success" />
+                        </IconButton>
+                      </div>
+
+                      <Tooltip title={item.productName} arrow>
+                        <ListItemText
+                          style={{
+                            color: "black",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: 1,
+                            overflow: "hidden",
+                            maxWidth: "15rem",
+                          }}
+                          primary={capitalizeFirstLetter(item.productName)}
+                        />
+                      </Tooltip>
+
+                      <Typography style={{ color: "black" }}>
+                        ${(item.unitaryPrice ?? 0) * item.quantity}
+                      </Typography>
+
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <IconButton onClick={() => toggleCommentInput(item.productId)}>
+                          <Comment style={{ color: "#856D5E" }} />
+                        </IconButton>
+                        <IconButton onClick={() =>
+                          handleDeleteProductAndComment(item.productId)}>
+                          <Delete />
+                        </IconButton>
+                      </div>
+                    </div>
+
+                    {/* Comentario */}
+                    {visibleCommentInputs[item.productId] && (
+                      <div style={{ marginTop: "0.5rem", width: "100%" }}>
+                        <AutoGrowTextarea
+                          value={
+                            commentInputs[item.productId] !== undefined
+                              ? commentInputs[item.productId]
+                              : item.commentOfProduct ?? ""
+                          }
+                          placeholder="Comentario al producto"
+                          onChange={(value) =>
+                            setCommentInputs((prev) => ({
+                              ...prev,
+                              [item.productId]: value,
+                            }))
+                          }
+                          onBlur={() =>
+                            productComment(item.productId, commentInputs[item.productId] || "")
+                          }
+                        />
+                      </div>
+                    )}
                   </ListItem>
                 ))}
               </List>
+
             ) : (
               <Typography
                 style={{
@@ -272,45 +354,30 @@ const OrderEditor = ({
                 No hay productos pre-seleccionados.
               </Typography>
             )}
-            <Typography
-              style={{
-                width: "50%",
-                margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
-              }}
-            >
-              Subtotal: ${subtotal}
-            </Typography>
 
-            {/* --------------------- Aca iria el comentario * ----------------------*/}
-            {/* Agregado por Eva para resolver lo del comentario */}
 
-            <div
-              style={{
-                margin: "10px 0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Comentario:</label>
-              <input
-                type="comment"
-                value={selectedOrderByTable?.comment || ""}
-                onFocus={(e) => (e.target.style.outline = "none")}
-                onChange={(e) =>
-                  setSelectedOrderByTable((prev: any) => ({
-                    ...prev,
-                    comment: e.target.value,
-                  }))
+            <div style={{ display: "flex", justifyContent: "space-between", flexDirection: "row" }}>
+              <Typography
+                style={{
+                  width: "50%",
+                  margin: "1rem 0",
+                  color: "black",
+                  fontWeight: "bold",
+                }}
+              >
+                Subtotal: ${subtotal}
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isPriority}
+                    onChange={(event) => setIsPriority(event.target.checked)}
+                  />
                 }
-                className="bg-transparent border-b-2 border-[#856D5E] w-1/2"
+                label="Orden Prioritaria"
+                style={{ fontSize: "0.8rem", color: `${isPriority ? "red" : "gray"}`, fontWeight: "bold" }}
               />
             </div>
-
-            {/* --------------------- Aca cierrra el comentario * ----------------------*/}
-
             <div>
               <Button
                 fullWidth
@@ -341,7 +408,7 @@ const OrderEditor = ({
                 }}
               >
                 <div
-                  className="w-2/4flex items-center 
+                  className="w-2/4flex items-center
                       justify-start m-2 text-[#856D5E]"
                 >
                   <h5>Productos confirmados:</h5>

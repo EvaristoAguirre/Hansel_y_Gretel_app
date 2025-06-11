@@ -7,7 +7,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './Product/product.module';
 import { CategoryModule } from './Category/category.module';
 import { UserModule } from './User/user.module';
-import { ProviderModule } from './Provider/provider.module';
 import { RealTimeModule } from './Real-time/real-time.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TableModule } from './Table/table.module';
@@ -20,6 +19,8 @@ import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { DailyCashModule } from './daily-cash/daily-cash.module';
+import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
+import { ExportModule } from './ExportPdf/export.module';
 
 @Module({
   imports: [
@@ -31,15 +32,30 @@ import { DailyCashModule } from './daily-cash/daily-cash.module';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const config = configService.get('typeorm');
-        return config;
+        const dbConfig = configService.get('typeorm');
+        const isDev = process.env.NODE_ENV !== 'production';
+
+        return {
+          type: dbConfig.type,
+          host: dbConfig.host,
+          port: dbConfig.port,
+          username: dbConfig.username,
+          password: dbConfig.password,
+          database: dbConfig.database,
+          autoLoadEntities: true,
+          synchronize: isDev, // solo true en desarrollo
+          dropSchema: false, // nunca true salvo que lo necesites puntualmente
+          logging: isDev ? ['warn', 'error'] : ['error'],
+          schema: dbConfig.schema,
+          entities: dbConfig.entities,
+          migrations: dbConfig.migrations,
+        };
       },
     }),
     EventEmitterModule.forRoot(),
     ProductModule,
     CategoryModule,
     UserModule,
-    ProviderModule,
     RealTimeModule,
     TableModule,
     OrderModule,
@@ -49,6 +65,8 @@ import { DailyCashModule } from './daily-cash/daily-cash.module';
     SeederModule,
     UnitOfMeasurenModule,
     DailyCashModule,
+    ToppingsGroupsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -39,7 +39,7 @@
 //       ),
 //     })),
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://192.168.0.50:3000");
+//     const socket = new WebSocket("ws://localhost:3000");
 
 //     socket.onmessage = (event) => {
 //       console.log("estas?");
@@ -148,6 +148,6 @@ export const useTableStore = create<TableStateZustand>((set) => {
           t.id === updatedTable.id ? updatedTable : t
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece al cargar el store
   };
 });

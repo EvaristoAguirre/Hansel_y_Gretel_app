@@ -18,7 +18,9 @@ export interface IingredientForm {
   ingredientId: string,
   quantityOfIngredient: number | null,
   unitOfMeasureId: string,
-  type: TypeBaseUnitIngredient | null
+  type: TypeBaseUnitIngredient | null,
+  isTopping: boolean,
+  extraCost: number
 }
 
 export interface IingredientResponse {

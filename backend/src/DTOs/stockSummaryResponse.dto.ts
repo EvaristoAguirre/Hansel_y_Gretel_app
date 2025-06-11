@@ -16,6 +16,7 @@ export class IngredientResponseDTO {
   id: string;
   name: string;
   cost: number;
+  isTopping: boolean;
 }
 
 export class ProductResponseDTO {

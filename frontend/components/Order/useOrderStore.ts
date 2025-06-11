@@ -31,7 +31,7 @@
 //       ),
 //     })),
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://192.168.0.50:3000");
+//     const socket = new WebSocket("ws://localhost:3000");
 
 //     socket.onmessage = (event) => {
 //       const { action, data } = JSON.parse(event.data);

@@ -89,6 +89,7 @@ export interface SelectedProductsI {
   productName: string;
   quantity: number;
   unitaryPrice: number | null;
+  commentOfProduct?: string | null;
 };
 
 export interface IConfirmedProducts {

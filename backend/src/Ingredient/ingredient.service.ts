@@ -5,6 +5,7 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 
 @Injectable()
 export class IngredientService {
@@ -54,5 +55,39 @@ export class IngredientService {
       ingredient: ingredientDeleted,
     });
     return ingredientDeleted;
+  }
+
+  // -------------------- TOPPINGS --------------------
+
+  async updateTopping(
+    id: string,
+    updateData: UpdateIngredientDto,
+  ): Promise<Ingredient> {
+    const toppingUpdated = await this.ingredientRepository.updateTopping(
+      id,
+      updateData,
+    );
+    await this.eventEmitter.emit('topping.updated', {
+      topping: toppingUpdated,
+    });
+    return toppingUpdated;
+  }
+
+  async getAllToppings(
+    page: number,
+    limit: number,
+  ): Promise<ToppingResponseDto[]> {
+    return this.ingredientRepository.getAllToppings(page, limit);
+  }
+
+  async getToppingById(id: string): Promise<ToppingResponseDto> {
+    return await this.ingredientRepository.getToppingById(id);
+  }
+  async getToppingByName(name: string): Promise<ToppingResponseDto> {
+    return await this.ingredientRepository.getToppingByName(name);
+  }
+
+  async findToppingById(id: string): Promise<Ingredient> {
+    return await this.ingredientRepository.findToppingById(id);
   }
 }

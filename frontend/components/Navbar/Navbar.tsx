@@ -26,7 +26,7 @@ const Navbar = () => {
   const sections = [
     { label: "Cafe", path: "/views/cafe", icon: cafe },
     { label: "Productos", path: "/views/products", icon: products },
-    { label: "Clientes", path: "/views/clientes", icon: clients },
+    { label: "Caja diaria", path: "/views/dailyCash", icon: clients },
     { label: "Proveedores", path: "/views/proveedores", icon: proveedor },
     { label: "Configuración", path: "/views/configuracion", icon: configuracion },
   ];

@@ -11,7 +11,7 @@ import { UnitConversion } from './unitConversion.entity';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-
+import { ProductTopping } from 'src/Ingredient/toppingProduct.entity';
 @Entity({ name: 'units_of_measure' })
 export class UnitOfMeasure {
   @PrimaryGeneratedColumn('uuid')
@@ -67,4 +67,10 @@ export class UnitOfMeasure {
 
   @OneToMany(() => Product, (product) => product.unitOfMeasure)
   products: Product[];
+
+  @OneToMany(
+    () => ProductTopping,
+    (productToppings) => productToppings.unitOfMeasure,
+  )
+  productToppings: ProductTopping[];
 }
