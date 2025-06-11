@@ -513,7 +513,6 @@ export class StockRepository {
         ? {
             name: stock.ingredient.name,
             cost: stock.ingredient.cost,
-            isTopping: stock.ingredient.isTopping,
           }
         : null,
       product: stock.product

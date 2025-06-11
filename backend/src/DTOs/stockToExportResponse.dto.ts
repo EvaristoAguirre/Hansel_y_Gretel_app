@@ -12,7 +12,6 @@ export class UnitOfMeasureResponseDTO {
 export class IngredientResponseDTO {
   name: string;
   cost: string;
-  isTopping: boolean;
 }
 
 export class ProductResponseDTO {
