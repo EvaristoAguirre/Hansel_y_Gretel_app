@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit-table';
 import { StockService } from 'src/Stock/stock.service';
 import * as fs from 'fs';
+import Table from 'pdfkit-table';
 
 @Injectable()
 export class ExportService {
@@ -12,6 +13,7 @@ export class ExportService {
     console.log('stock data....', stockData);
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      console.log(typeof (doc as any).table);
       const buffers: Buffer[] = [];
 
       doc.on('data', buffers.push.bind(buffers));
