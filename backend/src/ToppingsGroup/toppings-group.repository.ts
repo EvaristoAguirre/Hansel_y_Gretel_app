@@ -172,6 +172,7 @@ export class ToppingsGroupRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['toppings'],
       });
     } catch (error) {
       if (error instanceof HttpException) throw error;

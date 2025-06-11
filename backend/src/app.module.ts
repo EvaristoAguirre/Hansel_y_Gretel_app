@@ -43,7 +43,7 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
           autoLoadEntities: true,
           synchronize: isDev, // solo true en desarrollo
           dropSchema: false, // nunca true salvo que lo necesites puntualmente
-          logging: isDev ? ['query', 'error'] : ['error'],
+          logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,
           migrations: dbConfig.migrations,
