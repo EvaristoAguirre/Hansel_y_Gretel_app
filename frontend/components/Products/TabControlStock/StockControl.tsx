@@ -1,5 +1,5 @@
 'use client';
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
 import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
@@ -12,6 +12,8 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import { exportPDF } from "@/api/exportPDF";
+import { SimCardDownload } from "@mui/icons-material";
 
 
 const StockControl = () => {
@@ -197,18 +199,36 @@ const StockControl = () => {
     }
   }, [filteredProducts, filteredIngredients]);
 
-
+  const handleExportPDF = () => {
+    token && exportPDF(token);
+  }
 
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
-
-      <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
-      {noStock &&
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 2 }}>
+        <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<SimCardDownload />}
+          onClick={handleExportPDF}
+          sx={{
+            mt: { xs: 2, sm: 0 },
+            "&:hover": {
+              color: "white",
+            }
+          }}
+        >
+          Exportar Stock (PDF)
+        </Button>
+      </Box>
+      {noStock && (
         <Typography variant="h6" sx={{ mt: 2 }} color="error">
           ❗️Hay productos o ingredientes sin stock asignado.
           Seleccione la fila correspondiente en la tabla para agregar stock.
         </Typography>
-      }
+      )}
+
       {/* DataGrids */}
       <Box display="flex" gap={2} sx={{ mt: 3 }}>
 
