@@ -44,6 +44,13 @@ const Ingredients = () => {
 
   const columns = useMemo(() => [
     { field: "name", headerName: "Nombre", width: 200 },
+    {
+      field: "isTopping",
+      headerName: "¿Es un Agregado?",
+      width: 200,
+      renderCell: (params: GridCellParams) =>
+        params.value ? "Sí" : "No",
+    },
     { field: "description", headerName: "Descripción", width: 300 },
     { field: "cost", headerName: "Costo", width: 100 },
     {
@@ -70,6 +77,7 @@ const Ingredients = () => {
                 description: row.description,
                 cost: row.cost,
                 unitOfMeasureId: row.unitOfMeasure,
+                isTopping: row.isTopping
               })
             }
             disabled={units.length === 0}
