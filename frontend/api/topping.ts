@@ -76,6 +76,23 @@ export const editToppingGroup = async (token: string, form: IToppingForm, id: st
   };
 }
 
+export const deleteToppingGroup = async (token: string, id: string) => {
+  const response = await fetch(`${URI_TOPPINGS_GROUP}/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+
+  })
+  const text = await response.text();
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    data: text,
+  };
+}
 export const fetchAllToppingsGroup = async (token: string) => {
   const response = await fetch(`${URI_TOPPINGS_GROUP}`, {
     method: "GET",

@@ -1,4 +1,4 @@
-import { createToppingGroup, editToppingGroup, fetchAllToppingsGroup, fetchToppings } from "@/api/topping";
+import { createToppingGroup, deleteToppingGroup, editToppingGroup, fetchAllToppingsGroup, fetchToppings } from "@/api/topping";
 import { useAuth } from "@/app/context/authContext";
 import { ITopping, IToppingsGroup } from "@/components/Interfaces/IToppings";
 import LoadingLottie from "@/components/Loader/Loading";
@@ -11,12 +11,16 @@ import {
   Grid,
   CardActions,
   Chip,
+  Tooltip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import FormToppingsGroup from "./FormToppingsGroup";
 import { Stack } from "@mui/system";
-import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import Swal from "sweetalert2";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
+import { AutoAwesome } from "@mui/icons-material";
 
 const ToppingsGroupList = () => {
   const [toppingsGroups, setToppingsGroups] = useState<IToppingsGroup[]>([]);
@@ -60,6 +64,7 @@ const ToppingsGroupList = () => {
 
     if (groupToEdit) {
       response = token && await editToppingGroup(token, groupData, groupToEdit.id);
+
       if (response?.ok) {
         Swal.fire("Éxito", "Grupo actualizado correctamente.", "success");
       } else {
@@ -78,6 +83,31 @@ const ToppingsGroupList = () => {
     await loadData();
   };
 
+  const handleDeleteGroup = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro/a?",
+      text: "Esta acción eliminará el grupo de agregados.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      let response: any;
+
+      response = token && await deleteToppingGroup(token, id);
+
+      if (response?.ok) {
+        Swal.fire("Éxito", "Grupo eliminado correctamente.", "success");
+        await loadData();
+      } else {
+        Swal.fire("Error", response?.data?.message || "No se pudo eliminar el grupo.", "error");
+      }
+    }
+  };
 
   return (
     <Box sx={{ m: 4 }}>
@@ -102,8 +132,8 @@ const ToppingsGroupList = () => {
                           {group.toppings.map((topping) => (
                             <Chip
                               key={topping.id}
-                              label={topping.name}
-                              icon={<LocalPizzaIcon />}
+                              label={capitalizeFirstLetter(topping.name)}
+                              icon={<AutoAwesome />}
                               color="primary"
                               variant="outlined"
                             />
@@ -113,10 +143,37 @@ const ToppingsGroupList = () => {
                   </Typography>
 
                 </CardContent>
-                <CardActions>
-                  <Button size="small" onClick={() => handleOpenEdit(group)}>
-                    Editar
-                  </Button>
+                <CardActions sx={{ justifyContent: "space-around" }}>
+                  <Tooltip
+                    title="Eliminar"
+                    enterDelay={150}
+                  >
+                    <Button
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      sx={{
+                        color: "gray",
+                        "&:hover": {
+                          color: "red",
+                        },
+                      }}
+                      onClick={() => handleDeleteGroup(group.id)}>
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="Editar" enterDelay={150}>
+
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      sx={{
+                        "&:hover": {
+                          fontWeight: "bold",
+                          color: "secondary.main",
+                        },
+                      }}
+                      onClick={() => handleOpenEdit(group)}>
+                    </Button>
+                  </Tooltip>
                 </CardActions>
               </Card>
             </Grid>
