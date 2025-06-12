@@ -15,12 +15,10 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import FormToppingsGroup from "./FormToppingsGroup";
-import { Stack } from "@mui/system";
 import Swal from "sweetalert2";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
-import { AutoAwesome } from "@mui/icons-material";
+import ScrollableChips from "@/components/Utils/ScrollableChips";
 
 const ToppingsGroupList = () => {
   const [toppingsGroups, setToppingsGroups] = useState<IToppingsGroup[]>([]);
@@ -118,30 +116,19 @@ const ToppingsGroupList = () => {
       {loading ? (
         <LoadingLottie />
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={2} display="flex" justifyContent="center">
           {toppingsGroups.map((group) => (
-            <Grid item xs={12} sm={6} md={4} key={group.id}>
-              <Card>
+            <Grid item xs={12} md={4} key={group.id} >
+              <Card sx={{ height: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <CardContent>
                   <Typography variant="h6">{group.name.toLocaleUpperCase()}</Typography>
                   <Typography variant="body2" sx={{ mt: 1 }} component="div">
                     {
                       group.toppings.length === 0
                         ? 'Sin "agregados" asignados'
-                        : <Stack direction="row" flexWrap="wrap" gap={1}>
-                          {group.toppings.map((topping) => (
-                            <Chip
-                              key={topping.id}
-                              label={capitalizeFirstLetter(topping.name)}
-                              icon={<AutoAwesome />}
-                              color="primary"
-                              variant="outlined"
-                            />
-                          ))}
-                        </Stack>
+                        : <ScrollableChips toppings={group.toppings} />
                     }
                   </Typography>
-
                 </CardContent>
                 <CardActions sx={{ justifyContent: "space-around" }}>
                   <Tooltip
@@ -161,7 +148,6 @@ const ToppingsGroupList = () => {
                     </Button>
                   </Tooltip>
                   <Tooltip title="Editar" enterDelay={150}>
-
                     <Button
                       size="small"
                       startIcon={<EditIcon />}
