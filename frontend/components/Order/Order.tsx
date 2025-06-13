@@ -76,7 +76,6 @@ const Order: React.FC<OrderProps> = ({
     }
 
     const tableEdited = await editTable(
-      selectedMesa.id,
       { ...selectedMesa, state: TableState.PENDING_PAYMENT },
       token
     );
@@ -102,11 +101,9 @@ const Order: React.FC<OrderProps> = ({
       setSelectedOrderByTable(ordenPendingPay);
       setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
-      // updateOrder(ordenPendingPay);
     }
 
     const tableEdited = await editTable(
-      selectedMesa.id,
       { ...selectedMesa, state: TableState.PENDING_PAYMENT },
       token
     );

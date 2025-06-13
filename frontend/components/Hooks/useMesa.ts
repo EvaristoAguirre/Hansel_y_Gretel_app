@@ -8,6 +8,7 @@ import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { TableForm } from "../Interfaces/ITable";
 import { TableModalType } from "../Enums/table";
+import { TableState } from "../Enums/Enums";
 
 const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const { getAccessToken } = useAuth();
@@ -16,7 +17,8 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<TableModalType>(TableModalType.CREATE);
   const [form, setForm] = useState<TableForm>({
-    name: ""
+    name: "",
+    state: TableState.AVAILABLE,
   });
 
   const {
@@ -30,16 +32,18 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const { orders } = useOrderStore();
   const handleOpenModal = (type: TableModalType, mesa?: MesaInterface) => {
     setModalType(type);
-    if (type === TableModalType.EDIT && mesa) {
+    if (type === TableModalType.EDIT && mesa && mesa.state) {
       setForm({
         id: mesa.id,
         name: mesa.name,
+        state: mesa.state
       });
       setNameTable(mesa.name);
     } else {
       setForm({
         id: "",
         name: "",
+        state: TableState.AVAILABLE
       });
       setNameTable("")
     }
@@ -49,6 +53,7 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
+      state: TableState.AVAILABLE
     });
     setModalOpen(false);
     setNameTable("")

@@ -1,9 +1,10 @@
+import { TableState } from "../Enums/Enums";
 import { TableModalType } from "../Enums/table";
 
 export interface TableForm {
   id?: string;
   name: string;
-
+  state: TableState;
 }
 
 export interface TableModalProps {
