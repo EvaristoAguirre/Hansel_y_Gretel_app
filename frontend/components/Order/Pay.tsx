@@ -39,7 +39,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     if (selectedOrderByTable && selectedMesa) {
       const paidOrder = await orderToClosed(selectedOrderByTable.id, token);
       const closedTable = await editTable(
-        selectedMesa.id,
         { ...selectedMesa, state: TableState.CLOSED },
         token
       );
@@ -60,7 +59,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     token: string
   ) => {
     const tableEdited = await editTable(
-      selectedMesa.id,
       { ...selectedMesa, state: TableState.AVAILABLE },
       token
     );

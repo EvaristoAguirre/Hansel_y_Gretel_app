@@ -20,7 +20,7 @@ export interface IingredientForm {
   unitOfMeasureId: string,
   type: TypeBaseUnitIngredient | null,
   isTopping: boolean,
-  extraCost: number
+  extraCost: number | null
 }
 
 export interface IingredientResponse {
