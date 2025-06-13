@@ -1,6 +1,6 @@
 import { searchProductsNotProm } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
-import { ProductCreated, ProductForm, ProductForPromo, SelectedProductsI } from "@/components/Interfaces/IProducts";
+import { IProductDataList, ProductCreated, ProductForm, ProductForPromo, SelectedProductsI } from "@/components/Interfaces/IProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
@@ -29,6 +29,9 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
 
   useEffect(() => {
     if (form.products && form.products.length > 0) {
+
+      console.log("form🍎", form);
+
       const formattedProducts = form.products.map((item) => ({
         productId: item.product && item.product.id,
         productName: item.product && item.product.name,

@@ -72,7 +72,7 @@
 
 import { create } from "zustand";
 import { io } from "socket.io-client";
-import { IOrderDetails } from "../Interfaces/IOrderDetails";
+import { IOrderDetails } from "../Interfaces/IOrder";
 import { useState } from "react";
 
 interface OrderStateZustand {
