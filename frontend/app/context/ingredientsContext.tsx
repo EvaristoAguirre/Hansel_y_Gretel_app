@@ -1,5 +1,5 @@
 'use client';
-import { FormType } from '@/components/Enums/Ingredients';
+import { FormType, TypeBaseUnitIngredient } from '@/components/Enums/Ingredients';
 import { Iingredient } from '@/components/Interfaces/Ingredients';
 import { createContext, useContext, useState } from 'react';
 import Swal from 'sweetalert2';
@@ -30,7 +30,8 @@ const IngredientsContext = createContext<IngredientsContextType>({
     name: "",
     description: "",
     cost: null,
-    unitOfMeasureId: ""
+    unitOfMeasureId: "",
+    type: TypeBaseUnitIngredient.UNIT
   },
   setFormIngredients: () => { },
   formOpen: false,
@@ -59,6 +60,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
     description: "",
     cost: null,
     unitOfMeasureId: "",
+    type: TypeBaseUnitIngredient.UNIT,
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
@@ -172,7 +174,8 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
       name: "",
       description: "",
       cost: null,
-      unitOfMeasureId: ""
+      unitOfMeasureId: "",
+      type: TypeBaseUnitIngredient.UNIT,
     });
   };
 

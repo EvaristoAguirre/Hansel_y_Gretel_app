@@ -57,7 +57,7 @@
 //     }));
 //   },
 //   connectWebSocket: () => {
-//     const socket = new WebSocket("ws://192.168.0.50:3000");
+//     const socket = new WebSocket("ws://localhost:3000");
 
 //     socket.onmessage = (event) => {
 //       const { action, data } = JSON.parse(event.data);
@@ -103,10 +103,10 @@ import { ICategory } from "../Interfaces/ICategories";
 import { ProductCreated, ProductResponse, ProductState } from "../Interfaces/IProducts";
 
 const parseCategories = (categories: ICategory[]): string[] =>
-  categories.map((category) => category.id);
+  categories.map((category) => category.id).filter((id): id is string => id !== null && id !== undefined);
 
 export const useProductStore = create<ProductState>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Products");
@@ -121,7 +121,7 @@ export const useProductStore = create<ProductState>((set) => {
           ...data,
           categories: parseCategories(data.categories),
           productIngredients: data.productIngredients && data.productIngredients.length > 0
-            ? data.productIngredients.map((ingredient) => ({
+            ? data.productIngredients.map((ingredient: any) => ({
               name: ingredient.ingredient.name,
               ingredientId: ingredient.ingredient.id,
               unitOfMeasureId: ingredient.unitOfMeasure?.id ?? '',
@@ -163,12 +163,14 @@ export const useProductStore = create<ProductState>((set) => {
       const parsedProduct = products.map((product: ProductResponse) => ({
         ...product,
         categories: parseCategories(product.categories),
-        productIngredients: product.productIngredients.length > 0 && product.productIngredients.map((ingredient) => ({
-          name: ingredient.ingredient.name,
-          ingredientId: ingredient.ingredient.id,
-          unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
-          quantityOfIngredient: ingredient.quantityOfIngredient,
-        })),
+        productIngredients: product.productIngredients.length > 0
+          ? product.productIngredients.map((ingredient) => ({
+              name: ingredient.ingredient.name,
+              ingredientId: ingredient.ingredient.id,
+              unitOfMeasureId: ingredient.unitOfMeasure.id ?? '',
+              quantityOfIngredient: ingredient.quantityOfIngredient,
+            }))
+          : [],
       }));
       set({ products: parsedProduct });
     },
