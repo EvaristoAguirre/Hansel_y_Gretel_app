@@ -54,7 +54,6 @@ export interface IPromotionDetails {
   product: IProduct;
 }
 
-
 export interface ProductResponse {
   categories: ICategory[];
   code: number;
