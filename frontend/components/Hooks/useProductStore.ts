@@ -88,6 +88,10 @@ export const useProductStore = create<ProductState>((set) => {
         categories: parseCategories(product.categories),
         productIngredients: product.productIngredients?.map(mapIngredientResponseToForm) ?? [],
         promotionDetails: product.promotionDetails ?? null,
+        stock: product.stock ?? null,
+        allowsToppings: product.allowsToppings ?? false,
+        toppingsSettings: product.toppingsSettings ?? null,
+
       };
       set((state) => ({ products: [...state.products, parsedProduct] }));
     },

@@ -86,9 +86,11 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
-  productIngredients: IingredientResponse[]
-  promotionDetails: IPromotionDetails[]
-  stock: IStockOfProduct
+  productIngredients: IingredientResponse[];
+  promotionDetails: IPromotionDetails[];
+  stock: IStockOfProduct;
+  allowsToppings: boolean | null;
+  toppingsSettings: null
 }
 
 export interface ProductState {
