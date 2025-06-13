@@ -1,6 +1,5 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { MesaCardProps, MesaInterface } from "../Interfaces/Cafe_interfaces";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -10,9 +9,16 @@ import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
 import { UserRole } from "../Enums/user";
 import { TableModalType } from "../Enums/table";
+import { ITable } from "../Interfaces/ITable";
 
-const TableCard: React.FC<MesaCardProps> = ({
-  mesa, handleOpenModal, handleDelete
+interface TableCardProps {
+  table: ITable;
+  handleOpenModal: (type: TableModalType, table?: ITable) => void;
+  handleDelete: (id: string) => void;
+  setSelectedTable: (table: ITable) => void;
+}
+const TableCard: React.FC<TableCardProps> = ({
+  table, handleOpenModal, handleDelete
 }) => {
   const mesaColors = {
     available: "#21b421",
@@ -20,8 +26,8 @@ const TableCard: React.FC<MesaCardProps> = ({
     pending_payment: "#f9b32d",
     closed: "#1f7cad",
   };
-  const { selectedSala, handleSelectMesa, selectedMesa } = useRoomContext();
-  const borderColor = (mesa && mesa.state) ? mesaColors[mesa.state] : mesaColors.closed;
+  const { selectedRoom, handleSelectTable, selectedTable } = useRoomContext();
+  const borderColor = (table && table.state) ? mesaColors[table.state] : mesaColors.closed;
   const { userRoleFromToken } = useAuth();
   const [role, setRole] = useState<string | null>(null);
 
@@ -29,9 +35,9 @@ const TableCard: React.FC<MesaCardProps> = ({
     setRole(userRoleFromToken());
   }, []);
 
-  const handleClickMesa = (table: MesaInterface) => {
-    const isTheSameTable: boolean = table?.id === selectedMesa?.id;
-    return selectedMesa && isTheSameTable ? handleSelectMesa(null) : handleSelectMesa(table);
+  const handleClickTable = (table: ITable) => {
+    const isTheSameTable: boolean = table?.id === selectedTable?.id;
+    return selectedTable && isTheSameTable ? handleSelectTable(null) : handleSelectTable(table);
   };
 
 
@@ -52,7 +58,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         transition: "background-color 0.3s ease",
         position: "relative",
       }}
-      onClick={() => handleClickMesa(mesa)}
+      onClick={() => handleClickTable(table)}
     >
       {/* Indicador de estado */}
       <div
@@ -67,7 +73,7 @@ const TableCard: React.FC<MesaCardProps> = ({
         }}
       />
 
-      <Tooltip title={"Mesa: " + mesa.name} arrow>
+      <Tooltip title={"Table: " + table.name} arrow>
         <ListItemText
           style={{
             color: "#fff",
@@ -79,7 +85,7 @@ const TableCard: React.FC<MesaCardProps> = ({
           }}
           primary={
             <Typography variant="h6" sx={{ fontWeight: "bold", color: "black" }}>
-              {mesa.name}
+              {table.name}
             </Typography>
           }
         />
@@ -90,32 +96,32 @@ const TableCard: React.FC<MesaCardProps> = ({
         <Tooltip title="Ver detalles" arrow>
           <Button
             sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
-            onClick={() => handleClickMesa(mesa)} >
+            onClick={() => handleClickTable(table)} >
             {
-              selectedMesa?.id === mesa.id ? <VisibilityOffIcon /> : <VisibilityIcon />
+              selectedTable?.id === table.id ? <VisibilityOffIcon /> : <VisibilityIcon />
             }
           </Button>
         </Tooltip>
         {
           role !== UserRole.MOZO && (
             <>
-              <Tooltip title="Editar mesa" arrow>
+              <Tooltip title="Editar table" arrow>
                 <Button
                   sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleOpenModal(TableModalType.EDIT, mesa);
+                    handleOpenModal(TableModalType.EDIT, table);
                   }}
                 >
                   <EditIcon />
                 </Button>
               </Tooltip>
-              <Tooltip title="Eliminar mesa" arrow>
+              <Tooltip title="Eliminar table" arrow>
                 <Button
                   sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(mesa.id);
+                    handleDelete(table.id);
                   }}
                 >
                   <DeleteIcon />

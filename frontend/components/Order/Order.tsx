@@ -8,7 +8,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending, orderToReprint } from "@/api/order";
 import { SelectedProductsI } from "../Interfaces/IProducts";
@@ -18,11 +17,12 @@ import { OrderState, TableState } from "../Enums/Enums";
 import { useOrderStore } from "./useOrderStore";
 import { useTableStore } from "../Table/useTableStore";
 import { useAuth } from "@/app/context/authContext";
+import { ITable } from "../Interfaces/ITable";
 
 export interface OrderProps {
   imprimirComanda: any;
   handleDeleteOrder: any;
-  selectedMesa: MesaInterface;
+  selectedTable: ITable;
   handleNextStep: () => void;
   handleCompleteStep: () => void;
   handleReset: () => void;
@@ -40,7 +40,7 @@ const Order: React.FC<OrderProps> = ({
     setConfirmedProducts,
     handleCancelOrder,
   } = useOrderContext();
-  const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
+  const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
@@ -59,7 +59,7 @@ const Order: React.FC<OrderProps> = ({
     calcularTotal();
   }, [confirmedProducts]);
 
-  const handlePayOrder = async (selectedMesa: MesaInterface) => {
+  const handlePayOrder = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
@@ -76,11 +76,11 @@ const Order: React.FC<OrderProps> = ({
     }
 
     const tableEdited = await editTable(
-      { ...selectedMesa, state: TableState.PENDING_PAYMENT },
+      { ...selectedTable, state: TableState.PENDING_PAYMENT },
       token
     );
     if (tableEdited) {
-      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
+      setSelectedTable({ ...selectedTable, state: tableEdited.state });
       updateTable(tableEdited);
 
     }
@@ -88,7 +88,7 @@ const Order: React.FC<OrderProps> = ({
     handleNextStep();
   };
 
-  const handleReprintOrder = async (selectedMesa: MesaInterface) => {
+  const handleReprintOrder = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
@@ -104,11 +104,11 @@ const Order: React.FC<OrderProps> = ({
     }
 
     const tableEdited = await editTable(
-      { ...selectedMesa, state: TableState.PENDING_PAYMENT },
+      { ...selectedTable, state: TableState.PENDING_PAYMENT },
       token
     );
     if (tableEdited) {
-      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
+      setSelectedTable({ ...selectedTable, state: tableEdited.state });
       updateTable(tableEdited);
 
     }
@@ -135,9 +135,9 @@ const Order: React.FC<OrderProps> = ({
 
   return (
     <>
-      {selectedMesa &&
-        (selectedMesa.state === TableState.OPEN ||
-          selectedMesa.state === TableState.PENDING_PAYMENT) ? (
+      {selectedTable &&
+        (selectedTable.state === TableState.OPEN ||
+          selectedTable.state === TableState.PENDING_PAYMENT) ? (
         <div
           style={{
             width: "100%",
@@ -253,7 +253,7 @@ const Order: React.FC<OrderProps> = ({
                 fullWidth
                 variant="contained"
                 sx={commonButtonStyles}
-                onClick={() => handleReprintOrder(selectedMesa)}
+                onClick={() => handleReprintOrder(selectedTable)}
               >
                 <Print style={{ marginRight: "5px" }} /> Reimprimir ticket
               </Button>
@@ -264,7 +264,7 @@ const Order: React.FC<OrderProps> = ({
                 fullWidth
                 variant="contained"
                 sx={commonButtonStyles}
-                onClick={() => handlePayOrder(selectedMesa)}
+                onClick={() => handlePayOrder(selectedTable)}
               >
                 <Print style={{ marginRight: "5px" }} /> Imprimir ticket
               </Button>

@@ -5,7 +5,6 @@ import Step from '@mui/material/Step';
 import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { MesaInterface } from '../Interfaces/Cafe_interfaces';
 import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
@@ -13,11 +12,12 @@ import TableEditor from './TableEditor';
 import { TableState } from '../Enums/Enums';
 import OrderEditor from '../Order/OrderEditor';
 import { useEffect } from 'react';
+import { ITable } from '../Interfaces/ITable';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 
 interface Props {
-  selectedMesa: MesaInterface;
+  selectedTable: ITable;
   view: string;
   onAbrirPedido: () => void;
   activeStep: number;
@@ -25,7 +25,7 @@ interface Props {
 }
 
 export const StepperTable: React.FC<Props> = ({
-  selectedMesa,
+  selectedTable,
   onAbrirPedido,
   activeStep,
   setActiveStep,
@@ -75,15 +75,15 @@ export const StepperTable: React.FC<Props> = ({
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return selectedMesa.state === TableState.AVAILABLE ||
-          selectedMesa.state === TableState.OPEN ? (
+        return selectedTable.state === TableState.AVAILABLE ||
+          selectedTable.state === TableState.OPEN ? (
           <TableEditor
             view="mesaEditor"
             onAbrirPedido={onAbrirPedido}
             handleNextStep={handleNextStep}
             handleCompleteStep={handleCompleteStep}
           />
-        ) : selectedMesa.state === TableState.PENDING_PAYMENT ? (
+        ) : selectedTable.state === TableState.PENDING_PAYMENT ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
             Orden pendiente de pago, cobrar y luego iniciar una nueva orden.
           </div>
@@ -94,7 +94,7 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         );
       case 1:
-        return selectedMesa.state === TableState.OPEN ? (
+        return selectedTable.state === TableState.OPEN ? (
           <OrderEditor
             handleNextStep={handleNextStep}
 
@@ -102,11 +102,11 @@ export const StepperTable: React.FC<Props> = ({
             handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
           />
-        ) : selectedMesa.state === TableState.PENDING_PAYMENT ? (
+        ) : selectedTable.state === TableState.PENDING_PAYMENT ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
             Orden pendiente de pago, cobrar y luego iniciar una nueva orden.
           </div>
-        ) : selectedMesa.state === TableState.CLOSED ? (
+        ) : selectedTable.state === TableState.CLOSED ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
             La orden ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo
             pedido.
@@ -121,7 +121,7 @@ export const StepperTable: React.FC<Props> = ({
           <Order
             imprimirComanda={imprimirComanda}
             handleDeleteOrder={handleReset}
-            selectedMesa={selectedMesa}
+            selectedTable={selectedTable}
             handleNextStep={handleNextStep}
             handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
