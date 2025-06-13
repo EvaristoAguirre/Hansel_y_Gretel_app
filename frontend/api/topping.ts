@@ -105,3 +105,25 @@ export const fetchAllToppingsGroup = async (token: string) => {
   const data = await response.json();
   return data;
 }
+
+export const validatedNameToppingsGroup = async (name: string, token: string) => {
+  try {
+    const response = await fetch(`${URI_TOPPINGS_GROUP}/by-name/${encodeURIComponent(name)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { ok: false };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al validar nombre de grupo:", error);
+    return { ok: false };
+  }
+};

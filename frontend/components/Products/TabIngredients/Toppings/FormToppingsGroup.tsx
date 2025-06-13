@@ -1,3 +1,5 @@
+import { validatedNameToppingsGroup } from "@/api/topping";
+import { useAuth } from "@/app/context/authContext";
 import { ITopping, IToppingsGroup } from "@/components/Interfaces/IToppings";
 import LoadingLottie from "@/components/Loader/Loading";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
@@ -24,6 +26,10 @@ interface Props {
   initialData?: IToppingsGroup | null;
 }
 
+interface Errors {
+  [key: string]: string;
+}
+
 const FormToppingsGroup = ({
   open,
   onClose,
@@ -35,7 +41,11 @@ const FormToppingsGroup = ({
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [nameError, setNameError] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+
   const [toppingsError, setToppingsError] = useState(false);
+  const { getAccessToken } = useAuth();
+  const token = getAccessToken();
 
   const isFormValid = name.trim() !== "" && selectedIds.length > 0;
 
@@ -76,6 +86,29 @@ const FormToppingsGroup = ({
   };
 
 
+  const validateName = async (value: string) => {
+    setName(value);
+    const trimmed = value.trim();
+
+    if (trimmed === "") {
+      setNameError(true);
+      setErrors((prev) => ({ ...prev, name: "" }));
+      return;
+    }
+
+    setNameError(false);
+
+    const token = getAccessToken();
+    const result = token && await validatedNameToppingsGroup(trimmed, token);
+
+    if (result && result.name) {
+      setErrors((prev) => ({ ...prev, name: "El nombre ya está en uso" }));
+    } else {
+      setErrors((prev) => ({ ...prev, name: "" }));
+    }
+  };
+
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
@@ -87,9 +120,10 @@ const FormToppingsGroup = ({
           fullWidth
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
+          onBlur={() => validateName(name)}
           margin="normal"
-          error={nameError}
-          helperText={nameError ? "El nombre del grupo es obligatorio" : ""}
+          error={!!errors.name || nameError}
+          helperText={errors.name || (nameError ? "El nombre del grupo es obligatorio" : "")}
         />
 
         <Typography variant="subtitle1" sx={{ mt: 2 }}>

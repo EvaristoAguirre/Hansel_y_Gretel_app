@@ -118,18 +118,24 @@ const ToppingsGroupList = () => {
       ) : (
         <Grid container spacing={2} display="flex" justifyContent="center">
           {toppingsGroups.map((group) => (
-            <Grid item xs={12} md={4} key={group.id} >
-              <Card sx={{ height: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <Grid item xs={12} sm={6} md={6} key={group.id} >
+              <Card
+                sx={{
+                  width: "380px",
+                  minHeight: 200,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  overflow: "visible",
+                }}
+              >
                 <CardContent>
-                  <Typography variant="h6">{group.name.toLocaleUpperCase()}</Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }} component="div">
-                    {
-                      group.toppings.length === 0
-                        ? 'Sin "agregados" asignados'
-                        : <ScrollableChips toppings={group.toppings} />
-                    }
+                  <Typography variant="h6">
+                    {group.name.toLocaleUpperCase()}
                   </Typography>
+                  <ScrollableChips toppings={group.toppings} />
                 </CardContent>
+
                 <CardActions sx={{ justifyContent: "space-around" }}>
                   <Tooltip
                     title="Eliminar"
