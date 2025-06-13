@@ -3,7 +3,7 @@ import { useAuth } from "@/app/context/authContext";
 
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
+import { IProductDataList, ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
@@ -71,8 +71,8 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]
-  ) => setForm({ ...form, [field]: value });
+    value: string | number | string[] | IingredientForm[] | ProductForPromo[] | null
+  ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
@@ -104,6 +104,8 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 ingredients: params.row.productIngredients || [],
                 products: params.row.promotionDetails || [],
                 isActive: true,
+                allowsToppings: false,
+                toppingsSettings: null
               });
               setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);
