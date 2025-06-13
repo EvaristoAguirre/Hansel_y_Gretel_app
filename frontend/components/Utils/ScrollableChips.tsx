@@ -31,16 +31,24 @@ const ScrollableChips = ({ toppings, maxPerPage = 4 }: Props) => {
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", flexDirection: "column" }}>
-      <Box sx={{ display: "flex", alignItems: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+
+        }}>
         <IconButton size="small" onClick={handlePrev} disabled={page === 0}>
           <ChevronLeftIcon />
         </IconButton>
+
         <Grid
           container
           spacing={1}
-          columns={currentPage.length === 1 ? 1 : 2}
+          columns={2}
           sx={{
-            width: 300,
+            width: "90%",
             px: 1,
             minHeight: 80,
             alignContent: "flex-start",
@@ -53,7 +61,7 @@ const ScrollableChips = ({ toppings, maxPerPage = 4 }: Props) => {
               key={topping.id}
               sx={{
                 display: "flex",
-                justifyContent: "center",
+                justifyContent: "flex-start",
               }}
             >
               <Chip
@@ -62,10 +70,10 @@ const ScrollableChips = ({ toppings, maxPerPage = 4 }: Props) => {
                 color="primary"
                 variant="outlined"
                 sx={{
-                  width: currentPage.length === 1 ? "100%" : "100%",
-                  minWidth: currentPage.length === 1 ? 140 : 100,
-                  fontSize: currentPage.length === 1 ? "1rem" : "0.875rem",
-                  py: currentPage.length === 1 ? 2 : 0.5,
+                  width: "100%",
+                  minWidth: 100,
+                  fontSize: "0.875rem",
+                  py: 0.5,
                 }}
               />
             </Grid>
