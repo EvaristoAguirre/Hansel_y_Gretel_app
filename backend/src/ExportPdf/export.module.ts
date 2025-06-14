@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ExportController } from './export.controller';
 import { ExportService } from './export.service';
-import { StockModule } from 'src/Stock/stock.module';
+import { ProductModule } from 'src/Product/product.module';
+import { IngredientModule } from 'src/Ingredient/ingredient.module';
 
 @Module({
-  imports: [StockModule],
+  imports: [ProductModule, IngredientModule],
   controllers: [ExportController],
   providers: [ExportService],
   exports: [ExportService],

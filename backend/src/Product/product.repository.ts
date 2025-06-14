@@ -1458,4 +1458,14 @@ export class ProductRepository {
       relations,
     });
   }
+
+  //---------------- Consultas de Stock ---------------
+  async getProductsWithStock(): Promise<Product[]> {
+    return this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.stock', 'stock')
+      .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
+      .where('product.type = :type', { type: 'simple' })
+      .getMany();
+  }
 }
