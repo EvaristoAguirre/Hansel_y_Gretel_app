@@ -210,10 +210,10 @@ export class ProductRepository {
   async createProduct(
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const queryRunner = this.dataSource.createQueryRunner();
     if (!productToCreate.type) {
       throw new BadRequestException('Product type is required');
     }
+    const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 

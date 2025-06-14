@@ -521,11 +521,7 @@ export class OrderRepository {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(

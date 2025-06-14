@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, Repository } from 'typeorm';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
@@ -16,6 +16,7 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
+import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 
 @Injectable()
 export class IngredientRepository {
@@ -23,6 +24,7 @@ export class IngredientRepository {
     @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
     private readonly unitOfMeasureService: UnitOfMeasureService,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ------- con envio de stock estandarizado
@@ -197,36 +199,52 @@ export class IngredientRepository {
       );
     }
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const ingredient = await this.ingredientRepository.findOne({
-        where: { id: id, isActive: true },
+      const ingredientToUpdate = await queryRunner.manager.findOne(Ingredient, {
+        where: { id, isActive: true },
       });
-      if (!ingredient) {
+
+      if (!ingredientToUpdate) {
         throw new NotFoundException('Ingredient not found');
       }
 
+      const shouldRecalculate =
+        updateData.cost !== undefined &&
+        Number(updateData.cost) !== Number(ingredientToUpdate.cost);
+
       if (updateData.unitOfMeasureId) {
-        const unitOfMeasure =
-          await this.unitOfMeasureService.getUnitOfMeasureById(
-            updateData.unitOfMeasureId,
-          );
+        const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
+          where: { id: updateData.unitOfMeasureId },
+        });
         if (!unitOfMeasure) {
           throw new BadRequestException('Unit of measure not found');
         }
 
-        ingredient.unitOfMeasure = unitOfMeasure;
+        ingredientToUpdate.unitOfMeasure = unitOfMeasure;
         delete updateData.unitOfMeasureId;
       }
 
-      Object.assign(ingredient, updateData);
+      Object.assign(ingredientToUpdate, updateData);
 
-      await this.ingredientRepository.save(ingredient);
-      const updatedIngredient = await this.ingredientRepository.findOne({
+      // ---------------- Actualizacion de costos --------------------
+      if (shouldRecalculate) {
+        console.log('precio nuevo');
+      }
+      // ---------------- Cierre de actualizacion de costos ----------
+
+      await queryRunner.manager.save(ingredientToUpdate);
+      const updatedIngredient = await queryRunner.manager.findOne(Ingredient, {
         where: { id: id, isActive: true },
         relations: ['unitOfMeasure'],
       });
+      await queryRunner.commitTransaction();
       return updatedIngredient;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       if (
         error instanceof BadRequestException ||
         error instanceof NotFoundException
@@ -237,6 +255,8 @@ export class IngredientRepository {
         'Error updating the ingredient',
         error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -531,4 +551,19 @@ export class IngredientRepository {
   private adaptToppingsResponse(toppings: any[]): ToppingResponseDto[] {
     return toppings.map(this.adaptToppingResponse);
   }
+
+  // private async recalculateAffectedProductsCost(
+  //   ingredientId: string,
+  //   queryRunner: QueryRunner,
+  // ) {
+  //   try {
+
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new InternalServerErrorException(
+  //       'Product cost update failed. Please try aganin later',
+  //       error.message,
+  //     );
+  //   }
+  // }
 }
