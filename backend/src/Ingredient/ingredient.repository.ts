@@ -531,4 +531,13 @@ export class IngredientRepository {
   private adaptToppingsResponse(toppings: any[]): ToppingResponseDto[] {
     return toppings.map(this.adaptToppingResponse);
   }
+
+  // --------------------- Consultas sobre Stock  -----------
+  async getIngredientsWithStock(): Promise<Ingredient[]> {
+    return this.ingredientRepository
+      .createQueryBuilder('ingredient')
+      .leftJoinAndSelect('ingredient.stock', 'stock')
+      .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
+      .getMany();
+  }
 }
