@@ -63,4 +63,10 @@ export class TableController {
   async getTableByName(@Param('name') name: string): Promise<Table> {
     return this.tableService.getTableByName(name);
   }
+
+  @Get('by-room/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getTablesByRoom(@Param('id') roomId: string): Promise<Table[]> {
+    return this.tableService.getTablesByRoom(roomId);
+  }
 }
