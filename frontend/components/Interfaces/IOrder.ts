@@ -1,5 +1,13 @@
 import { OrderState } from "../Enums/Enums";
+import { ITable } from "./ITable";
 
+export interface IOrder {
+  id: string;
+  date: Date;
+  state: OrderState;
+  isActive: boolean;
+  table: ITable;
+}
 export interface IOrderDetails {
   id: string;
   state: OrderState;

@@ -19,6 +19,7 @@ import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
 import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
+import { ExportModule } from './ExportPdf/export.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
     SeederModule,
     UnitOfMeasurenModule,
     ToppingsGroupsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

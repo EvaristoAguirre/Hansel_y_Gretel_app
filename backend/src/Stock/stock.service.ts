@@ -51,7 +51,6 @@ export class StockService {
   }
 
   async deductStock(productId: string, quantity: number) {
-    console.log('adentro del descuento', productId, quantity);
     const stockDeducted = await this.stockRepository.deductStock(
       productId,
       quantity,

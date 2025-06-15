@@ -230,7 +230,7 @@ const OrderEditor = ({
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "16rem", // Más altura para que entren comentarios
+                  maxHeight: "16rem",
                   overflowY: "auto",
                   border: "2px solid #856D5E",
                   borderRadius: "5px",

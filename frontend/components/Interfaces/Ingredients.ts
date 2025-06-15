@@ -9,16 +9,18 @@ export interface Iingredient {
   description: string,
   // price: number | null,
   cost: number | null,
-  stock?: IStockOfProduct,
-  unitOfMeasureId?: (IUnitOfMeasureStandard | string) | null
-  type: TypeBaseUnitIngredient
+  stock?: IStockOfProduct | null,
+  unitOfMeasureId?: (string | IUnitOfMeasureStandard) | null
+  type: TypeBaseUnitIngredient | null
 }
 export interface IingredientForm {
   name: string,
   ingredientId: string,
   quantityOfIngredient: number | null,
   unitOfMeasureId: string,
-  type: TypeBaseUnitIngredient | null
+  type: TypeBaseUnitIngredient | null,
+  isTopping: boolean,
+  extraCost: number | null
 }
 
 export interface IingredientResponse {
@@ -26,4 +28,6 @@ export interface IingredientResponse {
   quantityOfIngredient: number,
   ingredient: Iingredient,
   unitOfMeasure: IUnitOfMeasureResponse
+  isTopping: boolean,
+  extraCost: number
 }

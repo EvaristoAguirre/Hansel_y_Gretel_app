@@ -44,13 +44,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const { updateIngredient } = useIngredientsContext();
   const { units } = useUnitContext()
 
-
-  useEffect(() => {
-    console.log({ selectedItem });
-
-  })
-
-
   useEffect(() => {
     let selectedUnit = units.find((u: IUnitOfMeasureForm) => u.name === selectedItem.unit);
     setFormValues({
@@ -83,8 +76,8 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const handleSubmit = async () => {
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
     const payload: IStock = {
-      quantityInStock: parseInt(quantityInStock, 10),
-      minimumStock: parseInt(minimumStock, 10),
+      quantityInStock: parseFloat(quantityInStock),
+      minimumStock: parseFloat(minimumStock),
       unitOfMeasureId: unitOfMeasure,
     };
 

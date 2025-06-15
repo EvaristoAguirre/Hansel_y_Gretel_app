@@ -33,6 +33,8 @@ export const useProducts = () => {
     ingredients: [],
     products: [],
     isActive: true,
+    allowsToppings: false,
+    toppingsSettings: null
   });
 
   // Llamada inicial para cargar productos
@@ -156,6 +158,8 @@ export const useProducts = () => {
       ingredients: [],
       products: [],
       isActive: true,
+      allowsToppings: false,
+      toppingsSettings: null
     });
   };
 

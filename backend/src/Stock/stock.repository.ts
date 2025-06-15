@@ -19,6 +19,7 @@ import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
+import { StockToExportResponseDTO } from 'src/DTOs/stockToExportResponse.dto';
 
 @Injectable()
 export class StockRepository {
@@ -467,6 +468,7 @@ export class StockRepository {
             id: stock.ingredient.id,
             name: stock.ingredient.name,
             cost: stock.ingredient.cost,
+            isTopping: stock.ingredient.isTopping,
           }
         : null,
       product: stock.product
@@ -486,5 +488,33 @@ export class StockRepository {
 
   private adaptStocksResponse(stocks: any[]): StockSummaryResponseDTO[] {
     return stocks.map(this.adaptStockResponse);
+  }
+
+  private adaptStockToExportResponse(stock: any): StockToExportResponseDTO {
+    return {
+      quantityInStock: stock.quantityInStock,
+      ingredient: stock.ingredient
+        ? {
+            name: stock.ingredient.name,
+            cost: stock.ingredient.cost,
+          }
+        : null,
+      product: stock.product
+        ? {
+            name: stock.product.name,
+            cost: stock.product.cost,
+          }
+        : null,
+      unitOfMeasure: {
+        name: stock.unitOfMeasure.name,
+        abbreviation: stock.unitOfMeasure.abbreviation,
+      },
+    };
+  }
+
+  private adaptStocksToExportResponse(
+    stocks: any[],
+  ): StockToExportResponseDTO[] {
+    return stocks.map(this.adaptStockToExportResponse);
   }
 }

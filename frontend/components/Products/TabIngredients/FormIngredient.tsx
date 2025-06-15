@@ -10,6 +10,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Checkbox,
+  FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { FormType } from "@/components/Enums/Ingredients";
@@ -151,6 +154,28 @@ export const FormIngredient = ({
             }
           </Select>
         </FormControl>
+        <Tooltip title="Un agregado puede ser una salsa de chocolate, por ejemplo, para agregar a un producto.">
+          <FormControlLabel
+            label="¿Es un agregado?"
+            control={
+              <Checkbox
+                size="medium"
+                onChange={(e) =>
+                  setFormIngredients((prev) => ({
+                    ...prev,
+                    isTopping: e.target.checked,
+                  }))
+                }
+              />
+            }
+            sx={{
+              mt: 2,
+              color: "primary.main",
+              fontSize: "1.2rem",
+              fontWeight: "bold",
+            }}
+          />
+        </Tooltip>
       </DialogContent>
 
       <DialogActions>

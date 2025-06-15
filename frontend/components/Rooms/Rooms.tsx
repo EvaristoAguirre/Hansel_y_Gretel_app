@@ -13,20 +13,20 @@ import LoadingLottie from "../Loader/Loading";
 
 const Rooms = () => {
   const {
-    salas,
-    selectedSala,
-    handleSelectSala,
-    selectedMesa,
+    rooms,
+    selectedRoom,
+    handleSelectRoom,
+    selectedTable,
     view,
     modalOpen,
     setModalOpen,
-    editingSala,
-    setEditingSala,
+    editingRoom,
+    setEditingRoom,
     menuAnchorEl,
-    menuSala,
-    handleSaveSala,
-    handleDeleteSala,
-    handleSelectMesa,
+    menuRoom,
+    handleSaveRoom,
+    handleDeleteRoom,
+    handleSelectTable,
     handleAbrirPedido,
     handleMenuOpen,
     handleMenuClose,
@@ -59,11 +59,11 @@ const Rooms = () => {
         }}
       >
         <Tabs
-          value={selectedSala?.id || false}
+          value={selectedRoom?.id || false}
           onChange={(_, newValue) => {
-            const salaSeleccionada = salas.find((sala) => sala.id === newValue);
+            const salaSeleccionada = rooms.find((room) => room.id === newValue);
 
-            handleSelectSala(salaSeleccionada || null);
+            handleSelectRoom(salaSeleccionada || null);
           }}
           textColor="inherit"
           variant="scrollable"
@@ -76,10 +76,10 @@ const Rooms = () => {
             }
           }}
         >
-          {Array.isArray(salas) &&
-            salas.map((sala) => (
+          {Array.isArray(rooms) &&
+            rooms.map((room) => (
               <Tab
-                key={sala.id}
+                key={room.id}
                 label={
                   <Box
                     sx={{
@@ -91,15 +91,15 @@ const Rooms = () => {
                     }}
                   >
                     <span className="ml-4">
-                      {sala.name}
+                      {room.name}
                     </span>
                     <MoreVertIcon
                       sx={{ cursor: "pointer" }}
-                      onClick={(e) => handleMenuOpen(e, sala)}
+                      onClick={(e) => handleMenuOpen(e, room)}
                     />
                   </Box>
                 }
-                value={sala.id}
+                value={room.id}
                 sx={{
                   textTransform: "uppercase",
                 }}
@@ -124,7 +124,7 @@ const Rooms = () => {
                 },
               }}
               onClick={() => {
-                setEditingSala(null);
+                setEditingRoom(null);
                 setModalOpen(true);
               }}
             >
@@ -140,24 +140,24 @@ const Rooms = () => {
           <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleMenuClose}>
             <MenuItem
               onClick={() => {
-                setEditingSala(menuSala);
+                setEditingRoom(menuRoom);
                 setModalOpen(true);
                 handleMenuClose();
               }}
             >
               Editar
             </MenuItem>
-            <MenuItem onClick={handleDeleteSala}>Borrar</MenuItem>
+            <MenuItem onClick={handleDeleteRoom}>Borrar</MenuItem>
           </Menu>
         )
       }
 
-      {/* Modal de sala */}
+      {/* Modal de Room */}
       <RoomModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSubmit={handleSaveSala}
-        sala={editingSala}
+        onSubmit={handleSaveRoom}
+        room={editingRoom}
       />
 
       {/* Contenido de las mesas y editor pedido */}
@@ -166,13 +166,13 @@ const Rooms = () => {
         {/* contenedor de Mesas */}
         <Box
           className="w-full p-2 ">
-          {selectedSala && (
-            <Table salaId={selectedSala.id} onSelectMesa={handleSelectMesa} />
+          {selectedRoom && (
+            <Table salaId={selectedRoom.id} onSelectTable={handleSelectTable} />
           )}
         </Box>
         {/* contenedor de Armar pedido */}
         <Box className="w-full p-2 lg:w-3/4">
-          {selectedMesa && (
+          {selectedTable && (
             <>
               <div>
                 <h2
@@ -190,13 +190,13 @@ const Rooms = () => {
                     borderRadius: "0.2rem",
                   }}
                 >
-                  MESA: {selectedMesa?.name}
+                  MESA: {selectedTable?.name}
                 </h2>
               </div>
               {
-                selectedMesa ? (
+                selectedTable ? (
                   <StepperTable
-                    selectedMesa={selectedMesa}
+                    selectedTable={selectedTable}
                     view={view || ""}
                     onAbrirPedido={handleAbrirPedido}
                     activeStep={activeStep}
