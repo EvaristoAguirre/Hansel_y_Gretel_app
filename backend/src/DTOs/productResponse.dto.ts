@@ -56,6 +56,9 @@ export class ProductResponseDto {
   type: 'product' | 'promotion' | 'simple';
 
   @Expose()
+  allowsToppings?: boolean;
+
+  @Expose()
   @Type(() => CategoryResponseDto)
   categories?: CategoryResponseDto[];
 
@@ -74,16 +77,23 @@ export class ProductResponseDto {
   @Expose()
   @Type(() => StockSummary)
   stock: StockSummary;
+
+  @Expose()
+  @Type(() => AvailableToppingGroupDto)
+  availableToppingGroups?: AvailableToppingGroupDto[];
 }
 
 export class ProductIngredientsResponseDto {
   @Expose()
   id: string;
+
   @Expose()
   quantityOfIngredient: number;
+
   @Expose()
   @Type(() => IngredientResponseDto)
   ingredient: IngredientResponseDto;
+
   @Expose()
   @Type(() => UnitOfMeasureResponseDto)
   unitOfMeasure: UnitOfMeasureResponseDto;
@@ -103,4 +113,48 @@ export class PromotionProductResponseDto {
   @Expose()
   @Type(() => PromotionResponse)
   promotion: PromotionResponse;
+}
+export class AvailableToppingGroupDto {
+  @Expose()
+  id?: string;
+
+  @Expose()
+  name?: string;
+
+  @Expose()
+  description?: string;
+
+  @Expose()
+  settings: {
+    maxSelection?: number;
+    chargeExtra?: boolean;
+  };
+
+  @Expose()
+  quantityOfTopping: number;
+
+  @Expose()
+  toppingsGroup?: ToppingGroupResponseDto[];
+}
+
+export class ToppingGroupResponseDto {
+  @Expose()
+  id?: string;
+
+  @Expose()
+  name?: string;
+
+  @Expose()
+  description?: string;
+
+  @Expose()
+  toppings?: ToppingResponseDto[];
+}
+
+export class ToppingResponseDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
 }

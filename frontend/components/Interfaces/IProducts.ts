@@ -4,21 +4,34 @@ import { ICategory } from './ICategories';
 import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
 
+// interface IProduct {
+//   id: string;
+//   code: number | null;
+//   name: string;
+//   description: string;
+//   type: TypeProduct | null;
+//   price: number | null;
+//   cost: number | null;
+//   isActive?: boolean;
+// }
+
 interface IProduct {
-  id: string;
+  allowsToppings: boolean | null;
   code: number | null;
-  name: string;
-  description: string;
-  type: TypeProduct | null;
-  price: number | null;
   cost: number | null;
-  isActive?: boolean;
+  description: string;
+  id: string;
+  isActive: boolean;
+  name: string;
+  price: number | null;
+  toppingsSettings: null;
+  type: TypeProduct;
 }
 export interface ProductForm extends IProduct {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | ProductForPromo[];
+  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IProductDataList[];
   categories: string[];
   ingredients: IingredientForm[];
-  products: ProductForPromo[];
+  products: IProductDataList[];
   isActive: boolean;
 }
 
@@ -28,7 +41,16 @@ export interface ProductForPromo {
   id?: string;
   name?: string;
   price?: number;
+
 }
+
+export interface IProductDataList {
+  id: string;
+  product: IProduct;
+  quantity: number;
+}
+
+
 export interface ProductTableProps {
   rows: GridRowsProp;
   columns: GridColDef[];
@@ -54,7 +76,6 @@ export interface IPromotionDetails {
   product: IProduct;
 }
 
-
 export interface ProductResponse {
   categories: ICategory[];
   code: number;
@@ -65,9 +86,11 @@ export interface ProductResponse {
   isActive: boolean;
   name: string;
   price: number;
-  productIngredients: IingredientResponse[]
-  promotionDetails: IPromotionDetails[]
-  stock: IStockOfProduct
+  productIngredients: IingredientResponse[];
+  promotionDetails: IPromotionDetails[];
+  stock: IStockOfProduct;
+  allowsToppings: boolean | null;
+  toppingsSettings: null
 }
 
 export interface ProductState {

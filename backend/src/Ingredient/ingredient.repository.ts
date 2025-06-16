@@ -552,18 +552,12 @@ export class IngredientRepository {
     return toppings.map(this.adaptToppingResponse);
   }
 
-  // private async recalculateAffectedProductsCost(
-  //   ingredientId: string,
-  //   queryRunner: QueryRunner,
-  // ) {
-  //   try {
-
-  //   } catch (error) {
-  //     if (error instanceof HttpException) throw error;
-  //     throw new InternalServerErrorException(
-  //       'Product cost update failed. Please try aganin later',
-  //       error.message,
-  //     );
-  //   }
-  // }
+  // --------------------- Consultas sobre Stock  -----------
+  async getIngredientsWithStock(): Promise<Ingredient[]> {
+    return this.ingredientRepository
+      .createQueryBuilder('ingredient')
+      .leftJoinAndSelect('ingredient.stock', 'stock')
+      .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
+      .getMany();
+  }
 }

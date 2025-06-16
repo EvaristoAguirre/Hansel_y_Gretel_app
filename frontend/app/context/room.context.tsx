@@ -1,49 +1,50 @@
-import { ISala, MesaInterface } from '@/components/Interfaces/Cafe_interfaces';
+import { IRoom } from '@/components/Interfaces/IRooms';
+import { ITable } from '@/components/Interfaces/ITable';
 import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from './authContext';
 type RoomContextType = {
-  salas: ISala[];
-  selectedSala: ISala | null;
-  selectedMesa: MesaInterface | null;
-  setSelectedMesa: (mesa: MesaInterface | null) => void;
+  rooms: IRoom[];
+  selectedRoom: IRoom | null;
+  selectedTable: ITable | null;
+  setSelectedTable: (table: ITable | null) => void;
   view: "mesaEditor" | "pedidoEditor" | null;
   modalOpen: boolean;
-  editingSala: ISala | null;
+  editingRoom: IRoom | null;
   menuAnchorEl: null | HTMLElement;
-  menuSala: ISala | null;
+  menuRoom: IRoom | null;
   setModalOpen: (open: boolean) => void;
-  setEditingSala: (sala: ISala | null) => void;
-  handleSelectSala: (sala: ISala | null) => void;
-  handleSaveSala: (sala: { id?: string; name: string }) => void;
-  handleDeleteSala: () => void;
-  handleSelectMesa: (mesa: MesaInterface | null) => void;
+  setEditingRoom: (room: IRoom | null) => void;
+  handleSelectRoom: (room: IRoom | null) => void;
+  handleSaveRoom: (room: { id?: string; name: string }) => void;
+  handleDeleteRoom: () => void;
+  handleSelectTable: (table: ITable | null) => void;
   handleAbrirPedido: () => void;
-  handleVolverAMesaEditor: () => void;
-  handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, sala: ISala) => void;
+  handleVolverATableEditor: () => void;
+  handleMenuOpen: (event: React.MouseEvent<SVGSVGElement>, room: IRoom) => void;
   handleMenuClose: () => void;
   setOrderSelectedTable: (order: string) => void
 };
 
 const RoomContext = createContext<RoomContextType>({
-  salas: [],
-  selectedSala: null,
-  selectedMesa: null,
-  setSelectedMesa: () => { },
+  rooms: [],
+  selectedRoom: null,
+  selectedTable: null,
+  setSelectedTable: () => { },
   view: null,
   modalOpen: false,
-  editingSala: null,
+  editingRoom: null,
   menuAnchorEl: null,
-  menuSala: null,
+  menuRoom: null,
   setModalOpen: () => { },
-  setEditingSala: () => { },
-  handleSelectSala: () => { },
-  handleSaveSala: () => { },
-  handleDeleteSala: () => { },
-  handleSelectMesa: () => { },
+  setEditingRoom: () => { },
+  handleSelectRoom: () => { },
+  handleSaveRoom: () => { },
+  handleDeleteRoom: () => { },
+  handleSelectTable: () => { },
   handleAbrirPedido: () => { },
-  handleVolverAMesaEditor: () => { },
+  handleVolverATableEditor: () => { },
   handleMenuOpen: () => { },
   handleMenuClose: () => { },
   setOrderSelectedTable: () => { }
@@ -57,14 +58,14 @@ export const useRoomContext = () => {
 const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
-  const [salas, setSalas] = useState<ISala[]>([]);
-  const [selectedSala, setSelectedSala] = useState<ISala | null>(null);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [rooms, setRooms] = useState<IRoom[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
+  const [selectedTable, setSelectedTable] = useState<ITable | null>(null);
   const [view, setView] = useState<"mesaEditor" | "pedidoEditor" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingSala, setEditingSala] = useState<ISala | null>(null);
+  const [editingRoom, setEditingRoom] = useState<IRoom | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [menuSala, setMenuSala] = useState<ISala | null>(null);
+  const [menuRoom, setMenuRoom] = useState<IRoom | null>(null);
 
 
   useEffect(() => {
@@ -72,7 +73,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     if (!token) return;
     setToken(token);
 
-    async function fetchSalas() {
+    async function fetchRooms() {
       try {
         const response = await fetch(URI_ROOM, {
           method: "GET",
@@ -81,40 +82,40 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
           }
         });
         const data = await response.json();
-        setSalas(data);
+        setRooms(data);
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar las salas.", "error");
       }
     }
-    fetchSalas();
+    fetchRooms();
   }, []);
 
-  const handleSelectSala = (sala: ISala | null) => {
-    setSelectedMesa(null);
-    setSelectedSala(sala);
+  const handleSelectRoom = (room: IRoom | null) => {
+    setSelectedTable(null);
+    setSelectedRoom(room);
   }
 
-  const handleSaveSala = async (sala: { id?: string; name: string }) => {
-    if (sala.id) {
+  const handleSaveRoom = async (room: { id?: string; name: string }) => {
+    if (room.id) {
       // Editar sala existente
       try {
-        const response = await fetch(`${URI_ROOM}/${sala.id}`, {
+        const response = await fetch(`${URI_ROOM}/${room.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
           },
-          body: JSON.stringify(sala),
+          body: JSON.stringify(room),
         });
 
         if (!response.ok) throw new Error("Error al editar la sala.");
 
-        const updatedSala = await response.json();
-        setSalas((prev) =>
-          prev.map((s) => (s.id === updatedSala.id ? updatedSala : s))
+        const updatedRoom = await response.json();
+        setRooms((prev) =>
+          prev.map((s) => (s.id === updatedRoom.id ? updatedRoom : s))
         );
 
-        Swal.fire("Éxito", "Sala actualizada correctamente.", "success");
+        Swal.fire("Éxito", "Room actualizada correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo actualizar la sala.", "error");
       }
@@ -127,23 +128,23 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
           },
-          body: JSON.stringify(sala),
+          body: JSON.stringify(room),
         });
 
         if (!response.ok) throw new Error("Error al crear la sala.");
 
-        const newSala = await response.json();
-        setSalas((prev) => [...prev, newSala]);
+        const newRoom = await response.json();
+        setRooms((prev) => [...prev, newRoom]);
 
-        Swal.fire("Éxito", "Sala creada correctamente.", "success");
+        Swal.fire("Éxito", "Room creada correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo crear la sala.", "error");
       }
     }
   };
 
-  const handleDeleteSala = async () => {
-    if (!menuSala) return;
+  const handleDeleteRoom = async () => {
+    if (!menuRoom) return;
 
     //agrego una confirmacion antes de eliminar
     const result = await Swal.fire({
@@ -158,7 +159,7 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     if (result.isConfirmed) {
 
       try {
-        const response = await fetch(`${URI_ROOM}/${menuSala.id}`, {
+        const response = await fetch(`${URI_ROOM}/${menuRoom.id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -168,19 +169,19 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
         if (!response.ok) throw new Error("Error al eliminar la sala.");
 
-        setSalas((prev) => {
-          const nuevasSalas = prev.filter((s) => s.id !== menuSala.id);
+        setRooms((prev) => {
+          const nuevasRooms = prev.filter((s) => s.id !== menuRoom.id);
 
           // Agrego esto para evitar error cuando se elimina la sala seleccionada. 
-          //Si la sala eliminada es la seleccionada, actualizar `selectedSala`
-          if (selectedSala?.id === menuSala.id) {
-            setSelectedSala(nuevasSalas.length > 0 ? nuevasSalas[0] : null);
+          //Si la sala eliminada es la seleccionada, actualizar `selectedRoom`
+          if (selectedRoom?.id === menuRoom.id) {
+            setSelectedRoom(nuevasRooms.length > 0 ? nuevasRooms[0] : null);
           }
 
-          return nuevasSalas;
+          return nuevasRooms;
         });
 
-        Swal.fire("Éxito", "Sala eliminada correctamente.", "success");
+        Swal.fire("Éxito", "Room eliminada correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo eliminar la sala.", "error");
       } finally {
@@ -190,64 +191,64 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   };
 
   /**
-   * @param mesa - Es la Mesa que se selecciona.
-   * Se setea la mesa seleccionada en `selectedMesa`.
-   * Se setea la orden de la mesa en `selectedOrderByTable`.
-   * Se limpia la información de la mesa saliente mediante `handleResetSelectedOrder`.
+   * @param table - Es la Table que se selecciona.
+   * Se setea la table seleccionada en `selectedTable`.
+   * Se setea la orden de la table en `selectedOrderByTable`.
+   * Se limpia la información de la table saliente mediante `handleResetSelectedOrder`.
    */
-  const handleSelectMesa = async (mesa: MesaInterface | null) => {
-    setSelectedMesa(mesa);
+  const handleSelectTable = async (table: ITable | null) => {
+    setSelectedTable(table);
   };
 
   const setOrderSelectedTable = (order: string) => {
     const newOrder = [order];
-    setSelectedMesa({
-      ...selectedMesa,
+    setSelectedTable({
+      ...selectedTable,
       orders: newOrder,
-    } as MesaInterface);
+    } as ITable);
   };
 
   const handleAbrirPedido = () => {
     setView("pedidoEditor");
   };
 
-  const handleVolverAMesaEditor = () => {
+  const handleVolverATableEditor = () => {
     setView("mesaEditor");
   };
 
   const handleMenuOpen = (
     event: React.MouseEvent<SVGSVGElement>,
-    sala: ISala
+    sala: IRoom
   ) => {
     setMenuAnchorEl(event.currentTarget as unknown as HTMLElement);
-    setMenuSala(sala);
+    setMenuRoom(sala);
   };
 
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
-    setMenuSala(null);
+    setMenuRoom(null);
   };
 
   return (
     <RoomContext.Provider value={{
-      salas,
-      selectedSala,
-      selectedMesa,
-      setSelectedMesa,
+      rooms,
+      selectedRoom,
+      selectedTable,
+      setSelectedTable,
       setOrderSelectedTable,
       view,
       modalOpen,
-      editingSala,
+      editingRoom,
       menuAnchorEl,
-      menuSala,
+      menuRoom,
       setModalOpen,
-      setEditingSala,
-      handleSelectSala,
-      handleSaveSala,
-      handleDeleteSala,
-      handleSelectMesa,
+      setEditingRoom,
+      handleSelectRoom,
+      handleSaveRoom,
+      handleDeleteRoom,
+      handleSelectTable,
       handleAbrirPedido,
-      handleVolverAMesaEditor,
+      handleVolverATableEditor,
       handleMenuOpen,
       handleMenuClose
     }}>

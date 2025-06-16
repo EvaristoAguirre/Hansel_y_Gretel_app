@@ -12,8 +12,8 @@ export default registerAs('typeorm', () => ({
   database: process.env.DB,
   autoLoadEntities: true,
   synchronize: true, // pasar a false en producción
-  dropSchema: false,
-  logging: ['error'],
+  dropSchema: false, // pasar a false en producción
+  logging: ['error', 'warn'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
@@ -31,4 +31,5 @@ export const connectionSource = new DataSource({
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
   schema: 'public',
+  logging: ['error', 'warn'],
 });

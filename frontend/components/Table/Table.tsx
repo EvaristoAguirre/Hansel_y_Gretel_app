@@ -1,8 +1,7 @@
 'useClient';
 import React, { useState } from "react";
-import { MesaProps } from "../Interfaces/Cafe_interfaces";
-import useMesa from "../Hooks/useMesa";
-import { TableCreated, useTableStore } from "./useTableStore";
+import useTable from "../Hooks/useTable";
+import { useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 import TablesStatus from "./TablesStatus";
@@ -12,8 +11,13 @@ import { useAuth } from "@/app/context/authContext";
 import { useNameTableForm } from "./useNameTableForm";
 import TableModal from "./TableModal";
 import { TableModalType } from "../Enums/table";
+import { ITable } from "../Interfaces/ITable";
 
-const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
+interface TableProps {
+  salaId: string;
+  onSelectTable: (table: ITable) => void;
+}
+const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
@@ -27,12 +31,11 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
     handleCreateTable,
     handleEdit,
     handleDelete,
-    // setForm,
-  } = useMesa(salaId, setNameTable);
+  } = useTable(salaId, setNameTable);
 
   const { tables } = useTableStore();
 
-  const { selectedMesa } = useRoomContext();
+  const { selectedTable } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
   const { userRoleFromToken } = useAuth();
   const role = userRoleFromToken();
@@ -43,12 +46,12 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
    * Esto es para renderizar solo las mesas de la sala seleccionada y
    * mostrar solo las mesas con el estado seleccionado del componente TablesStatus
    */
-  const mesasFiltradas = tables.filter((mesa: TableCreated) =>
-    mesa.room.id === salaId && (filterState ? mesa.state === filterState : true)
+  const mesasFiltradas = tables.filter((table: ITable) =>
+    table.room.id === salaId && (filterState ? table.state === filterState : true)
   );
 
 
-  const { selectedSala } = useRoomContext();
+  const { selectedRoom } = useRoomContext();
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -61,7 +64,7 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
               className="mr-2 w-1/3 lg:w-2/5 my-2 h-[3rem] border-2 border-[#856D5E] hover:bg-[#856D5E] hover:text-white"
               onClick={() => handleOpenModal(TableModalType.CREATE)}
             >
-              + Agregar mesa
+              + Agregar Mesa
             </Button>
           )
         }
@@ -76,12 +79,12 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
         style={{ maxHeight: "90vh" }}
       >
         {mesasFiltradas.length > 0 ? (
-          mesasFiltradas.map((mesa) => (
+          mesasFiltradas.map((table) => (
             <TableCard
-              key={mesa.id}
-              mesa={mesa}
-              setSelectedMesa={(mesaSeleccionada) => {
-                onSelectMesa(mesaSeleccionada);
+              key={table.id}
+              table={table}
+              setSelectedTable={(mesaSeleccionada) => {
+                onSelectTable(mesaSeleccionada);
               }}
               handleOpenModal={handleOpenModal}
               handleDelete={handleDelete}
@@ -98,12 +101,13 @@ const Table: React.FC<MesaProps> = ({ salaId, onSelectMesa }) => {
           onSave={
             modalType === TableModalType.CREATE
               ? () => handleCreateTable(nameTable, salaId)
+
               : (modalType === TableModalType.EDIT && form?.id)
                 ? () => handleEdit(form ?? {})
                 : () => Promise.resolve() // valor por defecto
           }
           nombre={nameTable}
-          room={selectedSala?.name ?? ''}
+          room={selectedRoom?.name ?? ''}
           setNombre={setNameTable}
           errorNombre={errorNameTable}
           modalType={modalType}

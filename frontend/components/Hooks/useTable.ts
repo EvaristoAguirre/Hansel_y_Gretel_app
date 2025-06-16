@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "../Order/useOrderStore";
 import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
-import { TableForm } from "../Interfaces/ITable";
+import { ITable, TableForm } from "../Interfaces/ITable";
 import { TableModalType } from "../Enums/table";
+import { TableState } from "../Enums/Enums";
 
-const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
+const useTable = (salaId: string, setNameTable: (name: string) => void) => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
-  const [selectedMesa, setSelectedMesa] = useState<MesaInterface | null>(null);
+  const [selectedTable, setSelectedTable] = useState<ITable | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<TableModalType>(TableModalType.CREATE);
   const [form, setForm] = useState<TableForm>({
-    name: ""
+    name: "",
+    state: TableState.AVAILABLE,
   });
 
   const {
@@ -28,18 +29,20 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   } = useTableStore();
 
   const { orders } = useOrderStore();
-  const handleOpenModal = (type: TableModalType, mesa?: MesaInterface) => {
+  const handleOpenModal = (type: TableModalType, table?: ITable) => {
     setModalType(type);
-    if (type === TableModalType.EDIT && mesa) {
+    if (type === TableModalType.EDIT && table && table.state) {
       setForm({
-        id: mesa.id,
-        name: mesa.name,
+        id: table.id,
+        name: table.name,
+        state: table.state
       });
-      setNameTable(mesa.name);
+      setNameTable(table.name);
     } else {
       setForm({
         id: "",
         name: "",
+        state: TableState.AVAILABLE
       });
       setNameTable("")
     }
@@ -49,6 +52,7 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
   const handleCloseModal = () => {
     setForm({
       name: "",
+      state: TableState.AVAILABLE
     });
     setModalOpen(false);
     setNameTable("")
@@ -144,7 +148,7 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
           }
         });
         removeTable(id);
-        setSelectedMesa(null);
+        setSelectedTable(null);
         Swal.fire("Eliminado", "Mesa eliminada correctamente.", "success");
       } catch (error) {
         Swal.fire("Error", "No se pudo eliminar la mesa.", "error");
@@ -155,7 +159,7 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
 
   return {
     tables,
-    selectedMesa,
+    selectedTable,
     modalOpen,
     modalType,
     form,
@@ -164,9 +168,9 @@ const useMesa = (salaId: string, setNameTable: (name: string) => void) => {
     handleCloseModal,
     handleCreateTable,
     handleEdit,
-    setSelectedMesa,
+    setSelectedTable,
     handleDelete,
   };
 };
 
-export default useMesa;
+export default useTable;

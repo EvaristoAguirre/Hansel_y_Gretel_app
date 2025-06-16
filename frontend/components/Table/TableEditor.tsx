@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { Button } from "@mui/material";
 import { useOrderContext } from "../../app/context/order.context";
 import { editTable } from "@/api/tables";
@@ -10,6 +9,7 @@ import { useRoomContext } from "../../app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
+import { ITable } from "../Interfaces/ITable";
 
 
 
@@ -28,7 +28,7 @@ const TableEditor = ({
   handleCompleteStep,
 }: Props) => {
   const { getAccessToken } = useAuth();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
+  const { selectedTable, setSelectedTable } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
   const {
@@ -50,26 +50,25 @@ const TableEditor = ({
     } else {
       setCantidadPersonas(null);
     }
-  }, [selectedMesa, selectedOrderByTable]);
+  }, [selectedTable, selectedOrderByTable]);
 
   useEffect(() => {
     setTableFields();
   }, [setTableFields]);
 
   /**
-   * @param selectedMesa - Es la Mesa que se selecciona.
+   * @param selectedTable - Es la Table que se selecciona.
    * se llama al endopoint para abrir la mesa
    * este cambia estado de la mesa a 'OPEN'
    */
-  const handleOpenTable = async (selectedMesa: MesaInterface) => {
+  const handleOpenTable = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
     const tableEdited = await editTable(
-      selectedMesa.id,
-      { ...selectedMesa, state: TableState.OPEN },
+      { ...selectedTable, state: TableState.OPEN },
       token
     );
-    setSelectedMesa(tableEdited);
+    setSelectedTable(tableEdited);
     handleNextStep();
   };
 
@@ -78,7 +77,7 @@ const TableEditor = ({
   useEffect(() => {
     connectWebSocket();
   }, []);
-  
+
   return (
     <div
       style={{
@@ -160,17 +159,17 @@ const TableEditor = ({
                       "error"
                     );
                     return;
-                  } else if (selectedMesa?.state === "available") {
+                  } else if (selectedTable?.state === "available") {
                     handleCreateOrder(
-                      selectedMesa,
+                      selectedTable,
                       cantidadPersonas,
                       comentario
                     );
                     onAbrirPedido();
-                    handleOpenTable(selectedMesa);
+                    handleOpenTable(selectedTable);
                     handleCompleteStep();
                     handleNextStep();
-                   
+
                   } else {
                     if (selectedOrderByTable?.id) {
 
@@ -186,9 +185,9 @@ const TableEditor = ({
                   }
                 }}
               >
-                {selectedMesa?.state === "open"
+                {selectedTable?.state === "open"
                   ? "Guardar Cambios"
-                  : "Abrir Mesa"}
+                  : "Abrir Table"}
               </Button>
             </div>
           </form>
