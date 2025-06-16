@@ -212,7 +212,7 @@ export class IngredientRepository {
         throw new NotFoundException('Ingredient not found');
       }
 
-      const shouldRecalculate =
+      const shouldRecalculateCost =
         updateData.cost !== undefined &&
         Number(updateData.cost) !== Number(ingredientToUpdate.cost);
 
@@ -231,7 +231,7 @@ export class IngredientRepository {
       Object.assign(ingredientToUpdate, updateData);
 
       // ---------------- Actualizacion de costos --------------------
-      if (shouldRecalculate) {
+      if (shouldRecalculateCost) {
         console.log('precio nuevo');
       }
       // ---------------- Cierre de actualizacion de costos ----------
@@ -560,4 +560,26 @@ export class IngredientRepository {
       .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
       .getMany();
   }
+
+  // async costRecalculation(queryRunner: QueryRunner, ingredientId: string) {
+  //   if (!ingredientId) {
+  //     throw new BadRequestException(
+  //       'To recalculate costs it is necessary to provide the ingredient ID',
+  //     );
+  //   }
+  //   try {
+  //     const productsToRecalculation = await queryRunner.manager.find(Product, {
+  //       where: { productIngredients: { id: ingredientId } },
+  //       relations: ['productIngredients', 'unitOfMeasure'],
+  //     });
+
+  //     const productsIds = [...new Set(productsToRecalculation.map(pr=> pr.prod))]
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new InternalServerErrorException(
+  //       'Error recalculating the new cost',
+  //       error.message,
+  //     );
+  //   }
+  // }
 }
