@@ -14,7 +14,6 @@ import { ProductIngredient } from './ingredientProduct.entity';
 import { IsNumber, IsOptional, Min } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
-import { ProductTopping } from './toppingProduct.entity';
 
 @Entity({ name: 'ingredients' })
 export class Ingredient {
@@ -62,7 +61,4 @@ export class Ingredient {
 
   @ManyToMany(() => ToppingsGroup, (group) => group.toppings)
   toppingsGroups: ToppingsGroup[];
-
-  @OneToMany(() => ProductTopping, (productToppings) => productToppings.topping)
-  productToppings: ProductTopping[];
 }

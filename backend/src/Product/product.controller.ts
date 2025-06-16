@@ -93,7 +93,7 @@ export class ProductController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductById(@Param('id') id: UUID): Promise<Product> {
+  async getProductById(@Param('id') id: UUID): Promise<ProductResponseDto> {
     return this.productService.getProductById(id);
   }
   @Get('by-code/:code')

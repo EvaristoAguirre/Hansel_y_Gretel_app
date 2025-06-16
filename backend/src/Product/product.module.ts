@@ -20,6 +20,7 @@ import { StockRepository } from 'src/Stock/stock.repository';
 import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -30,6 +31,7 @@ import { IngredientService } from 'src/Ingredient/ingredient.service';
       UnitOfMeasure,
       Stock,
       Ingredient,
+      ProductAvailableToppingGroup,
     ]),
     forwardRef(() => CategoryModule),
     UserModule,
