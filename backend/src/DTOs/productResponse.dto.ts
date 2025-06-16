@@ -131,6 +131,9 @@ export class AvailableToppingGroupDto {
   };
 
   @Expose()
+  quantityOfTopping: number;
+
+  @Expose()
   toppingsGroup?: ToppingGroupResponseDto[];
 }
 
@@ -154,8 +157,4 @@ export class ToppingResponseDto {
 
   @Expose()
   name: string;
-
-  @Expose()
-  @Type(() => UnitOfMeasureResponseDto)
-  unitOfMeasure: UnitOfMeasureResponseDto;
 }

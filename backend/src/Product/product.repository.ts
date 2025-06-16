@@ -537,7 +537,9 @@ export class ProductRepository {
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const { categories, ingredients, ...productData } = productToCreate;
+
     let categoryEntities: Category[] = [];
+
     if (categories && categories.length > 0) {
       categoryEntities = await queryRunner.manager.find(Category, {
         where: { id: In(categories), isActive: true },
@@ -609,58 +611,15 @@ export class ProductRepository {
       await queryRunner.manager.save(Product, savedProduct);
     }
 
-    const relationsToLoad = ['categories'];
-    if (ingredients && ingredients.length > 0) {
-      relationsToLoad.push(
-        'productIngredients',
-        'productIngredients.ingredient',
-        'productIngredients.unitOfMeasure',
-        'stock',
-        'stock.unitOfMeasure',
-        'unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.toppingGroup',
-        'availableToppingGroups.toppingGroup.toppings',
-      );
-    }
-
     if (
       productToCreate.allowsToppings &&
       productToCreate.availableToppingGroups?.length
     ) {
-      for (const groupDto of productToCreate.availableToppingGroups) {
-        const group = await queryRunner.manager.findOne(ToppingsGroup, {
-          where: { id: groupDto.toppingsGroupId, isActive: true },
-        });
-
-        if (!group) {
-          throw new BadRequestException(
-            `Toppings group with ID ${groupDto.toppingsGroupId} does not exist`,
-          );
-        }
-
-        const unit = await queryRunner.manager.findOne(UnitOfMeasure, {
-          where: { id: groupDto.unitOfMeasureId },
-        });
-
-        if (!unit) {
-          throw new BadRequestException(
-            `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
-          );
-        }
-
-        const association = queryRunner.manager.create(
-          ProductAvailableToppingGroup,
-          {
-            product: savedProduct,
-            toppingGroup: group,
-            quantityOfTopping: groupDto.quantityOfTopping,
-            unitOfMeasure: unit,
-            settings: groupDto.settings ?? null,
-          },
-        );
-        await queryRunner.manager.save(association);
-      }
+      await this.createAvailableToppingsGroup(
+        savedProduct,
+        productToCreate,
+        queryRunner,
+      );
     }
 
     const productWithRelations =
@@ -713,39 +672,11 @@ export class ProductRepository {
       productToCreate.allowsToppings &&
       productToCreate.availableToppingGroups?.length
     ) {
-      for (const groupDto of productToCreate.availableToppingGroups) {
-        const group = await queryRunner.manager.findOne(ToppingsGroup, {
-          where: { id: groupDto.toppingsGroupId, isActive: true },
-        });
-
-        if (!group) {
-          throw new BadRequestException(
-            `Toppings group with ID ${groupDto.toppingsGroupId} does not exist`,
-          );
-        }
-
-        const unit = await queryRunner.manager.findOne(UnitOfMeasure, {
-          where: { id: groupDto.unitOfMeasureId },
-        });
-
-        if (!unit) {
-          throw new BadRequestException(
-            `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
-          );
-        }
-
-        const association = queryRunner.manager.create(
-          ProductAvailableToppingGroup,
-          {
-            product: savedProduct,
-            toppingGroup: group,
-            quantityOfTopping: groupDto.quantityOfTopping,
-            unitOfMeasure: unit,
-            settings: groupDto.settings ?? null,
-          },
-        );
-        await queryRunner.manager.save(association);
-      }
+      await this.createAvailableToppingsGroup(
+        savedProduct,
+        productToCreate,
+        queryRunner,
+      );
     }
 
     const productWithRelations =
@@ -754,7 +685,6 @@ export class ProductRepository {
         savedProduct.id,
         'product',
       );
-
     if (!productWithRelations) {
       throw new NotFoundException('Product not found after creation');
     }
@@ -1591,7 +1521,6 @@ export class ProductRepository {
     id: string,
     type: 'product' | 'promotion' | 'simple',
   ): Promise<Product> {
-    console.log('getProductWithRelations:..... ', id, type);
     const relations =
       type === 'product' || type === 'simple'
         ? [
@@ -1604,6 +1533,7 @@ export class ProductRepository {
             'stock',
             'stock.unitOfMeasure',
             'availableToppingGroups',
+            'availableToppingGroups.unitOfMeasure',
             'availableToppingGroups.toppingGroup',
             'availableToppingGroups.toppingGroup.toppings',
           ]
@@ -1683,6 +1613,46 @@ export class ProductRepository {
         'availableToppingGroups.unitOfMeasure',
       ],
     });
+  }
+
+  private async createAvailableToppingsGroup(
+    savedProduct,
+    productToCreate,
+    queryRunner: QueryRunner,
+  ) {
+    for (const groupDto of productToCreate.availableToppingGroups) {
+      const group = await queryRunner.manager.findOne(ToppingsGroup, {
+        where: { id: groupDto.toppingsGroupId, isActive: true },
+      });
+
+      if (!group) {
+        throw new BadRequestException(
+          `Toppings group with ID ${groupDto.toppingsGroupId} does not exist`,
+        );
+      }
+
+      const unit = await queryRunner.manager.findOne(UnitOfMeasure, {
+        where: { id: groupDto.unitOfMeasureId },
+      });
+
+      if (!unit) {
+        throw new BadRequestException(
+          `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
+        );
+      }
+
+      const association = queryRunner.manager.create(
+        ProductAvailableToppingGroup,
+        {
+          product: savedProduct,
+          toppingGroup: group,
+          quantityOfTopping: groupDto.quantityOfTopping,
+          unitOfMeasure: unit,
+          settings: groupDto.settings ?? null,
+        },
+      );
+      await queryRunner.manager.save(association);
+    }
   }
 
   //---------------- Consultas de Stock ---------------

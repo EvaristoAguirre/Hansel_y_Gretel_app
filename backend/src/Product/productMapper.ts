@@ -7,12 +7,6 @@ import {
 
 export class ProductMapper {
   static toResponseDto(product: Product): ProductResponseDto {
-    console.log('Mapping product to response DTO:', product);
-    console.log(
-      'En mapping, a ver los toppingGroups:',
-      product.availableToppingGroups,
-    );
-
     const dto = plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
     });
@@ -23,16 +17,17 @@ export class ProductMapper {
         name: group.toppingGroup.name,
         isActive: group.toppingGroup.isActive,
         settings: group.settings,
+        quantityOfTopping: group.quantityOfTopping,
+        unitOfMeasure: plainToInstance(
+          UnitOfMeasureResponseDto,
+          group.unitOfMeasure,
+          {
+            excludeExtraneousValues: true,
+          },
+        ),
         toppings: group.toppingGroup.toppings?.map((topping) => ({
           id: topping.id,
           name: topping.name,
-          unitOfMeasure: plainToInstance(
-            UnitOfMeasureResponseDto,
-            topping.unitOfMeasure,
-            {
-              excludeExtraneousValues: true,
-            },
-          ),
         })),
         toppingsGroup: group.toppingGroup.productsAvailableIn?.map((tg) => ({
           id: tg.id,
@@ -40,13 +35,6 @@ export class ProductMapper {
           toppings: tg.toppingGroup.toppings?.map((topping) => ({
             id: topping.id,
             name: topping.name,
-            unitOfMeasure: plainToInstance(
-              UnitOfMeasureResponseDto,
-              topping.unitOfMeasure,
-              {
-                excludeExtraneousValues: true,
-              },
-            ),
           })),
         })),
       }),
