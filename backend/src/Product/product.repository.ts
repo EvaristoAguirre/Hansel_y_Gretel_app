@@ -96,22 +96,7 @@ export class ProductRepository {
       );
     }
     try {
-      const product = await this.productRepository.findOne({
-        where: { id, isActive: true },
-        relations: [
-          'categories',
-          'productIngredients',
-          'productIngredients.ingredient',
-          'productIngredients.unitOfMeasure',
-          'promotionDetails',
-          'promotionDetails.product',
-          'stock',
-          'stock.unitOfMeasure',
-          'availableToppingGroups',
-          'availableToppingGroups.toppingGroup',
-          'availableToppingGroups.toppingGroup.toppings',
-        ],
-      });
+      const product = await this.getProductWithRelations(id, 'product');
       if (!product) {
         throw new NotFoundException(`Product not found with  id: ${id}`);
       }
@@ -425,6 +410,7 @@ export class ProductRepository {
           'stock',
           'stock.unitOfMeasure',
           'availableToppingGroups',
+          'availableToppingGroups.unitOfMeasure',
           'availableToppingGroups.toppingGroup',
           'availableToppingGroups.toppingGroup.toppings',
         ],
@@ -512,18 +498,12 @@ export class ProductRepository {
       await queryRunner.manager.save(Product, savedPromotion);
     }
 
-    const promotionWithDetails = await queryRunner.manager.findOne(Product, {
-      where: { id: savedPromotion.id },
-      relations: [
-        'categories',
-        'promotionDetails',
-        'promotionDetails.product',
-        'stock',
-        'stock.unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.toppingGroup',
-      ],
-    });
+    const promotionWithDetails =
+      await this.getProductWithRelationsByQueryRunner(
+        queryRunner,
+        savedPromotion.id,
+        'promotion',
+      );
 
     if (!promotionWithDetails) {
       throw new NotFoundException('Promotion not found after creation');
@@ -1479,7 +1459,6 @@ export class ProductRepository {
     id: string,
     type: 'product' | 'promotion' | 'simple',
   ): Promise<Product> {
-    console.log('getProductWithRelations:..... ', id, type);
     const relations =
       type === 'product' || type === 'simple'
         ? [
@@ -1492,10 +1471,12 @@ export class ProductRepository {
             'stock',
             'stock.unitOfMeasure',
             'availableToppingGroups',
+            'availableToppingGroups.unitOfMeasure',
             'availableToppingGroups.toppingGroup',
             'availableToppingGroups.toppingGroup.toppings',
           ]
         : [
+            'categories',
             'promotionDetails',
             'promotionDetails.product',
             'promotionDetails.product.productIngredients',
@@ -1538,6 +1519,7 @@ export class ProductRepository {
             'availableToppingGroups.toppingGroup.toppings',
           ]
         : [
+            'categories',
             'promotionDetails',
             'promotionDetails.product',
             'promotionDetails.product.productIngredients',
