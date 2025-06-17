@@ -40,6 +40,9 @@ export class ToppingsGroupsService {
   async getAllToppingsGroups(): Promise<ToppingsGroup[]> {
     return this.toppingsGroupRepository.getAllToppingsGroups();
   }
+  async getAllToppingsGroupsWithoutToppings(): Promise<ToppingsGroup[]> {
+    return this.toppingsGroupRepository.getAllToppingsGroupsWithoutToppings();
+  }
 
   async getToppingsGroupByName(name: string): Promise<ToppingsGroup> {
     return this.toppingsGroupRepository.getToppingsGroupByName(name);
