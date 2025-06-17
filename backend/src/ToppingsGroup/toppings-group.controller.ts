@@ -40,6 +40,11 @@ export class ToppingsGroupsController {
   getAllToppingsGroups(): Promise<ToppingsGroup[]> {
     return this.toppingsGroupsService.getAllToppingsGroups();
   }
+  @Get('without-toppings')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getAllToppingsGroupsWithoutToppings(): Promise<ToppingsGroup[]> {
+    return this.toppingsGroupsService.getAllToppingsGroupsWithoutToppings();
+  }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)

@@ -179,6 +179,24 @@ export class ToppingsGroupRepository {
       throw new InternalServerErrorException('Error fetching toppings groups');
     }
   }
+  async getAllToppingsGroupsWithoutToppings(
+    page: number = 1,
+    limit: number = 100,
+  ): Promise<ToppingsGroup[]> {
+    if (page < 1 || limit < 1) {
+      throw new BadRequestException('Page and limit must be greater than 0');
+    }
+    try {
+      return await this.toppingsGroupRepository.find({
+        where: { isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Error fetching toppings groups');
+    }
+  }
 
   async getToppingsGroupByName(name: string): Promise<ToppingsGroup> {
     if (!name) {
