@@ -3,6 +3,7 @@ import { TypeProduct } from "../Enums/view-products";
 import { ICategory } from './ICategories';
 import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
+import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 
 // interface IProduct {
 //   id: string;
@@ -38,14 +39,27 @@ export interface ProductForm extends IProduct {
   availableToppingGroups: ProductToppingsGroupDto[];
 
 }
-interface ProductToppingsGroupDto {
+export interface ProductToppingsGroupDto {
   toppingsGroupId: string;
   quantityOfTopping: number;
   unitOfMeasureId?: string;
-  settings?: {
+  name?: string;
+  settings: {
     maxSelection: number;
     chargeExtra: boolean;
   }
+}
+export interface IProductToppingsGroupResponse {
+  id: string;
+  name: string;
+  isActive: boolean;
+  settings: {
+    chargeExtra: boolean;
+    maxSelection: number;
+  };
+  unitOfMeasureId: IUnitOfMeasureStandard;
+  quantityOfTopping: string;
+  toppings: IProduct[];
 }
 export interface ProductForPromo {
   productId: string;
