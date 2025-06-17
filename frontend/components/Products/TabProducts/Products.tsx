@@ -10,7 +10,7 @@ import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
-import ProductCreationModal from "./ProductCreationModal";
+import ProductCreationModal from "./Modal/ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { fetchUnits } from "@/api/unitOfMeasure";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";

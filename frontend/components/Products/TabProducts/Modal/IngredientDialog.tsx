@@ -23,9 +23,9 @@ import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { TabProductKey } from "@/components/Enums/view-products";
-import { useIngredientsContext } from '../../../app/context/ingredientsContext';
+import { useIngredientsContext } from '../../../../app/context/ingredientsContext';
 import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
-import { useUnitContext } from '../../../app/context/unitOfMeasureContext';
+import { useUnitContext } from '../../../../app/context/unitOfMeasureContext';
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 
 interface IngredientDialogProps {

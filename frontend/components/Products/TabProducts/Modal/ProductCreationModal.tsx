@@ -26,6 +26,7 @@ import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { NumericFormat } from "react-number-format";
+import { CheckAllowsToppings } from "./Toppings/CheckAllowsToppings";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -41,6 +42,7 @@ interface ProductCreationModalProps {
       | string[]
       | IingredientForm[]
       | ProductForPromo[]
+      | boolean
   ) => void;
   onSave: () => void;
   modalType: FormTypeProduct;
@@ -383,6 +385,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         {tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT && <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} handleSetDisableTabs={handleSetDisableTabs} />}
         {tabValue === TabProductKey.PROMO && <InputsPromo onSave={handleProductsPromo} form={form} handleSetDisableTabs={handleSetDisableTabs} />}
 
+        <CheckAllowsToppings
+          allowsToppings={form.allowsToppings ?? false}
+          setAllowsToppings={(value) => onChange("allowsToppings", value as boolean)}
+        />
         <DialogActions sx={{ justifyContent: "space-between" }}>
           <Button sx={{ mt: 2 }} onClick={() => {
             onClose();

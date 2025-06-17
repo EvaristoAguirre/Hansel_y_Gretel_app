@@ -106,6 +106,19 @@ export const fetchAllToppingsGroup = async (token: string) => {
   return data;
 }
 
+export const ToppingsGroupWithoutToppings = async (token: string) => {
+  const response = await fetch(`${URI_TOPPINGS_GROUP}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+
+  })
+  const data = await response.json();
+  return data;
+}
+
 export const validatedNameToppingsGroup = async (name: string, token: string) => {
   try {
     const response = await fetch(`${URI_TOPPINGS_GROUP}/by-name/${encodeURIComponent(name)}`, {
