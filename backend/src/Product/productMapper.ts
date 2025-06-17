@@ -15,7 +15,6 @@ export class ProductMapper {
       (group) => ({
         id: group.toppingGroup.id,
         name: group.toppingGroup.name,
-        isActive: group.toppingGroup.isActive,
         settings: group.settings,
         quantityOfTopping: group.quantityOfTopping,
         unitOfMeasure: plainToInstance(
