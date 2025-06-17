@@ -9,20 +9,20 @@ export class UnitOfMeasureResponseDto {
   name: string;
   @Expose()
   abbreviation: string;
-  @Expose()
-  isActive: boolean;
+  // @Expose()
+  // isActive: boolean;
 }
 export class IngredientResponseDto {
   @Expose()
   id: string;
   @Expose()
   name: string;
-  @Expose()
-  description: string;
+  // @Expose()
+  // description: string;
   @Expose()
   cost: number;
-  @Expose()
-  isActive: boolean;
+  // @Expose()
+  // isActive: boolean;
 }
 
 export class StockSummary {
@@ -44,14 +44,14 @@ export class ProductResponseDto {
   code?: number;
   @Expose()
   name?: string;
-  @Expose()
-  description?: string;
+  // @Expose()
+  // description?: string;
   @Expose()
   price?: number;
   @Expose()
   cost?: number;
-  @Expose()
-  isActive?: boolean;
+  // @Expose()
+  // isActive?: boolean;
   @Expose()
   type: 'product' | 'promotion' | 'simple';
 
@@ -69,6 +69,9 @@ export class ProductResponseDto {
   @Expose()
   @Type(() => PromotionProductResponseDto)
   promotionProducts?: PromotionProductResponseDto[];
+  @Expose()
+  @Type(() => PromotionProductResponseDto)
+  componentDetails?: PromotionProductResponseDto[];
 
   @Expose()
   @Type(() => UnitOfMeasureResponseDto)
@@ -121,8 +124,8 @@ export class AvailableToppingGroupDto {
   @Expose()
   name?: string;
 
-  @Expose()
-  description?: string;
+  // @Expose()
+  // description?: string;
 
   @Expose()
   settings: {
@@ -144,8 +147,8 @@ export class ToppingGroupResponseDto {
   @Expose()
   name?: string;
 
-  @Expose()
-  description?: string;
+  // @Expose()
+  // description?: string;
 
   @Expose()
   toppings?: ToppingResponseDto[];
