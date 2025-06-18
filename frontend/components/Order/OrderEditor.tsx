@@ -9,8 +9,11 @@ import {
   Tooltip,
   FormControlLabel,
   Switch,
+  Chip,
+  Checkbox,
+  Divider,
 } from "@mui/material";
-import { Add, Remove, Delete, Comment, AutoAwesome } from "@mui/icons-material";
+import { Add, Remove, Delete, Comment, AutoAwesome, SpaceBar } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
@@ -25,6 +28,10 @@ import { searchProducts } from "@/api/products";
 import AutoCompleteProduct from "../Utils/Autocomplete";
 import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
+import { ToppingsGroup } from '../../../backend/src/ToppingsGroup/toppings-group.entity';
+import { ITopping, IToppingsGroup } from '../Interfaces/IToppings';
+import { ProductToppingsGroupDto } from '../Interfaces/IProducts';
+import { fetchToppingsGroupById } from "@/api/topping";
 
 
 
@@ -177,9 +184,29 @@ const OrderEditor = ({
   //   setShowCategories((prev) => !prev);
   // };
 
-  const handleShowToppings = () => {
-    console.log("ACÁ SE VERÁN LOS TOPPINGS");
+  const [visibleToppings, setVisibleToppings] = useState<{ [productId: string]: boolean }>({});
+  const [selectedGroupToppings, setSelectedGroupToppings] = useState<{ [groupId: string]: ITopping[] }>({});
 
+
+  const handleShowToppings = (productId: string) => {
+    setVisibleToppings(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
+
+  const handleGroupClick = async (groupId: string) => {
+    console.log("handleGroupClick🧨🧨🧨", groupId);
+
+    if (!token) return; // asegurate de tener el token del contexto de auth
+
+    if (!selectedGroupToppings[groupId]) {
+      const data = await fetchToppingsGroupById(token, groupId);
+      setSelectedGroupToppings(prev => ({
+        ...prev,
+        [groupId]: data.toppings || [] // asumimos que el backend devuelve los toppings acá
+      }));
+    }
   };
 
   useEffect(() => {
@@ -264,8 +291,8 @@ const OrderEditor = ({
                       alignItems: "stretch",
                       width: "100%",
                       borderBottom: "1px solid #856D5E",
-                      paddingBottom: "0.5rem",
-                      marginBottom: "0.5rem",
+                      padding: "3px",
+
                     }}
                   >
                     {/* Línea principal de datos del producto */}
@@ -276,28 +303,28 @@ const OrderEditor = ({
                         gap: "0.5rem",
                         color: "#ffffff",
                         justifyContent: "space-between",
-                        flexWrap: "wrap",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <IconButton onClick={() => decreaseProductNumber(item.productId)}>
-                          <Remove color="error" />
+                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => decreaseProductNumber(item.productId)}>
+                          <Remove fontSize="small" color="error" />
                         </IconButton>
                         <Typography
-                          sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                          style={{
-                            color: "black",
-                            width: "2rem",
+                          sx={{
+                            border: "1px solid #856D5E",
+                            color: "#856D5E",
+                            width: "1.5rem",
                             textAlign: "center",
                             borderRadius: "5px",
                           }}
                         >
                           {item.quantity}
                         </Typography>
-                        <IconButton onClick={() => increaseProductNumber(item.productId)}>
-                          <Add color="success" />
+                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => increaseProductNumber(item.productId)}>
+                          <Add fontSize="small" color="success" />
                         </IconButton>
                       </div>
+
 
                       <Tooltip title={item.productName} arrow>
                         <ListItemText
@@ -317,21 +344,30 @@ const OrderEditor = ({
                         ${(item.unitaryPrice ?? 0) * item.quantity}
                       </Typography>
 
+                      {/* ICON DE AGREGADOS */}
                       <div style={{ display: "flex", alignItems: "center" }}>
                         {item.allowsToppings === true &&
-                          <Tooltip title="Ver Agregados" arrow>
-                            <IconButton size="small" onClick={handleShowToppings} >
+                          <Tooltip title="Agregados" arrow>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleShowToppings(item.productId)}
+                            >
                               <AutoAwesome />
                             </IconButton>
                           </Tooltip>
+
                         }
-                        <IconButton onClick={() => toggleCommentInput(item.productId)}>
-                          <Comment style={{ color: "#856D5E" }} />
-                        </IconButton>
-                        <IconButton onClick={() =>
-                          handleDeleteProductAndComment(item.productId)}>
-                          <Delete />
-                        </IconButton>
+                        <Tooltip title="Comentarios" arrow>
+                          <IconButton onClick={() => toggleCommentInput(item.productId)}>
+                            <Comment style={{ color: "#856D5E" }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar" arrow>
+                          <IconButton onClick={() =>
+                            handleDeleteProductAndComment(item.productId)}>
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
                       </div>
                     </div>
 
@@ -359,6 +395,56 @@ const OrderEditor = ({
                         </div>
                       )
                     }
+
+                    {visibleToppings[item.productId] && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "1rem",
+                          marginTop: "0.5rem",
+                          width: "100%",
+                        }}
+                      >
+                        {item.availableToppingGroups?.map((group) => (
+                          <div
+                            key={group.id}
+                            style={{
+                              flex: "1 1 calc(50% - 1rem)", // ✅ al menos dos por fila
+                              display: "flex",
+                              flexDirection: "column",
+                              backgroundColor: "#f9f9f9",
+                              borderRadius: "8px",
+                              padding: "0.5rem",
+                            }}
+                          >
+                            <Chip
+                              label={group.name}
+                              onClick={() => handleGroupClick(group.id)}
+                              style={{
+                                marginBottom: "0.25rem",
+                                backgroundColor: "#f5f5f5",
+                                fontWeight: 500,
+                                alignSelf: "flex-start",
+                              }}
+                            />
+                            {selectedGroupToppings[group.id] && (
+                              <div style={{ paddingLeft: "0.5rem" }}>
+                                {selectedGroupToppings[group.id].map((topping) => (
+                                  <FormControlLabel
+                                    key={topping.id}
+                                    control={<Checkbox checked disabled />}
+                                    label={topping.name}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+
                   </ListItem>
                 ))}
               </List>

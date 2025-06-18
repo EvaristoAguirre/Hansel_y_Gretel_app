@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import {
   ICheckStock,
   ProductResponse,
+  ProductToppingsGroupDto,
   SelectedProductsI,
 } from "../../components/Interfaces/IProducts";
 import { useOrderStore } from "../../components/Order/useOrderStore";
@@ -22,6 +23,7 @@ import { checkStock } from "@/api/products";
 import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
 import { ITable } from "@/components/Interfaces/ITable";
+import { AvailableToppingGroupDto } from '../../../backend/src/DTOs/productResponse.dto';
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -31,6 +33,7 @@ type OrderContextType = {
   selectedOrderByTable: IOrderDetails | null;
   setSelectedOrderByTable: (order: IOrderDetails | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
+  // handleShowToppingsGroup: (id: string) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
   decreaseProductNumber: (productId: string) => void;
@@ -63,6 +66,7 @@ const OrderContext = createContext<OrderContextType>({
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
   handleSelectedProducts: () => { },
+  // handleShowToppingsGroup: () => { },
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
@@ -213,6 +217,7 @@ const OrderProvider = ({
 
     }
   };
+
 
 
 
@@ -461,6 +466,7 @@ const OrderProvider = ({
         selectedOrderByTable,
         setSelectedOrderByTable,
         handleSelectedProducts,
+        // handleShowToppingsGroup,
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,

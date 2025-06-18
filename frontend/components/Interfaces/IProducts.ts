@@ -117,7 +117,7 @@ export interface ProductResponse {
   stock: IStockOfProduct;
   allowsToppings: boolean;
   toppingsSettings: null,
-  availableToppingGroups: ProductToppingsGroupDto[]
+  availableToppingGroups: IProductToppingsGroupResponse[]
 }
 
 export interface ProductState {
@@ -141,7 +141,7 @@ export interface SelectedProductsI {
   unitaryPrice: number | null;
   commentOfProduct?: string | null;
   allowsToppings?: boolean;
-  availableToppingGroups?: ProductToppingsGroupDto[];
+  availableToppingGroups?: IProductToppingsGroupResponse[];
 };
 
 export interface IConfirmedProducts {
