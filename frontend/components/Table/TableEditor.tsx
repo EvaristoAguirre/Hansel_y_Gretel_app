@@ -187,7 +187,7 @@ const TableEditor = ({
               >
                 {selectedTable?.state === "open"
                   ? "Guardar Cambios"
-                  : "Abrir Table"}
+                  : "Abrir Mesa"}
               </Button>
             </div>
           </form>

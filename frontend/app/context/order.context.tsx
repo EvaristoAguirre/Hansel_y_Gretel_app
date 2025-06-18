@@ -33,7 +33,9 @@ type OrderContextType = {
   selectedOrderByTable: IOrderDetails | null;
   setSelectedOrderByTable: (order: IOrderDetails | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
-  // handleShowToppingsGroup: (id: string) => void;
+  highlightedProducts: Set<string>;
+  addHighlightedProduct: (id: string) => void;
+  removeHighlightedProduct: (id: string) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
   increaseProductNumber: (productId: string) => void;
   decreaseProductNumber: (productId: string) => void;
@@ -66,7 +68,9 @@ const OrderContext = createContext<OrderContextType>({
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
   handleSelectedProducts: () => { },
-  // handleShowToppingsGroup: () => { },
+  highlightedProducts: new Set(),
+  addHighlightedProduct: () => { },
+  removeHighlightedProduct: () => { },
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
@@ -104,6 +108,9 @@ const OrderProvider = ({
 
   const [selectedOrderByTable, setSelectedOrderByTable] =
     useState<IOrderDetails | null>(null);
+
+  const [highlightedProducts, setHighlightedProducts] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     const token = getAccessToken();
@@ -213,12 +220,23 @@ const OrderProvider = ({
       setSelectedProducts([...selectedProducts, newProduct]);
 
     }
-    if (product.allowsToppings === true) {
-
+    if (product.allowsToppings) {
+      setHighlightedProducts(prev => new Set(prev).add(product.id));
     }
+
   };
 
+  const addHighlightedProduct = (id: string) => {
+    setHighlightedProducts((prev) => new Set(prev).add(id));
+  };
 
+  const removeHighlightedProduct = (id: string) => {
+    setHighlightedProducts(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
 
 
   const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
@@ -466,7 +484,9 @@ const OrderProvider = ({
         selectedOrderByTable,
         setSelectedOrderByTable,
         handleSelectedProducts,
-        // handleShowToppingsGroup,
+        highlightedProducts,
+        addHighlightedProduct,
+        removeHighlightedProduct,
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,

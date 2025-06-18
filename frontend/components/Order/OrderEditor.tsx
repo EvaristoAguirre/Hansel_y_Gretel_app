@@ -32,6 +32,7 @@ import { ToppingsGroup } from '../../../backend/src/ToppingsGroup/toppings-group
 import { ITopping, IToppingsGroup } from '../Interfaces/IToppings';
 import { ProductToppingsGroupDto } from '../Interfaces/IProducts';
 import { fetchToppingsGroupById } from "@/api/topping";
+import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 
 
@@ -77,6 +78,8 @@ const OrderEditor = ({
     decreaseProductNumber,
     productComment,
     handleEditOrder,
+    highlightedProducts,
+    removeHighlightedProduct
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -178,16 +181,7 @@ const OrderEditor = ({
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
-  // const [showCategories, setShowCategories] = useState(false);
-
-  // const handleToggle = () => {
-  //   setShowCategories((prev) => !prev);
-  // };
-
   const [visibleToppings, setVisibleToppings] = useState<{ [productId: string]: boolean }>({});
-  const [selectedGroupToppings, setSelectedGroupToppings] = useState<{ [groupId: string]: ITopping[] }>({});
-
-
   const handleShowToppings = (productId: string) => {
     setVisibleToppings(prev => ({
       ...prev,
@@ -195,24 +189,18 @@ const OrderEditor = ({
     }));
   };
 
-  const handleGroupClick = async (groupId: string) => {
-    console.log("handleGroupClick🧨🧨🧨", groupId);
-
-    if (!token) return; // asegurate de tener el token del contexto de auth
-
-    if (!selectedGroupToppings[groupId]) {
-      const data = await fetchToppingsGroupById(token, groupId);
-      setSelectedGroupToppings(prev => ({
-        ...prev,
-        [groupId]: data.toppings || [] // asumimos que el backend devuelve los toppings acá
-      }));
+  const shakeKeyframes = {
+    "@keyframes shake": {
+      "0%": { transform: "translateX(0)" },
+      "25%": { transform: "translateX(-2px)" },
+      "50%": { transform: "translateX(2px)" },
+      "75%": { transform: "translateX(-2px)" },
+      "100%": { transform: "translateX(0)" },
     }
   };
 
-  useEffect(() => {
-    console.log("selectedProducts:🪭", selectedProducts);
 
-  }, [selectedProducts]);
+
 
   return loading ? (
     <LoadingLottie />
@@ -346,17 +334,31 @@ const OrderEditor = ({
 
                       {/* ICON DE AGREGADOS */}
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        {item.allowsToppings === true &&
+                        {item.allowsToppings && (
                           <Tooltip title="Agregados" arrow>
                             <IconButton
                               size="small"
-                              onClick={() => handleShowToppings(item.productId)}
+                              onClick={() => {
+                                handleShowToppings(item.productId);
+                                removeHighlightedProduct(item.productId);  // <--- usás la de contexto
+                              }}
+                              sx={{
+                                "@keyframes heartbeat": {
+                                  "0%": { transform: "scale(1)" },
+                                  "14%": { transform: "scale(1.3)" },
+                                  "28%": { transform: "scale(1)" },
+                                  "42%": { transform: "scale(1.3)" },
+                                  "70%": { transform: "scale(1)" },
+                                },
+                                animation: highlightedProducts.has(item.productId)
+                                  ? "heartbeat 2.2s infinite ease-in-out"
+                                  : "none",
+                              }}
                             >
                               <AutoAwesome />
                             </IconButton>
                           </Tooltip>
-
-                        }
+                        )}
                         <Tooltip title="Comentarios" arrow>
                           <IconButton onClick={() => toggleCommentInput(item.productId)}>
                             <Comment style={{ color: "#856D5E" }} />
@@ -395,55 +397,14 @@ const OrderEditor = ({
                         </div>
                       )
                     }
-
+                    {/* ::::::::::::::::::::::::::::: */}
+                    {/* AGREGADOS */}
                     {visibleToppings[item.productId] && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "1rem",
-                          marginTop: "0.5rem",
-                          width: "100%",
-                        }}
-                      >
-                        {item.availableToppingGroups?.map((group) => (
-                          <div
-                            key={group.id}
-                            style={{
-                              flex: "1 1 calc(50% - 1rem)", // ✅ al menos dos por fila
-                              display: "flex",
-                              flexDirection: "column",
-                              backgroundColor: "#f9f9f9",
-                              borderRadius: "8px",
-                              padding: "0.5rem",
-                            }}
-                          >
-                            <Chip
-                              label={group.name}
-                              onClick={() => handleGroupClick(group.id)}
-                              style={{
-                                marginBottom: "0.25rem",
-                                backgroundColor: "#f5f5f5",
-                                fontWeight: 500,
-                                alignSelf: "flex-start",
-                              }}
-                            />
-                            {selectedGroupToppings[group.id] && (
-                              <div style={{ paddingLeft: "0.5rem" }}>
-                                {selectedGroupToppings[group.id].map((topping) => (
-                                  <FormControlLabel
-                                    key={topping.id}
-                                    control={<Checkbox checked disabled />}
-                                    label={topping.name}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      <ToppingsGroupsViewer
+                        groups={item.availableToppingGroups ?? []}
+                        fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                      />
                     )}
-
 
                   </ListItem>
                 ))}
