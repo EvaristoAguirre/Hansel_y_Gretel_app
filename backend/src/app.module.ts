@@ -18,6 +18,7 @@ import { SeederModule } from './Seeder/seeder.module';
 import { UnitOfMeasurenModule } from './UnitOfMeasure/unitOfMeasure.module';
 
 import { ScheduleModule } from '@nestjs/schedule';
+import { DailyCashModule } from './daily-cash/daily-cash.module';
 import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
 import { ExportModule } from './ExportPdf/export.module';
 
@@ -63,6 +64,7 @@ import { ExportModule } from './ExportPdf/export.module';
     StockModule,
     SeederModule,
     UnitOfMeasurenModule,
+    DailyCashModule,
     ToppingsGroupsModule,
     ExportModule,
   ],
