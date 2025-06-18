@@ -16,6 +16,7 @@ import {
   ProductCreated,
   ProductForm,
   ProductForPromo,
+  ProductToppingsGroupDto,
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { FormTypeProduct, TabProductKey, TypeProduct } from "@/components/Enums/view-products";
@@ -26,6 +27,8 @@ import IngredientDialog from "./IngredientDialog";
 import InputsPromo from "./InputsPromo";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { NumericFormat } from "react-number-format";
+import { CheckAllowsToppings } from "./Toppings/CheckAllowsToppings";
+import { AvailableToppingsGroups } from "./Toppings/AvailableToppingsGroups";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -41,6 +44,8 @@ interface ProductCreationModalProps {
       | string[]
       | IingredientForm[]
       | ProductForPromo[]
+      | boolean
+      | ProductToppingsGroupDto[]
   ) => void;
   onSave: () => void;
   modalType: FormTypeProduct;
@@ -86,6 +91,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     cost: "",
     categories: "",
     products: "",
+    ingredients: "",
+    isActive: "",
+    id: "",
+    availableToppingGroups: "",
+    toppingsSettings: "",
+    unitOfMeasure: "",
+    unitOfMeasureId: "",
+    unitOfMeasureConversions: "",
+
   });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
@@ -101,8 +115,19 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
 
   useEffect(() => {
+    console.log("✅form", form);
+
+  }, [form]);
+
+  useEffect(() => {
     validateForm(errors);
   }, [errors, form]);
+
+  useEffect(() => {
+    if (!form.allowsToppings) {
+      onChange("availableToppingGroups", []);
+    }
+  }, [form.allowsToppings]);
 
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
@@ -166,12 +191,25 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       error = "Debe seleccionar al menos un producto";
       setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
     }
-
   };
+  const isToppingsSectionValid = (): boolean => {
+    if (!form.allowsToppings) return true;
+    if (!Array.isArray(form.availableToppingGroups) || form.availableToppingGroups.length === 0) {
+      return false;
+    }
+    return form.availableToppingGroups.every(group =>
+      !!group.toppingsGroupId &&
+      typeof group.quantityOfTopping === "number" && group.quantityOfTopping > 0 &&
+      group.settings &&
+      typeof group.settings.maxSelection === "number" && group.settings.maxSelection >= 1 &&
+      group.unitOfMeasureId
+    );
+  };
+
   const validateForm = (currentErrors = errors) => {
     const hasErrors = Object.values(currentErrors).some((error) => error);
     const validationFields: { [key in TabProductKey]: string[] } = {
-      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "cost"],
+      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "cost", "categories", "availableToppingGroups"],
       [TabProductKey.PRODUCT_WITH_INGREDIENT]: ["code", "name", "price", "ingredients"],
       [TabProductKey.PROMO]: ["code", "name", "price", "products"],
     };
@@ -188,7 +226,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       !Array.isArray(form.categories) ||
       form.categories.length === 0;
 
-    setIsFormValid(!hasErrors && !hasEmptyFields);
+    const isValidToppings = isToppingsSectionValid();
+    setIsFormValid(!hasErrors && !hasEmptyFields && isValidToppings);
+
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: TabProductKey) => {
@@ -256,7 +296,16 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   return (
     <Modal open={open} onClose={onClose} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
+      <Box
+        sx={{
+          width: 600,
+          bgcolor: "background.paper",
+          p: 4,
+          mx: "auto",
+          mt: 2,
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab
             label="Producto simple"
@@ -356,6 +405,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               size="small"
             />
           </Grid>
+          {/* CATEGORIAS - AUTOCOMPLETE */}
           <Grid item xs={12} mt={1}>
             <FormControl fullWidth>
               <Autocomplete
@@ -382,6 +432,38 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
         {tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT && <IngredientDialog onSave={handleSaveIngredients} form={form} units={units} handleSetDisableTabs={handleSetDisableTabs} />}
         {tabValue === TabProductKey.PROMO && <InputsPromo onSave={handleProductsPromo} form={form} handleSetDisableTabs={handleSetDisableTabs} />}
+
+        {/* SECCIÓN DE PERMITIR AGREGADOS */}
+        {
+          (tabValue === TabProductKey.SIMPLE_PRODUCT || tabValue === TabProductKey.PRODUCT_WITH_INGREDIENT) && (
+            <>
+              <CheckAllowsToppings
+                allowsToppings={form.allowsToppings}
+                setAllowsToppings={(value) => {
+                  onChange("allowsToppings", value as boolean);
+                }}
+              />
+
+              {form.allowsToppings && (
+                <AvailableToppingsGroups
+                  value={form.availableToppingGroups ?? []}
+                  onChange={(updatedGroups) => {
+                    onChange("availableToppingGroups", updatedGroups);
+                    validateForm();
+                  }}
+                  units={units}
+                />
+
+              )}
+              {form.allowsToppings && !isToppingsSectionValid() && (
+                <Box mt={1} color="error.main" fontSize="0.9rem">
+                  Completar correctamente los campos.
+                </Box>
+              )}
+
+            </>
+          )
+        }
 
         <DialogActions sx={{ justifyContent: "space-between" }}>
           <Button sx={{ mt: 2 }} onClick={() => {

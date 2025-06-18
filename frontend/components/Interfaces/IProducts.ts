@@ -3,6 +3,7 @@ import { TypeProduct } from "../Enums/view-products";
 import { ICategory } from './ICategories';
 import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
+import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 
 // interface IProduct {
 //   id: string;
@@ -16,7 +17,7 @@ import { IStockOfProduct } from "./IStock";
 // }
 
 interface IProduct {
-  allowsToppings: boolean | null;
+  allowsToppings: boolean;
   code: number | null;
   cost: number | null;
   description: string;
@@ -28,13 +29,38 @@ interface IProduct {
   type: TypeProduct;
 }
 export interface ProductForm extends IProduct {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IProductDataList[];
+  [key: string]: string | number | boolean
+  | null | string[] | IingredientForm[]
+  | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
   categories: string[];
   ingredients: IingredientForm[];
   products: IProductDataList[];
   isActive: boolean;
-}
+  availableToppingGroups: ProductToppingsGroupDto[];
 
+}
+export interface ProductToppingsGroupDto {
+  toppingsGroupId: string;
+  quantityOfTopping: number;
+  unitOfMeasureId?: string;
+  name?: string;
+  settings: {
+    maxSelection: number;
+    chargeExtra: boolean;
+  }
+}
+export interface IProductToppingsGroupResponse {
+  id: string;
+  name: string;
+  isActive: boolean;
+  settings: {
+    chargeExtra: boolean;
+    maxSelection: number;
+  };
+  unitOfMeasure: IUnitOfMeasureStandard;
+  quantityOfTopping: string;
+  toppings: IProduct[];
+}
 export interface ProductForPromo {
   productId: string;
   quantity: number;
@@ -89,7 +115,7 @@ export interface ProductResponse {
   productIngredients: IingredientResponse[];
   promotionDetails: IPromotionDetails[];
   stock: IStockOfProduct;
-  allowsToppings: boolean | null;
+  allowsToppings: boolean;
   toppingsSettings: null
 }
 
