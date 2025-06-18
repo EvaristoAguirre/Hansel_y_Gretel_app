@@ -174,6 +174,7 @@ const OrderProvider = ({
   };
 
   const handleSelectedProducts = async (product: ProductResponse) => {
+
     const foundProduct = selectedProducts.find(
       (p) => p.productId === product.id
     );
@@ -202,10 +203,17 @@ const OrderProvider = ({
         quantity: 1,
         unitaryPrice: product.price,
         productName: product.name,
+        allowsToppings: product.allowsToppings,
+        availableToppingGroups: product.availableToppingGroups
       };
       setSelectedProducts([...selectedProducts, newProduct]);
+
+    }
+    if (product.allowsToppings === true) {
+
     }
   };
+
 
 
   const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {

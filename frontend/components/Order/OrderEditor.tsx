@@ -10,7 +10,7 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { Add, Remove, Delete, Comment } from "@mui/icons-material";
+import { Add, Remove, Delete, Comment, AutoAwesome } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
@@ -25,6 +25,8 @@ import { searchProducts } from "@/api/products";
 import AutoCompleteProduct from "../Utils/Autocomplete";
 import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
+
+
 
 export interface Product {
   price: number;
@@ -169,11 +171,21 @@ const OrderEditor = ({
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
-  const [showCategories, setShowCategories] = useState(false);
+  // const [showCategories, setShowCategories] = useState(false);
 
-  const handleToggle = () => {
-    setShowCategories((prev) => !prev);
+  // const handleToggle = () => {
+  //   setShowCategories((prev) => !prev);
+  // };
+
+  const handleShowToppings = () => {
+    console.log("ACÁ SE VERÁN LOS TOPPINGS");
+
   };
+
+  useEffect(() => {
+    console.log("selectedProducts:🪭", selectedProducts);
+
+  }, [selectedProducts]);
 
   return loading ? (
     <LoadingLottie />
@@ -306,6 +318,13 @@ const OrderEditor = ({
                       </Typography>
 
                       <div style={{ display: "flex", alignItems: "center" }}>
+                        {item.allowsToppings === true &&
+                          <Tooltip title="Ver Agregados" arrow>
+                            <IconButton size="small" onClick={handleShowToppings} >
+                              <AutoAwesome />
+                            </IconButton>
+                          </Tooltip>
+                        }
                         <IconButton onClick={() => toggleCommentInput(item.productId)}>
                           <Comment style={{ color: "#856D5E" }} />
                         </IconButton>
@@ -317,27 +336,29 @@ const OrderEditor = ({
                     </div>
 
                     {/* Comentario */}
-                    {visibleCommentInputs[item.productId] && (
-                      <div style={{ marginTop: "0.5rem", width: "100%" }}>
-                        <AutoGrowTextarea
-                          value={
-                            commentInputs[item.productId] !== undefined
-                              ? commentInputs[item.productId]
-                              : item.commentOfProduct ?? ""
-                          }
-                          placeholder="Comentario al producto"
-                          onChange={(value) =>
-                            setCommentInputs((prev) => ({
-                              ...prev,
-                              [item.productId]: value,
-                            }))
-                          }
-                          onBlur={() =>
-                            productComment(item.productId, commentInputs[item.productId] || "")
-                          }
-                        />
-                      </div>
-                    )}
+                    {
+                      visibleCommentInputs[item.productId] && (
+                        <div style={{ marginTop: "0.5rem", width: "100%" }}>
+                          <AutoGrowTextarea
+                            value={
+                              commentInputs[item.productId] !== undefined
+                                ? commentInputs[item.productId]
+                                : item.commentOfProduct ?? ""
+                            }
+                            placeholder="Comentario al producto"
+                            onChange={(value) =>
+                              setCommentInputs((prev) => ({
+                                ...prev,
+                                [item.productId]: value,
+                              }))
+                            }
+                            onBlur={() =>
+                              productComment(item.productId, commentInputs[item.productId] || "")
+                            }
+                          />
+                        </div>
+                      )
+                    }
                   </ListItem>
                 ))}
               </List>
@@ -483,7 +504,7 @@ const OrderEditor = ({
           </Box>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
