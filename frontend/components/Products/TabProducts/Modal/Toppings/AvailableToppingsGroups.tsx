@@ -108,10 +108,10 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
         return (
           <Grid container spacing={1} mt={1} key={group.toppingsGroupId}>
             <Grid item xs={12}>
-              <strong>{groupName}</strong>
+              <p>Grupo: <strong style={{ color: "green" }}> {capitalizeFirstLetter(groupName)}</strong></p>
             </Grid>
             <Grid item xs={6}>
-              <Tooltip title="Cantidad que se le agrega al producto. Ej: 100gr">
+              <Tooltip title="Cantidad que se le agrega al producto por agregado. Ej: 100gr">
                 <TextField
                   label="Cantidad"
                   type="number"

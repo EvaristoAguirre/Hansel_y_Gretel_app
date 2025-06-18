@@ -306,7 +306,16 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   return (
     <Modal open={open} onClose={onClose} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Box sx={{ width: 600, bgcolor: "background.paper", p: 4, mx: "auto", mt: 2 }}>
+      <Box
+        sx={{
+          width: 600,
+          bgcolor: "background.paper",
+          p: 4,
+          mx: "auto",
+          mt: 2,
+          maxHeight: "90vh",
+          overflowY: "auto",
+        }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab
             label="Producto simple"
@@ -465,7 +474,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             </>
           )
         }
-
 
         <DialogActions sx={{ justifyContent: "space-between" }}>
           <Button sx={{ mt: 2 }} onClick={() => {
