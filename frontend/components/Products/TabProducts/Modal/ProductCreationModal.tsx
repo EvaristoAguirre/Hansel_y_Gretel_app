@@ -84,11 +84,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     }
   }, [modalType, form.type, form.ingredients]);
 
-  useEffect(() => {
-    console.log("set en form 🅾️", form.allowsToppings);
-
-  })
-
   const [errors, setErrors] = useState<Errors>({
     code: "",
     name: "",
@@ -196,23 +191,18 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       error = "Debe seleccionar al menos un producto";
       setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
     }
-    if (field === "availableToppingGroups" && Array.isArray(value) && value.length === 0) {
-      error = "Debe seleccionar al menos un grupo de toppings";
-      setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
-    }
   };
   const isToppingsSectionValid = (): boolean => {
     if (!form.allowsToppings) return true;
-
     if (!Array.isArray(form.availableToppingGroups) || form.availableToppingGroups.length === 0) {
       return false;
     }
-
     return form.availableToppingGroups.every(group =>
       !!group.toppingsGroupId &&
       typeof group.quantityOfTopping === "number" && group.quantityOfTopping > 0 &&
       group.settings &&
-      typeof group.settings.maxSelection === "number" && group.settings.maxSelection >= 1
+      typeof group.settings.maxSelection === "number" && group.settings.maxSelection >= 1 &&
+      group.unitOfMeasureId
     );
   };
 
@@ -467,7 +457,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               )}
               {form.allowsToppings && !isToppingsSectionValid() && (
                 <Box mt={1} color="error.main" fontSize="0.9rem">
-                  Completar correctamente todos campos.
+                  Completar correctamente los campos.
                 </Box>
               )}
 

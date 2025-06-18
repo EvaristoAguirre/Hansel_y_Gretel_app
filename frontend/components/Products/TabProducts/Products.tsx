@@ -8,7 +8,7 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./Modal/ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
@@ -113,7 +113,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                   toppingsGroupId: group.id,
                   quantityOfTopping: parseFloat(group.quantityOfTopping),
                   settings: group.settings,
-                  unitOfMeasureId: group.unitOfMeasureId ?? undefined,
+                  unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
                 })) || [],
               });
               setModalType(FormTypeProduct.EDIT);

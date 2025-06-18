@@ -57,7 +57,7 @@ export interface IProductToppingsGroupResponse {
     chargeExtra: boolean;
     maxSelection: number;
   };
-  unitOfMeasureId: IUnitOfMeasureStandard;
+  unitOfMeasure: IUnitOfMeasureStandard;
   quantityOfTopping: string;
   toppings: IProduct[];
 }
