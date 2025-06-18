@@ -140,10 +140,6 @@ export class OrderRepository {
         order.numberCustomers = updateData.numberCustomers;
       }
 
-      // if (updateData.comment) {
-      //   order.comment = updateData.comment;
-      // }
-
       if (updateData.tableId) {
         const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
