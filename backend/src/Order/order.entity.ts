@@ -38,7 +38,7 @@ export class Order {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
-  @Column({ type: 'enum', enum: MethodOfPayment })
+  @Column({ type: 'enum', enum: MethodOfPayment, nullable: true })
   methodOfPayment: MethodOfPayment;
 
   // --------- Relaciones ---------
