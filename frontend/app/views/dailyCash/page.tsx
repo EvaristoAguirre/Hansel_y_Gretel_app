@@ -1,6 +1,5 @@
 import React from 'react'
 import { UserRole } from '@/components/Enums/user';
-import LoadingLottie from '@/components/Loader/Loading';
 import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute';
 import DailyCash from '@/components/DailyCash/DailyCash';
 
