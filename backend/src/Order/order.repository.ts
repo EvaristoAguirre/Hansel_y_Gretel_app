@@ -23,6 +23,9 @@ import { PrinterService } from 'src/Printer/printer.service';
 import { TableService } from 'src/Table/table.service';
 import { CloseOrderDto } from 'src/DTOs/close-order.dto';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { OrderDetailToppings } from './order_details_toppings.entity';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 
 @Injectable()
 export class OrderRepository {
@@ -151,11 +154,16 @@ export class OrderRepository {
         }
         order.table = table;
       }
+
       if (updateData.productsDetails) {
         const newProducts = [];
         let total = 0;
 
-        for (const { productId, quantity } of updateData.productsDetails) {
+        for (const {
+          productId,
+          toppingsIds,
+          quantity,
+        } of updateData.productsDetails) {
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: productId, isActive: true },
           });
@@ -175,10 +183,69 @@ export class OrderRepository {
             order,
           });
 
-          order.orderDetails.push(newDetail);
-          newProducts.push(product);
+          newDetail.orderDetailToppings = [];
 
-          total += quantity * product.price;
+          if (product.allowsToppings && toppingsIds.length) {
+            for (const toppingId of toppingsIds) {
+              const topping = await queryRunner.manager.findOne(Ingredient, {
+                where: { id: toppingId, isActive: true },
+                relations: ['toppingsGroups'],
+              });
+
+              if (!topping) {
+                throw new NotFoundException(
+                  `Topping with ID: ${toppingId} not found`,
+                );
+              }
+
+              // Buscar a qué grupo de toppings pertenece este topping
+              const toppingGroup = topping.toppingsGroups?.[0]; // o lógica más precisa si hay varios
+
+              if (!toppingGroup) {
+                throw new NotFoundException(
+                  `Topping ${topping.name} no tiene grupo asignado.`,
+                );
+              }
+
+              // Buscar la configuración del grupo para este producto
+              const config = await queryRunner.manager.findOne(
+                ProductAvailableToppingGroup,
+                {
+                  where: {
+                    product: { id: product.id },
+                    toppingGroup: { id: toppingGroup.id },
+                  },
+                  relations: ['unitOfMeasure'],
+                },
+              );
+
+              if (!config) {
+                throw new NotFoundException(
+                  `No se encontró configuración del grupo ${toppingGroup.name} para el producto ${product.name}`,
+                );
+              }
+
+              // await this.stockService.deductStock(topping.id, quantity * config.quantityOfTopping);
+
+              const toppingDetail = queryRunner.manager.create(
+                OrderDetailToppings,
+                {
+                  topping,
+                  orderDetails: newDetail,
+                  quantity: config.quantityOfTopping,
+                  unitOfMeasure: config.unitOfMeasure,
+                  unitOfMeasureName: config.unitOfMeasure?.name,
+                },
+              );
+
+              newDetail.orderDetailToppings.push(toppingDetail);
+            }
+
+            order.orderDetails.push(newDetail);
+            newProducts.push(product);
+
+            total += quantity * product.price;
+          }
         }
 
         order.total = (Number(order.total) || 0) + total;
