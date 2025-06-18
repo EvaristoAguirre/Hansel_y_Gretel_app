@@ -1,9 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { ProductCreated } from "../Interfaces/IProducts";
-import { Iingredient } from "../Interfaces/Ingredients";
-import { use } from 'react';
 import { capitalizeFirstLetter } from "./CapitalizeFirstLetter";
 
 interface AutoCompleteProductProps {

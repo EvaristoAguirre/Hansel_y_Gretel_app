@@ -70,10 +70,11 @@ export class ProductRepository {
           'stock',
           'stock.unitOfMeasure',
           'availableToppingGroups',
+          'availableToppingGroups.unitOfMeasure',
           'availableToppingGroups.toppingGroup',
-          'availableToppingGroups.toppingGroup.toppings',
         ],
       });
+      console.log('productos rescatados...', products);
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof BadRequestException) {

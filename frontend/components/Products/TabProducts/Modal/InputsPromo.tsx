@@ -6,7 +6,7 @@ import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter"
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
 import { IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { Tab, TabProductKey } from '../../Enums/view-products';
+import { Tab, TabProductKey } from '../../../Enums/view-products';
 
 interface InputsPromoProps {
   onSave: (productsForm: ProductForPromo[]) => void;
