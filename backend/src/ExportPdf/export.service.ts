@@ -1,14 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit-table';
-import { StockService } from 'src/Stock/stock.service';
 import * as fs from 'fs';
+import { ProductService } from 'src/Product/product.service';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
+import { Product } from 'src/Product/product.entity';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import table from 'pdfkit-table';
 
 @Injectable()
 export class ExportService {
-  constructor(private stockService: StockService) {}
+  constructor(
+    private productService: ProductService,
+    private ingredientService: IngredientService,
+  ) {}
 
   async generateStockPDF(): Promise<Buffer> {
-    const stockData = await this.stockService.stockToExport();
+    const stockData = await this.getStockToExport();
 
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -22,57 +31,82 @@ export class ExportService {
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, doc.page.width - 130, 20, { width: 100 });
       }
-      doc.moveDown();
-      doc.moveDown();
-      doc.moveDown();
+      doc.moveDown(3);
 
       // Título del documento
       doc.fontSize(15).text('Reporte de Stock', { align: 'center' });
       doc.moveDown();
 
-      // Preparar datos para la tabla
       const tableData = {
         headers: [
-          'Nombre',
-          'Cant. Actual',
-          'Unidad',
-          'Costo Unitario',
-          'Cant. Comprada',
-          'Precio pagado',
+          { label: 'Nombre', property: 'name', width: 190 },
+          {
+            label: 'Cant. actual',
+            property: 'quantity',
+            width: 60,
+            align: 'right',
+          },
+          { label: 'Unidad', property: 'unit', width: 50, align: 'center' },
+          {
+            label: 'Costo',
+            property: 'cost',
+            width: 60,
+            align: 'right',
+          },
+          {
+            label: 'Cant. comprada',
+            property: 'bought',
+            width: 75,
+            align: 'center',
+          },
+          {
+            label: 'Precio pagado',
+            property: 'paid',
+            width: 65,
+            align: 'right',
+          },
         ],
-        rows: stockData.map((item) => {
-          const isIngredient = !!item.ingredient;
-          const name = isIngredient ? item.ingredient.name : item.product.name;
-
-          const cost = isIngredient
-            ? `$${parseFloat(item.ingredient.cost).toFixed(1)}`
-            : `$${parseFloat(item.product.cost).toFixed(1)}`;
-
-          return [
-            name,
-            item.quantityInStock,
-            item.unitOfMeasure.abbreviation,
-            cost,
-            '',
-            '',
-          ];
-        }),
+        datas: stockData.map((item) => ({
+          name: item.name,
+          quantity: this.formatNumber(item.quantityInStock),
+          unit: item.unitOfMeasure,
+          cost: this.formatNumber(item.cost),
+          bought: '',
+          paid: '',
+        })),
       };
 
-      // Configuración CORREGIDA de la tabla
-      const tableOptions = {
-        width: 500,
-        x: 50,
-        y: doc.y,
+      (doc as any).table(tableData, {
         divider: {
           header: { disabled: false, width: 1 },
           horizontal: { disabled: false, width: 0.5 },
         },
-      };
+      });
 
-      // Generar la tabla
-      doc.table(tableData, tableOptions);
       doc.end();
+    });
+  }
+
+  async getStockToExport() {
+    const products = await this.productService.getProductsWithStock();
+    const ingredients = await this.ingredientService.getIngredientsWithStock();
+
+    return [...products, ...ingredients].map(this.adaptExportDto);
+  }
+
+  private adaptExportDto(item: Product | Ingredient): ProductsToExportDto {
+    return {
+      name: item.name,
+      quantityInStock: item.stock?.quantityInStock ?? 0,
+      unitOfMeasure: item.stock?.unitOfMeasure?.abbreviation ?? 'N/D',
+      cost: item.cost ?? 0,
+    };
+  }
+
+  private formatNumber(value: number | null | undefined): string {
+    return (value ?? 0).toLocaleString('es-AR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
     });
   }
 }

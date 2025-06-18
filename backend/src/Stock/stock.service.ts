@@ -58,8 +58,4 @@ export class StockService {
     await this.eventEmitter.emit('stock.updated', { stockDeducted });
     return stockDeducted;
   }
-
-  async stockToExport() {
-    return await this.stockRepository.stockToExport();
-  }
 }

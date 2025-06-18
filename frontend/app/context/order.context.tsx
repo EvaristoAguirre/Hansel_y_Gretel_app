@@ -1,5 +1,4 @@
 "use client";
-import { MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
 import {
   createContext,
@@ -17,11 +16,12 @@ import {
 import { useOrderStore } from "../../components/Order/useOrderStore";
 import { useRoomContext } from "./room.context";
 import { TableState } from "@/components/Enums/Enums";
-import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
+import { IOrderDetails } from "@/components/Interfaces/IOrder";
 import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";
 import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
+import { ITable } from "@/components/Interfaces/ITable";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -38,7 +38,7 @@ type OrderContextType = {
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (
-    mesa: MesaInterface,
+    table: ITable,
     cantidadPersonas: number,
     comentario: string
   ) => Promise<void>;
@@ -90,7 +90,7 @@ const OrderProvider = ({
   const [token, setToken] = useState<string | null>(null);
   const { tables } = useTableStore();
   const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
-  const { selectedMesa, setSelectedMesa, handleSelectMesa } = useRoomContext();
+  const { selectedTable, setSelectedTable, handleSelectTable } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
     []
   );
@@ -111,11 +111,11 @@ const OrderProvider = ({
   /**
    *
    * Al cambiar la Mesa o la Sala seleccionada se limpia
-   *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
+   *  la información de la Mesa saliente mediante `handleResetSelectedOrder`.
    */
   useEffect(() => {
     handleResetSelectedOrder();
-  }, [selectedMesa]);
+  }, [selectedTable]);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -124,15 +124,15 @@ const OrderProvider = ({
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    if (selectedMesa?.state === TableState.AVAILABLE) {
+    if (selectedTable?.state === TableState.AVAILABLE) {
       return setSelectedOrderByTable(null);
 
     }
-    if (selectedMesa && selectedMesa.orders) {
+    if (selectedTable && selectedTable.orders) {
       try {
-        if (selectedMesa?.orders.length > 0) {
+        if (selectedTable?.orders.length > 0) {
           const response = await fetch(
-            `${URI_ORDER}/${selectedMesa.orders[0]}`,
+            `${URI_ORDER}/${selectedTable.orders[0]}`,
             {
               method: "GET",
               headers: {
@@ -152,7 +152,7 @@ const OrderProvider = ({
         console.error("Error al obtener el pedido:", error);
       }
     }
-  }, [selectedMesa]);
+  }, [selectedTable]);
 
   useEffect(() => {
     fetchOrderBySelectedTable();
@@ -282,13 +282,13 @@ const OrderProvider = ({
   };
 
   const handleCreateOrder = async (
-    selectedMesa: MesaInterface,
+    selectedTable: ITable,
     cantidadPersonas: number,
     comentario: string
   ) => {
     try {
       const pedido = {
-        tableId: selectedMesa.id,
+        tableId: selectedTable.id,
         numberCustomers: cantidadPersonas,
         comment: comentario,
         productsDetails: [],
@@ -318,10 +318,10 @@ const OrderProvider = ({
 
       const updatedTable = {
         ...newOrder.table,
-        room: selectedMesa.room,
+        room: selectedTable.room,
         orders: [newOrder.id],
       };
-      handleSelectMesa(updatedTable);
+      handleSelectTable(updatedTable);
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");
     }
@@ -398,11 +398,11 @@ const OrderProvider = ({
           removeOrder(id);
           setSelectedOrderByTable(null);
           setConfirmedProducts([]);
-          setSelectedMesa({
-            ...selectedMesa,
+          setSelectedTable({
+            ...selectedTable,
             orders: [],
             state: TableState.AVAILABLE
-          } as MesaInterface);
+          } as ITable);
           Swal.fire({
             icon: "success",
             title: "Pedido cancelado",

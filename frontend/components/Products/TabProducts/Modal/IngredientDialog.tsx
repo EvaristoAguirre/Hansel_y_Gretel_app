@@ -12,20 +12,21 @@ import {
   IconButton,
   ListItemText,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { IingredientForm } from "@/components/Interfaces/Ingredients";
+import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { TabProductKey } from "@/components/Enums/view-products";
-import { useIngredientsContext } from '../../../app/context/ingredientsContext';
+import { useIngredientsContext } from '../../../../app/context/ingredientsContext';
 import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
-import { useUnitContext } from '../../../app/context/unitOfMeasureContext';
+import { useUnitContext } from '../../../../app/context/unitOfMeasureContext';
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 
 interface IngredientDialogProps {
@@ -45,7 +46,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
     ingredientId: "",
     quantityOfIngredient: 0,
     unitOfMeasureId: "",
-    type: null
+    type: null,
+    isTopping: false,
+    extraCost: null
   });
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editIngredient, setEditIngredient] = useState<IingredientForm | null>(null);
@@ -56,12 +59,14 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
     if (!token) return;
     if (form.ingredients && form.ingredients.length > 0) {
 
-      const preparedIngredients = form.ingredients.map((ingredient: any) => ({
+      const preparedIngredients = form.ingredients.map((ingredient: IingredientForm) => ({
         name: ingredient.name,
         ingredientId: ingredient.ingredientId,
         quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
         unitOfMeasureId: ingredient.unitOfMeasureId,
-        type: ingredient.type
+        type: ingredient.type,
+        isTopping: ingredient.isTopping,
+        extraCost: ingredient.extraCost
       }))
       setSelectedIngredients(preparedIngredients);
     }
@@ -112,7 +117,9 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
         ingredientId: "",
         quantityOfIngredient: 0,
         unitOfMeasureId: "",
-        type: null
+        type: null,
+        isTopping: false,
+        extraCost: null
       });
     }
   };
@@ -260,116 +267,128 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
 
         {/* Lista de ingredientes agregados */}
         <List sx={{ maxHeight: 130, overflowY: 'auto' }}>
-          {selectedIngredients.map((ingredient, index) => (
-            <ListItem key={index} divider
-              secondaryAction={
-                <>
-                  {editIndex === index ? (
-                    <Box sx={{ display: "flex", flexDirection: "row", gap: "8px" }} >
-                      <Tooltip title="Guardar">
-                        <IconButton edge="end" onClick={handleSaveEdit}>
-                          <SaveIcon color="success" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Cancelar">
-                        <IconButton edge="end" onClick={handleCancelEdit}>
-                          <CancelIcon color="error" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+          <Typography variant="body1" color={"green"}>Ingredientes de este producto:</Typography>
+          {
+            selectedIngredients.length > 0 ? (
+              selectedIngredients.map((ingredient, index) => (
+                <ListItem key={index} divider
+                  secondaryAction={
+                    <>
+                      {editIndex === index ? (
+                        <Box sx={{ display: "flex", flexDirection: "row", gap: "8px" }} >
+                          <Tooltip title="Guardar">
+                            <IconButton edge="end" onClick={handleSaveEdit}>
+                              <SaveIcon color="success" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Cancelar">
+                            <IconButton edge="end" onClick={handleCancelEdit}>
+                              <CancelIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ) : (
+                        <div className="flex gap-2">
+                          <IconButton edge="end" onClick={() => handleStartEdit(index)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton edge="end" onClick={() => handleRemoveIngredient(index)}>
+                            <GridDeleteIcon />
+                          </IconButton>
+                        </div>
+                      )}
+                    </>
+                  }
+                >
+                  {editIndex === index && editIngredient ? (
+                    <div style={{ width: "90%", display: "flex", flexDirection: "row", gap: "8px" }}>
+                      <TextField
+                        sx={{ width: "40%" }}
+                        margin="dense"
+                        label="Nombre"
+                        type="string"
+                        value={capitalizeFirstLetter(editIngredient.name)}
+                        onChange={(e) => {
+                          setEditIngredient({
+                            ...editIngredient,
+                            name: e.target.value,
+                          })
+
+                        }
+                        }
+                        InputProps={{ readOnly: true }}
+                        size="small"
+                      />
+                      <TextField
+                        sx={{ width: "20%" }}
+                        margin="dense"
+                        label="Cantidad"
+                        type="number"
+                        value={editIngredient.quantityOfIngredient ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+
+                          if (val === "") {
+                            setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
+                            return;
+                          }
+
+                          const value = parseFloat(val);
+                          if (isNaN(value) || value <= 0) return;
+
+                          setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
+                        }}
+                        onBlur={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (isNaN(value) || value <= 0) {
+                            setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
+                          } else {
+                            setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
+                          }
+                        }}
+                        inputProps={{ min: 0, step: 0.1 }}
+                        size="small"
+                      />
+
+                      <FormControl fullWidth margin="dense" size="small"
+                        sx={{ width: "40%" }}>
+                        <InputLabel>Unidad</InputLabel>
+                        <Select
+                          value={editIngredient.unitOfMeasureId}
+                          onChange={(e) =>
+                            setEditIngredient({
+                              ...editIngredient,
+                              unitOfMeasureId: e.target.value,
+                            })
+                          }
+                          size="small"
+                        >
+                          {unitsForEdit.map((u: IUnitOfMeasureForm) => (
+                            <MenuItem key={u.id} value={u.id}>
+                              {u.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </div>
                   ) : (
-                    <div className="flex gap-2">
-                      <IconButton edge="end" onClick={() => handleStartEdit(index)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton edge="end" onClick={() => handleRemoveIngredient(index)}>
-                        <GridDeleteIcon />
-                      </IconButton>
+                    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2">
+                            {`${capitalizeFirstLetter(ingredient.name)} - ${ingredient.quantityOfIngredient} ${units.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ""}`}
+                          </Typography>
+                        }
+                      />
                     </div>
                   )}
-                </>
-              }
-            >
-              {editIndex === index && editIngredient ? (
-                <div style={{ width: "90%", display: "flex", flexDirection: "row", gap: "8px" }}>
-                  <TextField
-                    sx={{ width: "40%" }}
-                    margin="dense"
-                    label="Nombre"
-                    type="string"
-                    value={capitalizeFirstLetter(editIngredient.name)}
-                    onChange={(e) => {
-                      setEditIngredient({
-                        ...editIngredient,
-                        name: e.target.value,
-                      })
+                </ListItem>
+              ))
 
-                    }
-                    }
-                    InputProps={{ readOnly: true }}
-                    size="small"
-                  />
-                  <TextField
-                    sx={{ width: "20%" }}
-                    margin="dense"
-                    label="Cantidad"
-                    type="number"
-                    value={editIngredient.quantityOfIngredient ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-
-                      if (val === "") {
-                        setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
-                        return;
-                      }
-
-                      const value = parseFloat(val);
-                      if (isNaN(value) || value <= 0) return;
-
-                      setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
-                    }}
-                    onBlur={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (isNaN(value) || value <= 0) {
-                        setEditIngredient({ ...editIngredient, quantityOfIngredient: null });
-                      } else {
-                        setEditIngredient({ ...editIngredient, quantityOfIngredient: value });
-                      }
-                    }}
-                    inputProps={{ min: 0, step: 0.1 }}
-                    size="small"
-                  />
-
-                  <FormControl fullWidth margin="dense" size="small"
-                    sx={{ width: "40%" }}>
-                    <InputLabel>Unidad</InputLabel>
-                    <Select
-                      value={editIngredient.unitOfMeasureId}
-                      onChange={(e) =>
-                        setEditIngredient({
-                          ...editIngredient,
-                          unitOfMeasureId: e.target.value,
-                        })
-                      }
-                      size="small"
-                    >
-                      {unitsForEdit.map((u: IUnitOfMeasureForm) => (
-                        <MenuItem key={u.id} value={u.id}>
-                          {u.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </div>
-              ) : (
-                <ListItemText
-                  primary={`${ingredient.name} - ${ingredient.quantityOfIngredient} ${units.find(u => u.id === ingredient.unitOfMeasureId)?.abbreviation || ""}`}
-                  sx={{ fontSize: '0.5rem' }}
-                />
-
-              )}
-            </ListItem>
-          ))}
+            ) : (
+              <Typography variant="body2" sx={{ color: "red", opacity: 0.7, fontStyle: "italic" }} >Aún no hay ingredientes agregados.</Typography>
+            )
+          }
         </List>
       </DialogContent>
     </>

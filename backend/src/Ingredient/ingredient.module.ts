@@ -9,10 +9,16 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
+import { ProductAvailableToppingGroup } from './productAvailableToppingsGroup.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ingredient, UnitConversion, UnitOfMeasure]),
+    TypeOrmModule.forFeature([
+      Ingredient,
+      UnitConversion,
+      UnitOfMeasure,
+      ProductAvailableToppingGroup,
+    ]),
     UserModule,
   ],
   controllers: [IngredientController],

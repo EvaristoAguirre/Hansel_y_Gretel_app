@@ -35,16 +35,29 @@ export class ToppingsGroupsController {
     return this.toppingsGroupsService.updateToppingsGroup(id, updateData);
   }
 
+  @Get()
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getAllToppingsGroups(): Promise<ToppingsGroup[]> {
+    return this.toppingsGroupsService.getAllToppingsGroups();
+  }
+  @Get('without-toppings')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getAllToppingsGroupsWithoutToppings(): Promise<ToppingsGroup[]> {
+    return this.toppingsGroupsService.getAllToppingsGroupsWithoutToppings();
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getToppingsGroupById(@Param('id') id: string): Promise<ToppingsGroup> {
     return this.toppingsGroupsService.getToppingsGroupById(id);
   }
 
-  @Get()
+  @Get('by-name/:name')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  getAllToppingsGroups(): Promise<ToppingsGroup[]> {
-    return this.toppingsGroupsService.getAllToppingsGroups();
+  async getToppingsGroupByName(
+    @Param('name') name: string,
+  ): Promise<ToppingsGroup> {
+    return this.toppingsGroupsService.getToppingsGroupByName(name);
   }
 
   @Delete(':id')

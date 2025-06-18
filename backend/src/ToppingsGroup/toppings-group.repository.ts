@@ -8,7 +8,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 // import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
@@ -177,6 +177,47 @@ export class ToppingsGroupRepository {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Error fetching toppings groups');
+    }
+  }
+  async getAllToppingsGroupsWithoutToppings(
+    page: number = 1,
+    limit: number = 100,
+  ): Promise<ToppingsGroup[]> {
+    if (page < 1 || limit < 1) {
+      throw new BadRequestException('Page and limit must be greater than 0');
+    }
+    try {
+      return await this.toppingsGroupRepository.find({
+        where: { isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Error fetching toppings groups');
+    }
+  }
+
+  async getToppingsGroupByName(name: string): Promise<ToppingsGroup> {
+    if (!name) {
+      throw new BadRequestException('Either name must be provided.');
+    }
+    try {
+      const toppingsGroup = await this.toppingsGroupRepository.findOne({
+        where: { name: ILike(name) },
+      });
+
+      if (!toppingsGroup) {
+        throw new NotFoundException(
+          `Toppings Group with ID: ${name} not found`,
+        );
+      }
+      return toppingsGroup;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching the table', error);
     }
   }
 

@@ -51,4 +51,8 @@ export class TableService {
   async updateTableState(tableId: string, state: TableState) {
     await this.tableRepository.updateTableState(tableId, state);
   }
+
+  async getTablesByRoom(roomId: string): Promise<Table[]> {
+    return this.tableRepository.getTablesByRoom(roomId);
+  }
 }

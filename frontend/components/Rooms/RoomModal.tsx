@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { Modal, TextField, Button } from "@mui/material";
 import Swal from "sweetalert2";
-import { SalaModalProps } from "../Interfaces/Cafe_interfaces";
+import { RoomModalProps } from "../Interfaces/IRooms";
 
 
 
-const RoomModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
+const RoomModal = ({ open, onClose, onSubmit, room }: RoomModalProps) => {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (sala) {
-      setName(sala.name || "");
+    if (room) {
+      setName(room.name || "");
     } else {
       setName("");
     }
-  }, [sala]);
+  }, [room]);
 
   const handleSave = () => {
     if (!name.trim()) {
       Swal.fire("Error", "El nombre de la sala es obligatorio.", "error");
       return;
     }
-    onSubmit({ id: sala?.id, name });
+    onSubmit({ id: room?.id, name });
     onClose();
     setName("");
   };
@@ -41,7 +41,7 @@ const RoomModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
           borderRadius: "8px",
         }}
       >
-        <h2>{sala ? "Editar Sala" : "Agregar Sala"}</h2>
+        <h2>{room ? "Editar Sala" : "Agregar Sala"}</h2>
         <TextField
           label="Nombre de la Sala"
           value={name}
@@ -54,7 +54,7 @@ const RoomModal = ({ open, onClose, onSubmit, sala }: SalaModalProps) => {
             Cancelar
           </Button>
           <Button onClick={handleSave} variant="contained" color="primary">
-            {sala ? "Guardar Cambios" : "Crear Sala"}
+            {room ? "Guardar Cambios" : "Crear Sala"}
           </Button>
         </div>
       </div>

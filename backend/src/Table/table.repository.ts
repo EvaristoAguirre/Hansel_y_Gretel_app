@@ -227,4 +227,28 @@ export class TableRepository {
       throw new InternalServerErrorException('Error updating the table', error);
     }
   }
+
+  async getTablesByRoom(roomId: string): Promise<Table[]> {
+    if (!roomId) {
+      throw new BadRequestException('Either Room ID must be provided.');
+    }
+    try {
+      const table = await this.tableRepository.find({
+        where: { room: { id: roomId } },
+      });
+      if (!table) {
+        throw new NotFoundException(`Tables with Room ID: ${roomId} not found`);
+      }
+
+      return table;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the tables',
+        error,
+      );
+    }
+  }
 }

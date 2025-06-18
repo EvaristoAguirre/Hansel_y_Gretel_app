@@ -90,4 +90,9 @@ export class IngredientService {
   async findToppingById(id: string): Promise<Ingredient> {
     return await this.ingredientRepository.findToppingById(id);
   }
+
+  // --------------------- Consultas sobre Stock  -----------
+  async getIngredientsWithStock(): Promise<Ingredient[]> {
+    return this.ingredientRepository.getIngredientsWithStock();
+  }
 }
