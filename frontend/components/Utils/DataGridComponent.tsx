@@ -6,13 +6,19 @@ import { IRowData } from "../Interfaces/IGridMUI";
 import { capitalizeFirstLetterTable } from "./CapitalizeFirstLetter";
 import LoadingLottie from "../Loader/Loading";
 
-interface ProductTableProps {
+interface DataGridComponentProps {
   rows: IRowData[];
   columns: GridColDef[];
   height?: number;
   capitalize: string[];
+  bgColor?: string;
 }
-const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capitalize = [] }) => {
+const DataGridComponent: React.FC<DataGridComponentProps> = ({
+  rows,
+  columns,
+  capitalize = [],
+  bgColor = "#fff",
+}) => {
 
 
   return (
@@ -20,7 +26,7 @@ const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capital
     <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
 
       <DataGrid
-        rows={capitalizeFirstLetterTable(rows, ['name', 'description'])}
+        rows={capitalizeFirstLetterTable(rows, capitalize)}
         columns={columns}
         localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         initialState={{
@@ -32,6 +38,10 @@ const DataGridComponent: React.FC<ProductTableProps> = ({ rows, columns, capital
           },
         }}
         pageSizeOptions={[2, 5, 7, 9, 15]}
+        sx={{
+          backgroundColor: bgColor,
+          border: "none",
+        }}
       />
 
     </Box>

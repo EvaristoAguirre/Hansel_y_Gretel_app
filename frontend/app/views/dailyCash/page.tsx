@@ -1,7 +1,7 @@
 import React from 'react'
 import { UserRole } from '@/components/Enums/user';
 import ProtectedRoute from '@/components/ProtectedRoute/ProtectedRoute';
-import DailyCash from '@/components/DailyCash/DailyCash';
+import DailyCash from '@/components/DailyCash/PanelDailyCash';
 
 const ViewDailyCash = () => {
   return (

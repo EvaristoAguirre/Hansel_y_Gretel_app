@@ -2,6 +2,7 @@
 import { Tab, Tabs, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { useState } from 'react';
+import DailyCashSection from './TabDailyCash/DailyCashSection';
 
 function TabPanel({ children, value, index }: { children: React.ReactNode, value: number, index: number }) {
   return (
@@ -23,7 +24,7 @@ const DailyCash = () => {
       </Tabs>
 
       <TabPanel value={tabIndex} index={0}>
-        <Typography variant="h6">Contenido de Caja Diaria</Typography>
+        <DailyCashSection />
       </TabPanel>
       <TabPanel value={tabIndex} index={1}>
         <Typography variant="h6">Contenido de Ventas</Typography>
