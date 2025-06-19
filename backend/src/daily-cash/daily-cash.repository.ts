@@ -14,12 +14,18 @@ import { CreateDailyCashDto } from 'src/DTOs/create-daily-cash.dto';
 import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { isUUID } from 'class-validator';
 import { DailyCashState } from 'src/Enums/states.enum';
+import { CashMovement } from './cash-movement.entity';
+import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import { UUID } from 'typeorm/driver/mongodb/bson.typings';
+import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 
 @Injectable()
 export class DailyCashRepository {
   constructor(
     @InjectRepository(DailyCash)
     private readonly dailyCashRepository: Repository<DailyCash>,
+    @InjectRepository(CashMovement)
+    private readonly cashMovementRepository: Repository<CashMovement>,
   ) {}
 
   async openDailyCash(createDailyCashDto: CreateDailyCashDto) {
@@ -167,5 +173,43 @@ export class DailyCashRepository {
 
   async deleteDailyCash(id: number) {
     return await this.dailyCashRepository.delete(id);
+  }
+
+  async registerExpense(
+    expenseData: RegisterExpenseDto,
+  ): Promise<CashMovement> {
+    if (!expenseData.dailyCashId) {
+      throw new BadRequestException('Daily cash ID must be provided.');
+    }
+    if (!isUUID(expenseData.dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid daily cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const dailyCash = await this.getDailyCashById(expenseData.dailyCashId);
+      if (!dailyCash) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+      if (dailyCash.state !== 'open') {
+        throw new ConflictException(
+          'Daily cash report must be open to register expenses.',
+        );
+      }
+      const cashMovement = new CashMovement();
+      cashMovement.type = DailyCashMovementType.EXPENSE;
+      cashMovement.amount = expenseData.amount;
+      cashMovement.description = expenseData.description || '';
+      cashMovement.paymentMethod = expenseData.paymentMethod;
+      cashMovement.dailyCash = dailyCash;
+
+      return await this.cashMovementRepository.save(cashMovement);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error registering the expense. Please try again later.',
+        error.message,
+      );
+    }
   }
 }
