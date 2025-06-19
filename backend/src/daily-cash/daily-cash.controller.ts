@@ -14,6 +14,8 @@ import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { DailyCash } from './daily-cash.entity';
+import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import { CashMovement } from './cash-movement.entity';
 
 @Controller('daily-cash')
 @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
@@ -35,6 +37,14 @@ export class DailyCashController {
     @Body() updateDailyCashDto: UpdateDailyCashDto,
   ): Promise<DailyCash> {
     return this.dailyCashService.closeDailyCash(id, updateDailyCashDto);
+  }
+
+  @Post('register-expense')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  registerExpense(
+    @Body() expenseData: RegisterExpenseDto,
+  ): Promise<CashMovement> {
+    return this.dailyCashService.registerExpense(expenseData);
   }
 
   @Get()

@@ -4,6 +4,8 @@ import { UpdateDailyCashDto } from '../DTOs/update-daily-cash.dto';
 import { DailyCashRepository } from './daily-cash.repository';
 import { DailyCash } from './daily-cash.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import { CashMovement } from './cash-movement.entity';
 
 @Injectable()
 export class DailyCashService {
@@ -55,5 +57,11 @@ export class DailyCashService {
 
   async deleteDailyCash(id: number): Promise<void> {
     await this.dailyCashRepository.deleteDailyCash(id);
+  }
+
+  async registerExpense(
+    expenseData: RegisterExpenseDto,
+  ): Promise<CashMovement> {
+    return await this.dailyCashRepository.registerExpense(expenseData);
   }
 }
