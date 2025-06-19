@@ -14,7 +14,7 @@ import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
-import { DailyCashState, OrderState, TableState } from 'src/Enums/states.enum';
+import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductSummary } from 'src/DTOs/productSummary.dto';
 import { StockService } from 'src/Stock/stock.service';
@@ -446,46 +446,46 @@ export class OrderRepository {
         throw new BadRequestException(`Total amount must be greater than 0`);
       }
 
-      if (!closeOrderDto.methodOfPayment) {
-        throw new BadRequestException(`Method of payment must be provided`);
-      }
+      // if (!closeOrderDto.methodOfPayment) {
+      //   throw new BadRequestException(`Method of payment must be provided`);
+      // }
 
       // -------- revisar si el ticket esta generando un numero y guardarlo en la orden
-      const today = new Date();
+      // const today = new Date();
 
-      const openDailyCash = await this.dailyCashRepository.findOne({
-        where: {
-          date: today,
-          state: DailyCashState.OPEN,
-        },
-      });
+      // const openDailyCash = await this.dailyCashRepository.findOne({
+      //   where: {
+      //     date: today,
+      //     state: DailyCashState.OPEN,
+      //   },
+      // });
 
-      if (!openDailyCash) {
-        throw new ConflictException(
-          'No open daily cash report found. Cannot close the order.',
-        );
-      }
-      order.methodOfPayment = closeOrderDto.methodOfPayment;
-      order.state = OrderState.CLOSED;
-      order.table.state = TableState.AVAILABLE;
-      openDailyCash.totalSales += order.total;
-      if (closeOrderDto.methodOfPayment === 'Efectivo') {
-        openDailyCash.totalCash += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Crédito') {
-        openDailyCash.totalCreditCard += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Débito') {
-        openDailyCash.totalDebitCard += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Transferencia') {
-        openDailyCash.totalTransfer += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'MercadoPago') {
-        openDailyCash.totalMercadoPago += order.total;
-      } else {
-        openDailyCash.totalOtherPayments += order.total;
-      }
-      openDailyCash.orders.push(order);
+      // if (!openDailyCash) {
+      //   throw new ConflictException(
+      //     'No open daily cash report found. Cannot close the order.',
+      //   );
+      // }
+      // order.methodOfPayment = closeOrderDto.methodOfPayment;
+      // order.state = OrderState.CLOSED;
+      // order.table.state = TableState.AVAILABLE;
+      // openDailyCash.totalSales += order.total;
+      // if (closeOrderDto.methodOfPayment === 'Efectivo') {
+      //   openDailyCash.totalCash += order.total;
+      // } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Crédito') {
+      //   openDailyCash.totalCreditCard += order.total;
+      // } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Débito') {
+      //   openDailyCash.totalDebitCard += order.total;
+      // } else if (closeOrderDto.methodOfPayment === 'Transferencia') {
+      //   openDailyCash.totalTransfer += order.total;
+      // } else if (closeOrderDto.methodOfPayment === 'MercadoPago') {
+      //   openDailyCash.totalMercadoPago += order.total;
+      // } else {
+      //   openDailyCash.totalOtherPayments += order.total;
+      // }
+      // openDailyCash.orders.push(order);
       await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
-      await this.dailyCashRepository.save(openDailyCash);
+      // await this.dailyCashRepository.save(openDailyCash);
 
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;

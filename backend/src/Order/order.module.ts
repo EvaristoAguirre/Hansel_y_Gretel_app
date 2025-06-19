@@ -32,6 +32,7 @@ import { TableService } from 'src/Table/table.service';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { DailyCashRepository } from 'src/daily-cash/daily-cash.repository';
 import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
+import { CashMovement } from 'src/daily-cash/cash-movement.entity';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
       Stock,
       Ingredient,
       DailyCash,
+      CashMovement,
     ]),
     UserModule,
     UnitOfMeasurenModule,
