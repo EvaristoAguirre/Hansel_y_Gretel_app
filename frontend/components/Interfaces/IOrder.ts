@@ -1,4 +1,4 @@
-import { OrderState } from "../Enums/Enums";
+import { OrderState } from "../Enums/order";
 import { ITable } from "./ITable";
 
 export interface IOrder {

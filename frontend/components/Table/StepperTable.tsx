@@ -9,7 +9,7 @@ import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
-import { TableState } from '../Enums/Enums';
+import { TableState } from '../Enums/order';
 import OrderEditor from '../Order/OrderEditor';
 import { useEffect } from 'react';
 import { ITable } from '../Interfaces/ITable';

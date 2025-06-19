@@ -11,3 +11,20 @@ export interface I_DC_Open {
   comment: string;
   totalCash: number | null;
 }
+
+export interface I_DC_ {
+  comment?: string;
+  date?: Date;
+  state?: string;
+  totalSales?: number;
+  totalExpenses?: number;
+  newExpense?: number;
+  totalPayments?: number;
+  totalCash?: number;
+  totalCreditCard?: number;
+  totalDebitCard?: number;
+  totalTransfer?: number;
+  totalMercadoPago?: number;
+  totalOtherPayments?: number;
+  ordersIds?: string[]
+}

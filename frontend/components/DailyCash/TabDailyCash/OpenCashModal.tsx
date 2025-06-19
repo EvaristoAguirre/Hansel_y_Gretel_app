@@ -44,7 +44,7 @@ const OpenCashModal = ({ open, onClose }: Props) => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const response = token && await openDailyCash(form, token);
+      const response = token && await openDailyCash(token, form);
       if (response) {
         Swal.fire("Éxito", "Caja abierta correctamente.", "success");
       } else {
@@ -61,7 +61,7 @@ const OpenCashModal = ({ open, onClose }: Props) => {
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Abrir Caja Diaria</DialogTitle>
+      <DialogTitle color="primary" fontWeight="bold" fontSize="1rem">Abrir Caja Diaria</DialogTitle>
       <DialogContent>
         <Box mt={2} display="flex" flexDirection="column" gap={2}>
           <NumericFormat

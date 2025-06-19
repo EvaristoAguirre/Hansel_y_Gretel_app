@@ -2,8 +2,8 @@
 import { Box, Stack, Typography } from '@mui/material';
 import OpenCashButton from './OpenCashButton';
 import NewMovementButton from './NewMovementButton';
-import CashFilters from './CashFilters';
-import CashTable from './CashTable';
+import CashFilters from './Table/CashFilters';
+import CashTable from './Table/CashTable';
 import { useState } from 'react';
 
 const DailyCashSection = () => {
