@@ -3,12 +3,9 @@ import { IRowData } from "@/components/Interfaces/IGridMUI";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { GridColDef } from "@mui/x-data-grid";
 
-interface Props {
-  month: number;
-  year: number;
-}
+// todo hardcodeado por ahora, 
+// próximas tareas, se mostrarán los movimientos de la caja reales
 
-// Dummy data
 const dummyData: IRowData[] = [
   {
     id: "1",
@@ -20,7 +17,6 @@ const dummyData: IRowData[] = [
   },
 ];
 
-// Columnas para DataGrid
 const columns: GridColDef[] = [
   { field: "fecha", headerName: "Fecha", flex: 1 },
   {
