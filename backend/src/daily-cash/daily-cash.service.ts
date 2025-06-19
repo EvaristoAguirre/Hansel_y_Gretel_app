@@ -28,7 +28,7 @@ export class DailyCashService {
   async getDailyCashById(id: string): Promise<DailyCash> {
     return await this.dailyCashRepository.getDailyCashById(id);
   }
-  async updateDailyCash(id: number, updateDailyCashDto: UpdateDailyCashDto) {
+  async updateDailyCash(id: string, updateDailyCashDto: UpdateDailyCashDto) {
     const dailyCashUpdated = await this.dailyCashRepository.updateDailyCash(
       id,
       updateDailyCashDto,

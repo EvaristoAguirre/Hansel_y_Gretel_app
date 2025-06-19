@@ -105,7 +105,7 @@ export class DailyCashRepository {
     }
   }
 
-  async updateDailyCash(id: number, updateDailyCashDto: UpdateDailyCashDto) {
+  async updateDailyCash(id: string, updateDailyCashDto: UpdateDailyCashDto) {
     if (!id) {
       throw new BadRequestException('Daily cash report ID must be provided.');
     }
@@ -115,7 +115,12 @@ export class DailyCashRepository {
       );
     }
     try {
-      return await this.dailyCashRepository.update(id, updateDailyCashDto);
+      await this.dailyCashRepository.update(id, updateDailyCashDto);
+      const updatedDailyCash = await this.getDailyCashById(id);
+      if (!updatedDailyCash) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+      return updatedDailyCash;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
