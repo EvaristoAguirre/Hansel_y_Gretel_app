@@ -173,7 +173,8 @@ export class OrderRepository {
               `Product with ID: ${productId} not found`,
             );
           }
-          await this.stockService.deductStock(product.id, quantity);
+
+          // await this.stockService.deductStock(product.id, quantity);
 
           const newDetail = queryRunner.manager.create(OrderDetails, {
             quantity,
@@ -218,6 +219,7 @@ export class OrderRepository {
                   relations: ['unitOfMeasure'],
                 },
               );
+              console.log('config.........', config);
 
               if (!config) {
                 throw new NotFoundException(
@@ -226,7 +228,11 @@ export class OrderRepository {
               }
 
               // await this.stockService.deductStock(topping.id, quantity * config.quantityOfTopping);
-
+              console.log('Creando topping detail con........:', {
+                topping,
+                orderDetails: newDetail,
+                unitOfMeasure: config.unitOfMeasure,
+              });
               const toppingDetail = queryRunner.manager.create(
                 OrderDetailToppings,
                 {
@@ -249,6 +255,7 @@ export class OrderRepository {
         }
 
         order.total = (Number(order.total) || 0) + total;
+
         // if (newProducts.length > 0) {
         //   try {
         //     const printData = {
