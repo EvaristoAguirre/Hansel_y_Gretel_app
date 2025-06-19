@@ -40,8 +40,8 @@ export class DailyCashController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getAllDailysCash(
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 1000,
   ): Promise<DailyCash[]> {
     return this.dailyCashService.getAllDailyCash(page, limit);
   }
@@ -58,7 +58,7 @@ export class DailyCashController {
     @Param('id') id: string,
     @Body() updateDailyCashDto: UpdateDailyCashDto,
   ) {
-    return this.dailyCashService.updateDailyCash(+id, updateDailyCashDto);
+    return this.dailyCashService.updateDailyCash(id, updateDailyCashDto);
   }
 
   @Delete(':id')
