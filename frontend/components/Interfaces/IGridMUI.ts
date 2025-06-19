@@ -5,7 +5,7 @@ import { IStockOfProduct } from "./IStock";
 export interface IRowData {
   id?: string;
   code?: number | null;
-  name: string;
+  name?: string;
   description?: string;
   abbreviation?: string;
   price?: number | null;
@@ -16,5 +16,10 @@ export interface IRowData {
   productIngredients?: IingredientForm[] | null;
   promotionDetails?: IPromotionDetails[] | null;
   stock?: IStockOfProduct | null;
+  fecha?: string;
+  ingresos?: number;
+  egresos?: number;
+  ganancia?: number;
+  estado?: "Abierta" | "Cerrada";
 };
 
