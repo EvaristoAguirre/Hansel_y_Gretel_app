@@ -10,6 +10,7 @@ const OpenCashButton = () => {
   const token = getAccessToken();
 
   const [open, setOpen] = useState(false);
+  const [isCashOpenToday, setIsCashOpenToday] = useState(false);
 
   useEffect(() => {
     const checkOpen = async () => {
@@ -17,7 +18,7 @@ const OpenCashButton = () => {
 
       try {
         const data = await checkOpenDailyCash(token);
-        if (data) setOpen(data);
+        if (data) setIsCashOpenToday(data);
       } catch (error) {
         console.error(error);
       }
@@ -25,7 +26,6 @@ const OpenCashButton = () => {
     checkOpen();
   }, [token]);
 
-  const isCashOpenToday = false;
 
   return (
     <>
