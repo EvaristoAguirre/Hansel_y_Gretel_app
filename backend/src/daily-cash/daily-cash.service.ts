@@ -64,4 +64,8 @@ export class DailyCashService {
   ): Promise<CashMovement> {
     return await this.dailyCashRepository.registerExpense(expenseData);
   }
+
+  async isTodayDailyCashOpen(): Promise<boolean> {
+    return await this.dailyCashRepository.isTodayDailyCashOpen();
+  }
 }
