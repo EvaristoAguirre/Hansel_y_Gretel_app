@@ -13,7 +13,7 @@ export class CloseOrderDto {
   total: number;
 
   @IsNotEmpty()
-  @IsEnum({ enum: MethodOfPayment })
+  @IsEnum(MethodOfPayment)
   methodOfPayment: MethodOfPayment;
 
   @IsOptional()

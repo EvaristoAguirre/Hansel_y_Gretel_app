@@ -56,6 +56,12 @@ export class DailyCashController {
     return this.dailyCashService.getAllDailyCash(page, limit);
   }
 
+  @Get('check-open')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  isTodayDailyCashOpen(): Promise<boolean> {
+    return this.dailyCashService.isTodayDailyCashOpen();
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getDailyCashById(@Param('id') id: string): Promise<DailyCash> {

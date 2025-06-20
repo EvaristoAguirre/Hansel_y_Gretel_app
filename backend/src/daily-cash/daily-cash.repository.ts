@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DailyCash } from './daily-cash.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { CreateDailyCashDto } from 'src/DTOs/create-daily-cash.dto';
 import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { isUUID } from 'class-validator';
@@ -47,6 +47,7 @@ export class DailyCashRepository {
       const dailyCash = this.dailyCashRepository.create(createDailyCashDto);
       dailyCash.date = today;
       dailyCash.state = DailyCashState.OPEN;
+      dailyCash.totalCash = createDailyCashDto.totalCash || 0;
       await this.dailyCashRepository.save(dailyCash);
       return dailyCash;
     } catch (error) {
@@ -70,6 +71,7 @@ export class DailyCashRepository {
       return await this.dailyCashRepository.find({
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['movements', 'orders'],
       });
     } catch (error) {
       if (error instanceof HttpException) {
@@ -95,6 +97,7 @@ export class DailyCashRepository {
     try {
       const dailyCash = await this.dailyCashRepository.findOne({
         where: { id },
+        relations: ['movements', 'orders'],
       });
       if (!dailyCash) {
         throw new BadRequestException('Daily cash report not found.');
@@ -208,6 +211,28 @@ export class DailyCashRepository {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error registering the expense. Please try again later.',
+        error.message,
+      );
+    }
+  }
+
+  async isTodayDailyCashOpen(): Promise<boolean> {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      const existingDailyCash = await this.dailyCashRepository.findOne({
+        where: {
+          date: Between(startOfDay, endOfDay),
+          state: DailyCashState.OPEN,
+        },
+      });
+      return !!existingDailyCash;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error checking if daily cash is open. Please try again later.',
         error.message,
       );
     }
