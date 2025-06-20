@@ -14,7 +14,10 @@ import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { DailyCash } from './daily-cash.entity';
-import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import {
+  RegisterExpenseDto,
+  RegisterMovementDto,
+} from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 
@@ -46,6 +49,13 @@ export class DailyCashController {
     @Body() expenseData: RegisterExpenseDto,
   ): Promise<CashMovement> {
     return this.dailyCashService.registerExpense(expenseData);
+  }
+  @Post('register-movement')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  registerMovement(
+    @Body() movementData: RegisterMovementDto,
+  ): Promise<CashMovement> {
+    return this.dailyCashService.registerMovement(movementData);
   }
 
   @Get()

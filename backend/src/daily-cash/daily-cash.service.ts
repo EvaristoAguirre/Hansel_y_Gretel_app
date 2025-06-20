@@ -4,7 +4,10 @@ import { UpdateDailyCashDto } from '../DTOs/update-daily-cash.dto';
 import { DailyCashRepository } from './daily-cash.repository';
 import { DailyCash } from './daily-cash.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import {
+  RegisterExpenseDto,
+  RegisterMovementDto,
+} from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 
@@ -64,6 +67,12 @@ export class DailyCashService {
     expenseData: RegisterExpenseDto,
   ): Promise<CashMovement> {
     return await this.dailyCashRepository.registerExpense(expenseData);
+  }
+
+  async registerMovement(
+    movementData: RegisterMovementDto,
+  ): Promise<CashMovement> {
+    return await this.dailyCashRepository.registerMovement(movementData);
   }
 
   async isTodayDailyCashOpen(): Promise<boolean> {
