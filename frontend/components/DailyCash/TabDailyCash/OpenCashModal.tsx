@@ -22,7 +22,7 @@ interface Props {
 }
 
 const OpenCashModal = ({ open, onClose }: Props) => {
-  const initialForm: I_DC_Open = { comment: "", totalCash: 0 };
+  const initialForm: I_DC_Open = { comment: "", initialCash: 0 };
   const [form, setForm] = useState<I_DC_Open>(initialForm);
   const [loading, setLoading] = useState(false);
   const { getAccessToken } = useAuth();
@@ -67,7 +67,7 @@ const OpenCashModal = ({ open, onClose }: Props) => {
           <NumericFormat
             customInput={TextField}
             label="Total en Caja Inicial"
-            value={form.totalCash}
+            value={form.initialCash}
             thousandSeparator="."
             decimalSeparator=","
             decimalScale={2}

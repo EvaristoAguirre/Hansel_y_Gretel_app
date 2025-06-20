@@ -9,7 +9,7 @@ export interface ICashMovement {
 
 export interface I_DC_Open {
   comment: string;
-  totalCash: number | null;
+  initialCash: number | null;
 }
 
 export interface I_DC_ {
