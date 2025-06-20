@@ -79,7 +79,7 @@ const OpenCashModal = ({ open, onClose }: Props) => {
               const num = values.floatValue ?? null;
               setForm((prev) => ({
                 ...prev,
-                totalCash: num,
+                initialCash: num,
               }));
             }}
           />
