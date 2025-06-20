@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { MethodOfPayment } from 'src/Enums/paymentMethod.enum';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 export class CloseOrderDto {
   @IsNotEmpty()
@@ -13,8 +13,8 @@ export class CloseOrderDto {
   total: number;
 
   @IsNotEmpty()
-  @IsEnum(MethodOfPayment)
-  methodOfPayment: MethodOfPayment;
+  @IsEnum(PaymentMethod)
+  methodOfPayment: PaymentMethod;
 
   @IsOptional()
   @IsString()

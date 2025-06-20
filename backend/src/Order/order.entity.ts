@@ -10,7 +10,7 @@ import {
 import { OrderDetails } from './order_details.entity';
 import { OrderState } from 'src/Enums/states.enum';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
-import { MethodOfPayment } from 'src/Enums/paymentMethod.enum';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 @Entity({ name: 'orders' })
 export class Order {
@@ -38,8 +38,8 @@ export class Order {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
-  @Column({ type: 'enum', enum: MethodOfPayment, nullable: true })
-  methodOfPayment: MethodOfPayment;
+  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
+  methodOfPayment: PaymentMethod;
 
   // --------- Relaciones ---------
   @ManyToOne(() => Table, (table) => table.orders, {
