@@ -1,10 +1,10 @@
 import { IsInt, IsOptional, IsString } from 'class-validator';
 
-export class CreateDailyCashDto {
+export class CloseDailyCash {
   @IsString()
   @IsOptional()
   comment: string;
 
   @IsInt()
-  initialCash: number;
+  totalCash: number;
 }

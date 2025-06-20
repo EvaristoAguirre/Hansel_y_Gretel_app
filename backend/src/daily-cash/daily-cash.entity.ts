@@ -24,6 +24,9 @@ export class DailyCash {
   totalPayments: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  initialCash: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalCash: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })

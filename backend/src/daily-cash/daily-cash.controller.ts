@@ -16,6 +16,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { DailyCash } from './daily-cash.entity';
 import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
+import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 
 @Controller('daily-cash')
 @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
@@ -34,9 +35,9 @@ export class DailyCashController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   closeDailyCash(
     @Param('id') id: string,
-    @Body() updateDailyCashDto: UpdateDailyCashDto,
+    @Body() closeDailyCashDto: CloseDailyCash,
   ): Promise<DailyCash> {
-    return this.dailyCashService.closeDailyCash(id, updateDailyCashDto);
+    return this.dailyCashService.closeDailyCash(id, closeDailyCashDto);
   }
 
   @Post('register-expense')
