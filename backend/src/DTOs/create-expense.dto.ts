@@ -5,7 +5,7 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { PaymentMethod } from 'src/Enums/dailyCash.enum';
+import { DailyCashMovementType, PaymentMethod } from 'src/Enums/dailyCash.enum';
 
 export class RegisterExpenseDto {
   @IsNumber()
@@ -20,4 +20,22 @@ export class RegisterExpenseDto {
 
   @IsUUID()
   dailyCashId: string;
+}
+
+export class RegisterMovementDto {
+  @IsNumber()
+  amount: number;
+
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsUUID()
+  dailyCashId: string;
+
+  @IsEnum(DailyCashMovementType)
+  movementType: DailyCashMovementType;
 }

@@ -15,7 +15,10 @@ import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { isUUID } from 'class-validator';
 import { DailyCashState } from 'src/Enums/states.enum';
 import { CashMovement } from './cash-movement.entity';
-import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
+import {
+  RegisterExpenseDto,
+  RegisterMovementDto,
+} from 'src/DTOs/create-expense.dto';
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
@@ -236,6 +239,44 @@ export class DailyCashRepository {
       cashMovement.amount = expenseData.amount;
       cashMovement.description = expenseData.description || '';
       cashMovement.paymentMethod = expenseData.paymentMethod;
+      cashMovement.dailyCash = dailyCash;
+
+      return await this.cashMovementRepository.save(cashMovement);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error registering the expense. Please try again later.',
+        error.message,
+      );
+    }
+  }
+
+  async registerMovement(
+    movementData: RegisterMovementDto,
+  ): Promise<CashMovement> {
+    if (!movementData.dailyCashId) {
+      throw new BadRequestException('Daily cash ID must be provided.');
+    }
+    if (!isUUID(movementData.dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid daily cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const dailyCash = await this.getDailyCashById(movementData.dailyCashId);
+      if (!dailyCash) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+      if (dailyCash.state !== 'open') {
+        throw new ConflictException(
+          'Daily cash report must be open to register expenses.',
+        );
+      }
+      const cashMovement = new CashMovement();
+      cashMovement.type = movementData.movementType;
+      cashMovement.amount = movementData.amount;
+      cashMovement.description = movementData.description || '';
+      cashMovement.paymentMethod = movementData.paymentMethod;
       cashMovement.dailyCash = dailyCash;
 
       return await this.cashMovementRepository.save(cashMovement);
