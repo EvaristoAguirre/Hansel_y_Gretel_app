@@ -69,4 +69,12 @@ export class DailyCashService {
   async isTodayDailyCashOpen(): Promise<boolean> {
     return await this.dailyCashRepository.isTodayDailyCashOpen();
   }
+
+  async getIncomesByDailyCashId(dailyCashId: string): Promise<CashMovement[]> {
+    return await this.dailyCashRepository.getIncomesByDailyCashId(dailyCashId);
+  }
+
+  async getExpensesByDailyCashId(dailyCashId: string): Promise<CashMovement[]> {
+    return await this.dailyCashRepository.getExpensesByDailyCashId(dailyCashId);
+  }
 }

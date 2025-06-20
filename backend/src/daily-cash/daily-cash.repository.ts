@@ -290,4 +290,54 @@ export class DailyCashRepository {
   private async sumMovementsTotal(movements: CashMovement[]) {
     return movements.reduce((acc, m) => acc + Number(m.amount), 0);
   }
+
+  async getIncomesByDailyCashId(dailyCashId: string) {
+    if (!dailyCashId) {
+      throw new BadRequestException('Daily Cash ID must be provided.');
+    }
+    if (!isUUID(dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid Daily Cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.cashMovementRepository.find({
+        where: {
+          dailyCash: { id: dailyCashId },
+          type: DailyCashMovementType.INCOME,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching incomes by daily cash ID. Please try again later.',
+        error.message,
+      );
+    }
+  }
+
+  async getExpensesByDailyCashId(dailyCashId: string) {
+    if (!dailyCashId) {
+      throw new BadRequestException('Daily Cash ID must be provided.');
+    }
+    if (!isUUID(dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid Daily Cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.cashMovementRepository.find({
+        where: {
+          dailyCash: { id: dailyCashId },
+          type: DailyCashMovementType.EXPENSE,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching incomes by daily cash ID. Please try again later.',
+        error.message,
+      );
+    }
+  }
 }

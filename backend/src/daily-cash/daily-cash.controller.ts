@@ -57,6 +57,18 @@ export class DailyCashController {
     return this.dailyCashService.getAllDailyCash(page, limit);
   }
 
+  @Get('incomes/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  getIncomesByDailyCashId(@Param('id') id: string): Promise<CashMovement[]> {
+    return this.dailyCashService.getIncomesByDailyCashId(id);
+  }
+
+  @Get('expenses/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  getExpensesByDailyCashId(@Param('id') id: string): Promise<CashMovement[]> {
+    return this.dailyCashService.getExpensesByDailyCashId(id);
+  }
+
   @Get('check-open')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   isTodayDailyCashOpen(): Promise<boolean> {
