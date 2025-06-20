@@ -6,6 +6,7 @@ import CashFilters from './Table/CashFilters';
 import CashTable from './Table/CashTable';
 import { useState } from 'react';
 import NewMovementModal from './NewMovement/NewMovementModal';
+import { INewMovement } from '@/components/Interfaces/IDailyCash';
 
 const DailyCashSection = () => {
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
@@ -14,6 +15,12 @@ const DailyCashSection = () => {
 
   const handleOpenMovement = () => {
     setOpenMovement(true);
+  };
+
+  const handleNewMovement = (data: INewMovement) => {
+
+
+
   };
 
   return (
@@ -28,7 +35,7 @@ const DailyCashSection = () => {
             open={openMovement}
             onClose={() => setOpenMovement(false)}
             onConfirm={(data) => {
-              console.log("Movimiento confirmado", data);
+              console.log("Movimiento confirmadoconfirmado🌈🌈🌈🌈🌈🌈🌈", data);
               setOpenMovement(false);
             }}
           />

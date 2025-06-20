@@ -15,7 +15,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { NumericFormat } from "react-number-format";
 import { useState } from "react";
-import { dailyCashType } from "@/components/Enums/dailyCash";
+import { dailyCashType, paymentMethod } from "@/components/Enums/dailyCash";
 
 const paymentMethods = [
   "Efectivo",
@@ -27,7 +27,7 @@ const paymentMethods = [
 ];
 
 interface PaymentEntry {
-  method: string;
+  paymentMethod: paymentMethod;
   amount: number;
 }
 
@@ -35,16 +35,16 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: (data: {
-    type: dailyCashType;
+    movementType: dailyCashType;
     payments: PaymentEntry[];
     description: string;
   }) => void;
 }
 
 const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
-  const [type, setType] = useState<dailyCashType>(dailyCashType.INCOME);
+  const [movementType, setMovementType] = useState<dailyCashType>(dailyCashType.INCOME);
   const [payments, setPayments] = useState<PaymentEntry[]>([
-    { method: "Efectivo", amount: 0 },
+    { paymentMethod: paymentMethod.CASH, amount: 0 },
   ]);
   const [description, setDescription] = useState("");
 
@@ -53,13 +53,13 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
     if (field === "amount") {
       updated[index][field] = Number(value);
     } else {
-      updated[index][field] = value as string;
+      updated[index][field] = value as paymentMethod;
     }
     setPayments(updated);
   };
 
   const addPayment = () => {
-    setPayments([...payments, { method: "", amount: 0 }]);
+    setPayments([...payments, { paymentMethod: paymentMethod.CASH, amount: 0 }]);
   };
 
   const removePayment = (index: number) => {
@@ -69,10 +69,10 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
   const total = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
 
   const handleConfirm = () => {
-    onConfirm({ type, payments, description });
+    onConfirm({ movementType, payments, description });
     // Limpiamos:
-    setType(dailyCashType.INCOME);
-    setPayments([{ method: "Efectivo", amount: 0 }]);
+    setMovementType(dailyCashType.INCOME);
+    setPayments([{ paymentMethod: paymentMethod.CASH, amount: 0 }]);
     setDescription("");
   };
 
@@ -87,8 +87,8 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
               select
               label="Tipo de Movimiento"
               fullWidth
-              value={type}
-              onChange={(e) => setType(e.target.value as dailyCashType)}
+              value={movementType}
+              onChange={(e) => setMovementType(e.target.value as dailyCashType)}
               size="small"
             >
               <MenuItem value="Ingreso">Ingreso</MenuItem>
@@ -105,8 +105,8 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
                   label="Método de Pago"
                   fullWidth
                   size="small"
-                  value={p.method}
-                  onChange={(e) => handlePaymentChange(i, "method", e.target.value)}
+                  value={p.paymentMethod}
+                  onChange={(e) => handlePaymentChange(i, "paymentMethod", e.target.value)}
                 >
                   {paymentMethods.map((m) => (
                     <MenuItem key={m} value={m}>

@@ -1,4 +1,4 @@
-import { I_DC_, I_DC_Open } from "@/components/Interfaces/IDailyCash";
+import { INewMovement, I_DC_, I_DC_Open } from "@/components/Interfaces/IDailyCash";
 import { URI_DAILY_CASH } from "@/components/URI/URI";
 
 export const fetchAllDailyCash = async (token: string) => {
@@ -90,3 +90,23 @@ export const deleteDailyCash = async (token: string, id: string) => {
     return false;
   }
 };
+
+export const newMovement = async (token: string, body: INewMovement) => {
+  const response = await fetch(`${URI_DAILY_CASH}/register-movement`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+    throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+};
+
+

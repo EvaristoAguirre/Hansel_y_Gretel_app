@@ -12,6 +12,14 @@ export interface I_DC_Open {
   totalCash: number | null;
 }
 
+export interface INewMovement {
+  amount: number;
+  paymentMethod: string;
+  description: string;
+  dailyCashId: string;
+  movementType: string;
+}
+
 export interface I_DC_ {
   comment?: string;
   date?: Date;
