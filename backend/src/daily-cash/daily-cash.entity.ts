@@ -1,6 +1,7 @@
 import { DailyCashState } from 'src/Enums/states.enum';
 import { Order } from 'src/Order/order.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { CashMovement } from './cash-movement.entity';
 
 @Entity({ name: 'daily_cash' })
 export class DailyCash {
@@ -20,10 +21,10 @@ export class DailyCash {
   totalSales: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  totalExpenses: number;
+  totalPayments: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  totalPayments: number;
+  initialCash: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalCash: number;
@@ -40,11 +41,11 @@ export class DailyCash {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalMercadoPago: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  totalOtherPayments: number;
-
   // --------- Relaciones ---------
 
   @OneToMany(() => Order, (order) => order.dailyCash)
   orders: Order[];
+
+  @OneToMany(() => CashMovement, (cashMovement) => cashMovement.dailyCash)
+  movements: CashMovement[];
 }

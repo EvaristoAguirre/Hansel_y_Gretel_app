@@ -14,6 +14,12 @@ import { UpdateDailyCashDto } from 'src/DTOs/update-daily-cash.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { DailyCash } from './daily-cash.entity';
+import {
+  RegisterExpenseDto,
+  RegisterMovementDto,
+} from 'src/DTOs/create-expense.dto';
+import { CashMovement } from './cash-movement.entity';
+import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 
 @Controller('daily-cash')
 @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
@@ -32,9 +38,24 @@ export class DailyCashController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   closeDailyCash(
     @Param('id') id: string,
-    @Body() updateDailyCashDto: UpdateDailyCashDto,
+    @Body() closeDailyCashDto: CloseDailyCash,
   ): Promise<DailyCash> {
-    return this.dailyCashService.closeDailyCash(id, updateDailyCashDto);
+    return this.dailyCashService.closeDailyCash(id, closeDailyCashDto);
+  }
+
+  @Post('register-expense')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  registerExpense(
+    @Body() expenseData: RegisterExpenseDto,
+  ): Promise<CashMovement> {
+    return this.dailyCashService.registerExpense(expenseData);
+  }
+  @Post('register-movement')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  registerMovement(
+    @Body() movementData: RegisterMovementDto,
+  ): Promise<CashMovement> {
+    return this.dailyCashService.registerMovement(movementData);
   }
 
   @Get()
@@ -44,6 +65,24 @@ export class DailyCashController {
     @Query('limit') limit: number = 1000,
   ): Promise<DailyCash[]> {
     return this.dailyCashService.getAllDailyCash(page, limit);
+  }
+
+  @Get('incomes/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  getIncomesByDailyCashId(@Param('id') id: string): Promise<CashMovement[]> {
+    return this.dailyCashService.getIncomesByDailyCashId(id);
+  }
+
+  @Get('expenses/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  getExpensesByDailyCashId(@Param('id') id: string): Promise<CashMovement[]> {
+    return this.dailyCashService.getExpensesByDailyCashId(id);
+  }
+
+  @Get('check-open')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  isTodayDailyCashOpen(): Promise<boolean> {
+    return this.dailyCashService.isTodayDailyCashOpen();
   }
 
   @Get(':id')

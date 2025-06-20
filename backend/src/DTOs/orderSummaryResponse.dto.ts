@@ -13,4 +13,5 @@ export class OrderSummaryResponseDto {
   };
   total: number;
   products: ProductSummary[];
+  methodOfPayment: string;
 }
