@@ -7,7 +7,7 @@ import { Button, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
-import { TableState } from "../Enums/Enums";
+import { TableState } from "../Enums/order";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";

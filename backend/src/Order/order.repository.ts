@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './order.entity';
-import { DataSource, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { OrderDetails } from './order_details.entity';
@@ -526,10 +526,12 @@ export class OrderRepository {
 
       // -------- revisar si el ticket esta generando un numero y guardarlo en la orden
       const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
       const openDailyCash = await this.dailyCashRepository.findOne({
         where: {
-          date: today,
+          date: Between(startOfDay, endOfDay),
           state: DailyCashState.OPEN,
         },
       });
@@ -540,23 +542,10 @@ export class OrderRepository {
         );
       }
       order.methodOfPayment = closeOrderDto.methodOfPayment;
+      order.dailyCash = openDailyCash;
       order.state = OrderState.CLOSED;
       order.table.state = TableState.AVAILABLE;
-      openDailyCash.totalSales += order.total;
-      if (closeOrderDto.methodOfPayment === 'Efectivo') {
-        openDailyCash.totalCash += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Crédito') {
-        openDailyCash.totalCreditCard += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Tarjeta de Débito') {
-        openDailyCash.totalDebitCard += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'Transferencia') {
-        openDailyCash.totalTransfer += order.total;
-      } else if (closeOrderDto.methodOfPayment === 'MercadoPago') {
-        openDailyCash.totalMercadoPago += order.total;
-      } else {
-        openDailyCash.totalOtherPayments += order.total;
-      }
-      openDailyCash.orders.push(order);
+
       await this.tableRepository.save(order.table);
       await this.orderRepository.save(order);
       await this.dailyCashRepository.save(openDailyCash);
@@ -632,11 +621,7 @@ export class OrderRepository {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -683,6 +668,7 @@ export class OrderRepository {
     };
     response.total = order.total;
     response.products = productSummaryArray;
+    response.methodOfPayment = order.methodOfPayment;
 
     return response;
   }

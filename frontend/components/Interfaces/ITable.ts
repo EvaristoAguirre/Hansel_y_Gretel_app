@@ -1,4 +1,4 @@
-import { TableState } from "../Enums/Enums";
+import { TableState } from "../Enums/order";
 import { TableModalType } from "../Enums/table";
 import { IRoom } from "./IRooms";
 export interface ITable {

@@ -7,7 +7,7 @@ import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { ITable, TableForm } from "../Interfaces/ITable";
 import { TableModalType } from "../Enums/table";
-import { TableState } from "../Enums/Enums";
+import { TableState } from "../Enums/order";
 
 const useTable = (salaId: string, setNameTable: (name: string) => void) => {
   const { getAccessToken } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import Chip from '@mui/material/Chip';
-import { TableState } from '../Enums/Enums';
+import { TableState } from '../Enums/order';
 
 interface Filter {
   label: string;

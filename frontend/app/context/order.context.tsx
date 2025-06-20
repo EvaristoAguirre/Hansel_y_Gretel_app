@@ -15,7 +15,7 @@ import {
 } from "../../components/Interfaces/IProducts";
 import { useOrderStore } from "../../components/Order/useOrderStore";
 import { useRoomContext } from "./room.context";
-import { TableState } from "@/components/Enums/Enums";
+import { TableState } from "@/components/Enums/order";
 import { IOrderDetails } from "@/components/Interfaces/IOrder";
 import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";

@@ -5,7 +5,7 @@ import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProd
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProducts } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
-import DataGridComponent from '../../Utils/ProductTable';
+import DataGridComponent from '../../Utils/DataGridComponent';
 import { useAuth } from "@/app/context/authContext";
 import { log } from 'console';
 import LoadingLottie from "@/components/Loader/Loading";
