@@ -10,7 +10,7 @@ import {
 import { OrderDetails } from './order_details.entity';
 import { OrderState } from 'src/Enums/states.enum';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
-import { MethodOfPayment } from 'src/Enums/methodOfPayment.enum';
+import { MethodOfPayment } from 'src/Enums/paymentMethod.enum';
 
 @Entity({ name: 'orders' })
 export class Order {

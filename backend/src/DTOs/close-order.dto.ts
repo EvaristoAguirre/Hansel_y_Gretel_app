@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { MethodOfPayment } from 'src/Enums/methodOfPayment.enum';
+import { MethodOfPayment } from 'src/Enums/paymentMethod.enum';
 
 export class CloseOrderDto {
   @IsNotEmpty()
