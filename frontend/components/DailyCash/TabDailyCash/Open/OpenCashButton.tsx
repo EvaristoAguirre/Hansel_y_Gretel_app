@@ -1,14 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Tooltip } from "@mui/material";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import OpenCashModal from "./OpenCashModal";
+import { checkOpenDailyCash } from '../../../../api/dailyCash';
+import { useAuth } from "@/app/context/authContext";
 
 const OpenCashButton = () => {
-  const [open, setOpen] = useState(false);
+  const { getAccessToken } = useAuth();
+  const token = getAccessToken();
 
-  //Este valor vendría desde el back
-  //Simulado por ahora
-  const isCashOpenToday = false;
+  const [open, setOpen] = useState(false);
+  const [isCashOpenToday, setIsCashOpenToday] = useState(false);
+
+  useEffect(() => {
+    const checkOpen = async () => {
+      if (!token) return;
+
+      try {
+        const data = await checkOpenDailyCash(token);
+        if (data) setIsCashOpenToday(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    checkOpen();
+  }, [token]);
+
 
   return (
     <>

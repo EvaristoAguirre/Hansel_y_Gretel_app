@@ -90,3 +90,14 @@ export const deleteDailyCash = async (token: string, id: string) => {
     return false;
   }
 };
+
+export const checkOpenDailyCash = async (token: string) => {
+  const response = await fetch(`${URI_DAILY_CASH}/check-open`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
