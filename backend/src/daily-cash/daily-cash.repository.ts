@@ -18,6 +18,9 @@ import { CashMovement } from './cash-movement.entity';
 import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
+import { MethodOfPayment } from 'src/Enums/methodOfPayment.enum';
+import { Order } from 'src/Order/order.entity';
 
 @Injectable()
 export class DailyCashRepository {
@@ -47,7 +50,7 @@ export class DailyCashRepository {
       const dailyCash = this.dailyCashRepository.create(createDailyCashDto);
       dailyCash.date = today;
       dailyCash.state = DailyCashState.OPEN;
-      dailyCash.totalCash = createDailyCashDto.totalCash || 0;
+      dailyCash.initialCash = createDailyCashDto.initialCash || 0;
       await this.dailyCashRepository.save(dailyCash);
       return dailyCash;
     } catch (error) {
@@ -143,7 +146,7 @@ export class DailyCashRepository {
 
   async closeDailyCash(
     id: string,
-    updateDailyCashDto: UpdateDailyCashDto,
+    closeDailyCashDto: CloseDailyCash,
   ): Promise<DailyCash> {
     if (!id) {
       throw new BadRequestException('Daily cash report ID must be provided.');
@@ -162,6 +165,35 @@ export class DailyCashRepository {
         throw new ConflictException('Daily cash report is already closed.');
       }
       dailyCash.state = DailyCashState.CLOSED;
+      dailyCash.comment = closeDailyCashDto.comment || '';
+
+      const totalSalesFromOrders = await this.sumOrdersTotal(dailyCash.orders);
+      const totalExpenses = await this.sumMovementsTotal(
+        dailyCash.movements.filter(
+          (m) => m.type === DailyCashMovementType.EXPENSE,
+        ),
+      );
+      const totalIncomes = await this.sumMovementsTotal(
+        dailyCash.movements.filter(
+          (m) => m.type === DailyCashMovementType.INCOME,
+        ),
+      );
+      const totalSalesFromOrdersByPaymentMethod =
+        await this.groupByPaymentMethod(dailyCash.orders);
+
+      dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
+      dailyCash.totalPayments = totalExpenses;
+      dailyCash.totalCash =
+        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.CASH];
+      dailyCash.totalCreditCard =
+        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.CREDIT_CARD];
+      dailyCash.totalDebitCard =
+        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.DEBIT_CARD];
+      dailyCash.totalTransfer =
+        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.TRANSFER];
+      dailyCash.totalMercadoPago =
+        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.MERCADOPAGO];
+
       return await this.dailyCashRepository.save(dailyCash);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -233,6 +265,77 @@ export class DailyCashRepository {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error checking if daily cash is open. Please try again later.',
+        error.message,
+      );
+    }
+  }
+
+  private async groupByPaymentMethod(
+    records: { methodOfPayment: MethodOfPayment; total: number }[],
+  ) {
+    return records.reduce(
+      (acc, record) => {
+        const method = record.methodOfPayment;
+        acc[method] = (acc[method] || 0) + record.total;
+        return acc;
+      },
+      {} as Record<MethodOfPayment, number>,
+    );
+  }
+
+  private async sumOrdersTotal(orders: Order[]) {
+    return orders.reduce((acc, o) => acc + Number(o.total), 0);
+  }
+
+  private async sumMovementsTotal(movements: CashMovement[]) {
+    return movements.reduce((acc, m) => acc + Number(m.amount), 0);
+  }
+
+  async getIncomesByDailyCashId(dailyCashId: string) {
+    if (!dailyCashId) {
+      throw new BadRequestException('Daily Cash ID must be provided.');
+    }
+    if (!isUUID(dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid Daily Cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.cashMovementRepository.find({
+        where: {
+          dailyCash: { id: dailyCashId },
+          type: DailyCashMovementType.INCOME,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching incomes by daily cash ID. Please try again later.',
+        error.message,
+      );
+    }
+  }
+
+  async getExpensesByDailyCashId(dailyCashId: string) {
+    if (!dailyCashId) {
+      throw new BadRequestException('Daily Cash ID must be provided.');
+    }
+    if (!isUUID(dailyCashId)) {
+      throw new BadRequestException(
+        'Invalid Daily Cash ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.cashMovementRepository.find({
+        where: {
+          dailyCash: { id: dailyCashId },
+          type: DailyCashMovementType.EXPENSE,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching incomes by daily cash ID. Please try again later.',
         error.message,
       );
     }

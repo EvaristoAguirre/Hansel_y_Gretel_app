@@ -6,6 +6,7 @@ import { DailyCash } from './daily-cash.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RegisterExpenseDto } from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
+import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 
 @Injectable()
 export class DailyCashService {
@@ -43,11 +44,11 @@ export class DailyCashService {
 
   async closeDailyCash(
     id: string,
-    updateDailyCashDto: UpdateDailyCashDto,
+    closeDailyCashDto: CloseDailyCash,
   ): Promise<DailyCash> {
     const dailyCashClosed = await this.dailyCashRepository.closeDailyCash(
       id,
-      updateDailyCashDto,
+      closeDailyCashDto,
     );
     await this.eventEmitter.emit('dailyCash.closed', {
       dailyCash: dailyCashClosed,
@@ -67,5 +68,13 @@ export class DailyCashService {
 
   async isTodayDailyCashOpen(): Promise<boolean> {
     return await this.dailyCashRepository.isTodayDailyCashOpen();
+  }
+
+  async getIncomesByDailyCashId(dailyCashId: string): Promise<CashMovement[]> {
+    return await this.dailyCashRepository.getIncomesByDailyCashId(dailyCashId);
+  }
+
+  async getExpensesByDailyCashId(dailyCashId: string): Promise<CashMovement[]> {
+    return await this.dailyCashRepository.getExpensesByDailyCashId(dailyCashId);
   }
 }
