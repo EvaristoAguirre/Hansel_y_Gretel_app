@@ -47,6 +47,7 @@ export class DailyCashRepository {
       const dailyCash = this.dailyCashRepository.create(createDailyCashDto);
       dailyCash.date = today;
       dailyCash.state = DailyCashState.OPEN;
+      dailyCash.totalCash = createDailyCashDto.totalCash || 0;
       await this.dailyCashRepository.save(dailyCash);
       return dailyCash;
     } catch (error) {
@@ -70,6 +71,7 @@ export class DailyCashRepository {
       return await this.dailyCashRepository.find({
         skip: (page - 1) * limit,
         take: limit,
+        relations: ['movements', 'orders'],
       });
     } catch (error) {
       if (error instanceof HttpException) {
@@ -95,6 +97,7 @@ export class DailyCashRepository {
     try {
       const dailyCash = await this.dailyCashRepository.findOne({
         where: { id },
+        relations: ['movements', 'orders'],
       });
       if (!dailyCash) {
         throw new BadRequestException('Daily cash report not found.');
