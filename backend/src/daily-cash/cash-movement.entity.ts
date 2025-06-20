@@ -19,8 +19,11 @@ export class CashMovement {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
-  paymentMethod: PaymentMethod;
+  @Column({ type: 'jsonb' })
+  payments: {
+    amount: number;
+    paymentMethod: PaymentMethod;
+  }[];
 
   // --------- Relaciones ---------
   @ManyToOne(() => DailyCash, (dailyCash) => dailyCash.movements, {

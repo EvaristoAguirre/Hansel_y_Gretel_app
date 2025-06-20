@@ -216,6 +216,7 @@ export class DailyCashRepository {
   async registerExpense(
     expenseData: RegisterExpenseDto,
   ): Promise<CashMovement> {
+    const { dailyCashId, movementType, payments, description } = expenseData;
     if (!expenseData.dailyCashId) {
       throw new BadRequestException('Daily cash ID must be provided.');
     }
@@ -234,11 +235,16 @@ export class DailyCashRepository {
           'Daily cash report must be open to register expenses.',
         );
       }
+      const totalAmount = payments.reduce(
+        (sum, payment) => sum + payment.amount,
+        0,
+      );
+
       const cashMovement = new CashMovement();
-      cashMovement.type = DailyCashMovementType.EXPENSE;
-      cashMovement.amount = expenseData.amount;
-      cashMovement.description = expenseData.description || '';
-      cashMovement.paymentMethod = expenseData.paymentMethod;
+      cashMovement.type = movementType;
+      cashMovement.amount = totalAmount;
+      cashMovement.description = description || '';
+      cashMovement.payments = payments;
       cashMovement.dailyCash = dailyCash;
 
       return await this.cashMovementRepository.save(cashMovement);
@@ -254,16 +260,20 @@ export class DailyCashRepository {
   async registerMovement(
     movementData: RegisterMovementDto,
   ): Promise<CashMovement> {
-    if (!movementData.dailyCashId) {
+    const { dailyCashId, movementType, payments, description } = movementData;
+
+    if (!movementData.dailyCashId || !isUUID(movementData.dailyCashId)) {
       throw new BadRequestException('Daily cash ID must be provided.');
     }
-    if (!isUUID(movementData.dailyCashId)) {
+
+    if (!payments || payments.length === 0) {
       throw new BadRequestException(
-        'Invalid daily cash ID format. ID must be a valid UUID.',
+        'At least one payment method must be provided.',
       );
     }
+
     try {
-      const dailyCash = await this.getDailyCashById(movementData.dailyCashId);
+      const dailyCash = await this.getDailyCashById(dailyCashId);
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -272,14 +282,25 @@ export class DailyCashRepository {
           'Daily cash report must be open to register expenses.',
         );
       }
+
+      const totalAmount = payments.reduce(
+        (sum, payment) => sum + payment.amount,
+        0,
+      );
+
       const cashMovement = new CashMovement();
       cashMovement.type = movementData.movementType;
-      cashMovement.amount = movementData.amount;
+      cashMovement.amount = totalAmount;
       cashMovement.description = movementData.description || '';
-      cashMovement.paymentMethod = movementData.paymentMethod;
+      cashMovement.payments = payments;
       cashMovement.dailyCash = dailyCash;
 
-      return await this.cashMovementRepository.save(cashMovement);
+      await this.cashMovementRepository.save(cashMovement);
+      await this.dailyCashRepository.save(dailyCash);
+      const movement = await this.cashMovementRepository.findOne({
+        where: { id: cashMovement.id },
+      });
+      return movement;
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
