@@ -1,7 +1,7 @@
 'use client';
 import { Box, Stack, Typography } from '@mui/material';
-import OpenCashButton from './OpenCash/OpenCashButton';
-import NewMovementButton from './NewMovement/NewMovementButton';
+import OpenCashButton from './Open/OpenCashButton';
+import NewMovementButton from './NewMovementButton';
 import CashFilters from './Table/CashFilters';
 import CashTable from './Table/CashTable';
 import { useState } from 'react';

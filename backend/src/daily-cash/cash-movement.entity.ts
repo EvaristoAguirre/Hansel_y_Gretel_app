@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { DailyCash } from './daily-cash.entity';
-import { DailyCashMovementType, PaymentMethod } from 'src/Enums/dailyCash.enum';
+import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 @Entity({ name: 'cash_movements' })
 export class CashMovement {
@@ -19,8 +20,11 @@ export class CashMovement {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
-  paymentMethod: PaymentMethod;
+  @Column({ type: 'jsonb' })
+  payments: {
+    amount: number;
+    paymentMethod: PaymentMethod;
+  }[];
 
   // --------- Relaciones ---------
   @ManyToOne(() => DailyCash, (dailyCash) => dailyCash.movements, {

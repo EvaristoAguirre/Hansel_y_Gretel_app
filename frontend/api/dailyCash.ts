@@ -91,6 +91,17 @@ export const deleteDailyCash = async (token: string, id: string) => {
   }
 };
 
+export const checkOpenDailyCash = async (token: string) => {
+  const response = await fetch(`${URI_DAILY_CASH}/check-open`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
 export const newMovement = async (token: string, body: INewMovement) => {
   const response = await fetch(`${URI_DAILY_CASH}/register-movement`, {
     method: "POST",

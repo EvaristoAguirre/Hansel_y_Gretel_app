@@ -22,8 +22,7 @@ import {
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
-import { MethodOfPayment } from 'src/Enums/methodOfPayment.enum';
-import { Order } from 'src/Order/order.entity';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 @Injectable()
 export class DailyCashRepository {
@@ -170,32 +169,45 @@ export class DailyCashRepository {
       dailyCash.state = DailyCashState.CLOSED;
       dailyCash.comment = closeDailyCashDto.comment || '';
 
-      const totalSalesFromOrders = await this.sumOrdersTotal(dailyCash.orders);
-      const totalExpenses = await this.sumMovementsTotal(
-        dailyCash.movements.filter(
-          (m) => m.type === DailyCashMovementType.EXPENSE,
-        ),
+      const incomes = dailyCash.movements.filter(
+        (mov) => mov.type === DailyCashMovementType.INCOME,
       );
-      const totalIncomes = await this.sumMovementsTotal(
-        dailyCash.movements.filter(
-          (m) => m.type === DailyCashMovementType.INCOME,
-        ),
+      const expenses = dailyCash.movements.filter(
+        (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
-      const totalSalesFromOrdersByPaymentMethod =
-        await this.groupByPaymentMethod(dailyCash.orders);
+      // ----- Totales -----
+      const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
+      const totalIncomes = this.sumTotal(incomes);
+      const totalExpenses = this.sumTotal(expenses);
+      //------ Agrupacion por metodo de pago -----
+      const orderPayments = this.groupRecordsByPaymentMethod(
+        dailyCash.orders.map((o) => ({
+          amount: Number(o.total),
+          methodOfPayment: o.methodOfPayment,
+        })),
+      );
+      const incomePayments = this.groupRecordsByPaymentMethod(incomes);
+      const expensePayments = this.groupRecordsByPaymentMethod(expenses);
 
+      // Total por método = ventas (órdenes + ingresos manuales)
       dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
       dailyCash.totalPayments = totalExpenses;
+
       dailyCash.totalCash =
-        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.CASH];
+        (orderPayments[PaymentMethod.CASH] || 0) +
+        (incomePayments[PaymentMethod.CASH] || 0);
       dailyCash.totalCreditCard =
-        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.CREDIT_CARD];
+        (orderPayments[PaymentMethod.CREDIT_CARD] || 0) +
+        (incomePayments[PaymentMethod.CREDIT_CARD] || 0);
       dailyCash.totalDebitCard =
-        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.DEBIT_CARD];
+        (orderPayments[PaymentMethod.DEBIT_CARD] || 0) +
+        (incomePayments[PaymentMethod.DEBIT_CARD] || 0);
       dailyCash.totalTransfer =
-        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.TRANSFER];
+        (orderPayments[PaymentMethod.TRANSFER] || 0) +
+        (incomePayments[PaymentMethod.TRANSFER] || 0);
       dailyCash.totalMercadoPago =
-        totalSalesFromOrdersByPaymentMethod[MethodOfPayment.MERCADOPAGO];
+        (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
+        (incomePayments[PaymentMethod.MERCADOPAGO] || 0);
 
       return await this.dailyCashRepository.save(dailyCash);
     } catch (error) {
@@ -216,6 +228,7 @@ export class DailyCashRepository {
   async registerExpense(
     expenseData: RegisterExpenseDto,
   ): Promise<CashMovement> {
+    const { dailyCashId, movementType, payments, description } = expenseData;
     if (!expenseData.dailyCashId) {
       throw new BadRequestException('Daily cash ID must be provided.');
     }
@@ -234,11 +247,16 @@ export class DailyCashRepository {
           'Daily cash report must be open to register expenses.',
         );
       }
+      const totalAmount = payments.reduce(
+        (sum, payment) => sum + payment.amount,
+        0,
+      );
+
       const cashMovement = new CashMovement();
-      cashMovement.type = DailyCashMovementType.EXPENSE;
-      cashMovement.amount = expenseData.amount;
-      cashMovement.description = expenseData.description || '';
-      cashMovement.paymentMethod = expenseData.paymentMethod;
+      cashMovement.type = movementType;
+      cashMovement.amount = totalAmount;
+      cashMovement.description = description || '';
+      cashMovement.payments = payments;
       cashMovement.dailyCash = dailyCash;
 
       return await this.cashMovementRepository.save(cashMovement);
@@ -254,16 +272,20 @@ export class DailyCashRepository {
   async registerMovement(
     movementData: RegisterMovementDto,
   ): Promise<CashMovement> {
-    if (!movementData.dailyCashId) {
+    const { dailyCashId, movementType, payments, description } = movementData;
+
+    if (!movementData.dailyCashId || !isUUID(movementData.dailyCashId)) {
       throw new BadRequestException('Daily cash ID must be provided.');
     }
-    if (!isUUID(movementData.dailyCashId)) {
+
+    if (!payments || payments.length === 0) {
       throw new BadRequestException(
-        'Invalid daily cash ID format. ID must be a valid UUID.',
+        'At least one payment method must be provided.',
       );
     }
+
     try {
-      const dailyCash = await this.getDailyCashById(movementData.dailyCashId);
+      const dailyCash = await this.getDailyCashById(dailyCashId);
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -272,14 +294,25 @@ export class DailyCashRepository {
           'Daily cash report must be open to register expenses.',
         );
       }
+
+      const totalAmount = payments.reduce(
+        (sum, payment) => sum + payment.amount,
+        0,
+      );
+
       const cashMovement = new CashMovement();
       cashMovement.type = movementData.movementType;
-      cashMovement.amount = movementData.amount;
+      cashMovement.amount = totalAmount;
       cashMovement.description = movementData.description || '';
-      cashMovement.paymentMethod = movementData.paymentMethod;
+      cashMovement.payments = payments;
       cashMovement.dailyCash = dailyCash;
 
-      return await this.cashMovementRepository.save(cashMovement);
+      await this.cashMovementRepository.save(cashMovement);
+      await this.dailyCashRepository.save(dailyCash);
+      const movement = await this.cashMovementRepository.findOne({
+        where: { id: cashMovement.id },
+      });
+      return movement;
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -309,27 +342,6 @@ export class DailyCashRepository {
         error.message,
       );
     }
-  }
-
-  private async groupByPaymentMethod(
-    records: { methodOfPayment: MethodOfPayment; total: number }[],
-  ) {
-    return records.reduce(
-      (acc, record) => {
-        const method = record.methodOfPayment;
-        acc[method] = (acc[method] || 0) + record.total;
-        return acc;
-      },
-      {} as Record<MethodOfPayment, number>,
-    );
-  }
-
-  private async sumOrdersTotal(orders: Order[]) {
-    return orders.reduce((acc, o) => acc + Number(o.total), 0);
-  }
-
-  private async sumMovementsTotal(movements: CashMovement[]) {
-    return movements.reduce((acc, m) => acc + Number(m.amount), 0);
   }
 
   async getIncomesByDailyCashId(dailyCashId: string) {
@@ -380,5 +392,42 @@ export class DailyCashRepository {
         error.message,
       );
     }
+  }
+
+  private sumTotal(records: { amount: number }[]): number {
+    return records.reduce((acc, r) => acc + Number(r.amount), 0);
+  }
+  private sumTotalOrders(records: { total: number }[]): number {
+    return records.reduce((acc, r) => acc + Number(r.total), 0);
+  }
+
+  private groupRecordsByPaymentMethod(
+    records: {
+      amount: number;
+      methodOfPayment?: PaymentMethod;
+      payments?: { amount: number; paymentMethod: PaymentMethod }[];
+    }[],
+  ): Record<PaymentMethod, number> {
+    const totals: Record<PaymentMethod, number> = {
+      [PaymentMethod.CASH]: 0,
+      [PaymentMethod.CREDIT_CARD]: 0,
+      [PaymentMethod.DEBIT_CARD]: 0,
+      [PaymentMethod.TRANSFER]: 0,
+      [PaymentMethod.MERCADOPAGO]: 0,
+    };
+
+    for (const record of records) {
+      if (record.methodOfPayment && typeof record.amount === 'number') {
+        totals[record.methodOfPayment] += record.amount;
+      }
+
+      if (record.payments && Array.isArray(record.payments)) {
+        for (const p of record.payments) {
+          totals[p.paymentMethod] += Number(p.amount);
+        }
+      }
+    }
+
+    return totals;
   }
 }
