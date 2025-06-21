@@ -44,7 +44,7 @@ import { ExportModule } from './ExportPdf/export.module';
           database: dbConfig.database,
           autoLoadEntities: true,
           synchronize: isDev, // solo true en desarrollo
-          dropSchema: false, // nunca true salvo que lo necesites puntualmente
+          dropSchema: true, // nunca true salvo que lo necesites puntualmente
           logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,

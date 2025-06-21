@@ -38,7 +38,7 @@ export class IngredientRepository {
 
     try {
       const ingredients = await this.ingredientRepository.find({
-        where: { isActive: true },
+        where: { isActive: true, isTopping: false },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],

@@ -1,10 +1,10 @@
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CloseDailyCash {
   @IsString()
   @IsOptional()
   comment: string;
 
-  @IsInt()
+  @IsNumber()
   totalCash: number;
 }
