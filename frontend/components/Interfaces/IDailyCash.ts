@@ -12,6 +12,11 @@ export interface I_DC_Open {
   initialCash: number | null;
 }
 
+export interface I_DC_Close {
+  comment: string;
+  totalCash: number | null;
+}
+
 export interface I_DC_ {
   comment?: string;
   date?: Date;

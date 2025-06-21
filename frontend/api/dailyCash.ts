@@ -1,4 +1,4 @@
-import { I_DC_, I_DC_Open } from "@/components/Interfaces/IDailyCash";
+import { I_DC_, I_DC_Close, I_DC_Open } from "@/components/Interfaces/IDailyCash";
 import { URI_DAILY_CASH } from "@/components/URI/URI";
 
 export const fetchAllDailyCash = async (token: string) => {
@@ -41,13 +41,14 @@ export const openDailyCash = async (token: string, data: I_DC_Open,) => {
   return await response.json();
 };
 
-export const closeDailyCash = async (token: string, id: string) => {
+export const closeDailyCash = async (token: string, id: string, data: I_DC_Close) => {
   const response = await fetch(`${URI_DAILY_CASH}/close/${id}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
     },
+    body: JSON.stringify(data),
   });
 
   if (!response.ok) {

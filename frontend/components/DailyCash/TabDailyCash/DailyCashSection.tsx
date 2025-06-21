@@ -1,6 +1,6 @@
 'use client';
 import { Box, Stack, Typography } from '@mui/material';
-import OpenCashButton from './Open/OpenCashButton';
+import OpenCashButton from './Open_CloseDailyCash/OpenCashButton';
 import NewMovementButton from './NewMovementButton';
 import CashFilters from './Table/CashFilters';
 import CashTable from './Table/CashTable';
