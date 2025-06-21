@@ -16,6 +16,7 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { NumericFormat } from "react-number-format";
 import { useState } from "react";
 import { dailyCashType, paymentMethod } from "@/components/Enums/dailyCash";
+import { IPayment } from "@/components/Interfaces/IDailyCash";
 
 const paymentMethods = [
   "Efectivo",
@@ -26,29 +27,26 @@ const paymentMethods = [
   "Otros",
 ];
 
-interface PaymentEntry {
-  paymentMethod: paymentMethod;
-  amount: number;
-}
+
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: (data: {
     movementType: dailyCashType;
-    payments: PaymentEntry[];
+    payments: IPayment[];
     description: string;
   }) => void;
 }
 
 const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
   const [movementType, setMovementType] = useState<dailyCashType>(dailyCashType.INCOME);
-  const [payments, setPayments] = useState<PaymentEntry[]>([
+  const [payments, setPayments] = useState<IPayment[]>([
     { paymentMethod: paymentMethod.CASH, amount: 0 },
   ]);
   const [description, setDescription] = useState("");
 
-  const handlePaymentChange = (index: number, field: keyof PaymentEntry, value: any) => {
+  const handlePaymentChange = (index: number, field: keyof IPayment, value: any) => {
     const updated = [...payments];
     if (field === "amount") {
       updated[index][field] = Number(value);

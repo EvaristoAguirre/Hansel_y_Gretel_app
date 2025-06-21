@@ -13,14 +13,19 @@ export interface I_DC_Open {
 }
 
 export interface INewMovement {
-  amount: number;
-  paymentMethod: string;
-  description: string;
   dailyCashId: string;
   movementType: string;
+  description: string;
+  payments: IPayment[];
 }
 
-export interface I_DC_ {
+export interface IPayment {
+  amount: number;
+  paymentMethod: string;
+}
+
+export interface IDailyCash {
+  id?: string;
   comment?: string;
   date?: Date;
   state?: string;

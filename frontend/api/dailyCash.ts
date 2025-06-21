@@ -1,4 +1,4 @@
-import { INewMovement, I_DC_, I_DC_Open } from "@/components/Interfaces/IDailyCash";
+import { INewMovement, IDailyCash, I_DC_Open } from "@/components/Interfaces/IDailyCash";
 import { URI_DAILY_CASH } from "@/components/URI/URI";
 
 export const fetchAllDailyCash = async (token: string) => {
@@ -58,7 +58,7 @@ export const closeDailyCash = async (token: string, id: string) => {
   return await response.json();
 };
 
-export const editDailyCash = async (token: string, id: string, data: I_DC_) => {
+export const editDailyCash = async (token: string, id: string, data: IDailyCash) => {
   const response = await fetch(`${URI_DAILY_CASH}/${id}`, {
     method: "PATCH",
     headers: {
