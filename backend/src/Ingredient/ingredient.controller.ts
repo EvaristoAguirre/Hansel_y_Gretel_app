@@ -27,6 +27,17 @@ export class IngredientController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async getAllIngredientsAndToppings(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ): Promise<IngredientResponseDTO[]> {
+    return await this.ingredientService.getAllIngredientsAndToppings(
+      page,
+      limit,
+    );
+  }
+  @Get('all')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   async getAllIngredients(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
