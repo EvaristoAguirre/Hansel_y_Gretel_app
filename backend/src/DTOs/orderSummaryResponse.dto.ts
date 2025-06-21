@@ -1,5 +1,5 @@
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { ProductSummary } from './productSummary.dto';
+import { ProductLineDto } from './productSummary.dto';
 
 export class OrderSummaryResponseDto {
   id: string;
@@ -12,6 +12,6 @@ export class OrderSummaryResponseDto {
     state: TableState;
   };
   total: number;
-  products: ProductSummary[];
+  products: ProductLineDto[];
   methodOfPayment: string;
 }

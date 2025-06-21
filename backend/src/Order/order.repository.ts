@@ -16,7 +16,7 @@ import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { DailyCashState, OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
-import { ProductSummary } from 'src/DTOs/productSummary.dto';
+import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
 import { StockService } from 'src/Stock/stock.service';
 import { isUUID } from 'class-validator';
 import { PrinterService } from 'src/Printer/printer.service';
@@ -116,9 +116,10 @@ export class OrderRepository {
           'table',
           'table.room',
           'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
         ],
       });
-      console.log('order....', order);
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
@@ -174,7 +175,7 @@ export class OrderRepository {
             );
           }
 
-          // await this.stockService.deductStock(product.id, quantity);
+          await this.stockService.deductStock(product.id, quantity);
 
           const newDetail = queryRunner.manager.create(OrderDetails, {
             quantity,
@@ -199,8 +200,8 @@ export class OrderRepository {
                 );
               }
 
-              // Buscar a qué grupo de toppings pertenece este topping
-              const toppingGroup = topping.toppingsGroups?.[0]; // o lógica más precisa si hay varios
+              // Buscar grupo de toppings que pertenece este topping
+              const toppingGroup = topping.toppingsGroups?.[0];
 
               if (!toppingGroup) {
                 throw new NotFoundException(
@@ -227,7 +228,7 @@ export class OrderRepository {
               }
 
               // await this.stockService.deductStock(topping.id, quantity * config.quantityOfTopping);
-              await queryRunner.manager.save(newDetail); // 👈 esto le da un ID real
+              await queryRunner.manager.save(newDetail);
               const toppingDetail = queryRunner.manager.create(
                 OrderDetailToppings,
                 {
@@ -240,21 +241,18 @@ export class OrderRepository {
               );
 
               newDetail.orderDetailToppings.push(toppingDetail);
-              console.log('Intentando guardar toppingDetail:', toppingDetail);
               try {
                 await queryRunner.manager.save(toppingDetail);
               } catch (e) {
                 console.error('🔥 Error guardando toppingDetail:', e);
                 throw e;
               }
-              // await queryRunner.manager.save(toppingDetail);
-              // console.log('toppingdetail......:', toppingDetail);
             }
           }
-          order.orderDetails.push(newDetail);
-          console.log('newDetail....', newDetail);
+          order.orderDetails = [...order.orderDetails, newDetail];
+
           newProducts.push(product);
-          console.log('newProducts....', newProducts);
+
           total += quantity * product.price;
         }
 
@@ -294,6 +292,14 @@ export class OrderRepository {
         //   }
         // }
       }
+      console.log(
+        '🧾 Detalles actuales antes de guardar:',
+        order.orderDetails.map((d) => ({
+          id: d.id,
+          product: d.product?.name,
+          toppings: d.orderDetailToppings?.map((t) => t.topping?.name),
+        })),
+      );
       const updatedOrder = await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
@@ -356,7 +362,13 @@ export class OrderRepository {
         where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
-        relations: ['orderDetails', 'orderDetails.product', 'table'],
+        relations: [
+          'table',
+          'orderDetails',
+          'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
+        ],
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
@@ -380,10 +392,12 @@ export class OrderRepository {
       const order = await this.orderRepository.findOne({
         where: { id, isActive: true },
         relations: [
-          'orderDetails',
           'table',
           'table.room',
+          'orderDetails',
           'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
         ],
       });
       if (!order) {
@@ -636,29 +650,26 @@ export class OrderRepository {
     }
   }
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
-    const productSummary: Record<string, ProductSummary> =
-      order.orderDetails.reduce(
-        (acc, detail) => {
-          const productId = detail.product.id;
-          const unitaryPrice = Number(detail.unitaryPrice);
-          const subtotal = Number(detail.subtotal);
-          if (!acc[productId]) {
-            acc[productId] = {
-              productId: detail.product.id,
-              productName: detail.product.name,
-              quantity: 0,
-              unitaryPrice: unitaryPrice,
-              subtotal: 0,
-            };
-          }
-          acc[productId].quantity += detail.quantity;
-          acc[productId].subtotal += subtotal;
-          return acc;
-        },
-        {} as Record<string, ProductSummary>,
-      );
+    const productLines: ProductLineDto[] = [];
 
-    const productSummaryArray: ProductSummary[] = Object.values(productSummary);
+    for (const detail of order.orderDetails) {
+      const toppings: ToppingSummaryDto[] =
+        detail.orderDetailToppings?.map((t) => ({
+          id: t.topping.id,
+          name: t.topping.name,
+        })) || [];
+
+      productLines.push({
+        productId: detail.product.id,
+        productName: detail.product.name,
+        quantity: detail.quantity,
+        unitaryPrice: Number(detail.unitaryPrice),
+        subtotal: Number(detail.subtotal),
+        allowsToppings: detail.product.allowsToppings,
+        commentOfProduct: detail.commentOfProduct || null,
+        toppings,
+      });
+    }
 
     const response = new OrderSummaryResponseDto();
     response.id = order.id;
@@ -670,9 +681,9 @@ export class OrderRepository {
       name: order.table.name,
       state: order.table.state,
     };
-    response.total = order.total;
-    response.products = productSummaryArray;
+    response.total = Number(order.total);
     response.methodOfPayment = order.methodOfPayment;
+    response.products = productLines;
 
     return response;
   }
