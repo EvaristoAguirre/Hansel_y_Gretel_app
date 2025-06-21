@@ -24,6 +24,11 @@ export interface IPayment {
   paymentMethod: string;
 }
 
+export interface IDailyCheck {
+  exist: boolean;
+  dailyCashOpenId: string | null;
+}
+
 export interface IDailyCash {
   id?: string;
   comment?: string;

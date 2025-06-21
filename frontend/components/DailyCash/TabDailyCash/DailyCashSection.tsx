@@ -7,8 +7,8 @@ import NewMovementModal from './NewMovement/NewMovementModal';
 import { INewMovement, IPayment } from '@/components/Interfaces/IDailyCash';
 import NewMovementButton from './NewMovement/NewMovementButton';
 import OpenCashButton from './OpenCash/OpenCashButton';
-import { dailyCashType } from '@/components/Enums/dailyCash';
 import { useDailyCash } from '@/app/context/dailyCashContext';
+import { dailyCashType } from '@/components/Enums/dailyCash';
 
 const DailyCashSection = () => {
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
@@ -26,10 +26,10 @@ const DailyCashSection = () => {
     payments: IPayment[];
     description: string;
   }) => {
-    if (!dailyCash?.id) return;
+    if (!dailyCash?.dailyCashOpenId) return;
 
     const body: INewMovement = {
-      dailyCashId: dailyCash.id,
+      dailyCashId: dailyCash.dailyCashOpenId,
       movementType: data.movementType.toLowerCase(),
       description: data.description,
       payments: data.payments.map(p => ({

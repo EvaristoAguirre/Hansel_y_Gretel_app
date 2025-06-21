@@ -18,7 +18,7 @@ const OpenCashButton = () => {
 
       try {
         const data = await checkOpenDailyCash(token);
-        if (data) setIsCashOpenToday(data);
+        if (data.dailyCashOpenId) setIsCashOpenToday(data);
       } catch (error) {
         console.error(error);
       }

@@ -2,13 +2,15 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { IDailyCash, INewMovement, I_DC_Open } from "@/components/Interfaces/IDailyCash";
+import { IDailyCash, IDailyCheck, INewMovement, I_DC_Open, } from '@/components/Interfaces/IDailyCash';
 import { useAuth } from "@/app/context/authContext";
-import { checkOpenDailyCash, closeDailyCash, fetchDailyCashByID, newMovement, openDailyCash } from "@/api/dailyCash";
+import { checkOpenDailyCash, closeDailyCash, fetchAllDailyCash, fetchDailyCashByID, newMovement, openDailyCash } from "@/api/dailyCash";
 
 interface DailyCashContextType {
-  dailyCash: IDailyCash | null;
+  allDailyCash: IDailyCash[];
+  dailyCash: IDailyCheck | null;
   loading: boolean;
+  fetchAllCash: () => Promise<void>;
   fetchCash: () => Promise<void>;
   openCash: (data: I_DC_Open) => Promise<void>;
   closeCash: () => Promise<void>;
@@ -18,19 +20,30 @@ interface DailyCashContextType {
 const DailyCashContext = createContext<DailyCashContextType | undefined>(undefined);
 
 export const DailyCashProvider = ({ children }: { children: React.ReactNode }) => {
-  const [dailyCash, setDailyCash] = useState<IDailyCash | null>(null);
+  const [dailyCash, setDailyCash] = useState<IDailyCheck | null>(null);
+  const [allDailyCash, setAllDailyCash] = useState<IDailyCash[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
+  const fetchAllCash = async () => {
+    if (!token) return;
+    try {
+      const allCash = await fetchAllDailyCash(token);
+      setAllDailyCash(allCash);
+    } catch (error) {
+      console.error("Error al obtener todas las cajas", error);
+    }
+  };
   const fetchCash = async () => {
     if (!token) return;
     setLoading(true);
     try {
       const currentCash = await checkOpenDailyCash(token);
-      if (currentCash?.id) {
-        const detail = await fetchDailyCashByID(token, currentCash.id);
+      if (currentCash?.dailyCashOpenId) {
+        const detail = await fetchDailyCashByID(token, currentCash.dailyCashOpenId);
         setDailyCash(detail);
       } else {
         setDailyCash(null);
@@ -49,8 +62,8 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const closeCash = async () => {
-    if (!token || !dailyCash?.id) return;
-    await closeDailyCash(token, dailyCash.id);
+    if (!token || !dailyCash?.dailyCashOpenId) return;
+    await closeDailyCash(token, dailyCash.dailyCashOpenId);
     setDailyCash(null);
   };
 
@@ -66,7 +79,17 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   }, [token]);
 
   return (
-    <DailyCashContext.Provider value={{ dailyCash, loading, fetchCash, openCash, closeCash, registerMovement }}>
+    <DailyCashContext.Provider
+      value={{
+        allDailyCash,
+        dailyCash,
+        loading,
+        fetchAllCash,
+        fetchCash,
+        openCash,
+        closeCash,
+        registerMovement
+      }}>
       {children}
     </DailyCashContext.Provider>
   );
