@@ -1,6 +1,6 @@
 import { fetchAllDailyCash } from "@/api/dailyCash";
 import { useAuth } from "@/app/context/authContext";
-import { dailyCashState } from "@/components/Enums/dailyCash";
+import { dailyCashModalType, dailyCashState } from "@/components/Enums/dailyCash";
 import { I_DC_ } from "@/components/Interfaces/IDailyCash";
 import { IRowData } from "@/components/Interfaces/IGridMUI";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
@@ -13,6 +13,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import { Box } from "@mui/system";
+import CashModal from "../Open_CloseDailyCash/CashModal";
 
 
 
@@ -23,6 +24,8 @@ const CashTable = () => {
   const [dataCashTable, setDataCashTable] = useState<IRowData[]>([]);
   const [selectedCash, setSelectedCash] = useState<I_DC_ | null>(null);
   const [openModal, setOpenModal] = useState(false);
+  const [open, setOpen] = useState(false);
+
 
 
   useEffect(() => {
@@ -123,9 +126,7 @@ const CashTable = () => {
                 <Tooltip title="Cerrar caja">
                   <IconButton
                     size="small"
-                    onClick={() => {
-                      console.log("Cerrar caja:", params.row.id);
-                    }}
+                    onClick={() => setOpen(true)}
                   >
                     <LockIcon fontSize="small" color="primary" />
                   </IconButton>
@@ -162,6 +163,12 @@ const CashTable = () => {
         open={openModal}
         onClose={() => setOpenModal(false)}
         data={selectedCash}
+      />
+
+      <CashModal
+        open={open}
+        onClose={() => setOpen(false)}
+        type={dailyCashModalType.CLOSE}
       />
     </>
 

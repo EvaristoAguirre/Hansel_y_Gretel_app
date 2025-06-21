@@ -7,9 +7,8 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-  CircularProgress,
 } from "@mui/material";
-import { I_DC_Open } from "@/components/Interfaces/IDailyCash";
+import { I_DC_Open_Close } from "@/components/Interfaces/IDailyCash";
 import { useAuth } from "@/app/context/authContext";
 import { closeDailyCash, openDailyCash } from "@/api/dailyCash";
 import { NumericFormat } from "react-number-format";
@@ -23,9 +22,9 @@ interface Props {
   type: dailyCashModalType;
 }
 
-const OpenCashModal = ({ open, onClose, type }: Props) => {
-  const initialForm: I_DC_Open = { comment: "", initialCash: 0 };
-  const [form, setForm] = useState<I_DC_Open>(initialForm);
+const CashModal = ({ open, onClose, type }: Props) => {
+  const initialForm: I_DC_Open_Close = { comment: "", initialCash: 0 };
+  const [form, setForm] = useState<I_DC_Open_Close>(initialForm);
   const [loading, setLoading] = useState(false);
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
@@ -87,7 +86,7 @@ const OpenCashModal = ({ open, onClose, type }: Props) => {
           <NumericFormat
             customInput={TextField}
             label="Total en Caja"
-            value={form.initialCash}
+            value={type === dailyCashModalType.OPEN ? form.initialCash : form.totalCash}
             thousandSeparator="."
             decimalSeparator=","
             decimalScale={2}
@@ -125,4 +124,4 @@ const OpenCashModal = ({ open, onClose, type }: Props) => {
 };
 
 
-export default OpenCashModal;
+export default CashModal;

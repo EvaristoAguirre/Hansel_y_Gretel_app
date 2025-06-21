@@ -7,15 +7,14 @@ export interface ICashMovement {
   estado: "Abierta" | "Cerrada";
 }
 
-export interface I_DC_Open {
+export interface I_DC_Open_Close {
   comment: string;
-  initialCash: number | null;
+  initialCash?: number | null;
+  totalCash?: number | null;
+
 }
 
-export interface I_DC_Close {
-  comment: string;
-  totalCash: number | null;
-}
+
 
 export interface I_DC_ {
   comment?: string;
