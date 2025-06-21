@@ -32,13 +32,10 @@ import { TableService } from 'src/Table/table.service';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { DailyCashRepository } from 'src/daily-cash/daily-cash.repository';
 import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
-<<<<<<< HEAD
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailToppings } from './order_details_toppings.entity';
-=======
 import { CashMovement } from 'src/daily-cash/cash-movement.entity';
->>>>>>> master
 
 @Module({
   imports: [
@@ -56,13 +53,10 @@ import { CashMovement } from 'src/daily-cash/cash-movement.entity';
       Stock,
       Ingredient,
       DailyCash,
-<<<<<<< HEAD
       ToppingsGroup,
       ProductAvailableToppingGroup,
       OrderDetailToppings,
-=======
       CashMovement,
->>>>>>> master
     ]),
     UserModule,
     UnitOfMeasurenModule,

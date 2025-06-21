@@ -118,7 +118,7 @@ export class OrderRepository {
           'orderDetails.product',
         ],
       });
-
+      console.log('order....', order);
       if (!order) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
@@ -219,7 +219,6 @@ export class OrderRepository {
                   relations: ['unitOfMeasure'],
                 },
               );
-              console.log('config.........', config);
 
               if (!config) {
                 throw new NotFoundException(
@@ -228,11 +227,7 @@ export class OrderRepository {
               }
 
               // await this.stockService.deductStock(topping.id, quantity * config.quantityOfTopping);
-              console.log('Creando topping detail con........:', {
-                topping,
-                orderDetails: newDetail,
-                unitOfMeasure: config.unitOfMeasure,
-              });
+              await queryRunner.manager.save(newDetail); // 👈 esto le da un ID real
               const toppingDetail = queryRunner.manager.create(
                 OrderDetailToppings,
                 {
@@ -245,13 +240,22 @@ export class OrderRepository {
               );
 
               newDetail.orderDetailToppings.push(toppingDetail);
+              console.log('Intentando guardar toppingDetail:', toppingDetail);
+              try {
+                await queryRunner.manager.save(toppingDetail);
+              } catch (e) {
+                console.error('🔥 Error guardando toppingDetail:', e);
+                throw e;
+              }
+              // await queryRunner.manager.save(toppingDetail);
+              // console.log('toppingdetail......:', toppingDetail);
             }
-
-            order.orderDetails.push(newDetail);
-            newProducts.push(product);
-
-            total += quantity * product.price;
           }
+          order.orderDetails.push(newDetail);
+          console.log('newDetail....', newDetail);
+          newProducts.push(product);
+          console.log('newProducts....', newProducts);
+          total += quantity * product.price;
         }
 
         order.total = (Number(order.total) || 0) + total;
