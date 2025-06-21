@@ -7,7 +7,8 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { DailyCashMovementType, PaymentMethod } from 'src/Enums/dailyCash.enum';
+import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 export class RegisterExpenseDto {
   @IsString()
