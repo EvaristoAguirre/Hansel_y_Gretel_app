@@ -13,11 +13,12 @@ import { orderToPending, orderToReprint } from "@/api/order";
 import { SelectedProductsI } from "../Interfaces/IProducts";
 import { useRoomContext } from "@/app/context/room.context";
 import { editTable } from "@/api/tables";
-import { OrderState, TableState } from "../Enums/order";
+import { OrderState } from "../Enums/order";
 import { useOrderStore } from "./useOrderStore";
 import { useTableStore } from "../Table/useTableStore";
 import { useAuth } from "@/app/context/authContext";
 import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
 
 export interface OrderProps {
   imprimirComanda: any;
