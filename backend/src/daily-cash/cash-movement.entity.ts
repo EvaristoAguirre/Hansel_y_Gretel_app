@@ -1,4 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { DailyCash } from './daily-cash.entity';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
@@ -28,7 +34,8 @@ export class CashMovement {
 
   // --------- Relaciones ---------
   @ManyToOne(() => DailyCash, (dailyCash) => dailyCash.movements, {
-    onDelete: 'CASCADE',
+    eager: false,
   })
+  @JoinColumn({ name: 'dailyCashId' })
   dailyCash: DailyCash;
 }

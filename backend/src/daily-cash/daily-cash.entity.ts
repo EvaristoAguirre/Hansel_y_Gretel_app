@@ -46,6 +46,8 @@ export class DailyCash {
   @OneToMany(() => Order, (order) => order.dailyCash)
   orders: Order[];
 
-  @OneToMany(() => CashMovement, (cashMovement) => cashMovement.dailyCash)
+  @OneToMany(() => CashMovement, (movement) => movement.dailyCash, {
+    cascade: true,
+  })
   movements: CashMovement[];
 }
