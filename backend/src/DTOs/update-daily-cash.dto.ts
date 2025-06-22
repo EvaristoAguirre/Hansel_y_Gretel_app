@@ -27,6 +27,7 @@ export class UpdateDailyCashDto extends PartialType(CreateDailyCashDto) {
   totalPayments: number;
 
   @IsNumber()
+  @IsOptional()
   totalCash: number;
 
   @IsOptional()

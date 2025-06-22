@@ -294,7 +294,6 @@ export class DailyCashRepository {
           'Daily cash report must be open to register expenses.',
         );
       }
-
       const totalAmount = payments.reduce(
         (sum, payment) => sum + payment.amount,
         0,
@@ -307,10 +306,16 @@ export class DailyCashRepository {
       cashMovement.payments = payments;
       cashMovement.dailyCash = dailyCash;
 
+      if (!dailyCash.movements) {
+        dailyCash.movements = [];
+      }
+      dailyCash.movements.push(cashMovement);
+
       await this.cashMovementRepository.save(cashMovement);
       await this.dailyCashRepository.save(dailyCash);
       const movement = await this.cashMovementRepository.findOne({
         where: { id: cashMovement.id },
+        relations: ['dailyCash'],
       });
       return movement;
     } catch (error) {
