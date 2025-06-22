@@ -11,7 +11,6 @@ export interface I_DC_Open_Close {
   comment: string;
   initialCash?: number | null;
   totalCash?: number | null;
-
 }
 
 export interface INewMovement {

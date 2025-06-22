@@ -1,16 +1,14 @@
 'use client';
 import { Box, Stack, Typography } from '@mui/material';
-import OpenCashButton from './Open_CloseDailyCash/OpenCashButton';
-import NewMovementButton from './NewMovementButton';
 import CashFilters from './Table/CashFilters';
 import CashTable from './Table/CashTable';
 import { useState } from 'react';
 import NewMovementModal from './NewMovement/NewMovementModal';
 import { INewMovement, IPayment } from '@/components/Interfaces/IDailyCash';
-import NewMovementButton from './NewMovement/NewMovementButton';
-import OpenCashButton from './OpenCash/OpenCashButton';
 import { useDailyCash } from '@/app/context/dailyCashContext';
 import { dailyCashType } from '@/components/Enums/dailyCash';
+import OpenCashButton from './Open_CloseDailyCash/OpenCashButton';
+import NewMovementButton from './NewMovement/NewMovementButton';
 
 const DailyCashSection = () => {
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);

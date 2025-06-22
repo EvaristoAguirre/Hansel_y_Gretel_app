@@ -9,11 +9,10 @@ import {
   TextField,
 } from "@mui/material";
 import { I_DC_Open_Close } from "@/components/Interfaces/IDailyCash";
-import { useAuth } from "@/app/context/authContext";
-import { closeDailyCash, openDailyCash } from "@/api/dailyCash";
 import { NumericFormat } from "react-number-format";
 import Swal from "sweetalert2";
 import { dailyCashModalType } from "@/components/Enums/dailyCash";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 
 
 interface Props {
@@ -26,16 +25,17 @@ const CashModal = ({ open, onClose, type }: Props) => {
   const initialForm: I_DC_Open_Close = { comment: "", initialCash: 0 };
   const [form, setForm] = useState<I_DC_Open_Close>(initialForm);
   const [loading, setLoading] = useState(false);
-  const { getAccessToken } = useAuth();
-  const token = getAccessToken();
+
+  const { openCash, closeCash } = useDailyCash();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "totalCash" ? Number(value) : value,
+      [name]: name === "totalCash" || name === "initialCash" ? Number(value) : value,
     }));
   };
+
 
   const handleClose = () => {
     setForm(initialForm);
@@ -44,39 +44,21 @@ const CashModal = ({ open, onClose, type }: Props) => {
 
   const handleSubmit = async () => {
     setLoading(true);
-    if (type === dailyCashModalType.OPEN) {
-      try {
-        const response = token && await openDailyCash(token, form);
-        if (response) {
-          Swal.fire("Éxito", "Caja abierta correctamente.", "success");
-        } else {
-          Swal.fire("Error", "No se pudo abrir la caja.", "error");
-        }
-        handleClose();
-      } catch (error) {
-        console.error("Error al abrir caja:", error);
-        Swal.fire("Error", "No se pudo abrir la caja.", "error");
-      } finally {
-        setLoading(false);
+    try {
+      if (type === dailyCashModalType.OPEN) {
+        await openCash(form);
+      } else {
+        await closeCash(form);
       }
-
-    } else {
-      // try {
-      //   const response = token && await closeDailyCash(token, id, form);
-      //   if (response) {
-      //     Swal.fire("Éxito", "Caja cerrada correctamente.", "success");
-      //   } else {
-      //     Swal.fire("Error", "No se pudo cerrar la caja.", "error");
-      //   }
-      //   handleClose();
-      // } catch (error) {
-      //   console.error("Error al abrir caja:", error);
-      //   Swal.fire("Error", "No se pudo cerrar la caja.", "error");
-      // } finally {
-      //   setLoading(false);
-      // }
+      handleClose();
+    } catch (error) {
+      console.error("Error al procesar caja:", error);
+      Swal.fire("Error", `No se pudo ${type === dailyCashModalType.OPEN ? "abrir" : "cerrar"} la caja.`, "error");
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -85,7 +67,8 @@ const CashModal = ({ open, onClose, type }: Props) => {
         <Box mt={2} display="flex" flexDirection="column" gap={2}>
           <NumericFormat
             customInput={TextField}
-            label="Total en Caja"
+            label={type === dailyCashModalType.OPEN ? "Monto inicial" : "Total en caja"}
+            name={type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"}
             value={type === dailyCashModalType.OPEN ? form.initialCash : form.totalCash}
             thousandSeparator="."
             decimalSeparator=","
@@ -95,13 +78,14 @@ const CashModal = ({ open, onClose, type }: Props) => {
             fullWidth
             required
             onValueChange={(values) => {
-              const num = values.floatValue ?? null;
+              const num = values.floatValue ?? 0;
               setForm((prev) => ({
                 ...prev,
-                initialCash: num,
+                [type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"]: num,
               }));
             }}
           />
+
           <TextField
             name="comment"
             label="Comentario (opcional)"

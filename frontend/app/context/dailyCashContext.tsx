@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { IDailyCash, IDailyCheck, INewMovement, I_DC_Open, } from '@/components/Interfaces/IDailyCash';
+import { IDailyCash, IDailyCheck, INewMovement, I_DC_Open_Close } from '@/components/Interfaces/IDailyCash';
 import { useAuth } from "@/app/context/authContext";
 import { checkOpenDailyCash, closeDailyCash, fetchAllDailyCash, fetchDailyCashByID, newMovement, openDailyCash } from "@/api/dailyCash";
+import Swal from "sweetalert2";
 
 interface DailyCashContextType {
   allDailyCash: IDailyCash[];
@@ -12,8 +13,9 @@ interface DailyCashContextType {
   loading: boolean;
   fetchAllCash: () => Promise<void>;
   fetchCash: () => Promise<void>;
-  openCash: (data: I_DC_Open) => Promise<void>;
-  closeCash: () => Promise<void>;
+  selectedCash: (cash: string) => void;
+  openCash: (data: I_DC_Open_Close) => Promise<void>;
+  closeCash: (data: I_DC_Open_Close) => Promise<void>;
   registerMovement: (data: INewMovement) => Promise<void>;
 }
 
@@ -22,6 +24,7 @@ const DailyCashContext = createContext<DailyCashContextType | undefined>(undefin
 export const DailyCashProvider = ({ children }: { children: React.ReactNode }) => {
   const [dailyCash, setDailyCash] = useState<IDailyCheck | null>(null);
   const [allDailyCash, setAllDailyCash] = useState<IDailyCash[]>([]);
+  const [selectedDailyCashId, setSelectedDailyCashID] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -55,16 +58,30 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
-  const openCash = async (data: I_DC_Open) => {
-    if (!token) return;
-    const opened = await openDailyCash(token, data);
-    setDailyCash(opened);
+  const selectedCash = (cash: string) => {
+    setSelectedDailyCashID(cash);
   };
 
-  const closeCash = async () => {
-    if (!token || !dailyCash?.dailyCashOpenId) return;
-    await closeDailyCash(token, dailyCash.dailyCashOpenId);
-    setDailyCash(null);
+  const openCash = async (data: I_DC_Open_Close) => {
+    if (!token) return;
+    const opened = await openDailyCash(token, data);
+    if (opened) {
+      Swal.fire("Éxito", "Caja abierta correctamente.", "success");
+    } else {
+      Swal.fire("Error", "No se pudo abrir la caja.", "error");
+    }
+    await fetchAllCash();
+  };
+
+  const closeCash = async (data: I_DC_Open_Close) => {
+    if (!token) return;
+    const response = selectedDailyCashId && await closeDailyCash(token, selectedDailyCashId, data);
+    if (response) {
+      Swal.fire("Éxito", "Caja cerrada correctamente.", "success");
+    } else {
+      Swal.fire("Error", "No se pudo cerrar la caja.", "error");
+    }
+    await fetchAllCash();
   };
 
   const registerMovement = async (data: INewMovement) => {
@@ -86,6 +103,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
         loading,
         fetchAllCash,
         fetchCash,
+        selectedCash,
         openCash,
         closeCash,
         registerMovement

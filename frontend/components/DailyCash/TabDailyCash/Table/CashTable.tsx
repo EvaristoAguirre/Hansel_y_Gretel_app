@@ -16,13 +16,11 @@ import CashModal from "../Open_CloseDailyCash/CashModal";
 
 
 const CashTable = () => {
-  const [selectedCash, setSelectedCash] = useState<IDailyCash | null>(null);
+  const [selectedDailyCash, setSelectedDailyCash] = useState<IDailyCash | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [open, setOpen] = useState(false);
 
-
-
-  const { allDailyCash, fetchAllCash } = useDailyCash();
+  const { allDailyCash, fetchAllCash, selectedCash } = useDailyCash();
 
 
   useEffect(() => {
@@ -91,7 +89,7 @@ const CashTable = () => {
               <IconButton
                 size="small"
                 onClick={() => {
-                  setSelectedCash(params.row);
+                  setSelectedDailyCash(params.row);
                   setOpenModal(true);
                 }}
               >
@@ -115,7 +113,10 @@ const CashTable = () => {
                 <Tooltip title="Cerrar caja">
                   <IconButton
                     size="small"
-                    onClick={() => setOpen(true)}
+                    onClick={() => {
+                      selectedCash(params.row.id);
+                      setOpen(true)
+                    }}
                   >
                     <LockIcon fontSize="small" color="primary" />
                   </IconButton>
