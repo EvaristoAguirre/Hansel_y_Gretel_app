@@ -16,3 +16,9 @@ export enum paymentMethod {
   MERCADO_PAGO = 'mercado_pago',
   OTHER = 'other',
 }
+
+
+export enum dailyCashModalType {
+  OPEN = 'open',
+  CLOSE = 'close',
+}

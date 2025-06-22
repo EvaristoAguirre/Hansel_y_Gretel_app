@@ -8,7 +8,6 @@ import {
   Grid,
   Chip,
 } from "@mui/material";
-import { I_DC_ } from "@/components/Interfaces/IDailyCash";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
@@ -16,11 +15,12 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { dailyCashState } from "@/components/Enums/dailyCash";
+import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  data: I_DC_ | null;
+  data: IDailyCash | null;
 }
 
 const CashDetailModal = ({ open, onClose, data }: Props) => {
@@ -72,7 +72,7 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
         })}
         <Chip
           label={data.state === dailyCashState.OPEN ? "Abierta" : "Cerrada"}
-          color={data.state === dailyCashState.OPEN ? "success" : "default"}
+          color={data.state === dailyCashState.OPEN ? "success" : "error"}
           size="small"
           sx={{ fontWeight: 500, ml: 2 }}
         />

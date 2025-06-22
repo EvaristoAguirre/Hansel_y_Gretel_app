@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button, Tooltip } from "@mui/material";
 import AddBoxIcon from "@mui/icons-material/AddBox";
-import OpenCashModal from "./OpenCashModal";
 import { checkOpenDailyCash } from '../../../../api/dailyCash';
 import { useAuth } from "@/app/context/authContext";
+import { dailyCashModalType } from "@/components/Enums/dailyCash";
+import CashModal from "./CashModal";
 
 const OpenCashButton = () => {
   const { getAccessToken } = useAuth();
@@ -49,9 +50,10 @@ const OpenCashButton = () => {
         </span>
       </Tooltip>
 
-      <OpenCashModal
+      <CashModal
         open={open}
         onClose={() => setOpen(false)}
+        type={dailyCashModalType.OPEN}
       />
     </>
   );

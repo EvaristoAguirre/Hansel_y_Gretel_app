@@ -7,34 +7,35 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-  CircularProgress,
 } from "@mui/material";
-import { I_DC_Open } from "@/components/Interfaces/IDailyCash";
-import { useAuth } from "@/app/context/authContext";
-import { openDailyCash } from "@/api/dailyCash";
+import { I_DC_Open_Close } from "@/components/Interfaces/IDailyCash";
 import { NumericFormat } from "react-number-format";
 import Swal from "sweetalert2";
+import { dailyCashModalType } from "@/components/Enums/dailyCash";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  type: dailyCashModalType;
 }
 
-const OpenCashModal = ({ open, onClose }: Props) => {
-  const initialForm: I_DC_Open = { comment: "", initialCash: 0 };
-  const [form, setForm] = useState<I_DC_Open>(initialForm);
+const CashModal = ({ open, onClose, type }: Props) => {
+  const initialForm: I_DC_Open_Close = { comment: "", initialCash: 0 };
+  const [form, setForm] = useState<I_DC_Open_Close>(initialForm);
   const [loading, setLoading] = useState(false);
-  const { getAccessToken } = useAuth();
-  const token = getAccessToken();
+
+  const { openCash, closeCash } = useDailyCash();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "totalCash" ? Number(value) : value,
+      [name]: name === "totalCash" || name === "initialCash" ? Number(value) : value,
     }));
   };
+
 
   const handleClose = () => {
     setForm(initialForm);
@@ -44,30 +45,31 @@ const OpenCashModal = ({ open, onClose }: Props) => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const response = token && await openDailyCash(token, form);
-      if (response) {
-        Swal.fire("Éxito", "Caja abierta correctamente.", "success");
+      if (type === dailyCashModalType.OPEN) {
+        await openCash(form);
       } else {
-        Swal.fire("Error", "No se pudo abrir la caja.", "error");
+        await closeCash(form);
       }
       handleClose();
     } catch (error) {
-      console.error("Error al abrir caja:", error);
-      Swal.fire("Error", "No se pudo abrir la caja.", "error");
+      console.error("Error al procesar caja:", error);
+      Swal.fire("Error", `No se pudo ${type === dailyCashModalType.OPEN ? "abrir" : "cerrar"} la caja.`, "error");
     } finally {
       setLoading(false);
     }
   };
 
+
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle color="primary" fontWeight="bold" fontSize="1rem">Abrir Caja Diaria</DialogTitle>
+      <DialogTitle color="primary" fontWeight="bold" fontSize="1rem">{type === dailyCashModalType.OPEN ? "Abrir" : "Cerrar"} Caja Diaria</DialogTitle>
       <DialogContent>
         <Box mt={2} display="flex" flexDirection="column" gap={2}>
           <NumericFormat
             customInput={TextField}
-            label="Total en Caja Inicial"
-            value={form.initialCash}
+            label={type === dailyCashModalType.OPEN ? "Monto inicial" : "Total en caja"}
+            name={type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"}
+            value={type === dailyCashModalType.OPEN ? form.initialCash : form.totalCash}
             thousandSeparator="."
             decimalSeparator=","
             decimalScale={2}
@@ -76,13 +78,14 @@ const OpenCashModal = ({ open, onClose }: Props) => {
             fullWidth
             required
             onValueChange={(values) => {
-              const num = values.floatValue ?? null;
+              const num = values.floatValue ?? 0;
               setForm((prev) => ({
                 ...prev,
-                initialCash: num,
+                [type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"]: num,
               }));
             }}
           />
+
           <TextField
             name="comment"
             label="Comentario (opcional)"
@@ -97,7 +100,7 @@ const OpenCashModal = ({ open, onClose }: Props) => {
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={24} /> : "Abrir Caja"}
+          {type === dailyCashModalType.OPEN ? "Abrir Caja" : "Cerrar Caja"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -105,4 +108,4 @@ const OpenCashModal = ({ open, onClose }: Props) => {
 };
 
 
-export default OpenCashModal;
+export default CashModal;

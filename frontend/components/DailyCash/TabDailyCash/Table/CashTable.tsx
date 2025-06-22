@@ -1,4 +1,4 @@
-import { dailyCashState } from "@/components/Enums/dailyCash";
+import { dailyCashModalType, dailyCashState } from "@/components/Enums/dailyCash";
 import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { IconButton, Tooltip } from "@mui/material";
@@ -11,14 +11,16 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import { Box } from "@mui/system";
 import { useDailyCash } from "@/app/context/dailyCashContext";
+import CashModal from "../Open_CloseDailyCash/CashModal";
 
 
 
 const CashTable = () => {
-  const [selectedCash, setSelectedCash] = useState<IDailyCash | null>(null);
+  const [selectedDailyCash, setSelectedDailyCash] = useState<IDailyCash | null>(null);
   const [openModal, setOpenModal] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const { allDailyCash, fetchAllCash } = useDailyCash();
+  const { allDailyCash, fetchAllCash, selectedCash } = useDailyCash();
 
 
   useEffect(() => {
@@ -87,7 +89,7 @@ const CashTable = () => {
               <IconButton
                 size="small"
                 onClick={() => {
-                  setSelectedCash(params.row);
+                  setSelectedDailyCash(params.row);
                   setOpenModal(true);
                 }}
               >
@@ -112,7 +114,8 @@ const CashTable = () => {
                   <IconButton
                     size="small"
                     onClick={() => {
-                      console.log("Cerrar caja:", params.row.id);
+                      selectedCash(params.row.id);
+                      setOpen(true)
                     }}
                   >
                     <LockIcon fontSize="small" color="primary" />
@@ -149,7 +152,13 @@ const CashTable = () => {
       <CashDetailModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        data={selectedCash}
+        data={selectedDailyCash}
+      />
+
+      <CashModal
+        open={open}
+        onClose={() => setOpen(false)}
+        type={dailyCashModalType.CLOSE}
       />
     </>
 
