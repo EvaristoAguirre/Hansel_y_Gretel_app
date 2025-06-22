@@ -152,7 +152,7 @@ const CashTable = () => {
       <CashDetailModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        data={selectedCash}
+        data={selectedDailyCash}
       />
 
       <CashModal
