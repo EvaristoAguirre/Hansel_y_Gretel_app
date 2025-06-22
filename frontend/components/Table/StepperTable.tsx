@@ -9,10 +9,10 @@ import Order from '../Order/Order';
 import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
-import { TableState } from '../Enums/Enums';
 import OrderEditor from '../Order/OrderEditor';
 import { useEffect } from 'react';
 import { ITable } from '../Interfaces/ITable';
+import { TableState } from '../Enums/table';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 

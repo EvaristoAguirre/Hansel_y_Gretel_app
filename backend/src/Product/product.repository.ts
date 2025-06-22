@@ -74,7 +74,6 @@ export class ProductRepository {
           'availableToppingGroups.toppingGroup',
         ],
       });
-      console.log('productos rescatados...', products);
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof BadRequestException) {

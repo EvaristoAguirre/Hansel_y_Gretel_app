@@ -7,11 +7,11 @@ import { Button, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
-import { TableState } from "../Enums/Enums";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";
 import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
 
 export interface PayOrderProps {
   handleComplete: () => void;

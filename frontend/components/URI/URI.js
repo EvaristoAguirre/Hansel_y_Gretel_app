@@ -49,3 +49,6 @@ export const URI_STOCK = "http://localhost:3000/stock";
 
 export const URI_PDF = "http://localhost:3000/export/stock/pdf";
 
+// DAILY CASH
+
+export const URI_DAILY_CASH = "http://localhost:3000/daily-cash";

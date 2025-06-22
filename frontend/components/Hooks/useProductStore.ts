@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import { ICategory } from "../Interfaces/ICategories";
 import { ProductCreated, ProductState } from "../Interfaces/IProducts";
 
+
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
 
@@ -91,7 +92,6 @@ export const useProductStore = create<ProductState>((set) => {
         stock: product.stock ?? null,
         allowsToppings: product.allowsToppings ?? false,
         toppingsSettings: product.toppingsSettings ?? null,
-
       };
       set((state) => ({ products: [...state.products, parsedProduct] }));
     },
@@ -113,6 +113,6 @@ export const useProductStore = create<ProductState>((set) => {
       }));
       console.log("✅ Producto actualizado:", parsedProduct);
     },
-    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    connectWebSocket: () => {}, // La conexión se establece al cargar el store
   };
 });

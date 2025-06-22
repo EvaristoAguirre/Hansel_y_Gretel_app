@@ -1,4 +1,4 @@
-import { TypeBaseUnitIngredient } from "../Enums/Ingredients"
+import { TypeBaseUnitIngredient } from "../Enums/ingredients"
 import { IStockOfProduct } from "./IStock"
 import { IUnitOfMeasureResponse, IUnitOfMeasureStandard } from "./IUnitOfMeasure"
 

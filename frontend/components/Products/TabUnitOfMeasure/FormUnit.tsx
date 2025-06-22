@@ -18,7 +18,7 @@ import {
   CardActions,
   Box,
 } from "@mui/material";
-import { FormType } from "@/components/Enums/Ingredients";
+import { FormType } from "@/components/Enums/ingredients";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import DeleteIcon from '@mui/icons-material/Delete';

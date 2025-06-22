@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import { FormType } from "@/components/Enums/Ingredients";
+import { FormType } from "@/components/Enums/ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IUnitOfMeasureForm } from "../../Interfaces/IUnitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
