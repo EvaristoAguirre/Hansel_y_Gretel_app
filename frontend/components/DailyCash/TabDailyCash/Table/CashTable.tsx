@@ -1,8 +1,5 @@
-import { fetchAllDailyCash } from "@/api/dailyCash";
-import { useAuth } from "@/app/context/authContext";
 import { dailyCashModalType, dailyCashState } from "@/components/Enums/dailyCash";
-import { I_DC_ } from "@/components/Interfaces/IDailyCash";
-import { IRowData } from "@/components/Interfaces/IGridMUI";
+import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { IconButton, Tooltip } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
@@ -13,33 +10,25 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import { Box } from "@mui/system";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 import CashModal from "../Open_CloseDailyCash/CashModal";
 
 
 
 const CashTable = () => {
-  const { getAccessToken } = useAuth();
-  const token = getAccessToken();
-
-  const [dataCashTable, setDataCashTable] = useState<IRowData[]>([]);
-  const [selectedCash, setSelectedCash] = useState<I_DC_ | null>(null);
+  const [selectedCash, setSelectedCash] = useState<IDailyCash | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [open, setOpen] = useState(false);
 
 
 
+  const { allDailyCash, fetchAllCash } = useDailyCash();
+
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!token) return;
-      try {
-        const data = token && await fetchAllDailyCash(token);
-        if (data) setDataCashTable(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchData();
-  }, [token]);
+    fetchAllCash();
+  }, []);
+
 
   const columns: GridColDef[] = [
     {
@@ -154,7 +143,7 @@ const CashTable = () => {
   return (
     <>
       <DataGridComponent
-        rows={dataCashTable}
+        rows={allDailyCash}
         columns={columns}
         capitalize={[]}
       />

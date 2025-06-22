@@ -21,7 +21,7 @@ export class ToppingsGroup {
   isActive: boolean;
 
   // ------------------------  Relaciones --------------
-  @ManyToMany(() => Ingredient)
+  @ManyToMany(() => Ingredient, (ingredient) => ingredient.toppingsGroups)
   @JoinTable({
     name: 'toppings_groups_ingredients',
     joinColumn: { name: 'toppings_group_id', referencedColumnName: 'id' },

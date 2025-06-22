@@ -14,6 +14,12 @@ export class IngredientService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  async getAllIngredientsAndToppings(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
+    return this.ingredientRepository.getAllIngredientsAndToppings(page, limit);
+  }
   async getAllIngredients(
     page: number,
     limit: number,

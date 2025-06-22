@@ -26,6 +26,32 @@ export class IngredientRepository {
   ) {}
 
   // ------- con envio de stock estandarizado
+  async getAllIngredientsAndToppings(
+    page: number,
+    limit: number,
+  ): Promise<IngredientResponseDTO[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+
+    try {
+      const ingredients = await this.ingredientRepository.find({
+        where: { isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
+      });
+      return await this.adaptIngredientsResponse(ingredients);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching ingredients',
+        error.message,
+      );
+    }
+  }
   async getAllIngredients(
     page: number,
     limit: number,

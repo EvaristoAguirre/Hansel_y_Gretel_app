@@ -322,7 +322,7 @@ export class DailyCashRepository {
     }
   }
 
-  async isTodayDailyCashOpen(): Promise<boolean> {
+  async isTodayDailyCashOpen(): Promise<object> {
     try {
       const today = new Date();
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
@@ -334,7 +334,11 @@ export class DailyCashRepository {
           state: DailyCashState.OPEN,
         },
       });
-      return !!existingDailyCash;
+
+      return {
+        exist: !!existingDailyCash,
+        dailyCashOpenId: existingDailyCash?.id || null,
+      };
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(

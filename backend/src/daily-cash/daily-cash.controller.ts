@@ -81,7 +81,7 @@ export class DailyCashController {
 
   @Get('check-open')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  isTodayDailyCashOpen(): Promise<boolean> {
+  isTodayDailyCashOpen(): Promise<object> {
     return this.dailyCashService.isTodayDailyCashOpen();
   }
 

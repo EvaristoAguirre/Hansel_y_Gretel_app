@@ -14,9 +14,25 @@ export interface I_DC_Open_Close {
 
 }
 
+export interface INewMovement {
+  dailyCashId: string;
+  movementType: string;
+  description: string;
+  payments: IPayment[];
+}
 
+export interface IPayment {
+  amount: number;
+  paymentMethod: string;
+}
 
-export interface I_DC_ {
+export interface IDailyCheck {
+  exist: boolean;
+  dailyCashOpenId: string | null;
+}
+
+export interface IDailyCash {
+  id?: string;
   comment?: string;
   date?: Date;
   state?: string;
