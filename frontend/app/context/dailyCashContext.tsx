@@ -31,11 +31,6 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
-  useEffect(() => {
-    console.log("caja del dia💘💘💘💘💘💘💘", dailyCash);
-    fetchCash();
-  }, [token]);
-
   const fetchAllCash = async () => {
     if (!token) return;
     try {

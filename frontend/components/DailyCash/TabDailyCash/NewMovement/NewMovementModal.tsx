@@ -22,14 +22,24 @@ import { IPayment } from "@/components/Interfaces/IDailyCash";
 import Swal from "sweetalert2";
 import { useDailyCash } from "@/app/context/dailyCashContext";
 
-const paymentMethods = [
-  "Efectivo",
-  "Tarjeta Débito",
-  "Tarjeta Crédito",
-  "Transferencia",
-  "Mercado Pago",
-  "Otros",
-];
+const paymentLabelToValue: Record<string, paymentMethod> = {
+  "Efectivo": paymentMethod.CASH,
+  "Tarjeta Débito": paymentMethod.DEBIT_CARD,
+  "Tarjeta Crédito": paymentMethod.CREDIT_CARD,
+  "Transferencia": paymentMethod.TRANSFER,
+  "Mercado Pago": paymentMethod.MERCADO_PAGO,
+  "Otros": paymentMethod.OTHER,
+};
+
+const paymentValueToLabel: Record<paymentMethod, string> = {
+  [paymentMethod.CASH]: "Efectivo",
+  [paymentMethod.DEBIT_CARD]: "Tarjeta Débito",
+  [paymentMethod.CREDIT_CARD]: "Tarjeta Crédito",
+  [paymentMethod.TRANSFER]: "Transferencia",
+  [paymentMethod.MERCADO_PAGO]: "Mercado Pago",
+  [paymentMethod.OTHER]: "Otros",
+};
+
 
 interface Props {
   open: boolean;
@@ -112,13 +122,18 @@ const NewMovementModal = ({ open, onClose }: Props) => {
                   label="Método de Pago"
                   fullWidth
                   size="small"
-                  value={p.paymentMethod}
-                  onChange={(e) => handlePaymentChange(i, "paymentMethod", e.target.value)}
+                  value={paymentValueToLabel[p.paymentMethod]}
+                  onChange={(e) =>
+                    handlePaymentChange(i, "paymentMethod", paymentLabelToValue[e.target.value])
+                  }
                 >
-                  {paymentMethods.map((m) => (
-                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                  {Object.keys(paymentLabelToValue).map((label) => (
+                    <MenuItem key={label} value={label}>
+                      {label}
+                    </MenuItem>
                   ))}
                 </TextField>
+
               </Grid>
               <Grid item xs={5}>
                 <NumericFormat

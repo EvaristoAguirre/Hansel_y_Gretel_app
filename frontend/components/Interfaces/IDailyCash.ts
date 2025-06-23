@@ -1,3 +1,5 @@
+import { paymentMethod } from "../Enums/dailyCash";
+
 export interface ICashMovement {
   id: string;
   fecha: string;
@@ -22,7 +24,7 @@ export interface INewMovement {
 
 export interface IPayment {
   amount: number;
-  paymentMethod: string;
+  paymentMethod: paymentMethod;
 }
 
 export interface IDailyCheck {
