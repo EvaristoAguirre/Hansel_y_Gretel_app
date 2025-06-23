@@ -58,6 +58,7 @@ type OrderContextType = {
   handleResetSelectedOrder: () => void;
   fetchOrderBySelectedTable: () => void;
   handleCancelOrder: (orderId: string) => Promise<void>;
+  handleAddTopping: (productId: string, toppingIds: string[]) => Promise<void>;
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -83,6 +84,7 @@ const OrderContext = createContext<OrderContextType>({
   handleResetSelectedOrder: () => { },
   fetchOrderBySelectedTable: () => { },
   handleCancelOrder: async () => { },
+  handleAddTopping: async () => { },
 });
 
 export const useOrderContext = () => {
@@ -225,6 +227,17 @@ const OrderProvider = ({
     }
 
   };
+
+  const handleAddTopping = async (productId: string, toppingIds: string[]) => {
+    setSelectedProducts((prevProducts) =>
+      prevProducts.map((p) =>
+        p.productId === productId
+          ? { ...p, toppingsIds: toppingIds }
+          : p
+      )
+    );
+  };
+
 
   const addHighlightedProduct = (id: string) => {
     setHighlightedProducts((prev) => new Set(prev).add(id));
@@ -474,6 +487,11 @@ const OrderProvider = ({
 
 
 
+  useEffect(() => {
+    console.log("selectedProducts🟢👀🟢👀🟢👀🟢👀🟢👀🟢👀🟢👀", selectedProducts);
+
+  }, [selectedProducts]);
+
   return (
     <OrderContext.Provider
       value={{
@@ -498,7 +516,8 @@ const OrderProvider = ({
         handleDeleteOrder,
         handleResetSelectedOrder,
         fetchOrderBySelectedTable,
-        handleCancelOrder
+        handleCancelOrder,
+        handleAddTopping
       }}
     >
       {children}

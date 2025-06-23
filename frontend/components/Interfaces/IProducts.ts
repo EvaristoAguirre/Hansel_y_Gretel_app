@@ -140,6 +140,7 @@ export interface SelectedProductsI {
   quantity: number;
   unitaryPrice: number | null;
   commentOfProduct?: string | null;
+  toppingsIds?: string[];
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
 };

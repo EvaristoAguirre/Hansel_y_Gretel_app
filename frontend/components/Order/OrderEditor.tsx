@@ -65,13 +65,10 @@ const OrderEditor = ({
   }, []);
 
   const {
-    handleCancelOrder,
     selectedProducts,
     setSelectedProducts,
     confirmedProducts,
-    setConfirmedProducts,
     selectedOrderByTable,
-    setSelectedOrderByTable,
     handleSelectedProducts,
     handleDeleteSelectedProduct,
     increaseProductNumber,
@@ -79,7 +76,8 @@ const OrderEditor = ({
     productComment,
     handleEditOrder,
     highlightedProducts,
-    removeHighlightedProduct
+    removeHighlightedProduct,
+    handleAddTopping
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -189,15 +187,16 @@ const OrderEditor = ({
     }));
   };
 
-  const shakeKeyframes = {
-    "@keyframes shake": {
-      "0%": { transform: "translateX(0)" },
-      "25%": { transform: "translateX(-2px)" },
-      "50%": { transform: "translateX(2px)" },
-      "75%": { transform: "translateX(-2px)" },
-      "100%": { transform: "translateX(0)" },
-    }
-  };
+  // const shakeKeyframes = {
+  //   "@keyframes shake": {
+  //     "0%": { transform: "translateX(0)" },
+  //     "25%": { transform: "translateX(-2px)" },
+  //     "50%": { transform: "translateX(2px)" },
+  //     "75%": { transform: "translateX(-2px)" },
+  //     "100%": { transform: "translateX(0)" },
+  //   }
+  // };
+
 
 
 
@@ -403,6 +402,7 @@ const OrderEditor = ({
                       <ToppingsGroupsViewer
                         groups={item.availableToppingGroups ?? []}
                         fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                        productId={item.productId}
                       />
                     )}
 

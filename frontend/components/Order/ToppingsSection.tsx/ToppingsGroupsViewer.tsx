@@ -1,32 +1,54 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Chip,
   Checkbox,
   Divider,
   FormControlLabel,
-  useMediaQuery,
 } from "@mui/material";
 import { ITopping } from "@/components/Interfaces/IToppings";
-import { IProductToppingsGroupResponse } from "@/components/Interfaces/IProducts";
+import {
+  IProductToppingsGroupResponse,
+} from "@/components/Interfaces/IProducts";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
+import { useOrderContext } from "@/app/context/order.context";
 
 interface ToppingsGroupsViewerProps {
   groups: IProductToppingsGroupResponse[];
   fetchGroupById: (id: string) => Promise<{ toppings: ITopping[] }>;
+  productId: string;
 }
 
 const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
   groups,
   fetchGroupById,
+  productId,
 }) => {
-  const [visibleGroups, setVisibleGroups] = useState<{ [id: string]: boolean }>(
-    {}
-  );
-  const [loadedToppings, setLoadedToppings] = useState<{
-    [id: string]: ITopping[];
-  }>({});
+  const [visibleGroups, setVisibleGroups] = useState<{ [id: string]: boolean }>({});
+  const [loadedToppings, setLoadedToppings] = useState<{ [id: string]: ITopping[] }>({});
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
 
-  const isSmallScreen = useMediaQuery("(max-width:600px)");
+  const {
+    handleAddTopping,
+    selectedProducts
+  } = useOrderContext();
+
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (initialized) return;
+    const product = selectedProducts.find(p => p.productId === productId);
+    if (product?.toppingsIds) {
+      setSelectedToppings(product.toppingsIds);
+    }
+    setInitialized(true);
+  }, [initialized, selectedProducts, productId]);
+
+
+  // Enviar al contexto los toppings seleccionados
+  useEffect(() => {
+    handleAddTopping(productId, Object.values(selectedToppings).flat());
+
+  }, [selectedToppings]);
 
   const handleToggleGroup = async (groupId: string) => {
     setVisibleGroups((prev) => ({
@@ -69,7 +91,6 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
         >
           <Chip
             label={capitalizeFirstLetter(group.name)}
-
             onClick={() => handleToggleGroup(group.id)}
             style={{
               marginBottom: "0.25rem",
@@ -88,14 +109,36 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
                 marginTop: "0.25rem",
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.25rem",
+                gap: "0.15rem",
               }}
             >
+              <div>
+                <Divider style={{ width: "100%" }} />
+                Máxima selección: {group.settings.maxSelection}
+              </div>
+
               {loadedToppings[group.id].map((topping) => (
                 <FormControlLabel
                   key={topping.id}
-                  control={<Checkbox checked disabled />}
-                  label={topping.name}
+                  control={
+                    <Checkbox
+                      checked={selectedToppings.includes(topping.id)}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+
+                        setSelectedToppings((prev) => {
+                          if (isChecked) {
+                            if (prev.length >= group.settings.maxSelection) return prev;
+                            return [...prev, topping.id];
+                          } else {
+                            return prev.filter((id) => id !== topping.id);
+                          }
+                        });
+                      }}
+                    />
+                  }
+                  label={capitalizeFirstLetter(topping.name)}
+                  sx={{ height: "25%" }}
                 />
               ))}
             </div>
