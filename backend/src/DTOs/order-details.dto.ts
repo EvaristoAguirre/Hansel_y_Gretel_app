@@ -4,6 +4,9 @@ export class OrderDetailsDto {
   @IsString()
   productId: string;
 
+  @IsOptional()
+  toppingsIds: string[];
+
   @IsNumber()
   quantity: number;
 

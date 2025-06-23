@@ -16,13 +16,13 @@ import {
 } from "../../components/Interfaces/IProducts";
 import { useOrderStore } from "../../components/Order/useOrderStore";
 import { useRoomContext } from "./room.context";
-import { TableState } from "@/components/Enums/Enums";
 import { IOrderDetails } from "@/components/Interfaces/IOrder";
 import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";
 import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
 import { ITable } from "@/components/Interfaces/ITable";
+import { TableState } from "@/components/Enums/table";
 import { AvailableToppingGroupDto } from '../../../backend/src/DTOs/productResponse.dto';
 
 type OrderContextType = {

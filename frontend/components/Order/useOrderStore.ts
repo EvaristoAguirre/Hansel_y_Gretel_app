@@ -86,7 +86,6 @@ interface OrderStateZustand {
 }
 
 export const useOrderStore = create<OrderStateZustand>((set, get) => {
-
   const socket = io("http://localhost:3000");
 
   socket.on("connect", () => {
@@ -125,7 +124,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
     }));
   });
 
-
   socket.on("orderDeleted", (data) => {
     console.log("🔴 Orden eliminada:", data);
     set((state) => ({
@@ -154,6 +152,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
           order.id === updatedOrder.id ? updatedOrder : order
         ),
       })),
-    connectWebSocket: () => { },
+    connectWebSocket: () => {},
   };
 });

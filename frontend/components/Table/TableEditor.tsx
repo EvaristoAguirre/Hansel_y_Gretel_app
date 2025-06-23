@@ -4,12 +4,12 @@ import Swal from "sweetalert2";
 import { Button } from "@mui/material";
 import { useOrderContext } from "../../app/context/order.context";
 import { editTable } from "@/api/tables";
-import { TableState } from "../Enums/Enums";
 import { useRoomContext } from "../../app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
 import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
 
 
 

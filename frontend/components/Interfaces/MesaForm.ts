@@ -1,2 +1,2 @@
-import { TableState } from "../Enums/Enums";
+import { TableState } from "../Enums/order";
 

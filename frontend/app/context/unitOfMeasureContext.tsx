@@ -1,5 +1,5 @@
 'use client';
-import { FormType } from '@/components/Enums/Ingredients';
+import { FormType } from '@/components/Enums/ingredients';
 import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import { createContext, use, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';

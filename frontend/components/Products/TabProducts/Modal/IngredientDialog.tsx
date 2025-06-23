@@ -25,7 +25,7 @@ import { ProductForm } from "@/components/Interfaces/IProducts";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { TabProductKey } from "@/components/Enums/view-products";
 import { useIngredientsContext } from '../../../../app/context/ingredientsContext';
-import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
+import { TypeBaseUnitIngredient } from "@/components/Enums/ingredients";
 import { useUnitContext } from '../../../../app/context/unitOfMeasureContext';
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 

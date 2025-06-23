@@ -1,9 +1,9 @@
 'use client';
-import { FormType } from '@/components/Enums/Ingredients';
+import { FormType } from '@/components/Enums/ingredients';
 import { Iingredient } from '@/components/Interfaces/Ingredients';
 import { createContext, useContext, useState } from 'react';
 import Swal from 'sweetalert2';
-import { createIngredient, deleteIngredient, editIngredient, fetchIngredients } from '../../api/ingredients';
+import { createIngredient, deleteIngredient, editIngredient, fetchIngredientsAll, fetchIngredientsAndToppings } from '../../api/ingredients';
 import { useEffect } from 'react';
 import { useAuth } from './authContext';
 import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
@@ -14,6 +14,7 @@ type IngredientsContextType = {
   formOpen: boolean;
   formType: FormType;
   ingredients: Iingredient[];
+  ingredientsAndToppings: Iingredient[];
   setFormIngredients: React.Dispatch<React.SetStateAction<Iingredient>>;
   setFormOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setFormType: React.Dispatch<React.SetStateAction<FormType>>;
@@ -44,6 +45,7 @@ const IngredientsContext = createContext<IngredientsContextType>({
   handleEditIngredient: async () => { },
   handleCloseForm: () => { },
   ingredients: [],
+  ingredientsAndToppings: [],
   updateIngredient: () => { },
 
 });
@@ -66,24 +68,28 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   });
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<FormType>(FormType.CREATE);
+  const [ingredientsAndToppings, setIngredientsAndToppings] = useState<Iingredient[]>([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
   const { getAccessToken } = useAuth();
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) return;
-    fetchIngredients(token).then(dataIngredients => {
-      if (dataIngredients) setIngredients(dataIngredients);
+    fetchIngredientsAndToppings(token).then(dataIngredients => {
+      if (dataIngredients) setIngredientsAndToppings(dataIngredients);
     });
+    fetchIngredientsAll(token).then(dataIngredients => {
+      if (dataIngredients) setIngredients(dataIngredients);
+    })
   }, []);
 
   const addIngredient = (ingredient: Iingredient) => {
-    setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
+    setIngredientsAndToppings((prevIngredient) => [...prevIngredient, ingredient]);
   };
 
   const updateIngredient = (ingredient: Iingredient) => {
 
-    setIngredients((prevIngredients) =>
+    setIngredientsAndToppings((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
         prevIngredient.id === ingredient.id ? ingredient : prevIngredient
       )
@@ -91,7 +97,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
   };
 
   const removeIngredient = (id: string) => {
-    setIngredients((prevIngredients) =>
+    setIngredientsAndToppings((prevIngredients) =>
       prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
     );
   };
@@ -189,6 +195,7 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
         formOpen,
         formType,
         ingredients,
+        ingredientsAndToppings,
         updateIngredient,
         setFormIngredients,
         setFormOpen,

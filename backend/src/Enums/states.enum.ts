@@ -11,3 +11,8 @@ export enum TableState {
   PENDING_PAYMENT = 'pending_payment',
   CLOSED = 'closed',
 }
+
+export enum DailyCashState {
+  OPEN = 'open',
+  CLOSED = 'closed',
+}

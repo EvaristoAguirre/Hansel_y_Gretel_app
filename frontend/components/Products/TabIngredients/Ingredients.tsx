@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
-import { FormType } from "@/components/Enums/Ingredients";
-import DataGridComponent from "@/components/Utils/ProductTable";
+import { FormType } from "@/components/Enums/ingredients";
+import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -25,7 +25,7 @@ const Ingredients = () => {
   const {
     formType,
     formOpen,
-    ingredients,
+    ingredientsAndToppings,
     setFormIngredients,
     setFormType,
     setFormOpen,
@@ -118,7 +118,7 @@ const Ingredients = () => {
         </Box>
 
         <DataGridComponent
-          rows={ingredients}
+          rows={ingredientsAndToppings}
           columns={columns}
           capitalize={["name", "description"]}
         />
