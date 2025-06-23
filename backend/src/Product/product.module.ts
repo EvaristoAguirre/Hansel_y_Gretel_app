@@ -21,6 +21,7 @@ import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -34,6 +35,7 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
       ProductAvailableToppingGroup,
     ]),
     forwardRef(() => CategoryModule),
+    CostCascadeModule,
     UserModule,
     UnitOfMeasurenModule,
   ],

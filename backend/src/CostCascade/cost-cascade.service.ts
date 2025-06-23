@@ -1,172 +1,147 @@
-// import { Injectable } from '@nestjs/common';
-// import { InjectDataSource } from '@nestjs/typeorm';
-// import { DataSource, In, QueryRunner } from 'typeorm';
-// import { Ingredient } from 'src/ingredients/entities/ingredient.entity';
-// import { Product } from 'src/products/entities/product.entity';
-// import { ProductIngredient } from 'src/products/entities/product-ingredient.entity';
-// import { PromotionProduct } from 'src/promotions/entities/promotion-product.entity';
-// import { ProductAvailableToppingGroup } from 'src/products/entities/product-available-topping-group.entity';
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
+import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
+import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { DataSource, In, QueryRunner } from 'typeorm';
+import { Logger } from '@nestjs/common';
 
-// @Injectable()
-// export class CostCascadeService {
-//   constructor(
-//     @InjectDataSource()
-//     private readonly dataSource: DataSource,
-//   ) {}
+import { CostCascadeResult } from './cost-cascade.type';
+import { ProductService } from 'src/Product/product.service';
 
-//   async updateIngredientCostAndCascade(ingredientId: string, newCost: number): Promise<void> {
-//     const queryRunner = this.dataSource.createQueryRunner();
-//     await queryRunner.connect();
-//     await queryRunner.startTransaction();
+@Injectable()
+export class CostCascadeService {
+  private readonly logger = new Logger(CostCascadeService.name);
+  constructor(
+    private readonly productService: ProductService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+  ) {}
 
-//     try {
-//       // 1. Actualizar costo del ingrediente
-//       await queryRunner.manager.update(Ingredient, ingredientId, { cost: newCost });
+  async updateIngredientCostAndCascade(
+    ingredientId: string,
+    newCost: number,
+    externalQueryRunner?: QueryRunner,
+  ): Promise<CostCascadeResult> {
+    this.logger.log(
+      `🔁 Iniciando cascada de costo para ingrediente ${ingredientId} con nuevo costo ${newCost}`,
+    );
 
-//       const updatedProducts = new Set<string>();
+    const queryRunner =
+      externalQueryRunner ?? this.dataSource.createQueryRunner();
+    const isExternal = !!externalQueryRunner;
 
-//       // 2. Productos compuestos afectados
-//       const productIngredients = await queryRunner.manager.find(ProductIngredient, {
-//         where: { ingredient: { id: ingredientId } },
-//         relations: ['product', 'ingredient', 'unitOfMeasure'],
-//       });
+    if (!isExternal) {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+    }
+    const updatedProducts = new Set<string>();
+    const updatedPromotions = new Set<string>();
 
-//       for (const pi of productIngredients) {
-//         const productId = pi.product.id;
-//         const newProductCost = await this.calculateCompoundCost(productId, queryRunner);
-//         await queryRunner.manager.update(Product, productId, { cost: newProductCost });
-//         updatedProducts.add(productId);
-//       }
+    try {
+      // 1. Actualizar costo del ingrediente
+      await queryRunner.manager.update(Ingredient, ingredientId, {
+        cost: newCost,
+      });
+      this.logger.log(
+        `✅ Ingrediente ${ingredientId} actualizado con nuevo costo: ${newCost}`,
+      );
 
-//       // 3. Productos simples o compuestos con toppings pagos
-//       const toppingLinks = await queryRunner.manager.find(ProductAvailableToppingGroup, {
-//         where: {
-//           ingredient: { id: ingredientId },
-//           settings: { chargeExtra: true },
-//         },
-//         relations: ['product', 'ingredient'],
-//       });
+      // -------------------------- llamo a productService.calculateCompoundProductsCost
 
-//       for (const link of toppingLinks) {
-//         const productId = link.product.id;
-//         const newToppingCost = await this.calculateToppingCost(productId, queryRunner);
-//         await queryRunner.manager.update(Product, productId, { cost: newToppingCost });
-//         updatedProducts.add(productId);
-//       }
+      // 2. Productos compuestos afectados
+      const productIngredients = await queryRunner.manager.find(
+        ProductIngredient,
+        {
+          where: { ingredient: { id: ingredientId } },
+          relations: ['product', 'ingredient', 'unitOfMeasure'],
+        },
+      );
 
-//       // 4. Promociones que incluyen productos actualizados
-//       if (updatedProducts.size > 0) {
-//         const productIds = Array.from(updatedProducts);
-//         const promoLinks = await queryRunner.manager.find(PromotionProduct, {
-//           where: { product: { id: In(productIds) } },
-//           relations: ['promotion', 'product'],
-//         });
+      for (const pi of productIngredients) {
+        const productId = pi.product.id;
+        const updatedProductId =
+          await this.productService.calculateCompoundProductsCost(
+            productId,
+            queryRunner,
+          );
+        this.logger.log(
+          `🧮 Producto afectado por ingrediente ${ingredientId}: ${productId}`,
+        );
 
-//         const updatedPromotions = new Set<string>();
-//         for (const link of promoLinks) {
-//           const promoId = link.promotion.id;
-//           if (!updatedPromotions.has(promoId)) {
-//             const newPromoCost = await this.calculatePromotionCost(promoId, queryRunner);
-//             await queryRunner.manager.update(Product, promoId, { cost: newPromoCost });
-//             updatedPromotions.add(promoId);
-//           }
-//         }
-//       }
+        updatedProducts.add(updatedProductId);
+      }
+      // ----------------------------------------- cierro la parte de producto compuesto
 
-//       await queryRunner.commitTransaction();
-//     } catch (error) {
-//       await queryRunner.rollbackTransaction();
-//       throw error;
-//     } finally {
-//       await queryRunner.release();
-//     }
-//   }
+      // -------------------------Actualizo Promociones que incluyen productos recien actualizados
 
-//   // ==== Métodos auxiliares con QueryRunner ====
+      if (updatedProducts.size > 0) {
+        const productIds = Array.from(updatedProducts);
+        const promoLinks = await queryRunner.manager.find(PromotionProduct, {
+          where: { product: { id: In(productIds) } },
+          relations: ['promotion', 'product'],
+        });
 
-//   private async calculateCompoundCost(productId: string, qr: QueryRunner): Promise<number> {
-//     const ingredients = await qr.manager.find(ProductIngredient, {
-//       where: { product: { id: productId } },
-//       relations: ['ingredient', 'unitOfMeasure'],
-//     });
+        for (const link of promoLinks) {
+          const promotionId = link.promotion.id;
+          updatedPromotions.add(promotionId);
+        }
 
-//     let total = 0;
-//     for (const item of ingredients) {
-//       const cost = item.ingredient.cost ?? 0;
-//       total += cost * item.quantityOfIngredient;
-//     }
+        for (const promotionId of updatedPromotions) {
+          await this.productService.calculatePromotionCost(
+            promotionId,
+            queryRunner,
+          );
+        }
+      }
 
-//     return total;
-//   }
+      if (!isExternal) await queryRunner.commitTransaction();
+      this.logger.log(`✅ Cascada finalizada para ingrediente ${ingredientId}`);
 
-//   private async calculateToppingCost(productId: string, qr: QueryRunner): Promise<number> {
-//     const product = await qr.manager.findOne(Product, { where: { id: productId } });
+      return {
+        success: true,
+        updatedProducts: Array.from(updatedProducts),
+        updatedPromotions: Array.from(updatedPromotions),
+      };
+    } catch (error) {
+      if (!isExternal) await queryRunner.rollbackTransaction();
 
-//     const toppingLinks = await qr.manager.find(ProductAvailableToppingGroup, {
+      this.logger.error(
+        `❌ Error durante la cascada de costo del ingrediente ${ingredientId}: ${error.message}`,
+      );
+
+      return {
+        success: false,
+        updatedProducts: Array.from(updatedProducts),
+        updatedPromotions: Array.from(updatedPromotions),
+        message: error.message,
+      };
+    } finally {
+      if (!isExternal) await queryRunner.release();
+    }
+  }
+}
+
+// 3. Productos simples o compuestos con toppings pagos
+//   const toppingLinks = await queryRunner.manager.find(
+//     ProductAvailableToppingGroup,
+//     {
 //       where: {
-//         product: { id: productId },
+//         ingredient: { id: ingredientId },
 //         settings: { chargeExtra: true },
 //       },
-//       relations: ['ingredient'],
+//       relations: ['product', 'ingredient'],
+//     },
+//   );
+
+//   for (const link of toppingLinks) {
+//     const productId = link.product.id;
+//     const newToppingCost = await this.calculateToppingCost(
+//       productId,
+//       queryRunner,
+//     );
+//     await queryRunner.manager.update(Product, productId, {
+//       cost: newToppingCost,
 //     });
-
-//     let extra = 0;
-//     for (const topping of toppingLinks) {
-//       extra += topping.ingredient.cost ?? 0;
-//     }
-
-//     return (product?.cost ?? 0) + extra;
+//     updatedProducts.add(productId);
 //   }
-
-//   private async calculatePromotionCost(promoId: string, qr: QueryRunner): Promise<number> {
-//     const items = await qr.manager.find(PromotionProduct, {
-//       where: { promotion: { id: promoId } },
-//       relations: ['product'],
-//     });
-
-//     let total = 0;
-//     for (const item of items) {
-//       total += (item.product.cost ?? 0) * item.quantity;
-//     }
-
-//     return total;
-//   }
-// }
-// ---------------------
-// CostCascadeService
-// await this.ingredientService.updateCost(ingredientId, newCost, qr);
-// const affectedProductIds = await this.productService.updateProductsByIngredient(ingredientId, qr);
-// const toppingProductIds = await this.productService.updateToppingProducts(ingredientId, qr);
-// const allAffectedProducts = [...new Set([...affectedProductIds, ...toppingProductIds])];
-
-// await this.promotionService.updatePromotionsByProducts(allAffectedProducts, qr);
-
-// ---------------------
-
-// @Injectable()
-// export class ProductService {
-//   async updateProductsByIngredient(ingredientId: string, qr: QueryRunner): Promise<string[]> {
-//     const affected: string[] = [];
-//     // lógica igual que antes pero encapsulada
-//     return affected;
-//   }
-
-//   async updateToppingProducts(ingredientId: string, qr: QueryRunner): Promise<string[]> {
-//     const affected: string[] = [];
-//     // lógica igual que antes pero encapsulada
-//     return affected;
-//   }
-
-//   async calculateCompoundCost(...) { ... }
-//   async calculateToppingCost(...) { ... }
-// }
-// ---------------------
-// @Injectable()
-// export class PromotionService {
-//   async updatePromotionsByProducts(productIds: string[], qr: QueryRunner): Promise<void> {
-//     // buscar promociones que contienen productos
-//     // calcular y actualizar costos
-//   }
-
-//   async calculatePromotionCost(...) { ... }
-// }

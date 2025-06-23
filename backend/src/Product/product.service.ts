@@ -6,6 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { Product } from './product.entity';
+import { QueryRunner } from 'typeorm';
 
 @Injectable()
 export class ProductService {
@@ -123,5 +124,22 @@ export class ProductService {
 
   async getProductsWithStock(): Promise<Product[]> {
     return this.productRepository.getProductsWithStock();
+  }
+
+  async calculateCompoundProductsCost(
+    productId: string,
+    queryRunner: QueryRunner,
+  ) {
+    return this.productRepository.calculateCompoundProductsCost(
+      productId,
+      queryRunner,
+    );
+  }
+
+  async calculatePromotionCost(promotionId: string, queryRunner: QueryRunner) {
+    return this.productRepository.calculatePromotionCost(
+      promotionId,
+      queryRunner,
+    );
   }
 }

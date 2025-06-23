@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
-import { DataSource, ILike, Repository } from 'typeorm';
+import { DataSource, ILike, QueryRunner, Repository } from 'typeorm';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
 import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
@@ -17,14 +17,18 @@ import { isUUID } from 'class-validator';
 import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class IngredientRepository {
+  private readonly logger = new Logger(IngredientRepository.name);
   constructor(
     @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
     private readonly unitOfMeasureService: UnitOfMeasureService,
     private readonly dataSource: DataSource,
+    private readonly costCascadeService: CostCascadeService,
   ) {}
 
   // ------- con envio de stock estandarizado
@@ -241,6 +245,13 @@ export class IngredientRepository {
       const shouldRecalculateCost =
         updateData.cost !== undefined &&
         Number(updateData.cost) !== Number(ingredientToUpdate.cost);
+      if (shouldRecalculateCost) {
+        this.logger.log(
+          'deberia dispararse el recalculo de costo por cambio de valor en ingrediente...',
+          ingredientToUpdate.id,
+          ingredientToUpdate.name,
+        );
+      }
 
       if (updateData.unitOfMeasureId) {
         const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
@@ -254,11 +265,32 @@ export class IngredientRepository {
         delete updateData.unitOfMeasureId;
       }
 
+      if (shouldRecalculateCost) {
+        delete updateData.cost;
+      }
+
       Object.assign(ingredientToUpdate, updateData);
 
       // ---------------- Actualizacion de costos --------------------
       if (shouldRecalculateCost) {
-        console.log('precio nuevo');
+        this.logger.log(
+          `Entre a recalculo de costos debido a cambio en ingrediente ${ingredientToUpdate.id}`,
+        );
+        const cascadeResult =
+          await this.costCascadeService.updateIngredientCostAndCascade(
+            ingredientToUpdate.id,
+            Number(updateData.cost), // importante: pasás el nuevo costo explícito
+            queryRunner,
+          );
+        if (!cascadeResult.success) {
+          this.logger.warn(
+            `⚠️ Recalculo incompleto para ingrediente ${ingredientToUpdate.id}. Productos actualizados: ${cascadeResult.updatedProducts.length}, promociones: ${cascadeResult.updatedPromotions.length}. Mensaje: ${cascadeResult.message}`,
+          );
+        } else {
+          this.logger.log(
+            `✅ Recalculo completo. Productos: ${cascadeResult.updatedProducts.length}, Promociones: ${cascadeResult.updatedPromotions.length}`,
+          );
+        }
       }
       // ---------------- Cierre de actualizacion de costos ----------
 
@@ -271,12 +303,7 @@ export class IngredientRepository {
       return updatedIngredient;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error updating the ingredient',
         error.message,
@@ -587,25 +614,11 @@ export class IngredientRepository {
       .getMany();
   }
 
-  // async costRecalculation(queryRunner: QueryRunner, ingredientId: string) {
-  //   if (!ingredientId) {
-  //     throw new BadRequestException(
-  //       'To recalculate costs it is necessary to provide the ingredient ID',
-  //     );
-  //   }
-  //   try {
-  //     const productsToRecalculation = await queryRunner.manager.find(Product, {
-  //       where: { productIngredients: { id: ingredientId } },
-  //       relations: ['productIngredients', 'unitOfMeasure'],
-  //     });
-
-  //     const productsIds = [...new Set(productsToRecalculation.map(pr=> pr.prod))]
-  //   } catch (error) {
-  //     if (error instanceof HttpException) throw error;
-  //     throw new InternalServerErrorException(
-  //       'Error recalculating the new cost',
-  //       error.message,
-  //     );
-  //   }
-  // }
+  async costRecalculation(queryRunner: QueryRunner, ingredientId: string) {
+    if (!ingredientId) {
+      throw new BadRequestException(
+        'To recalculate costs it is necessary to provide the ingredient ID',
+      );
+    }
+  }
 }

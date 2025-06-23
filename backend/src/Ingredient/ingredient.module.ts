@@ -10,6 +10,7 @@ import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
 import { ProductAvailableToppingGroup } from './productAvailableToppingsGroup.entity';
+import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ProductAvailableToppingGroup } from './productAvailableToppingsGroup.en
       ProductAvailableToppingGroup,
     ]),
     UserModule,
+    CostCascadeModule,
   ],
   controllers: [IngredientController],
   providers: [

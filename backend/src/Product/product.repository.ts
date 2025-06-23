@@ -28,9 +28,11 @@ import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { ProductMapper } from './productMapper';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class ProductRepository {
+  private readonly logger = new Logger(ProductRepository.name);
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -1645,5 +1647,116 @@ export class ProductRepository {
       .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
       .where('product.type = :type', { type: 'simple' })
       .getMany();
+  }
+
+  async calculateCompoundProductsCost(
+    productId: string,
+    queryRunner?: QueryRunner,
+  ) {
+    if (!productId || !isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ingredient ID format. Is not posible to calculate the cost',
+      );
+    }
+
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    let releaseQR = false;
+
+    if (!queryRunner) {
+      await qr.connect();
+      await qr.startTransaction();
+      releaseQR = true;
+    }
+
+    try {
+      const product = await this.getProductWithRelationsByQueryRunner(
+        qr,
+        productId,
+        'product',
+      );
+
+      let newCost = 0;
+
+      for (const productIngredient of product.productIngredients) {
+        const quantity = await this.unitOfMeasureService.convertUnit(
+          productIngredient.unitOfMeasure.id,
+          productIngredient.ingredient.unitOfMeasure.id,
+          productIngredient.quantityOfIngredient,
+        );
+        newCost += productIngredient.ingredient.cost * quantity;
+      }
+      product.cost = newCost;
+      this.logger.log(
+        `📦 Producto compuesto ${product.id} recalculado. Nuevo costo: ${newCost}`,
+      );
+
+      await qr.manager.save(product);
+
+      if (releaseQR) await qr.commitTransaction();
+
+      return product.id;
+    } catch (error) {
+      if (releaseQR) await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      if (releaseQR) await qr.release();
+    }
+  }
+
+  async calculatePromotionCost(promotionId: string, queryRunner: QueryRunner) {
+    this.logger.log(`📊 Iniciando cálculo de promoción ${promotionId}`);
+
+    if (!promotionId || !isUUID(promotionId)) {
+      throw new BadRequestException(
+        'Invalid promotion ID format. Is not posible to calculate the cost',
+      );
+    }
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    let releaseQR = false;
+
+    if (!queryRunner) {
+      await qr.connect();
+      await qr.startTransaction();
+      releaseQR = true;
+    }
+
+    try {
+      // 1. Obtener todos los productos asociados a la promoción
+      const promoProducts = await qr.manager.find(PromotionProduct, {
+        where: { promotion: { id: promotionId } },
+        relations: ['product', 'promotion'],
+      });
+
+      if (promoProducts.length === 0) {
+        throw new NotFoundException(
+          `No products found in promotion ${promotionId}`,
+        );
+      }
+
+      // 2. Calcular el costo total
+      let totalCost = 0;
+      for (const item of promoProducts) {
+        const quantity = item.quantity ?? 1;
+        const productCost = item.product.cost ?? 0;
+        totalCost += productCost * quantity;
+      }
+
+      // 3. Actualizar el costo en la entidad Product (que representa la promoción)
+      await qr.manager.update(Product, promotionId, {
+        cost: totalCost,
+      });
+
+      if (releaseQR) await qr.commitTransaction();
+      this.logger.log(
+        `🎁 Promoción ${promotionId} recalculada. Nuevo costo total: ${totalCost}`,
+      );
+
+      return totalCost;
+    } catch (error) {
+      if (releaseQR) await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      if (releaseQR) await qr.release();
+    }
   }
 }
