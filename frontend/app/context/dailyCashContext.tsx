@@ -31,6 +31,11 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
+  useEffect(() => {
+    console.log("caja del dia💘💘💘💘💘💘💘", dailyCash);
+    fetchCash();
+  }, [token]);
+
   const fetchAllCash = async () => {
     if (!token) return;
     try {
@@ -45,12 +50,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
     setLoading(true);
     try {
       const currentCash = await checkOpenDailyCash(token);
-      if (currentCash?.dailyCashOpenId) {
-        const detail = await fetchDailyCashByID(token, currentCash.dailyCashOpenId);
-        setDailyCash(detail);
-      } else {
-        setDailyCash(null);
-      }
+      setDailyCash(currentCash);
     } catch (error) {
       console.error("Error al obtener la caja actual", error);
     } finally {
@@ -86,8 +86,14 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
 
   const registerMovement = async (data: INewMovement) => {
     if (!token) return;
-    const response = await newMovement(token, data);
-    await fetchCash();
+    const body = {
+      dailyCashId: dailyCash?.dailyCashOpenId || "",
+      movementType: data.movementType,
+      description: data.description,
+      payments: data.payments
+    }
+    const response = await newMovement(token, body);
+    await fetchAllCash();
     return response;
   };
 

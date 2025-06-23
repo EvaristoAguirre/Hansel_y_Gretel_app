@@ -14,7 +14,7 @@ export interface I_DC_Open_Close {
 }
 
 export interface INewMovement {
-  dailyCashId: string;
+  dailyCashId?: string;
   movementType: string;
   description: string;
   payments: IPayment[];

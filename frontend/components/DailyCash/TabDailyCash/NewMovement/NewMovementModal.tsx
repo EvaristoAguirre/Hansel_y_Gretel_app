@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +19,8 @@ import { NumericFormat } from "react-number-format";
 import { useState } from "react";
 import { dailyCashType, paymentMethod } from "@/components/Enums/dailyCash";
 import { IPayment } from "@/components/Interfaces/IDailyCash";
+import Swal from "sweetalert2";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 
 const paymentMethods = [
   "Efectivo",
@@ -27,32 +31,24 @@ const paymentMethods = [
   "Otros",
 ];
 
-
-
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConfirm: (data: {
-    movementType: dailyCashType;
-    payments: IPayment[];
-    description: string;
-  }) => void;
 }
 
-const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
+const NewMovementModal = ({ open, onClose }: Props) => {
   const [movementType, setMovementType] = useState<dailyCashType>(dailyCashType.INCOME);
   const [payments, setPayments] = useState<IPayment[]>([
     { paymentMethod: paymentMethod.CASH, amount: 0 },
   ]);
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { registerMovement } = useDailyCash();
 
   const handlePaymentChange = (index: number, field: keyof IPayment, value: any) => {
     const updated = [...payments];
-    if (field === "amount") {
-      updated[index][field] = Number(value);
-    } else {
-      updated[index][field] = value as paymentMethod;
-    }
+    (updated[index][field] as IPayment[keyof IPayment]) = field === "amount" ? Number(value) : value;
     setPayments(updated);
   };
 
@@ -66,12 +62,25 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
 
   const total = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
 
-  const handleConfirm = () => {
-    onConfirm({ movementType, payments, description });
-    // Limpiamos:
+  const resetForm = () => {
     setMovementType(dailyCashType.INCOME);
     setPayments([{ paymentMethod: paymentMethod.CASH, amount: 0 }]);
     setDescription("");
+  };
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await registerMovement({ movementType, payments, description });
+      Swal.fire("Éxito", "Movimiento registrado correctamente", "success");
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error al registrar movimiento:", error);
+      Swal.fire("Error", "No se pudo registrar el movimiento", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,8 +98,8 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
               onChange={(e) => setMovementType(e.target.value as dailyCashType)}
               size="small"
             >
-              <MenuItem value="Ingreso">Ingreso</MenuItem>
-              <MenuItem value="Egreso">Egreso</MenuItem>
+              <MenuItem value={dailyCashType.INCOME}>Ingreso</MenuItem>
+              <MenuItem value={dailyCashType.EXPENSE}>Egreso</MenuItem>
             </TextField>
           </Grid>
 
@@ -107,9 +116,7 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
                   onChange={(e) => handlePaymentChange(i, "paymentMethod", e.target.value)}
                 >
                   {paymentMethods.map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {m}
-                    </MenuItem>
+                    <MenuItem key={m} value={m}>{m}</MenuItem>
                   ))}
                 </TextField>
               </Grid>
@@ -172,10 +179,10 @@ const NewMovementModal = ({ open, onClose, onConfirm }: Props) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleConfirm} variant="contained" color="primary">
+        <Button onClick={handleConfirm} variant="contained" color="primary" disabled={loading}>
           Confirmar
         </Button>
-        <Button onClick={onClose} variant="outlined" color="inherit">
+        <Button onClick={onClose} variant="outlined" color="inherit" disabled={loading}>
           Cancelar
         </Button>
       </DialogActions>
