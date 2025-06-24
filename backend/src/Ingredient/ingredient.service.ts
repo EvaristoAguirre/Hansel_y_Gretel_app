@@ -226,9 +226,9 @@ export class IngredientService {
         delete updateData.unitOfMeasureId;
       }
 
-      if (shouldRecalculateCost) {
-        delete updateData.cost;
-      }
+      // if (shouldRecalculateCost) {
+      //   delete updateData.cost;
+      // }
 
       Object.assign(ingredientToUpdate, updateData);
 
@@ -236,6 +236,10 @@ export class IngredientService {
       if (shouldRecalculateCost) {
         this.logger.log(
           `Entre a recalculo de costos debido a cambio en ingrediente ${ingredientToUpdate.id}`,
+        );
+        this.logger.log(
+          'a ver que datos le estoy pansando a la actualizacion..',
+          updateData.cost,
         );
         const cascadeResult =
           await this.costCascadeService.updateIngredientCostAndCascade(
