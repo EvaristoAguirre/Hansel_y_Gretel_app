@@ -21,7 +21,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DailyCashModule } from './daily-cash/daily-cash.module';
 import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
 import { ExportModule } from './ExportPdf/export.module';
-import { CostCascadeModule } from './CostCascade/cost-cascade.module';
 
 @Module({
   imports: [
@@ -68,7 +67,6 @@ import { CostCascadeModule } from './CostCascade/cost-cascade.module';
     DailyCashModule,
     ToppingsGroupsModule,
     ExportModule,
-    CostCascadeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

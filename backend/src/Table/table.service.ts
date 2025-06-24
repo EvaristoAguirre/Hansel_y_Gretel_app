@@ -55,4 +55,6 @@ export class TableService {
   async getTablesByRoom(roomId: string): Promise<Table[]> {
     return this.tableRepository.getTablesByRoom(roomId);
   }
+
+  // ------------------- creados porque los necesite en otro servicio
 }

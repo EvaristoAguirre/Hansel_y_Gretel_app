@@ -11,7 +11,6 @@ import { ArchivedOrderDetails } from './archived_order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { TableRepository } from 'src/Table/table.repository';
 import { Product } from 'src/Product/product.entity';
-import { ProductRepository } from 'src/Product/product.repository';
 import { NotificationService } from './notification.service';
 import { RoomRepository } from 'src/Room/room.repository';
 import { Room } from 'src/Room/room.entity';
@@ -68,7 +67,6 @@ import { CashMovement } from 'src/daily-cash/cash-movement.entity';
     OrderRepository,
     ArchiveService,
     TableRepository,
-    ProductRepository,
     NotificationService,
     RoomRepository,
     CategoryRepository,

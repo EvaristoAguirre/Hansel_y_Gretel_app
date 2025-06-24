@@ -8,140 +8,25 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
-import { DataSource, ILike, QueryRunner, Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
-import { UpdateIngredientDto } from 'src/DTOs/update-ingredient.dto';
-import { IngredientResponseDTO } from 'src/DTOs/ingredientSummaryResponse.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
-import { isUUID } from 'class-validator';
 import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
-import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
-import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class IngredientRepository {
-  private readonly logger = new Logger(IngredientRepository.name);
   constructor(
     @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-    private readonly dataSource: DataSource,
-    private readonly costCascadeService: CostCascadeService,
   ) {}
 
-  // ------- con envio de stock estandarizado
-  async getAllIngredientsAndToppings(
-    page: number,
-    limit: number,
-  ): Promise<IngredientResponseDTO[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-
-    try {
-      const ingredients = await this.ingredientRepository.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
-      });
-      return await this.adaptIngredientsResponse(ingredients);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching ingredients',
-        error.message,
-      );
-    }
-  }
-  async getAllIngredients(
-    page: number,
-    limit: number,
-  ): Promise<IngredientResponseDTO[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-
-    try {
-      const ingredients = await this.ingredientRepository.find({
-        where: { isActive: true, isTopping: false },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
-      });
-      return await this.adaptIngredientsResponse(ingredients);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching ingredients',
-        error.message,
-      );
-    }
-  }
-
-  // ------- con envio de stock estandarizado
-  async getIngredientById(id: string): Promise<IngredientResponseDTO> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const ingredient = await this.ingredientRepository.findOne({
-        where: { id, isActive: true },
-        relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
-      });
-      if (!ingredient) {
-        throw new NotFoundException(`Ingredient with ID: ${id} not found`);
-      }
-      return await this.adaptIngredientResponse(ingredient);
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the unit of mesure',
-        error.message,
-      );
-    }
-  }
-
   async getIngredientByName(name: string): Promise<Ingredient> {
-    if (!name || name.trim().length === 0) {
-      throw new BadRequestException('Name parameter is required');
-    }
-    try {
-      const ingredient = await this.ingredientRepository.findOne({
-        where: { name: ILike(name) },
-      });
-      if (!ingredient) {
-        throw new NotFoundException(`Ingredient with name: ${name} not found`);
-      }
-      return ingredient;
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the unit of mesure',
-        error.message,
-      );
-    }
+    const ingredient = await this.ingredientRepository.findOne({
+      where: { name: ILike(name) },
+    });
+    return ingredient;
   }
 
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
@@ -216,196 +101,7 @@ export class IngredientRepository {
     }
   }
 
-  async updateIngredient(
-    id: string,
-    updateData: UpdateIngredientDto,
-  ): Promise<Ingredient> {
-    if (!id) {
-      throw new BadRequestException('ID must be provided');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const ingredientToUpdate = await queryRunner.manager.findOne(Ingredient, {
-        where: { id, isActive: true },
-      });
-
-      if (!ingredientToUpdate) {
-        throw new NotFoundException('Ingredient not found');
-      }
-
-      const shouldRecalculateCost =
-        updateData.cost !== undefined &&
-        Number(updateData.cost) !== Number(ingredientToUpdate.cost);
-      if (shouldRecalculateCost) {
-        this.logger.log(
-          'deberia dispararse el recalculo de costo por cambio de valor en ingrediente...',
-          ingredientToUpdate.id,
-          ingredientToUpdate.name,
-        );
-      }
-
-      if (updateData.unitOfMeasureId) {
-        const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
-          where: { id: updateData.unitOfMeasureId },
-        });
-        if (!unitOfMeasure) {
-          throw new BadRequestException('Unit of measure not found');
-        }
-
-        ingredientToUpdate.unitOfMeasure = unitOfMeasure;
-        delete updateData.unitOfMeasureId;
-      }
-
-      if (shouldRecalculateCost) {
-        delete updateData.cost;
-      }
-
-      Object.assign(ingredientToUpdate, updateData);
-
-      // ---------------- Actualizacion de costos --------------------
-      if (shouldRecalculateCost) {
-        this.logger.log(
-          `Entre a recalculo de costos debido a cambio en ingrediente ${ingredientToUpdate.id}`,
-        );
-        const cascadeResult =
-          await this.costCascadeService.updateIngredientCostAndCascade(
-            ingredientToUpdate.id,
-            Number(updateData.cost), // importante: pasás el nuevo costo explícito
-            queryRunner,
-          );
-        if (!cascadeResult.success) {
-          this.logger.warn(
-            `⚠️ Recalculo incompleto para ingrediente ${ingredientToUpdate.id}. Productos actualizados: ${cascadeResult.updatedProducts.length}, promociones: ${cascadeResult.updatedPromotions.length}. Mensaje: ${cascadeResult.message}`,
-          );
-        } else {
-          this.logger.log(
-            `✅ Recalculo completo. Productos: ${cascadeResult.updatedProducts.length}, Promociones: ${cascadeResult.updatedPromotions.length}`,
-          );
-        }
-      }
-      // ---------------- Cierre de actualizacion de costos ----------
-
-      await queryRunner.manager.save(ingredientToUpdate);
-      const updatedIngredient = await queryRunner.manager.findOne(Ingredient, {
-        where: { id: id, isActive: true },
-        relations: ['unitOfMeasure'],
-      });
-      await queryRunner.commitTransaction();
-      return updatedIngredient;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error updating the ingredient',
-        error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async deleteIngredient(id: string) {
-    if (!id) {
-      throw new BadRequestException('ID must be provided');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const ingredient = await this.ingredientRepository.findOne({
-        where: { id: id, isActive: true },
-      });
-      if (!ingredient) {
-        throw new NotFoundException('Ingredient not found');
-      }
-      ingredient.isActive = false;
-      return await this.ingredientRepository.save(ingredient);
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error deleting the ingredient',
-        error.message,
-      );
-    }
-  }
-
   // --------------------- TOPPINGS ----------------
-  // ------- con envio de stock estandarizado
-  async getAllToppings(
-    page: number,
-    limit: number,
-  ): Promise<ToppingResponseDto[]> {
-    console.log('getAllToppings called with page:', page, 'and limit:', limit);
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-
-    try {
-      const toppings = await this.ingredientRepository.find({
-        where: { isActive: true, isTopping: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
-      });
-      return await this.adaptToppingsResponse(toppings);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching toppings',
-        error.message,
-      );
-    }
-  }
-
-  async getToppingById(id: string): Promise<ToppingResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const topping = await this.ingredientRepository.findOne({
-        where: { id, isActive: true, isTopping: true },
-        relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
-      });
-      if (!topping) {
-        throw new NotFoundException(`topping with ID: ${id} not found`);
-      }
-      return await this.adaptToppingResponse(topping);
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the sauce',
-        error.message,
-      );
-    }
-  }
 
   async getToppingByName(name: string): Promise<ToppingResponseDto> {
     if (!name || typeof name !== 'string') {
@@ -434,38 +130,6 @@ export class IngredientRepository {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Error fetching topping');
-    }
-  }
-
-  async findToppingById(id: string): Promise<Ingredient> {
-    if (!id) {
-      throw new BadRequestException('ID must be provided');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const topping = await this.ingredientRepository.findOne({
-        where: { id, isActive: true, isTopping: true },
-        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
-      });
-      if (!topping) {
-        throw new NotFoundException(`Topping with ID: ${id} not found`);
-      }
-      return topping;
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the topping',
-        error.message,
-      );
     }
   }
 
@@ -526,46 +190,8 @@ export class IngredientRepository {
       );
     }
   }
-
+  // ---------------------------------------
   // --------------------- Ajuste de respuesta ----------------
-  private adaptIngredientResponse(ingredient: any): IngredientResponseDTO {
-    return {
-      id: ingredient.id,
-      name: ingredient.name,
-      isActive: ingredient.isActive,
-      description: ingredient.description,
-      cost: ingredient.cost,
-      type: ingredient.type,
-      isTopping: ingredient.isTopping,
-      unitOfMeasure: ingredient.unitOfMeasure
-        ? {
-            id: ingredient.unitOfMeasure.id,
-            name: ingredient.unitOfMeasure.name,
-            abbreviation: ingredient.unitOfMeasure.abbreviation,
-          }
-        : null,
-      stock: ingredient.stock
-        ? {
-            id: ingredient.stock.id,
-            quantityInStock: ingredient.stock.quantityInStock,
-            minimumStock: ingredient.stock.minimumStock,
-            unitOfMeasure: ingredient.stock.unitOfMeasure
-              ? {
-                  id: ingredient.stock.unitOfMeasure.id,
-                  name: ingredient.stock.unitOfMeasure.name,
-                  abbreviation: ingredient.stock.unitOfMeasure.abbreviation,
-                }
-              : null,
-          }
-        : null,
-    };
-  }
-
-  private adaptIngredientsResponse(
-    ingredients: any[],
-  ): IngredientResponseDTO[] {
-    return ingredients.map(this.adaptIngredientResponse);
-  }
 
   private adaptToppingResponse(topping: any): ToppingResponseDto {
     return {
@@ -612,13 +238,5 @@ export class IngredientRepository {
       .leftJoinAndSelect('ingredient.stock', 'stock')
       .leftJoinAndSelect('stock.unitOfMeasure', 'unitOfMeasure')
       .getMany();
-  }
-
-  async costRecalculation(queryRunner: QueryRunner, ingredientId: string) {
-    if (!ingredientId) {
-      throw new BadRequestException(
-        'To recalculate costs it is necessary to provide the ingredient ID',
-      );
-    }
   }
 }

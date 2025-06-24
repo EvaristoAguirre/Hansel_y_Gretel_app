@@ -3,7 +3,6 @@ import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './product.entity';
-import { ProductRepository } from './product.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { CategoryRepository } from 'src/Category/category.repository';
 import { Category } from 'src/Category/category.entity';
@@ -14,14 +13,13 @@ import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
-import { StockService } from 'src/Stock/stock.service';
 import { Stock } from 'src/Stock/stock.entity';
-import { StockRepository } from 'src/Stock/stock.repository';
 import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
-import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
+import { IngredientModule } from 'src/Ingredient/ingredient.module';
+import { StockModule } from 'src/Stock/stock.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -35,19 +33,17 @@ import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
       ProductAvailableToppingGroup,
     ]),
     forwardRef(() => CategoryModule),
-    CostCascadeModule,
     UserModule,
     UnitOfMeasurenModule,
+    IngredientModule,
+    StockModule,
   ],
   controllers: [ProductController],
   providers: [
     ProductService,
-    ProductRepository,
     CategoryRepository,
     UnitOfMeasureService,
     UnitOfMeasureRepository,
-    StockService,
-    StockRepository,
     IngredientRepository,
     IngredientService,
   ],

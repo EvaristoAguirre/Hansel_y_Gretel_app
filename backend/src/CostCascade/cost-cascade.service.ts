@@ -1,19 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { DataSource, In, QueryRunner } from 'typeorm';
 import { Logger } from '@nestjs/common';
-
-import { CostCascadeResult } from './cost-cascade.type';
-import { ProductService } from 'src/Product/product.service';
+import { CostCascadeResult } from 'src/Types/cost-cascade.type';
+import { Product } from 'src/Product/product.entity';
+import { isUUID } from 'class-validator';
+import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 
 @Injectable()
 export class CostCascadeService {
   private readonly logger = new Logger(CostCascadeService.name);
   constructor(
-    private readonly productService: ProductService,
+    private readonly unitOfMeasureService: UnitOfMeasureService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -60,11 +65,10 @@ export class CostCascadeService {
 
       for (const pi of productIngredients) {
         const productId = pi.product.id;
-        const updatedProductId =
-          await this.productService.calculateCompoundProductsCost(
-            productId,
-            queryRunner,
-          );
+        const updatedProductId = await this.calculateCompoundProductsCost(
+          productId,
+          queryRunner,
+        );
         this.logger.log(
           `🧮 Producto afectado por ingrediente ${ingredientId}: ${productId}`,
         );
@@ -88,10 +92,7 @@ export class CostCascadeService {
         }
 
         for (const promotionId of updatedPromotions) {
-          await this.productService.calculatePromotionCost(
-            promotionId,
-            queryRunner,
-          );
+          await this.calculatePromotionCost(promotionId, queryRunner);
         }
       }
 
@@ -119,6 +120,140 @@ export class CostCascadeService {
     } finally {
       if (!isExternal) await queryRunner.release();
     }
+  }
+
+  async calculateCompoundProductsCost(
+    productId: string,
+    queryRunner?: QueryRunner,
+  ): Promise<string> {
+    if (!productId || !isUUID(productId)) {
+      throw new BadRequestException(
+        'Invalid ingredient ID format. Is not posible to calculate the cost',
+      );
+    }
+
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    let releaseQR = false;
+
+    if (!queryRunner) {
+      await qr.connect();
+      await qr.startTransaction();
+      releaseQR = true;
+    }
+
+    try {
+      // ----revisar las relaciones cargadas en el metodo de este repo con las del repo de producto
+
+      const product = await this.getProductWithRelations(qr, productId);
+
+      // ----revisar las relaciones cargadas en el metodo de este repo con las del repo de producto
+
+      let newCost = 0;
+
+      for (const productIngredient of product.productIngredients) {
+        const quantity = await this.unitOfMeasureService.convertUnit(
+          productIngredient.unitOfMeasure.id,
+          productIngredient.ingredient.unitOfMeasure.id,
+          productIngredient.quantityOfIngredient,
+        );
+        newCost += productIngredient.ingredient.cost * quantity;
+      }
+
+      product.cost = newCost;
+
+      this.logger.log(
+        `📦 Producto compuesto ${product.id} recalculado. Nuevo costo: ${newCost}`,
+      );
+
+      await qr.manager.save(product);
+
+      if (releaseQR) await qr.commitTransaction();
+
+      return product.id;
+    } catch (error) {
+      if (releaseQR) await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      if (releaseQR) await qr.release();
+    }
+  }
+
+  async calculatePromotionCost(promotionId: string, queryRunner?: QueryRunner) {
+    this.logger.log(`📊 Iniciando cálculo de promoción ${promotionId}`);
+
+    if (!promotionId || !isUUID(promotionId)) {
+      throw new BadRequestException(
+        'Invalid promotion ID format. Is not posible to calculate the cost',
+      );
+    }
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    let releaseQR = false;
+
+    if (!queryRunner) {
+      await qr.connect();
+      await qr.startTransaction();
+      releaseQR = true;
+    }
+
+    try {
+      // 1. Obtener todos los productos asociados a la promoción
+      const promoProducts = await qr.manager.find(PromotionProduct, {
+        where: { promotion: { id: promotionId } },
+        relations: ['product', 'promotion'],
+      });
+
+      if (promoProducts.length === 0) {
+        throw new NotFoundException(
+          `No products found in promotion ${promotionId}`,
+        );
+      }
+
+      // 2. Calcular el costo total
+      let totalCost = 0;
+      for (const item of promoProducts) {
+        const quantity = item.quantity ?? 1;
+        const productCost = item.product.cost ?? 0;
+        totalCost += productCost * quantity;
+      }
+
+      // 3. Actualizar el costo en la entidad Product (que representa la promoción)
+      await qr.manager.update(Product, promotionId, {
+        cost: totalCost,
+      });
+
+      if (releaseQR) await qr.commitTransaction();
+      this.logger.log(
+        `🎁 Promoción ${promotionId} recalculada. Nuevo costo total: ${totalCost}`,
+      );
+
+      return totalCost;
+    } catch (error) {
+      if (releaseQR) await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      if (releaseQR) await qr.release();
+    }
+  }
+
+  private async getProductWithRelations(
+    queryRunner: QueryRunner,
+    productId: string,
+  ): Promise<Product> {
+    const product = await queryRunner.manager.findOne(Product, {
+      where: { id: productId },
+      relations: [
+        'productIngredients',
+        'productIngredients.ingredient',
+        'productIngredients.unitOfMeasure',
+        'productIngredients.ingredient.unitOfMeasure',
+      ],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product ${productId} not found`);
+    }
+
+    return product;
   }
 }
 
