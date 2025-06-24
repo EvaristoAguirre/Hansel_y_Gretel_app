@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable prettier/prettier */
 import {
   BadRequestException,
   ConflictException,
@@ -26,9 +24,12 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/product.entity';
 import { StockService } from 'src/Stock/stock.service';
+import { Logger } from '@nestjs/common';
+import { PrinterService } from 'src/Printer/printer.service';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
@@ -40,6 +41,7 @@ export class OrderService {
     private readonly dailyCashService: DailyCashService,
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
+    private readonly printerService: PrinterService,
   ) {}
 
   async openOrder(
@@ -80,8 +82,7 @@ export class OrderService {
       );
     }
   }
-  // ------revisar el update porque falta la parte de la impresora
-  //guardo hasta aca, el update es lo ultimo que acomode
+
   async updateOrder(
     id: string,
     updateData: UpdateOrderDto,
@@ -157,9 +158,47 @@ export class OrderService {
 
       await queryRunner.commitTransaction();
 
+      // ---------- envio a impresion de comanda  -------------------------
+      if (updateData.productsDetails?.length) {
+        const printData = {
+          numberCustomers: updatedOrder.numberCustomers,
+          table: updatedOrder.table?.name || 'SIN MESA',
+          products: updateData.productsDetails.map((detail) => ({
+            name:
+              updatedOrder.orderDetails.find(
+                (d) => d.product.id === detail.productId,
+              )?.product.name || 'Producto',
+            quantity: detail.quantity,
+            commentOfProduct: detail.commentOfProduct,
+          })),
+          isPriority: updateData.isPriority,
+        };
+
+        try {
+          this.printerService.logger.log(
+            `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+          );
+          const commandNumber =
+            await this.printerService.printKitchenOrder(printData);
+
+          updatedOrder.commandNumber = commandNumber;
+
+          await this.orderRepo.save(updatedOrder);
+
+          this.printerService.logger.log(
+            `✅ Comanda impresa, número: ${commandNumber}`,
+          );
+        } catch (printError) {
+          this.printerService.logger.error(
+            '❌ Falló la impresión de la comanda',
+            printError.stack,
+          );
+        }
+      }
+
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
-      return await this.orderRepository.adaptResponse(updatedOrder);
+      return await this.adaptResponse(updatedOrder);
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err instanceof HttpException
@@ -368,7 +407,70 @@ export class OrderService {
   }
 
   async cancelOrder(id: string): Promise<Order> {
-    return await this.orderRepository.cancelOrder(id);
+    if (!id || !isUUID(id)) {
+      throw new BadRequestException('Invalid or missing order ID.');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const order = await queryRunner.manager.findOne(Order, {
+        where: { id, isActive: true },
+        relations: [
+          'orderDetails',
+          'table',
+          'table.room',
+          'orderDetails.product',
+        ],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException('Closed orders cannot be cancelled.');
+      }
+
+      const previousTableId = order.table?.id;
+      if (order.table) {
+        order.table = null;
+      }
+
+      order.state = OrderState.CANCELLED;
+
+      const updatedOrder = await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
+
+      // Cambiar estado de mesa (fuera de la transacción)
+      if (previousTableId) {
+        try {
+          await this.tableService.updateTableState(
+            previousTableId,
+            TableState.AVAILABLE,
+          );
+        } catch (err) {
+          this.logger.warn(
+            `⚠️ La orden ${id} fue cancelada, pero no se pudo actualizar el estado de la mesa ${previousTableId}: ${err.message}`,
+          );
+        }
+      }
+
+      return updatedOrder;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        'Error cancelling the order.',
+        error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // ----------------- respuesta adaptada
