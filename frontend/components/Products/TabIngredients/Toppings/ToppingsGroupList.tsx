@@ -10,7 +10,6 @@ import {
   Button,
   Grid,
   CardActions,
-  Chip,
   Tooltip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -19,6 +18,7 @@ import Swal from "sweetalert2";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ScrollableChips from "@/components/Utils/ScrollableChips";
+import { NodeNextRequest } from "next/dist/server/base-http/node";
 
 const ToppingsGroupList = () => {
   const [toppingsGroups, setToppingsGroups] = useState<IToppingsGroup[]>([]);
@@ -116,9 +116,82 @@ const ToppingsGroupList = () => {
       {loading ? (
         <LoadingLottie />
       ) : (
-        <Grid container spacing={2} display="flex" justifyContent="center">
+        // <Grid container spacing={2} display="flex" justifyContent="center">
+        //   {toppingsGroups.map((group) => (
+        //     <Grid item xs={12} sm={6} md={4} key={group.id} >
+        //       <Card
+        //         sx={{
+        //           width: "380px",
+        //           minHeight: 200,
+        //           display: "flex",
+        //           flexDirection: "column",
+        //           justifyContent: "space-between",
+        //           overflow: "visible",
+        //         }}
+        //       >
+        // <CardContent>
+        //   <Typography variant="h6">
+        //     {group.name.toLocaleUpperCase()}
+        //   </Typography>
+        //   <ScrollableChips toppings={group.toppings} />
+        // </CardContent>
+
+        // <CardActions sx={{ justifyContent: "space-around" }}>
+        //   <Tooltip
+        //     title="Eliminar"
+        //     enterDelay={150}
+        //   >
+        //     <Button
+        //       size="small"
+        //       startIcon={<DeleteIcon />}
+        //       sx={{
+        //         color: "gray",
+        //         "&:hover": {
+        //           color: "red",
+        //         },
+        //       }}
+        //       onClick={() => handleDeleteGroup(group.id)}>
+        //     </Button>
+        //   </Tooltip>
+        //   <Tooltip title="Editar" enterDelay={150}>
+        //     <Button
+        //       size="small"
+        //       startIcon={<EditIcon />}
+        //       sx={{
+        //         "&:hover": {
+        //           fontWeight: "bold",
+        //           color: "secondary.main",
+        //         },
+        //       }}
+        //       onClick={() => handleOpenEdit(group)}>
+        //     </Button>
+        //   </Tooltip>
+        // </CardActions>
+        //       </Card>
+        //     </Grid>
+        //   ))}
+        // </Grid>
+
+        <Grid
+          container
+          spacing={2}
+          justifyContent={{ xs: "center", md: "flex-start" }}
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
           {toppingsGroups.map((group) => (
-            <Grid item xs={12} sm={6} md={6} key={group.id} >
+            <Grid
+              item
+              key={group.id}
+              sx={{
+                flex: "0 1 380px",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <Card
                 sx={{
                   width: "380px",
@@ -127,6 +200,8 @@ const ToppingsGroupList = () => {
                   flexDirection: "column",
                   justifyContent: "space-between",
                   overflow: "visible",
+                  paddingLeft: "none",
+                  marginRight: "12px",
                 }}
               >
                 <CardContent>
@@ -171,6 +246,7 @@ const ToppingsGroupList = () => {
             </Grid>
           ))}
         </Grid>
+
       )}
 
       <FormToppingsGroup
