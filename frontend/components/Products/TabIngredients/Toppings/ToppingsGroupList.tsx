@@ -256,6 +256,7 @@ const ToppingsGroupList = () => {
         toppings={toppings}
         initialData={groupToEdit}
         isLoading={false}
+        toppingsGroups={toppingsGroups}
       />
     </Box>
   );
