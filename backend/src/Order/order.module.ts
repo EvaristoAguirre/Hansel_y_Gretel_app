@@ -14,14 +14,14 @@ import { NotificationService } from './notification.service';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
-import { StockService } from 'src/Stock/stock.service';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { PrinterService } from 'src/Printer/printer.service';
-import { TableService } from 'src/Table/table.service';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
 import { OrderDetailToppings } from './order_details_toppings.entity';
-import { DailyCashService } from 'src/daily-cash/daily-cash.service';
+
+import { StockModule } from 'src/Stock/stock.module';
+import { TableModule } from 'src/Table/table.module';
+import { PrinterModule } from 'src/Printer/printer.module';
 
 @Module({
   imports: [
@@ -40,6 +40,9 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
     UserModule,
     UnitOfMeasurenModule,
     DailyCashModule,
+    StockModule,
+    TableModule,
+    PrinterModule,
   ],
   controllers: [OrderController],
   providers: [
@@ -47,10 +50,6 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
     OrderRepository,
     ArchiveService,
     NotificationService,
-    StockService,
-    PrinterService,
-    TableService,
-    DailyCashService,
   ],
 })
 export class OrderModule {}

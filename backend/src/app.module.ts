@@ -21,6 +21,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DailyCashModule } from './daily-cash/daily-cash.module';
 import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
 import { ExportModule } from './ExportPdf/export.module';
+import { CostCascadeModule } from './CostCascade/cost-cascade.module';
 
 @Module({
   imports: [
@@ -44,7 +45,7 @@ import { ExportModule } from './ExportPdf/export.module';
           database: dbConfig.database,
           autoLoadEntities: true,
           synchronize: isDev, // solo true en desarrollo
-          dropSchema: true, // nunca true salvo que lo necesites puntualmente
+          dropSchema: false, // nunca true salvo que lo necesites puntualmente
           logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,
@@ -67,6 +68,7 @@ import { ExportModule } from './ExportPdf/export.module';
     DailyCashModule,
     ToppingsGroupsModule,
     ExportModule,
+    CostCascadeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

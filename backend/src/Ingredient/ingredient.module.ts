@@ -5,32 +5,21 @@ import { IngredientRepository } from './ingredient.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Ingredient } from './ingredient.entity';
 import { UserModule } from 'src/User/user.module';
-import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
-import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
-import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
+
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
+import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Ingredient,
-      UnitConversion,
-      UnitOfMeasure,
-      // ProductAvailableToppingGroup,
-    ]),
+    TypeOrmModule.forFeature([Ingredient, UnitConversion, UnitOfMeasure]),
     UserModule,
     CostCascadeModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [IngredientController],
-  providers: [
-    IngredientService,
-    IngredientRepository,
-    UnitOfMeasureService,
-    UnitOfMeasureRepository,
-    CostCascadeService,
-  ],
+  providers: [IngredientService, IngredientRepository],
   exports: [IngredientService],
 })
 export class IngredientModule {}

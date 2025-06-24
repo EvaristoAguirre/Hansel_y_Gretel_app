@@ -15,6 +15,7 @@ import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ProductModule } from 'src/Product/product.module';
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
+import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { IngredientModule } from 'src/Ingredient/ingredient.module';
     forwardRef(() => ProductModule),
     UserModule,
     IngredientModule,
+    UnitOfMeasurenModule,
   ],
   controllers: [StockController],
   providers: [StockRepository, StockService],
