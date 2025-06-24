@@ -46,24 +46,43 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       return;
     }
 
-    if (selectedOrderByTable && selectedTable) {
-      const paidOrder = await orderToClosed(selectedOrderByTable, token, method);
-      const closedTable = await editTable(
-        { ...selectedTable, state: TableState.CLOSED },
-        token
-      );
-      if (paidOrder) {
-        setSelectedOrderByTable(paidOrder);
-        updateOrder(paidOrder);
-        Swal.fire("Orden pagada", "Registro actualizado correctamente.", "success");
-      } else if (closedTable) {
-        setSelectedTable(closedTable);
-      } else {
-        Swal.fire("Error", "No se pudo pagar la orden.", "error");
+    try {
+      if (selectedOrderByTable && selectedTable) {
+        const paidOrder = await orderToClosed(
+          selectedOrderByTable,
+          token,
+          method
+        );
+
+        const closedTable = await editTable(
+          { ...selectedTable, state: TableState.CLOSED },
+          token
+        );
+
+        if (paidOrder) {
+          setSelectedOrderByTable(paidOrder);
+          updateOrder(paidOrder);
+        }
+
+        if (closedTable) {
+          setSelectedTable(closedTable);
+        }
+
+        updateTable(closedTable);
       }
-      updateTable(closedTable);
+    } catch (error: any) {
+      if (error.statusCode === 409) {
+        Swal.fire({
+          icon: "info",
+          title: "Caja no abierta",
+          text: "Debes abrir una caja diaria antes de registrar un pago.",
+        });
+      } else {
+        Swal.fire("Error", error.message || "Error al cerrar la orden", "error");
+      }
     }
   };
+
 
   const handleTableAvailable = async (
     selectedTable: ITable,
