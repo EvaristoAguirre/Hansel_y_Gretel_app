@@ -67,6 +67,30 @@ export class ProductService {
     }
   }
 
+  async getProductByIdToAnotherService(id: string): Promise<Product> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const product =
+        await this.productRepository.getProductByIdToAnotherService(id);
+      return product;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the product',
+        error.message,
+      );
+    }
+  }
+
   async getProductByCode(code: number) {
     return await this.productRepository.getProductByCode(code);
   }
@@ -404,5 +428,27 @@ export class ProductService {
 
   async getProductsWithStock(): Promise<Product[]> {
     return this.productRepository.getProductsWithStock();
+  }
+
+  async getPromotionProductsToAnotherService(promotionId: string) {
+    if (!promotionId) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(promotionId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      return await this.getPromotionProductsToAnotherService(promotionId);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error fetching the product',
+        error.message,
+      );
+    }
   }
 }

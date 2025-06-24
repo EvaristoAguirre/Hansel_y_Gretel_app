@@ -7,7 +7,6 @@ import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from './promotionProducts.entity';
-import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
@@ -17,7 +16,6 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
 import { StockModule } from 'src/Stock/stock.module';
 import { ProductRepository } from './product.repository';
-import { StockService } from 'src/Stock/stock.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -30,19 +28,15 @@ import { StockService } from 'src/Stock/stock.service';
       Ingredient,
       ProductAvailableToppingGroup,
     ]),
-    forwardRef(() => CategoryModule),
-    forwardRef(() => IngredientModule),
+    CategoryModule,
+    IngredientModule,
     forwardRef(() => StockModule),
-    forwardRef(() => UnitOfMeasurenModule),
-    forwardRef(() => UserModule),
+    UnitOfMeasurenModule,
+    UserModule,
+    StockModule,
   ],
   controllers: [ProductController],
-  providers: [
-    ProductService,
-    ProductRepository,
-    StockService,
-    UnitOfMeasureService,
-  ],
+  providers: [ProductService, ProductRepository],
   exports: [ProductService],
 })
 export class ProductModule {}

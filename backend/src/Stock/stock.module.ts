@@ -5,19 +5,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Stock } from './stock.entity';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { IngredientRepository } from 'src/Ingredient/ingredient.repository';
 import { StockRepository } from './stock.repository';
-import { CategoryRepository } from 'src/Category/category.repository';
 import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
 import { UserModule } from 'src/User/user.module';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { IngredientService } from 'src/Ingredient/ingredient.service';
-import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
-import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.repository';
+import { ProductModule } from 'src/Product/product.module';
+import { IngredientModule } from 'src/Ingredient/ingredient.module';
 
 @Module({
   imports: [
@@ -32,18 +29,12 @@ import { UnitOfMeasureRepository } from 'src/UnitOfMeasure/unitOfMeasure.reposit
       UnitOfMeasure,
     ]),
     forwardRef(() => CategoryModule),
+    forwardRef(() => ProductModule),
     UserModule,
+    IngredientModule,
   ],
   controllers: [StockController],
-  providers: [
-    StockService,
-    StockRepository,
-    IngredientRepository,
-    CategoryRepository,
-    IngredientService,
-    UnitOfMeasureService,
-    UnitOfMeasureRepository,
-  ],
+  providers: [StockRepository, StockService],
   exports: [StockService],
 })
 export class StockModule {}

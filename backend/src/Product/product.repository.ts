@@ -30,6 +30,8 @@ export class ProductRepository {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(PromotionProduct)
+    private readonly promotionProductRepository: Repository<PromotionProduct>,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
   ) {}
@@ -64,6 +66,23 @@ export class ProductRepository {
 
   async getProductById(id: string): Promise<Product> {
     const product = await this.getProductWithRelations(id, 'product');
+    if (!product) {
+      throw new NotFoundException(`Product not found with  id: ${id}`);
+    }
+    return product;
+  }
+  async getProductByIdToAnotherService(id: string): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: [
+        'stock',
+        'stock.unitOfMeasure',
+        'productIngredients',
+        'productIngredients.ingredient',
+        'productIngredients.unitOfMeasure',
+        'promotionDetails',
+      ],
+    });
     if (!product) {
       throw new NotFoundException(`Product not found with  id: ${id}`);
     }
@@ -1254,5 +1273,13 @@ export class ProductRepository {
         'stock.unitOfMeasure',
       ],
     });
+  }
+
+  async getPromotionProductsToAnotherService(promotionId: string) {
+    const promotionProducts = await this.promotionProductRepository.find({
+      where: { promotion: { id: promotionId } },
+      relations: ['product'],
+    });
+    return promotionProducts;
   }
 }

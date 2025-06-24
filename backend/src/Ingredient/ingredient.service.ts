@@ -118,6 +118,35 @@ export class IngredientService {
     }
   }
 
+  async getIngredientByIdToAnotherService(id: string): Promise<Ingredient> {
+    if (!id) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const ingredient = await this.ingredientRepo.findOne({
+        where: { id, isActive: true },
+        relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
+      });
+      if (!ingredient) {
+        throw new NotFoundException(`Ingredient with ID: ${id} not found`);
+      }
+
+      return ingredient;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        'Error fetching the ingredient by ID',
+        error.message,
+      );
+    }
+  }
+
   async getIngredientByName(name: string): Promise<Ingredient> {
     if (!name || name.trim().length === 0) {
       throw new BadRequestException('Name parameter is required');
