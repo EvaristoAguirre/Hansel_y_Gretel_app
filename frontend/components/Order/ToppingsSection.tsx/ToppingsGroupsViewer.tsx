@@ -4,11 +4,10 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
+  Typography,
 } from "@mui/material";
 import { ITopping } from "@/components/Interfaces/IToppings";
-import {
-  IProductToppingsGroupResponse,
-} from "@/components/Interfaces/IProducts";
+import { IProductToppingsGroupResponse } from "@/components/Interfaces/IProducts";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { useOrderContext } from "@/app/context/order.context";
 
@@ -25,30 +24,24 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
 }) => {
   const [visibleGroups, setVisibleGroups] = useState<{ [id: string]: boolean }>({});
   const [loadedToppings, setLoadedToppings] = useState<{ [id: string]: ITopping[] }>({});
-  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [visibleUnits, setVisibleUnits] = useState<{ [unitIndex: number]: boolean }>({});
+
 
   const {
-    handleAddTopping,
-    selectedProducts
+    selectedProducts,
+    selectedToppingsByProduct,
+    updateToppingForUnit
   } = useOrderContext();
 
-  const [initialized, setInitialized] = useState(false);
+  const product = selectedProducts.find((p) => p.productId === productId);
+  const quantity = product?.quantity || 0;
 
   useEffect(() => {
-    if (initialized) return;
-    const product = selectedProducts.find(p => p.productId === productId);
-    if (product?.toppingsIds) {
-      setSelectedToppings(product.toppingsIds);
+    if (product && !selectedToppingsByProduct[productId]) {
+      const emptyArray = Array.from({ length: product.quantity }, () => []);
+      updateToppingForUnit(productId, 0, emptyArray[0]);
     }
-    setInitialized(true);
-  }, [initialized, selectedProducts, productId]);
-
-
-  // Enviar al contexto los toppings seleccionados
-  useEffect(() => {
-    handleAddTopping(productId, Object.values(selectedToppings).flat());
-
-  }, [selectedToppings]);
+  }, [product]);
 
   const handleToggleGroup = async (groupId: string) => {
     setVisibleGroups((prev) => ({
@@ -65,6 +58,14 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     }
   };
 
+  const toggleUnitVisibility = (index: number) => {
+    setVisibleUnits((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
+
   return (
     <div
       style={{
@@ -75,76 +76,110 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
         width: "100%",
       }}
     >
-      {groups.map((group) => (
-        <div
-          key={group.id}
-          style={{
-            flex: "1 1 calc(50% - 1rem)",
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#856d5e52",
-            opacity: 0.8,
-            borderRadius: "8px",
-            padding: "0.5rem",
-            border: "1px solid #856D5E",
-          }}
-        >
-          <Chip
-            label={capitalizeFirstLetter(group.name)}
-            onClick={() => handleToggleGroup(group.id)}
-            style={{
-              marginBottom: "0.25rem",
-              border: "1px solid #856D5E",
-              fontWeight: 500,
-              alignSelf: "flex-start",
-              cursor: "pointer",
-              backgroundColor: "#ffffffa8",
-            }}
-          />
-
-          {visibleGroups[group.id] && loadedToppings[group.id] && (
-            <div
-              style={{
-                paddingLeft: "0.5rem",
-                marginTop: "0.25rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.15rem",
+      {Array.from({ length: quantity }).map((_, unitIndex) => (
+        <div key={unitIndex} style={{ flex: "1 1 calc(50% - 1rem)" }}>
+          {quantity > 1 && (
+            <Typography
+              variant="subtitle1"
+              onClick={() => toggleUnitVisibility(unitIndex)}
+              sx={{
+                // mt: 1,
+                fontWeight: 600,
+                color: "#856D5E",
+                backgroundColor: "#f1eae5",
+                padding: "0.3rem 0.6rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                userSelect: "none",
               }}
             >
-              <div>
-                <Divider style={{ width: "100%" }} />
-                Máxima selección: {group.settings.maxSelection}
-              </div>
+              Unidad {unitIndex + 1}
+            </Typography>
+          )}
 
-              {loadedToppings[group.id].map((topping) => (
-                <FormControlLabel
-                  key={topping.id}
-                  control={
-                    <Checkbox
-                      checked={selectedToppings.includes(topping.id)}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
+          {/* Mostramos grupos de toppings si: 
+        - hay una sola unidad
+        - o la unidad está visible en el toggle */}
+          {(quantity === 1 || visibleUnits[unitIndex]) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "0.5rem" }}>
+              {groups.map((group) => (
+                <div
+                  key={`${group.id}-${unitIndex}`}
+                  style={{
+                    flex: "1 1 calc(50% - 1rem)",
+                    display: "flex",
+                    flexDirection: "column",
+                    backgroundColor: "#856d5e52",
+                    opacity: 0.8,
+                    borderRadius: "8px",
+                    padding: "0.5rem",
+                    border: "1px solid #856D5E",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  <Chip
+                    label={capitalizeFirstLetter(group.name)}
+                    onClick={() => handleToggleGroup(group.id)}
+                    style={{
+                      marginBottom: "0.25rem",
+                      border: "1px solid #856D5E",
+                      fontWeight: 500,
+                      alignSelf: "flex-start",
+                      cursor: "pointer",
+                      backgroundColor: "#ffffffa8",
+                    }}
+                  />
 
-                        setSelectedToppings((prev) => {
-                          if (isChecked) {
-                            if (prev.length >= group.settings.maxSelection) return prev;
-                            return [...prev, topping.id];
-                          } else {
-                            return prev.filter((id) => id !== topping.id);
-                          }
-                        });
+                  {visibleGroups[group.id] && loadedToppings[group.id] && (
+                    <div
+                      style={{
+                        paddingLeft: "0.5rem",
+                        marginTop: "0.25rem",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.15rem",
                       }}
-                    />
-                  }
-                  label={capitalizeFirstLetter(topping.name)}
-                  sx={{ height: "25%" }}
-                />
+                    >
+                      <div>
+                        <Divider style={{ width: "100%" }} />
+                        Máxima selección: {group.settings.maxSelection}
+                      </div>
+
+                      {loadedToppings[group.id].map((topping) => {
+                        const selectedForUnit = selectedToppingsByProduct[productId]?.[unitIndex] || [];
+                        const isChecked = selectedForUnit.includes(topping.id);
+
+                        return (
+                          <FormControlLabel
+                            key={topping.id}
+                            control={
+                              <Checkbox
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const updated = e.target.checked
+                                    ? selectedForUnit.length < group.settings.maxSelection
+                                      ? [...selectedForUnit, topping.id]
+                                      : selectedForUnit
+                                    : selectedForUnit.filter((id) => id !== topping.id);
+
+                                  updateToppingForUnit(productId, unitIndex, updated);
+                                }}
+                              />
+                            }
+                            label={capitalizeFirstLetter(topping.name)}
+                            sx={{ height: "25%" }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </div>
       ))}
+
     </div>
   );
 };

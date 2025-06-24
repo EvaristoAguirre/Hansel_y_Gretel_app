@@ -136,11 +136,12 @@ export interface ProductsProps {
 
 export interface SelectedProductsI {
   productId: string;
-  productName: string;
+  productName?: string;
   quantity: number;
-  unitaryPrice: number | null;
+  unitaryPrice?: number | null;
   commentOfProduct?: string | null;
   toppingsIds?: string[];
+  toppingsPerUnit?: string[][]
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
 };

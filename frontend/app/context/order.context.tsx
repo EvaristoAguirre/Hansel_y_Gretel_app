@@ -37,7 +37,7 @@ type OrderContextType = {
   addHighlightedProduct: (id: string) => void;
   removeHighlightedProduct: (id: string) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
-  increaseProductNumber: (productId: string) => void;
+  increaseProductNumber: (product: SelectedProductsI) => void;
   decreaseProductNumber: (productId: string) => void;
   productComment: (id: string, comment: string) => void;
   clearSelectedProducts: () => void;
@@ -59,6 +59,12 @@ type OrderContextType = {
   fetchOrderBySelectedTable: () => void;
   handleCancelOrder: (orderId: string) => Promise<void>;
   handleAddTopping: (productId: string, toppingIds: string[]) => Promise<void>;
+  selectedToppingsByProduct: { [productId: string]: string[][] };
+  updateToppingForUnit: (
+    productId: string,
+    unitIndex: number,
+    toppingIds: string[]
+  ) => void;
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -85,6 +91,8 @@ const OrderContext = createContext<OrderContextType>({
   fetchOrderBySelectedTable: () => { },
   handleCancelOrder: async () => { },
   handleAddTopping: async () => { },
+  selectedToppingsByProduct: {},
+  updateToppingForUnit: () => { },
 });
 
 export const useOrderContext = () => {
@@ -104,6 +112,11 @@ const OrderProvider = ({
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
     []
   );
+
+  const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
+    [productId: string]: string[][];
+  }>({});
+
   const [confirmedProducts, setConfirmedProducts] = useState<
     SelectedProductsI[]
   >([]);
@@ -134,6 +147,7 @@ const OrderProvider = ({
     setSelectedProducts([]);
     setConfirmedProducts([]);
     setSelectedOrderByTable(null);
+    setSelectedToppingsByProduct({});
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
@@ -192,10 +206,9 @@ const OrderProvider = ({
       (p) => p.productId === product.id
     );
 
+
     const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
-
     const stockResponse = await checkStockAvailability(product.id, newQuantity);
-
     if (!stockResponse?.available) {
       Swal.fire({
         icon: "error",
@@ -205,12 +218,13 @@ const OrderProvider = ({
       return;
     }
 
+
     if (foundProduct) {
       const updatedDetails = selectedProducts.map((p) =>
         p.productId === product.id ? { ...p, quantity: newQuantity } : p
       );
       setSelectedProducts(updatedDetails);
-    } else {
+    } else if (!foundProduct || product.allowsToppings) {
       const newProduct = {
         productId: product.id,
         quantity: 1,
@@ -238,6 +252,25 @@ const OrderProvider = ({
     );
   };
 
+  const updateToppingForUnit = (
+    productId: string,
+    unitIndex: number,
+    toppingIds: string[]
+  ) => {
+    setSelectedToppingsByProduct((prev) => {
+      const current = prev[productId] || [];
+      const updated = [...current];
+      updated[unitIndex] = toppingIds;
+      return {
+        ...prev,
+        [productId]: updated,
+      };
+    });
+
+
+  };
+
+
 
   const addHighlightedProduct = (id: string) => {
     setHighlightedProducts((prev) => new Set(prev).add(id));
@@ -260,12 +293,12 @@ const OrderProvider = ({
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
   };
 
-  const increaseProductNumber = async (id: string) => {
-    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+  const increaseProductNumber = async (product: SelectedProductsI) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === product.productId);
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity + 1;
       // Verifica el stock antes de actualizar
-      const stockResponse = await checkStockAvailability(id, newQuantity);
+      const stockResponse = await checkStockAvailability(product.productId, newQuantity);
       if (!stockResponse?.available) {
         Swal.fire({
           icon: "error",
@@ -276,10 +309,11 @@ const OrderProvider = ({
       }
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === id ? { ...p, quantity: newQuantity } : p
+          p.productId === product.productId ? { ...p, quantity: newQuantity } : p
         )
       );
     }
+
   };
 
   const decreaseProductNumber = async (id: string) => {
@@ -488,9 +522,14 @@ const OrderProvider = ({
 
 
   useEffect(() => {
-    console.log("selectedProducts🟢👀🟢👀🟢👀🟢👀🟢👀🟢👀🟢👀", selectedProducts);
+    console.log("selectedProducts🟢👀🟢👀", selectedProducts);
+    console.log("🌈 hay orden sleccionada'''???", selectedOrderByTable);
+    console.log("🔢🔢🔢🔢🔢 Número de arrays:", selectedToppingsByProduct.length);
+    console.log("🌼 Toppings actualizados para el producto:", selectedToppingsByProduct);
 
-  }, [selectedProducts]);
+
+
+  }, [selectedProducts, selectedOrderByTable, selectedToppingsByProduct]);
 
   return (
     <OrderContext.Provider
@@ -517,7 +556,10 @@ const OrderProvider = ({
         handleResetSelectedOrder,
         fetchOrderBySelectedTable,
         handleCancelOrder,
-        handleAddTopping
+        handleAddTopping,
+        selectedToppingsByProduct,
+        updateToppingForUnit,
+
       }}
     >
       {children}

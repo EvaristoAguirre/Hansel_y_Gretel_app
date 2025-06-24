@@ -77,7 +77,7 @@ const OrderEditor = ({
     handleEditOrder,
     highlightedProducts,
     removeHighlightedProduct,
-    handleAddTopping
+    selectedToppingsByProduct,
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -94,13 +94,23 @@ const OrderEditor = ({
     token && fetchCategories(token).then((categories = []) => setCategories(categories));
   }, []);
 
+
   const confirmarPedido: () => Promise<void> = async () => {
+    const productDetails = selectedProducts.map((product) => ({
+      productId: product.productId,
+      quantity: product.quantity,
+      toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? []
+    }));
+
+    console.log("📦 Body final para back", productDetails);
+
+
     if (selectedOrderByTable) {
       setLoading(true);
       try {
         await handleEditOrder(
           selectedOrderByTable.id,
-          selectedProducts,
+          productDetails,
           selectedOrderByTable.numberCustomers,
           selectedOrderByTable.comment,
           isPriority
@@ -307,7 +317,7 @@ const OrderEditor = ({
                         >
                           {item.quantity}
                         </Typography>
-                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => increaseProductNumber(item.productId)}>
+                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => increaseProductNumber(item)}>
                           <Add fontSize="small" color="success" />
                         </IconButton>
                       </div>
@@ -323,7 +333,7 @@ const OrderEditor = ({
                             overflow: "hidden",
                             maxWidth: "15rem",
                           }}
-                          primary={capitalizeFirstLetter(item.productName)}
+                          primary={capitalizeFirstLetter(item.productName ?? "")}
                         />
                       </Tooltip>
 
@@ -339,7 +349,7 @@ const OrderEditor = ({
                               size="small"
                               onClick={() => {
                                 handleShowToppings(item.productId);
-                                removeHighlightedProduct(item.productId);  // <--- usás la de contexto
+                                removeHighlightedProduct(item.productId);
                               }}
                               sx={{
                                 "@keyframes heartbeat": {
@@ -399,6 +409,24 @@ const OrderEditor = ({
                     {/* ::::::::::::::::::::::::::::: */}
                     {/* AGREGADOS */}
                     {visibleToppings[item.productId] && (
+                      // <ToppingsGroupsViewer
+                      //   groups={item.availableToppingGroups ?? []}
+                      //   fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                      //   productId={item.productId}
+                      // />
+                      // [...Array(item.quantity)].map((_, i) => (
+                      //   <div key={i} style={{ marginBottom: "0.5rem", borderBottom: "1px dashed #856D5E" }}>
+                      //     <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#856D5E" }}>
+                      //       Unidad #{i + 1}
+                      //     </span>
+                      //     <ToppingsGroupsViewer
+                      //       groups={item.availableToppingGroups ?? []}
+                      //       fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                      //       productId={item.productId}
+                      //       unitIndex={i}
+                      //     />
+                      //   </div>
+                      // ))
                       <ToppingsGroupsViewer
                         groups={item.availableToppingGroups ?? []}
                         fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
