@@ -9,8 +9,6 @@ import {
   Tooltip,
   FormControlLabel,
   Switch,
-  Chip,
-  Checkbox,
   Divider,
 } from "@mui/material";
 import { Add, Remove, Delete, Comment, AutoAwesome, SpaceBar } from "@mui/icons-material";
@@ -28,9 +26,6 @@ import { searchProducts } from "@/api/products";
 import AutoCompleteProduct from "../Utils/Autocomplete";
 import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
-import { ToppingsGroup } from '../../../backend/src/ToppingsGroup/toppings-group.entity';
-import { ITopping, IToppingsGroup } from '../Interfaces/IToppings';
-import { ProductToppingsGroupDto } from '../Interfaces/IProducts';
 import { fetchToppingsGroupById } from "@/api/topping";
 import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
@@ -51,9 +46,7 @@ interface Props {
 }
 const OrderEditor = ({
   handleNextStep,
-  handleBackStep,
   handleCompleteStep,
-  handleReset,
 }: Props) => {
   const { productosDisponibles, setProductosDisponibles } = useOrder();
   const { fetchAndSetProducts, products } = useProducts();
@@ -86,7 +79,6 @@ const OrderEditor = ({
   const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
   const [categories, setCategories] = useState<ICategory[]>([]);
-  // const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
 
@@ -287,9 +279,7 @@ const OrderEditor = ({
                       flexDirection: "column",
                       alignItems: "stretch",
                       width: "100%",
-                      borderBottom: "1px solid #856D5E",
                       padding: "3px",
-
                     }}
                   >
                     {/* Línea principal de datos del producto */}
@@ -409,30 +399,13 @@ const OrderEditor = ({
                     {/* ::::::::::::::::::::::::::::: */}
                     {/* AGREGADOS */}
                     {visibleToppings[item.productId] && (
-                      // <ToppingsGroupsViewer
-                      //   groups={item.availableToppingGroups ?? []}
-                      //   fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
-                      //   productId={item.productId}
-                      // />
-                      // [...Array(item.quantity)].map((_, i) => (
-                      //   <div key={i} style={{ marginBottom: "0.5rem", borderBottom: "1px dashed #856D5E" }}>
-                      //     <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#856D5E" }}>
-                      //       Unidad #{i + 1}
-                      //     </span>
-                      //     <ToppingsGroupsViewer
-                      //       groups={item.availableToppingGroups ?? []}
-                      //       fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
-                      //       productId={item.productId}
-                      //       unitIndex={i}
-                      //     />
-                      //   </div>
-                      // ))
                       <ToppingsGroupsViewer
                         groups={item.availableToppingGroups ?? []}
                         fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
                         productId={item.productId}
                       />
                     )}
+                    <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
 
                   </ListItem>
                 ))}

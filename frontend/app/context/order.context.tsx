@@ -11,7 +11,6 @@ import Swal from "sweetalert2";
 import {
   ICheckStock,
   ProductResponse,
-  ProductToppingsGroupDto,
   SelectedProductsI,
 } from "../../components/Interfaces/IProducts";
 import { useOrderStore } from "../../components/Order/useOrderStore";
@@ -23,7 +22,6 @@ import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
 import { ITable } from "@/components/Interfaces/ITable";
 import { TableState } from "@/components/Enums/table";
-import { AvailableToppingGroupDto } from '../../../backend/src/DTOs/productResponse.dto';
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -269,8 +267,6 @@ const OrderProvider = ({
 
 
   };
-
-
 
   const addHighlightedProduct = (id: string) => {
     setHighlightedProducts((prev) => new Set(prev).add(id));
@@ -518,18 +514,6 @@ const OrderProvider = ({
       }
     }
   };
-
-
-
-  useEffect(() => {
-    console.log("selectedProducts🟢👀🟢👀", selectedProducts);
-    console.log("🌈 hay orden sleccionada'''???", selectedOrderByTable);
-    console.log("🔢🔢🔢🔢🔢 Número de arrays:", selectedToppingsByProduct.length);
-    console.log("🌼 Toppings actualizados para el producto:", selectedToppingsByProduct);
-
-
-
-  }, [selectedProducts, selectedOrderByTable, selectedToppingsByProduct]);
 
   return (
     <OrderContext.Provider

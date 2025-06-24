@@ -5,17 +5,6 @@ import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
 import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 
-// interface IProduct {
-//   id: string;
-//   code: number | null;
-//   name: string;
-//   description: string;
-//   type: TypeProduct | null;
-//   price: number | null;
-//   cost: number | null;
-//   isActive?: boolean;
-// }
-
 interface IProduct {
   allowsToppings: boolean;
   code: number | null;

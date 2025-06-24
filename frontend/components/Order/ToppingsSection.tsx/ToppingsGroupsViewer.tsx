@@ -83,11 +83,10 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
               variant="subtitle1"
               onClick={() => toggleUnitVisibility(unitIndex)}
               sx={{
-                // mt: 1,
                 fontWeight: 600,
                 color: "#856D5E",
                 backgroundColor: "#f1eae5",
-                padding: "0.3rem 0.6rem",
+                padding: "0.1rem 0.6rem",
                 borderRadius: "6px",
                 cursor: "pointer",
                 userSelect: "none",
