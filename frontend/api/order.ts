@@ -48,8 +48,9 @@ export const orderToClosed = async (order: IOrderDetails, token: string, methodO
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Error:", errorData);
-    throw new Error(`Error: ${response.status} ${response.statusText}`);
+    const error = new Error(errorData.message || 'Error al cerrar la orden') as any;
+    error.statusCode = errorData.statusCode || response.status;
+    throw error;
   }
   return await response.json();
 };
