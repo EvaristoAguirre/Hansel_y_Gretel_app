@@ -119,49 +119,84 @@ export class OrderRepository {
     toppingDetails: OrderDetailToppings[];
     subtotal: number;
   }> {
+    const quantity = detailData.quantity;
+    const unitaryPrice = product.price;
+    const subtotal = unitaryPrice * quantity;
+
     const detail = qr.manager.create(OrderDetails, {
-      quantity: detailData.quantity,
-      unitaryPrice: product.price,
-      subtotal: product.price * detailData.quantity,
+      quantity,
+      unitaryPrice,
+      subtotal,
       product,
       order,
     });
 
     const toppingDetails: OrderDetailToppings[] = [];
 
-    if (product.allowsToppings && detailData.toppingsIds?.length) {
-      for (const toppingId of detailData.toppingsIds) {
-        const topping = await qr.manager.findOne(Ingredient, {
-          where: { id: toppingId, isActive: true },
-          relations: ['toppingsGroups'],
-        });
+    if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
+      if (detailData.toppingsPerUnit.length !== quantity) {
+        throw new BadRequestException(
+          `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
+        );
+      }
 
-        const toppingGroup = topping.toppingsGroups?.[0];
+      for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+        const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
 
-        const config = await qr.manager.findOne(ProductAvailableToppingGroup, {
-          where: {
-            product: { id: product.id },
-            toppingGroup: { id: toppingGroup.id },
-          },
-          relations: ['unitOfMeasure'],
-        });
+        for (const toppingId of toppingsForUnit) {
+          const topping = await qr.manager.findOne(Ingredient, {
+            where: { id: toppingId, isActive: true },
+            relations: ['toppingsGroups'],
+          });
 
-        const td = qr.manager.create(OrderDetailToppings, {
-          topping,
-          orderDetails: detail,
-          quantity: config.quantityOfTopping,
-          unitOfMeasure: config.unitOfMeasure,
-          unitOfMeasureName: config.unitOfMeasure?.name,
-        });
+          if (!topping) {
+            throw new NotFoundException(
+              `Topping con ID ${toppingId} no encontrado`,
+            );
+          }
 
-        toppingDetails.push(td);
+          const toppingGroup = topping.toppingsGroups?.[0];
+
+          if (!toppingGroup) {
+            throw new BadRequestException(
+              `El topping ${topping.name} no tiene grupo de topping asignado`,
+            );
+          }
+
+          const config = await qr.manager.findOne(
+            ProductAvailableToppingGroup,
+            {
+              where: {
+                product: { id: product.id },
+                toppingGroup: { id: toppingGroup.id },
+              },
+              relations: ['unitOfMeasure'],
+            },
+          );
+
+          if (!config) {
+            throw new BadRequestException(
+              `El producto ${product.name} no tiene configuración para el grupo de topping del ingrediente ${topping.name}`,
+            );
+          }
+
+          const td = qr.manager.create(OrderDetailToppings, {
+            topping,
+            orderDetails: detail,
+            quantity: config.quantityOfTopping,
+            unitOfMeasure: config.unitOfMeasure,
+            unitOfMeasureName: config.unitOfMeasure?.name,
+          });
+
+          toppingDetails.push(td);
+        }
       }
     }
 
     return {
       detail,
       toppingDetails,
-      subtotal: detail.subtotal,
+      subtotal,
     };
   }
 
