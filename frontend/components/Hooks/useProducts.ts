@@ -34,7 +34,8 @@ export const useProducts = () => {
     products: [],
     isActive: true,
     allowsToppings: false,
-    toppingsSettings: null
+    toppingsSettings: null,
+    availableToppingGroups: []
   });
 
   // Llamada inicial para cargar productos
@@ -159,7 +160,8 @@ export const useProducts = () => {
       products: [],
       isActive: true,
       allowsToppings: false,
-      toppingsSettings: null
+      toppingsSettings: null,
+      availableToppingGroups: []
     });
   };
 
