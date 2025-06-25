@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { Button } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import { useOrderContext } from "../../app/context/order.context";
 import { editTable } from "@/api/tables";
 import { useRoomContext } from "../../app/context/room.context";
@@ -10,6 +10,7 @@ import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
 import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
+import { checkOpenDailyCash } from "@/api/dailyCash";
 
 
 
@@ -31,12 +32,26 @@ const TableEditor = ({
   const { selectedTable, setSelectedTable } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
+  const [openDailyCash, setOpenDailyCash] = useState(false);
   const {
     handleCreateOrder,
     handleEditOrder,
     selectedProducts,
     selectedOrderByTable,
   } = useOrderContext();
+
+  const token = getAccessToken();
+
+  useEffect(() => {
+    const cashOpen = async () => {
+      const cash = token && await checkOpenDailyCash(token)
+      if (cash?.dailyCashOpenId) {
+        setOpenDailyCash(true)
+      }
+    }
+    cashOpen()
+
+  }, []);
 
   const setTableFields = useCallback(() => {
     if (selectedOrderByTable && selectedOrderByTable.comment) {
@@ -145,12 +160,18 @@ const TableEditor = ({
                 marginTop: "30px",
               }}
             >
+              {!openDailyCash && (
+                <p style={{ color: "red", textAlign: "start", fontSize: "14px" }}>
+                  *Debes abrir una caja antes de habilitar esta acción.
+                </p>
+              )}
               <Button
                 type="button"
                 fullWidth
                 color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
+                disabled={!openDailyCash}
                 onClick={() => {
                   if (cantidadPersonas === null || cantidadPersonas <= 0) {
                     Swal.fire(
