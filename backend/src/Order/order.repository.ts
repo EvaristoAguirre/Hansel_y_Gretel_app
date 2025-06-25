@@ -20,9 +20,11 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { OrderDetailToppings } from './order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class OrderRepository {
+  private readonly logger = new Logger(OrderRepository.name);
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -119,10 +121,17 @@ export class OrderRepository {
     toppingDetails: OrderDetailToppings[];
     subtotal: number;
   }> {
+    this.logger.log('adentro del crear order con o sin topp....');
+    this.logger.log('orden....', order);
+    console.log(order);
+    this.logger.log('producto....', product);
+    console.log(product);
+    this.logger.log('product detail....', detailData);
+    console.log(detailData);
     const quantity = detailData.quantity;
     const unitaryPrice = product.price;
     const subtotal = unitaryPrice * quantity;
-
+    console.log(quantity, unitaryPrice, subtotal);
     const detail = qr.manager.create(OrderDetails, {
       quantity,
       unitaryPrice,
@@ -130,7 +139,8 @@ export class OrderRepository {
       product,
       order,
     });
-
+    this.logger.log('detalle creado....', detail);
+    console.log('detalle creaddoooo........', detail);
     const toppingDetails: OrderDetailToppings[] = [];
 
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
