@@ -1,5 +1,7 @@
 import { Box, Grid, Typography } from "@mui/material";
 import AnnualSummary from "./ AnnualSummary";
+import DailyLineChart from "./grafics/DailyLineChart";
+import DailyProfitChart from "./grafics/DailyProfitChart";
 import MonthlySummary from "./MonthlySummary";
 
 const MetricsContainer = () => {
@@ -11,6 +13,12 @@ const MetricsContainer = () => {
         </Grid>
         <Grid item xs={12} md={6}>
           <AnnualSummary />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <DailyLineChart />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <DailyProfitChart />
         </Grid>
       </Grid>
     </Box>

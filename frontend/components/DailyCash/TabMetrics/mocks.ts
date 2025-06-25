@@ -18,15 +18,22 @@ export const mockAnnualDistribution: MonthlyDistributionItem[] = [
   { mes: "febrero", ingresos: 12000, egresos: 6000 },
 ];
 
-export const mockDaily: DailyIncomeExpense[] = [
-  { dia: "01", ingresos: 500, egresos: 200 },
-  { dia: "02", ingresos: 600, egresos: 100 },
-];
+// Simulamos ingresos y egresos del día 01 al 30
+export const mockDaily: DailyIncomeExpense[] = Array.from({ length: 30 }, (_, i) => {
+  const ingresos = Math.floor(Math.random() * 2000) + 500; // $500 a $2500
+  const egresos = Math.floor(Math.random() * 1500); // $0 a $1500
+  return {
+    dia: (i + 1).toString().padStart(2, "0"),
+    ingresos,
+    egresos,
+  };
+});
 
-export const mockDailyProfit: DailyProfit[] = [
-  { dia: "01", ganancia: 300 },
-  { dia: "02", ganancia: 500 },
-];
+// Ganancia como diferencia entre ingresos y egresos
+export const mockDailyProfit: DailyProfit[] = mockDaily.map((entry) => ({
+  dia: entry.dia,
+  ganancia: entry.ingresos - entry.egresos,
+}));
 
 export const mockTopProducts: TopProduct[] = [
   { producto: "Pizza Muzzarella", cantidadVendida: 123 },
