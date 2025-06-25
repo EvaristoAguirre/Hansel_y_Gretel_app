@@ -119,6 +119,7 @@ export class StockService {
     );
 
     this.eventEmitter.emit('stock.created', { stock: createdStock });
+
     return createdStock;
   }
 
@@ -228,7 +229,7 @@ export class StockService {
       await this.deductPromotionStock(product.id, quantity);
     }
 
-    this.eventEmitter.emit('stock.updated', { stockDeducted: true });
+    this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
 
     return 'Stock deducted successfully.';
   }

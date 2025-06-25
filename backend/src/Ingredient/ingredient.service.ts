@@ -174,7 +174,8 @@ export class IngredientService {
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
     const ingredientCreated =
       await this.ingredientRepository.createIngredient(createData);
-    await this.eventEmitter.emit('ingredient.created', {
+
+    this.eventEmitter.emit('ingredient.created', {
       ingredient: ingredientCreated,
     });
     return ingredientCreated;
@@ -275,6 +276,7 @@ export class IngredientService {
       this.eventEmitter.emit('ingredient.updated', {
         ingredient: updatedIngredient,
       });
+
       return updatedIngredient;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -305,6 +307,7 @@ export class IngredientService {
         throw new NotFoundException('Ingredient not found');
       }
       ingredient.isActive = false;
+
       const ingredientSoftDeleted = await this.ingredientRepo.save(ingredient);
 
       this.eventEmitter.emit('ingredient.deleted', {

@@ -32,7 +32,9 @@ export class CategoryService {
       throw new ConflictException('Category with the same name already exists');
     }
     const categoryCreated = this.repo.create(category);
+
     await this.repo.save(categoryCreated);
+
     if (categoryCreated) {
       this.eventEmitter.emit('category.created', {
         category: categoryCreated,
@@ -52,11 +54,16 @@ export class CategoryService {
       if (!existingCategory) {
         throw new NotFoundException('Category not found');
       }
+
       Object.assign(existingCategory, category);
+
       const updatedCategory = await this.repo.save(existingCategory);
       if (updatedCategory) {
-        this.eventEmitter.emit('category.updated', {});
+        this.eventEmitter.emit('category.updated', {
+          category: updatedCategory,
+        });
       }
+
       return updatedCategory;
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -73,10 +80,13 @@ export class CategoryService {
       if (!category) {
         throw new NotFoundException(`Category with ID ${id} not found`);
       }
+
       const categoryDeleted = await this.repo.update(id, { isActive: false });
+
       this.eventEmitter.emit('category.deleted', {
         category: categoryDeleted,
       });
+
       return 'Category successfully deleted';
     } catch (error) {
       if (error instanceof HttpException) throw error;

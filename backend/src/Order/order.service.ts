@@ -73,9 +73,11 @@ export class OrderService {
       });
 
       await this.orderRepo.save(newOrder);
+
       this.eventEmitter.emit('order.created', {
         order: newOrder,
       });
+
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
