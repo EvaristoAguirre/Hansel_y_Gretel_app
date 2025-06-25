@@ -50,10 +50,12 @@ export class DailyCashService {
           'A daily cash report for today already exists.',
         );
       }
+
       const dailyCash = this.dailyCashRepo.create(createDailyCashDto);
       dailyCash.date = today;
       dailyCash.state = DailyCashState.OPEN;
       dailyCash.initialCash = createDailyCashDto.initialCash || 0;
+
       const dailyCashOpened = await this.dailyCashRepo.save(dailyCash);
 
       this.eventEmitter.emit('dailyCash.opened', {
@@ -128,8 +130,10 @@ export class DailyCashService {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
     try {
       await this.dailyCashRepo.update(id, updateDailyCashDto);
+
       const updatedDailyCash = await this.getDailyCashById(id);
       if (!updatedDailyCash) {
         throw new NotFoundException('Daily cash report not found.');

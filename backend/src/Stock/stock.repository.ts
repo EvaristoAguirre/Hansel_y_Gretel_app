@@ -126,7 +126,13 @@ export class StockRepository {
       ingredient: ingredient ?? null,
     });
 
-    return this.stockRepository.save(stock);
+    await this.stockRepository.save(stock);
+
+    const createdStock = await this.stockRepository.findOne({
+      where: { id: stock.id },
+      relations: ['ingredient', 'product', 'unitOfMeasure'],
+    });
+    return createdStock;
   }
 
   async saveStock(stock: Stock): Promise<Stock> {
@@ -136,7 +142,7 @@ export class StockRepository {
   async findStockById(id: string): Promise<Stock | null> {
     return this.stockRepository.findOne({
       where: { id },
-      relations: ['product', 'ingredient'],
+      relations: ['product', 'ingredient', 'unitOfMeasure'],
     });
   }
 

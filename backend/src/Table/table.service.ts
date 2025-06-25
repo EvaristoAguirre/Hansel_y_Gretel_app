@@ -16,23 +16,28 @@ export class TableService {
   async createTable(table: CreateTableDto): Promise<Table> {
     const tableCreated = await this.tableRepository.createTable(table);
 
-    await this.eventEmitter.emit('table.created', { table: tableCreated });
+    this.eventEmitter.emit('table.created', { table: tableCreated });
+
     return tableCreated;
   }
 
   async updateTable(id: string, updateData: UpdateTableDto): Promise<Table> {
     const tableUpdated = await this.tableRepository.updateTable(id, updateData);
-    await this.eventEmitter.emit('table.updated', {
+
+    this.eventEmitter.emit('table.updated', {
       table: tableUpdated,
     });
+
     return tableUpdated;
   }
 
   async deleteTable(id: string): Promise<string> {
     const tableDelete = await this.tableRepository.deleteTable(id);
-    await this.eventEmitter.emit('table.deleted', {
+
+    this.eventEmitter.emit('table.deleted', {
       tableId: id,
     });
+
     return tableDelete;
   }
 

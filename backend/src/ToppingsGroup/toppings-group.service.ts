@@ -16,9 +16,11 @@ export class ToppingsGroupsService {
   ): Promise<ToppingsGroup> {
     const toppingsGroupCreated =
       await this.toppingsGroupRepository.createToppingsGroup(createData);
-    await this.eventEmitter.emit('toppingsGroup.created', {
+
+    this.eventEmitter.emit('toppingsGroup.created', {
       toppingsGroup: toppingsGroupCreated,
     });
+
     return toppingsGroupCreated;
   }
 
@@ -28,9 +30,11 @@ export class ToppingsGroupsService {
   ): Promise<ToppingsGroup> {
     const toppingsGroupUpdated =
       await this.toppingsGroupRepository.updateToppingsGroup(id, updateData);
-    await this.eventEmitter.emit('toppingsGroup.updated', {
+
+    this.eventEmitter.emit('toppingsGroup.updated', {
       toppingsGroup: toppingsGroupUpdated,
     });
+
     return toppingsGroupUpdated;
   }
 
@@ -51,9 +55,11 @@ export class ToppingsGroupsService {
   async deleteToppingsGroup(id: string): Promise<string> {
     const toppingsGroupDeleted =
       await this.toppingsGroupRepository.deleteToppingsGroup(id);
-    await this.eventEmitter.emit('toppingsGroup.deleted', {
+
+    this.eventEmitter.emit('toppingsGroup.deleted', {
       toppingsGroup: toppingsGroupDeleted,
     });
+
     return toppingsGroupDeleted;
   }
 }

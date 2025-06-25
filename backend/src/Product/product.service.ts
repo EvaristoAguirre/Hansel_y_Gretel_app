@@ -118,7 +118,7 @@ export class ProductService {
     const productCreated =
       await this.productRepository.createProduct(productToCreate);
 
-    await this.eventEmitter.emit('product.created', {
+    this.eventEmitter.emit('product.created', {
       product: productCreated,
     });
     return productCreated;
@@ -202,7 +202,6 @@ export class ProductService {
     );
   }
 
-  // ------------------------- arriba de esta linea lo que se queda -----------
   async getSimpleAndCompositeProducts(page: number, limit: number) {
     return this.productRepository.getSimpleAndCompositeProducts(page, limit);
   }
