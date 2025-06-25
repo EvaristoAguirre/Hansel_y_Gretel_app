@@ -27,7 +27,7 @@ const StockControl = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [noStock, setNoStock] = useState(false);
 
-  const { ingredients } = useIngredientsContext();
+  const { ingredientsAndToppings } = useIngredientsContext();
 
   useEffect(() => {
     connectWebSocket();
@@ -64,7 +64,7 @@ const StockControl = () => {
     idStock: product.stock?.id || null
   }));
 
-  const formattedIngredients = ingredients.map((ingredient) => ({
+  const formattedIngredients = ingredientsAndToppings.map((ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
     stock: Number(ingredient.stock?.quantityInStock) || null,
