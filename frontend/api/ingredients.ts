@@ -4,8 +4,19 @@ import { URI_INGREDIENT, URI_PRODUCT } from "@/components/URI/URI";
 
 
 
-export const fetchIngredients = async (token: string) => {
+export const fetchIngredientsAndToppings = async (token: string) => {
   const response = await fetch(`${URI_INGREDIENT}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const fetchIngredientsAll = async (token: string) => {
+  const response = await fetch(`${URI_INGREDIENT}/all`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`,

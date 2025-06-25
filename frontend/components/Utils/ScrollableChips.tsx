@@ -64,18 +64,20 @@ const ScrollableChips = ({ toppings, maxPerPage = 4 }: Props) => {
                 justifyContent: "flex-start",
               }}
             >
-              <Chip
-                label={capitalizeFirstLetter(topping.name)}
-                icon={<AutoAwesome />}
-                color="primary"
-                variant="outlined"
-                sx={{
-                  width: "100%",
-                  minWidth: 100,
-                  fontSize: "0.875rem",
-                  py: 0.5,
-                }}
-              />
+              <Tooltip title={capitalizeFirstLetter(topping.name)} placement="top" arrow>
+                <Chip
+                  label={capitalizeFirstLetter(topping.name)}
+                  icon={<AutoAwesome />}
+                  color="primary"
+                  variant="outlined"
+                  sx={{
+                    width: "100%",
+                    minWidth: 100,
+                    fontSize: "0.875rem",
+                    py: 0.5,
+                  }}
+                />
+              </Tooltip>
             </Grid>
           ))}
         </Grid>

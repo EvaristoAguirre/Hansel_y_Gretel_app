@@ -14,6 +14,7 @@ import {
   FormControlLabel,
   FormGroup,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -24,6 +25,8 @@ interface Props {
   isLoading?: boolean;
   toppings: ITopping[];
   initialData?: IToppingsGroup | null;
+  toppingsGroups: IToppingsGroup[];
+
 }
 
 interface Errors {
@@ -37,6 +40,7 @@ const FormToppingsGroup = ({
   isLoading = false,
   toppings,
   initialData = null,
+  toppingsGroups
 }: Props) => {
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -62,6 +66,10 @@ const FormToppingsGroup = ({
     setToppingsError(false);
   }, [initialData, open]);
 
+
+  const usedToppingsIds = toppingsGroups
+    .filter(group => group.id !== initialData?.id)
+    .flatMap(group => group.toppings.map(t => t.id));
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -146,16 +154,35 @@ const FormToppingsGroup = ({
             >
               <FormGroup>
                 {toppings.map((topping) => (
-                  <FormControlLabel
-                    key={topping.id}
-                    control={
-                      <Checkbox
-                        checked={selectedIds.includes(topping.id)}
-                        onChange={() => handleChange(topping.id)}
-                      />
+                  <Tooltip
+                    title={
+                      usedToppingsIds.includes(topping.id) &&
+                        !selectedIds.includes(topping.id)
+                        ? "Este topping ya está en otro grupo"
+                        : ""
                     }
-                    label={capitalizeFirstLetter(topping.name)}
-                  />
+                    arrow
+                    placement="top"
+                  >
+
+                    <FormControlLabel
+                      key={topping.id}
+                      control={
+                        <Checkbox
+                          checked={selectedIds.includes(topping.id)}
+                          onChange={() => handleChange(topping.id)}
+                          disabled={
+                            usedToppingsIds.includes(topping.id) &&
+                            !selectedIds.includes(topping.id)
+                          }
+                        />
+                      }
+                      label={capitalizeFirstLetter(topping.name)}
+                    />
+
+                  </Tooltip>
+
+
                 ))}
               </FormGroup>
             </div>

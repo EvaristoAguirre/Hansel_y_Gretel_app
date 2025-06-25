@@ -8,6 +8,10 @@ import Image from 'next/image';
 import { loginUser } from '@/api/login-register';
 import Swal from 'sweetalert2';
 import { useAuth } from '@/app/context/authContext';
+import { InputAdornment, IconButton } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -15,6 +19,9 @@ export default function RegisterForm() {
     password: '',
   });
   const { validateUserSession } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword((prev) => !prev);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -76,11 +83,24 @@ export default function RegisterForm() {
                 margin="normal"
                 label="Contraseña"
                 variant="outlined"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <Button
                 type="submit"

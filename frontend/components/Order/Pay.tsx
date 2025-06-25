@@ -3,7 +3,7 @@ import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
-import { Button, Typography } from "@mui/material";
+import { Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
@@ -12,6 +12,7 @@ import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";
 import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
+import { PaymentMethod } from "../Enums/dailyCash";
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -24,35 +25,64 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
-    setToken(token);
-  }, []);
+  const [method, setMethod] = useState<PaymentMethod | ''>('');
+
+
+  const token = getAccessToken();
+
+
+  const handleChangeMethod = (event: SelectChangeEvent<PaymentMethod>) => {
+    setMethod(event.target.value as PaymentMethod);
+  };
+
 
   const handlePayOrder = async () => {
     const token = getAccessToken();
     if (!token) return;
 
-    if (selectedOrderByTable && selectedTable) {
-      const paidOrder = await orderToClosed(selectedOrderByTable.id, token);
-      const closedTable = await editTable(
-        { ...selectedTable, state: TableState.CLOSED },
-        token
-      );
-      if (paidOrder) {
-        setSelectedOrderByTable(paidOrder);
-        updateOrder(paidOrder);
-      } else if (closedTable) {
-        setSelectedTable(closedTable);
-      } else {
-        Swal.fire("Error", "No se pudo pagar la orden.", "error");
+    if (!method) {
+      Swal.fire("Selecciona un método de pago", "", "warning");
+      return;
+    }
+
+    try {
+      if (selectedOrderByTable && selectedTable) {
+        const paidOrder = await orderToClosed(
+          selectedOrderByTable,
+          token,
+          method
+        );
+
+        const closedTable = await editTable(
+          { ...selectedTable, state: TableState.CLOSED },
+          token
+        );
+
+        if (paidOrder) {
+          setSelectedOrderByTable(paidOrder);
+          updateOrder(paidOrder);
+        }
+
+        if (closedTable) {
+          setSelectedTable(closedTable);
+        }
+
+        updateTable(closedTable);
       }
-      updateTable(closedTable);
+    } catch (error: any) {
+      if (error.statusCode === 409) {
+        Swal.fire({
+          icon: "info",
+          title: "Caja no abierta",
+          text: "Debes abrir una caja diaria antes de registrar un pago.",
+        });
+      } else {
+        Swal.fire("Error", error.message || "Error al cerrar la orden", "error");
+      }
     }
   };
+
 
   const handleTableAvailable = async (
     selectedTable: ITable,
@@ -170,6 +200,22 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         (userRoleFromToken() === UserRole.ADMIN || userRoleFromToken() === UserRole.ENCARGADO) &&
         <div>
           <>
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel id="payment-method-label">Método de Pago</InputLabel>
+              <Select
+                labelId="payment-method-label"
+                value={method}
+                label="Método de Pago"
+                onChange={handleChangeMethod}
+              >
+                <MenuItem value={PaymentMethod.CASH}>Efectivo</MenuItem>
+                <MenuItem value={PaymentMethod.CREDIT_CARD}>Tarjeta de Crédito</MenuItem>
+                <MenuItem value={PaymentMethod.DEBIT_CARD}>Tarjeta de Débito</MenuItem>
+                <MenuItem value={PaymentMethod.TRANSFER}>Transferencia</MenuItem>
+                <MenuItem value={PaymentMethod.MERCADOPAGO}>MercadoPago</MenuItem>
+              </Select>
+            </FormControl>
+
             {selectedOrderByTable &&
               selectedOrderByTable.state === "pending_payment" && (
                 <Button
