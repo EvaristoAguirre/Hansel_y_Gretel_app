@@ -851,4 +851,22 @@ export class UnitOfMeasureRepository {
       );
     }
   }
+
+  async getUnitOfMeasureUnidad(): Promise<UnitOfMeasure> {
+    try {
+      const unitOfMeasure = await this.unitOfMeasureRepository.findOne({
+        where: { name: 'Unidad' },
+      });
+      if (!unitOfMeasure) {
+        throw new NotFoundException(`Unit of mesure not found`);
+      }
+      return unitOfMeasure;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching the unit of mesure',
+        error.message,
+      );
+    }
+  }
 }
