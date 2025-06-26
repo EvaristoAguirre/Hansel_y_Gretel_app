@@ -8,16 +8,8 @@ export enum dailyCashType {
   EXPENSE = 'egreso',
 }
 
-export enum paymentMethod {
-  CASH = 'cash',
-  CREDIT_CARD = 'credit_card',
-  DEBIT_CARD = 'debit_card',
-  TRANSFER = 'transfer',
-  MERCADO_PAGO = 'mercado_pago',
-  OTHER = 'other',
-}
 
-export enum PaymentMethod {
+export enum paymentMethod {
   CASH = 'efectivo',
   CREDIT_CARD = 'tarjeta de credito',
   DEBIT_CARD = 'tarjeta de debito',
