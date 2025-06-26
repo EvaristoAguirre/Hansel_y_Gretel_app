@@ -1278,7 +1278,15 @@ export class ProductRepository {
   async getPromotionProductsToAnotherService(promotionId: string) {
     const promotionProducts = await this.promotionProductRepository.find({
       where: { promotion: { id: promotionId } },
-      relations: ['product'],
+      relations: [
+        'promotionDetails',
+        'promotionDetails.product',
+        'promotionDetails.product.productIngredients',
+        'promotionDetails.product.productIngredients.ingredient',
+        'promotionDetails.product.productIngredients.unitOfMeasure',
+        'promotionDetails.product.stock',
+        'promotionDetails.product.stock.unitOfMeasure',
+      ],
     });
     return promotionProducts;
   }
