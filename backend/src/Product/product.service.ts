@@ -217,16 +217,23 @@ export class ProductService {
       );
     }
 
-    const product =
-      await this.productRepository.getProductWithRelationsToService(productId);
+    const product = await this.productRepository.getProductById(productId);
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
     if (product.type === 'promotion') {
-      return this.checkPromotionStock(product, quantityToSell);
+      const promotion = await this.productRepository.getProductWithRelations(
+        productId,
+        'promotion',
+      );
+      return this.checkPromotionStock(promotion, quantityToSell);
     } else {
+      const product = await this.productRepository.getProductWithRelations(
+        productId,
+        'product',
+      );
       return this.checkProductStock(product, quantityToSell);
     }
   }
@@ -310,119 +317,287 @@ export class ProductService {
         };
   }
 
+  // private async checkPromotionStock(
+  //   promotion: Product,
+  //   quantityToSell: number,
+  // ): Promise<any> {
+  //   if (!promotion.promotionDetails?.length) {
+  //     return {
+  //       available: false,
+  //       message: 'Promotion has no associated products',
+  //     };
+  //   }
+
+  //   const checks = await Promise.all(
+  //     promotion.promotionDetails.map(async (pp) => {
+  //       const product = pp.product;
+  //       const requiredQty = pp.quantity * quantityToSell;
+
+  //       if (!product.productIngredients?.length) {
+  //         // Producto simple sin ingredientes
+  //         const stock = product.stock;
+  //         if (!stock) {
+  //           return {
+  //             available: false,
+  //             productId: product.id,
+  //             productName: product.name,
+  //             message: 'El producto no tiene información de stock',
+  //           };
+  //         }
+
+  //         const available = stock.quantityInStock;
+  //         return available >= requiredQty
+  //           ? {
+  //               available: true,
+  //               productId: product.id,
+  //               productName: product.name,
+  //             }
+  //           : {
+  //               available: false,
+  //               productId: product.id,
+  //               productName: product.name,
+  //               message: `Stock insuficiente. Disponible: ${available}, Requerido: ${requiredQty}`,
+  //               details: {
+  //                 available,
+  //                 required: requiredQty,
+  //                 deficit: requiredQty - available,
+  //               },
+  //             };
+  //       }
+
+  //       // Producto con ingredientes
+  //       const ingredientChecks = await Promise.all(
+  //         product.productIngredients.map(async (pi) => {
+  //           const stock = await this.stockService.getStockByIngredientId(
+  //             pi.ingredient.id,
+  //           );
+
+  //           if (!stock.quantityInStock) {
+  //             return {
+  //               available: false,
+  //               ingredientId: pi.ingredient.id,
+  //               ingredientName: pi.ingredient.name,
+  //               message: 'El ingrediente no tiene información de stock',
+  //             };
+  //           }
+
+  //           let required = pi.quantityOfIngredient * requiredQty;
+
+  //           if (pi.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
+  //             required = await this.unitOfMeasureService.convertUnit(
+  //               pi.unitOfMeasure.id,
+  //               stock.unitOfMeasure.id,
+  //               required,
+  //             );
+  //           }
+
+  //           const available = Number(stock.quantityInStock);
+
+  //           return {
+  //             available: available >= required,
+  //             ingredientId: pi.ingredient.id,
+  //             ingredientName: pi.ingredient.name,
+  //             requiredQuantity: required,
+  //             availableQuantity: available,
+  //             deficit: available >= required ? 0 : required - available,
+  //             unitOfMeasure: stock.unitOfMeasure.name,
+  //           };
+  //         }),
+  //       );
+
+  //       const allIngredientsOk = ingredientChecks.every((c) => c.available);
+
+  //       return {
+  //         available: allIngredientsOk,
+  //         productId: product.id,
+  //         productName: product.name,
+  //         ...(allIngredientsOk
+  //           ? {}
+  //           : {
+  //               message: 'Stock insuficiente para algunos ingredientes',
+  //               details: ingredientChecks.filter((c) => !c.available),
+  //             }),
+  //       };
+  //     }),
+  //   );
+
+  //   const allProductsAvailable = checks.every((c) => c.available);
+
+  //   return allProductsAvailable
+  //     ? { available: true }
+  //     : {
+  //         available: false,
+  //         message: 'Stock insuficiente para algunos productos de la promoción',
+  //         details: checks.filter((c) => !c.available),
+  //       };
+  // }
+
   private async checkPromotionStock(
     promotion: Product,
     quantityToSell: number,
-  ): Promise<any> {
-    if (!promotion.promotionDetails?.length) {
-      return {
-        available: false,
-        message: 'Promotion has no associated products',
-      };
-    }
+  ) {
+    try {
+      if (!promotion) {
+        throw new NotFoundException('Promotion not found');
+      }
 
-    const checks = await Promise.all(
-      promotion.promotionDetails.map(async (pp) => {
-        const product = pp.product;
-        const requiredQty = pp.quantity * quantityToSell;
+      if (
+        !promotion.promotionDetails ||
+        promotion.promotionDetails.length === 0
+      ) {
+        return {
+          available: false,
+          message: 'Promotion has no associated products',
+        };
+      }
 
-        if (!product.productIngredients?.length) {
-          // Producto simple sin ingredientes
-          const stock = product.stock;
-          if (!stock) {
-            return {
-              available: false,
-              productId: product.id,
-              productName: product.name,
-              message: 'El producto no tiene información de stock',
-            };
-          }
+      const productChecks = await Promise.all(
+        promotion.promotionDetails.map(async (pp) => {
+          const product = pp.product;
 
-          const available = stock.quantityInStock;
-          return available >= requiredQty
-            ? {
-                available: true,
+          const requiredQuantity = pp.quantity * quantityToSell;
+          if (
+            !product.productIngredients ||
+            product.productIngredients.length === 0
+          ) {
+            if (!product.stock) {
+              return {
                 productId: product.id,
                 productName: product.name,
-              }
-            : {
                 available: false,
+                message: 'El producto no cuenta con información de stock',
+              };
+            }
+            const availableQuantity = product.stock.quantityInStock;
+            if (availableQuantity >= requiredQuantity) {
+              return {
                 productId: product.id,
                 productName: product.name,
-                message: `Stock insuficiente. Disponible: ${available}, Requerido: ${requiredQty}`,
+                available: true,
+              };
+            } else {
+              return {
+                productId: product.id,
+                productName: product.name,
+                available: false,
+                message: `Stock insuficiente. Disponible: ${availableQuantity}, Requerido: ${requiredQuantity}`,
                 details: {
-                  available,
-                  required: requiredQty,
-                  deficit: requiredQty - available,
+                  available: availableQuantity,
+                  required: requiredQuantity,
+                  deficit: requiredQuantity - availableQuantity,
                 },
               };
-        }
-
-        // Producto con ingredientes
-        const ingredientChecks = await Promise.all(
-          product.productIngredients.map(async (pi) => {
-            const stock = await this.stockService.getStockByIngredientId(
-              pi.ingredient.id,
-            );
-
-            if (!stock.quantityInStock) {
-              return {
-                available: false,
-                ingredientId: pi.ingredient.id,
-                ingredientName: pi.ingredient.name,
-                message: 'El ingrediente no tiene información de stock',
-              };
             }
+          }
 
-            let required = pi.quantityOfIngredient * requiredQty;
+          const ingredientChecks = await Promise.all(
+            product.productIngredients.map(async (pi) => {
+              const ingredientId = pi.ingredient.id;
+              const stockOfIngredient =
+                await this.stockService.getStockByIngredientId(ingredientId);
 
-            if (pi.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
-              required = await this.unitOfMeasureService.convertUnit(
-                pi.unitOfMeasure.id,
-                stock.unitOfMeasure.id,
-                required,
+              if (!stockOfIngredient.quantityInStock) {
+                return {
+                  ingredientId: ingredientId,
+                  ingredientName: stockOfIngredient.ingredient.name,
+                  available: false,
+                  message: 'El ingrediente no tiene información de stock',
+                };
+              }
+
+              let requiredIngredientQuantity =
+                pi.quantityOfIngredient * requiredQuantity;
+
+              if (
+                pi.unitOfMeasure?.id !== stockOfIngredient.unitOfMeasure?.id
+              ) {
+                try {
+                  requiredIngredientQuantity =
+                    await this.unitOfMeasureService.convertUnit(
+                      pi.unitOfMeasure.id,
+                      stockOfIngredient.unitOfMeasure.id,
+                      pi.quantityOfIngredient * requiredQuantity,
+                    );
+                } catch (error) {
+                  return {
+                    ingredientId: stockOfIngredient.ingredient.id,
+                    ingredientName: stockOfIngredient.ingredient.name,
+                    available: false,
+                    message: `Unit conversion error: ${error.message}`,
+                  };
+                }
+              }
+
+              const availableQuantity = parseFloat(
+                stockOfIngredient.quantityInStock,
               );
-            }
 
-            const available = Number(stock.quantityInStock);
+              return {
+                ingredientId: stockOfIngredient.ingredient.id,
+                ingredientName: stockOfIngredient.ingredient.name,
+                requiredQuantity: requiredIngredientQuantity,
+                availableQuantity: availableQuantity,
+                available: availableQuantity >= requiredIngredientQuantity,
+                unitOfMeasure: stockOfIngredient.unitOfMeasure.name,
+                deficit:
+                  availableQuantity >= requiredIngredientQuantity
+                    ? 0
+                    : requiredIngredientQuantity - availableQuantity,
+              };
+            }),
+          );
 
-            return {
-              available: available >= required,
-              ingredientId: pi.ingredient.id,
-              ingredientName: pi.ingredient.name,
-              requiredQuantity: required,
-              availableQuantity: available,
-              deficit: available >= required ? 0 : required - available,
-              unitOfMeasure: stock.unitOfMeasure.name,
-            };
-          }),
+          const allIngredientsAvailable = ingredientChecks.every(
+            (check) => check.available,
+          );
+
+          return {
+            productId: product.id,
+            productName: product.name,
+            available: allIngredientsAvailable,
+            details: allIngredientsAvailable
+              ? null
+              : {
+                  message: 'Stock insuficiente para algunos ingredientes',
+                  ingredientDetails: ingredientChecks.filter(
+                    (check) => !check.available,
+                  ),
+                },
+          };
+        }),
+      );
+
+      const allProductsAvailable = productChecks.every(
+        (check) => check.available,
+      );
+
+      if (allProductsAvailable) {
+        return { available: true };
+      } else {
+        const unavailableProducts = productChecks.filter(
+          (check) => !check.available,
         );
-
-        const allIngredientsOk = ingredientChecks.every((c) => c.available);
-
         return {
-          available: allIngredientsOk,
-          productId: product.id,
-          productName: product.name,
-          ...(allIngredientsOk
-            ? {}
-            : {
-                message: 'Stock insuficiente para algunos ingredientes',
-                details: ingredientChecks.filter((c) => !c.available),
-              }),
-        };
-      }),
-    );
-
-    const allProductsAvailable = checks.every((c) => c.available);
-
-    return allProductsAvailable
-      ? { available: true }
-      : {
           available: false,
-          message: 'Stock insuficiente para algunos productos de la promoción',
-          details: checks.filter((c) => !c.available),
+          message:
+            'Stock insuficiente para algunos productos de esta promoción',
+          details: unavailableProducts.map((up) => ({
+            productId: up.productId,
+            productName: up.productName,
+            reason: up.message || 'Ingrediente insuficiente',
+            details: up.details,
+          })),
         };
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error checking promotion stock availability',
+        error.message,
+      );
+    }
   }
 
   async getProductsWithStock(): Promise<Product[]> {
@@ -439,7 +614,9 @@ export class ProductService {
       );
     }
     try {
-      return await this.getPromotionProductsToAnotherService(promotionId);
+      return await this.productRepository.getPromotionProductsToAnotherService(
+        promotionId,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
