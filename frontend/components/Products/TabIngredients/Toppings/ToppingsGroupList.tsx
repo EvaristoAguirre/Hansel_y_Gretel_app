@@ -116,61 +116,6 @@ const ToppingsGroupList = () => {
       {loading ? (
         <LoadingLottie />
       ) : (
-        // <Grid container spacing={2} display="flex" justifyContent="center">
-        //   {toppingsGroups.map((group) => (
-        //     <Grid item xs={12} sm={6} md={4} key={group.id} >
-        //       <Card
-        //         sx={{
-        //           width: "380px",
-        //           minHeight: 200,
-        //           display: "flex",
-        //           flexDirection: "column",
-        //           justifyContent: "space-between",
-        //           overflow: "visible",
-        //         }}
-        //       >
-        // <CardContent>
-        //   <Typography variant="h6">
-        //     {group.name.toLocaleUpperCase()}
-        //   </Typography>
-        //   <ScrollableChips toppings={group.toppings} />
-        // </CardContent>
-
-        // <CardActions sx={{ justifyContent: "space-around" }}>
-        //   <Tooltip
-        //     title="Eliminar"
-        //     enterDelay={150}
-        //   >
-        //     <Button
-        //       size="small"
-        //       startIcon={<DeleteIcon />}
-        //       sx={{
-        //         color: "gray",
-        //         "&:hover": {
-        //           color: "red",
-        //         },
-        //       }}
-        //       onClick={() => handleDeleteGroup(group.id)}>
-        //     </Button>
-        //   </Tooltip>
-        //   <Tooltip title="Editar" enterDelay={150}>
-        //     <Button
-        //       size="small"
-        //       startIcon={<EditIcon />}
-        //       sx={{
-        //         "&:hover": {
-        //           fontWeight: "bold",
-        //           color: "secondary.main",
-        //         },
-        //       }}
-        //       onClick={() => handleOpenEdit(group)}>
-        //     </Button>
-        //   </Tooltip>
-        // </CardActions>
-        //       </Card>
-        //     </Grid>
-        //   ))}
-        // </Grid>
 
         <Grid
           container
@@ -179,7 +124,6 @@ const ToppingsGroupList = () => {
           sx={{
             display: "flex",
             flexWrap: "wrap",
-            gap: 2,
           }}
         >
           {toppingsGroups.map((group) => (
@@ -189,7 +133,8 @@ const ToppingsGroupList = () => {
               sx={{
                 flex: "0 1 380px",
                 display: "flex",
-                justifyContent: "center",
+                justifyContent: "flex-start",
+                marginRight: "12px",
               }}
             >
               <Card
@@ -201,7 +146,6 @@ const ToppingsGroupList = () => {
                   justifyContent: "space-between",
                   overflow: "visible",
                   paddingLeft: "none",
-                  marginRight: "12px",
                 }}
               >
                 <CardContent>

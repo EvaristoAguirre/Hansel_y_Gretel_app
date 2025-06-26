@@ -157,6 +157,7 @@ const FormToppingsGroup = ({
               >
                 {toppings.map((topping) => (
                   <Tooltip
+                    key={topping.id}
                     title={
                       usedToppingsIds.includes(topping.id) &&
                         !selectedIds.includes(topping.id)
@@ -165,6 +166,7 @@ const FormToppingsGroup = ({
                     }
                     arrow
                     placement="top"
+
                   >
 
                     <FormControlLabel
