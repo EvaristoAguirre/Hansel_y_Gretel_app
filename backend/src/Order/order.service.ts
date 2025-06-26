@@ -149,6 +149,7 @@ export class OrderService {
             );
 
           await queryRunner.manager.save(detail);
+
           for (const td of toppingDetails) {
             await queryRunner.manager.save(td);
           }
