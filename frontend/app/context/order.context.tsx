@@ -61,8 +61,12 @@ type OrderContextType = {
   updateToppingForUnit: (
     productId: string,
     unitIndex: number,
-    toppingIds: string[]
+    updatedGroup: { [groupId: string]: string[] }
   ) => void;
+  toppingsByProductGroup: {
+    [productId: string]: Array<{ [groupId: string]: string[] }>
+  };
+
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -91,6 +95,7 @@ const OrderContext = createContext<OrderContextType>({
   handleAddTopping: async () => { },
   selectedToppingsByProduct: {},
   updateToppingForUnit: () => { },
+  toppingsByProductGroup: {}
 });
 
 export const useOrderContext = () => {
@@ -123,6 +128,10 @@ const OrderProvider = ({
     useState<IOrderDetails | null>(null);
 
   const [highlightedProducts, setHighlightedProducts] = useState<Set<string>>(new Set());
+
+  const [toppingsByProductGroup, setToppingsByProductGroup] = useState<{
+    [productId: string]: Array<{ [groupId: string]: string[] }>
+  }>({});
 
 
   useEffect(() => {
@@ -253,20 +262,28 @@ const OrderProvider = ({
   const updateToppingForUnit = (
     productId: string,
     unitIndex: number,
-    toppingIds: string[]
+    updatedGroup: { [groupId: string]: string[] }
   ) => {
-    setSelectedToppingsByProduct((prev) => {
-      const current = prev[productId] || [];
-      const updated = [...current];
-      updated[unitIndex] = toppingIds;
+    setToppingsByProductGroup((prev) => {
+      const productData = [...(prev[productId] || [])];
+      productData[unitIndex] = updatedGroup;
+
+      const flattened = productData.map((groupMap) => {
+        return Object.values(groupMap || {}).flat();
+      });
+
+      setSelectedToppingsByProduct((prevFlat) => ({
+        ...prevFlat,
+        [productId]: flattened,
+      }));
+
       return {
         ...prev,
-        [productId]: updated,
+        [productId]: productData,
       };
     });
-
-
   };
+
 
   const addHighlightedProduct = (id: string) => {
     setHighlightedProducts((prev) => new Set(prev).add(id));
@@ -543,7 +560,7 @@ const OrderProvider = ({
         handleAddTopping,
         selectedToppingsByProduct,
         updateToppingForUnit,
-
+        toppingsByProductGroup
       }}
     >
       {children}

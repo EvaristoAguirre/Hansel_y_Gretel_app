@@ -28,6 +28,7 @@ import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
 import { fetchToppingsGroupById } from "@/api/topping";
 import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
+// import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 
 
@@ -93,9 +94,6 @@ const OrderEditor = ({
       quantity: product.quantity,
       toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? []
     }));
-
-    console.log("📦 Body final para back", productDetails);
-
 
     if (selectedOrderByTable) {
       setLoading(true);
@@ -401,7 +399,7 @@ const OrderEditor = ({
                     {visibleToppings[item.productId] && (
                       <ToppingsGroupsViewer
                         groups={item.availableToppingGroups ?? []}
-                        fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                        fetchGroupById={(id: string) => fetchToppingsGroupById(token as string, id)}
                         productId={item.productId}
                       />
                     )}
