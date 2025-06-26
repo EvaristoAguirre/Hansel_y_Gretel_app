@@ -25,7 +25,7 @@ const Ingredients = () => {
   const {
     formType,
     formOpen,
-    ingredients,
+    ingredientsAndToppings,
     setFormIngredients,
     setFormType,
     setFormOpen,
@@ -118,7 +118,7 @@ const Ingredients = () => {
         </Box>
 
         <DataGridComponent
-          rows={ingredients}
+          rows={ingredientsAndToppings}
           columns={columns}
           capitalize={["name", "description"]}
         />

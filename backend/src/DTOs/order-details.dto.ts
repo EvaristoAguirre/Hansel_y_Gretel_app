@@ -1,11 +1,12 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class OrderDetailsDto {
   @IsString()
   productId: string;
 
   @IsOptional()
-  toppingsIds: string[];
+  @IsArray()
+  toppingsPerUnit?: string[][];
 
   @IsNumber()
   quantity: number;

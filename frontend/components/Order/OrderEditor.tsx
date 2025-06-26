@@ -9,8 +9,9 @@ import {
   Tooltip,
   FormControlLabel,
   Switch,
+  Divider,
 } from "@mui/material";
-import { Add, Remove, Delete, Comment } from "@mui/icons-material";
+import { Add, Remove, Delete, Comment, AutoAwesome, SpaceBar } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
 import "../../styles/pedidoEditor.css";
@@ -25,6 +26,10 @@ import { searchProducts } from "@/api/products";
 import AutoCompleteProduct from "../Utils/Autocomplete";
 import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
+import { fetchToppingsGroupById } from "@/api/topping";
+import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
+
+
 
 export interface Product {
   price: number;
@@ -41,9 +46,7 @@ interface Props {
 }
 const OrderEditor = ({
   handleNextStep,
-  handleBackStep,
   handleCompleteStep,
-  handleReset,
 }: Props) => {
   const { productosDisponibles, setProductosDisponibles } = useOrder();
   const { fetchAndSetProducts, products } = useProducts();
@@ -55,19 +58,19 @@ const OrderEditor = ({
   }, []);
 
   const {
-    handleCancelOrder,
     selectedProducts,
     setSelectedProducts,
     confirmedProducts,
-    setConfirmedProducts,
     selectedOrderByTable,
-    setSelectedOrderByTable,
     handleSelectedProducts,
     handleDeleteSelectedProduct,
     increaseProductNumber,
     decreaseProductNumber,
     productComment,
     handleEditOrder,
+    highlightedProducts,
+    removeHighlightedProduct,
+    selectedToppingsByProduct,
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -76,7 +79,6 @@ const OrderEditor = ({
   const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
   const [categories, setCategories] = useState<ICategory[]>([]);
-  // const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
 
@@ -84,13 +86,23 @@ const OrderEditor = ({
     token && fetchCategories(token).then((categories = []) => setCategories(categories));
   }, []);
 
+
   const confirmarPedido: () => Promise<void> = async () => {
+    const productDetails = selectedProducts.map((product) => ({
+      productId: product.productId,
+      quantity: product.quantity,
+      toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? []
+    }));
+
+    console.log("📦 Body final para back", productDetails);
+
+
     if (selectedOrderByTable) {
       setLoading(true);
       try {
         await handleEditOrder(
           selectedOrderByTable.id,
-          selectedProducts,
+          productDetails,
           selectedOrderByTable.numberCustomers,
           selectedOrderByTable.comment,
           isPriority
@@ -169,11 +181,27 @@ const OrderEditor = ({
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
-  const [showCategories, setShowCategories] = useState(false);
-
-  const handleToggle = () => {
-    setShowCategories((prev) => !prev);
+  const [visibleToppings, setVisibleToppings] = useState<{ [productId: string]: boolean }>({});
+  const handleShowToppings = (productId: string) => {
+    setVisibleToppings(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
   };
+
+  // const shakeKeyframes = {
+  //   "@keyframes shake": {
+  //     "0%": { transform: "translateX(0)" },
+  //     "25%": { transform: "translateX(-2px)" },
+  //     "50%": { transform: "translateX(2px)" },
+  //     "75%": { transform: "translateX(-2px)" },
+  //     "100%": { transform: "translateX(0)" },
+  //   }
+  // };
+
+
+
+
 
   return loading ? (
     <LoadingLottie />
@@ -251,9 +279,7 @@ const OrderEditor = ({
                       flexDirection: "column",
                       alignItems: "stretch",
                       width: "100%",
-                      borderBottom: "1px solid #856D5E",
-                      paddingBottom: "0.5rem",
-                      marginBottom: "0.5rem",
+                      padding: "3px",
                     }}
                   >
                     {/* Línea principal de datos del producto */}
@@ -264,28 +290,28 @@ const OrderEditor = ({
                         gap: "0.5rem",
                         color: "#ffffff",
                         justifyContent: "space-between",
-                        flexWrap: "wrap",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <IconButton onClick={() => decreaseProductNumber(item.productId)}>
-                          <Remove color="error" />
+                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => decreaseProductNumber(item.productId)}>
+                          <Remove fontSize="small" color="error" />
                         </IconButton>
                         <Typography
-                          sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                          style={{
-                            color: "black",
-                            width: "2rem",
+                          sx={{
+                            border: "1px solid #856D5E",
+                            color: "#856D5E",
+                            width: "1.5rem",
                             textAlign: "center",
                             borderRadius: "5px",
                           }}
                         >
                           {item.quantity}
                         </Typography>
-                        <IconButton onClick={() => increaseProductNumber(item.productId)}>
-                          <Add color="success" />
+                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => increaseProductNumber(item)}>
+                          <Add fontSize="small" color="success" />
                         </IconButton>
                       </div>
+
 
                       <Tooltip title={item.productName} arrow>
                         <ListItemText
@@ -297,7 +323,7 @@ const OrderEditor = ({
                             overflow: "hidden",
                             maxWidth: "15rem",
                           }}
-                          primary={capitalizeFirstLetter(item.productName)}
+                          primary={capitalizeFirstLetter(item.productName ?? "")}
                         />
                       </Tooltip>
 
@@ -305,39 +331,82 @@ const OrderEditor = ({
                         ${(item.unitaryPrice ?? 0) * item.quantity}
                       </Typography>
 
+                      {/* ICON DE AGREGADOS */}
                       <div style={{ display: "flex", alignItems: "center" }}>
-                        <IconButton onClick={() => toggleCommentInput(item.productId)}>
-                          <Comment style={{ color: "#856D5E" }} />
-                        </IconButton>
-                        <IconButton onClick={() =>
-                          handleDeleteProductAndComment(item.productId)}>
-                          <Delete />
-                        </IconButton>
+                        {item.allowsToppings && (
+                          <Tooltip title="Agregados" arrow>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                handleShowToppings(item.productId);
+                                removeHighlightedProduct(item.productId);
+                              }}
+                              sx={{
+                                "@keyframes heartbeat": {
+                                  "0%": { transform: "scale(1)" },
+                                  "14%": { transform: "scale(1.3)" },
+                                  "28%": { transform: "scale(1)" },
+                                  "42%": { transform: "scale(1.3)" },
+                                  "70%": { transform: "scale(1)" },
+                                },
+                                animation: highlightedProducts.has(item.productId)
+                                  ? "heartbeat 2.2s infinite ease-in-out"
+                                  : "none",
+                              }}
+                            >
+                              <AutoAwesome />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <Tooltip title="Comentarios" arrow>
+                          <IconButton onClick={() => toggleCommentInput(item.productId)}>
+                            <Comment style={{ color: "#856D5E" }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar" arrow>
+                          <IconButton onClick={() =>
+                            handleDeleteProductAndComment(item.productId)}>
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
                       </div>
                     </div>
 
                     {/* Comentario */}
-                    {visibleCommentInputs[item.productId] && (
-                      <div style={{ marginTop: "0.5rem", width: "100%" }}>
-                        <AutoGrowTextarea
-                          value={
-                            commentInputs[item.productId] !== undefined
-                              ? commentInputs[item.productId]
-                              : item.commentOfProduct ?? ""
-                          }
-                          placeholder="Comentario al producto"
-                          onChange={(value) =>
-                            setCommentInputs((prev) => ({
-                              ...prev,
-                              [item.productId]: value,
-                            }))
-                          }
-                          onBlur={() =>
-                            productComment(item.productId, commentInputs[item.productId] || "")
-                          }
-                        />
-                      </div>
+                    {
+                      visibleCommentInputs[item.productId] && (
+                        <div style={{ marginTop: "0.5rem", width: "100%" }}>
+                          <AutoGrowTextarea
+                            value={
+                              commentInputs[item.productId] !== undefined
+                                ? commentInputs[item.productId]
+                                : item.commentOfProduct ?? ""
+                            }
+                            placeholder="Comentario al producto"
+                            onChange={(value) =>
+                              setCommentInputs((prev) => ({
+                                ...prev,
+                                [item.productId]: value,
+                              }))
+                            }
+                            onBlur={() =>
+                              productComment(item.productId, commentInputs[item.productId] || "")
+                            }
+                          />
+                        </div>
+                      )
+                    }
+                    {/* ::::::::::::::::::::::::::::: */}
+                    {/* AGREGADOS */}
+                    {visibleToppings[item.productId] && (
+                      <ToppingsGroupsViewer
+                        groups={item.availableToppingGroups ?? []}
+                        fetchGroupById={(id) => fetchToppingsGroupById(token as string, id)}
+                        productId={item.productId}
+                      />
                     )}
+                    <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
+
                   </ListItem>
                 ))}
               </List>
@@ -483,7 +552,7 @@ const OrderEditor = ({
           </Box>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -10,6 +10,10 @@ import { RegisterRequest } from '@/components/Interfaces/IUsers';
 import Swal from 'sweetalert2';
 import { UserRole } from '@/components/Enums/user';
 import { useAuth } from '@/app/context/authContext';
+import { InputAdornment, IconButton } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -22,6 +26,8 @@ export default function RegisterForm() {
   });
 
   const { validateUserSession, userRoleFromToken, getAccessToken } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword((prev) => !prev);
 
 
   useEffect(() => {
@@ -142,12 +148,27 @@ export default function RegisterForm() {
                 margin="normal"
                 label="Contraseña"
                 variant="outlined"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
+
               <Button
                 type="submit"
                 fullWidth
