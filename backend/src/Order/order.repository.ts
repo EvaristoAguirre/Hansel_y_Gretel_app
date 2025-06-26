@@ -58,6 +58,7 @@ export class OrderRepository {
       where: { id, isActive: true },
       relations: ['orderDetails', 'table', 'orderDetails.product'],
     });
+    console.log('order antes de intentar cerrar', order);
 
     if (!order) {
       throw new NotFoundException(`Order with ID: ${id} not found`);
@@ -131,7 +132,9 @@ export class OrderRepository {
       product,
       order,
     });
-
+    console.log('evaluando el order detail creado.....', product);
+    console.log('evaluando el order detail creado.....', subtotal);
+    console.log('evaluando el order detail creado.....', detail);
     const toppingDetails: OrderDetailToppings[] = [];
 
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {

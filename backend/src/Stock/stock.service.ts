@@ -226,7 +226,7 @@ export class StockService {
     } else if (product.type === 'product') {
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
-      await this.deductPromotionStock(product.id, quantity);
+      await this.deductPromotionStock(product, quantity);
     }
 
     this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
@@ -273,10 +273,10 @@ export class StockService {
     }
   }
 
-  private async deductPromotionStock(promotionId: string, quantity: number) {
+  private async deductPromotionStock(promotion: Product, quantity: number) {
     const promotionProducts =
       await this.productService.getPromotionProductsToAnotherService(
-        promotionId,
+        promotion.id,
       );
 
     for (const promotionProduct of promotionProducts) {
