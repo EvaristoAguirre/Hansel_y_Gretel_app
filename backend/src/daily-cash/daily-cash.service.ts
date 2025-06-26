@@ -106,7 +106,7 @@ export class DailyCashService {
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
       if (!dailyCash) {
-        throw new BadRequestException('Daily cash report not found.');
+        throw new NotFoundException('Daily cash report not found.');
       }
       return dailyCash;
     } catch (error) {
@@ -462,6 +462,7 @@ export class DailyCashService {
         date: Between(startOfDay, endOfDay),
         state: DailyCashState.OPEN,
       },
+      relations: ['movements', 'orders'],
     });
   }
 
@@ -501,5 +502,39 @@ export class DailyCashService {
     }
 
     return totals;
+  }
+
+  async summaryAtMoment(): Promise<object> {
+    const openedDailyCash = await this.getTodayOpenDailyCash();
+    try {
+      if (openedDailyCash && openedDailyCash.state === DailyCashState.OPEN) {
+        const incomes = openedDailyCash.movements.filter(
+          (mov) => mov.type === DailyCashMovementType.INCOME,
+        );
+        const expenses = openedDailyCash.movements.filter(
+          (mov) => mov.type === DailyCashMovementType.EXPENSE,
+        );
+        const totalSalesFromOrders = Number(
+          this.sumTotalOrders(openedDailyCash.orders),
+        );
+        const totalIncomes = Number(this.sumTotal(incomes));
+        const totalExpenses = Number(this.sumTotal(expenses));
+
+        return {
+          incomes: totalIncomes + totalSalesFromOrders,
+          expenses: totalExpenses,
+        };
+      } else {
+        return { result: 'No hay resumen disponible' };
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while trying to generate the daily cash summary. Please try again later.',
+        error.message,
+      );
+    }
   }
 }
