@@ -10,6 +10,6 @@ import { CashMovement } from './cash-movement.entity';
   imports: [TypeOrmModule.forFeature([DailyCash, CashMovement])],
   controllers: [DailyCashController],
   providers: [DailyCashService, DailyCashRepository],
-  exports: [DailyCashService, DailyCashRepository],
+  exports: [DailyCashService],
 })
 export class DailyCashModule {}

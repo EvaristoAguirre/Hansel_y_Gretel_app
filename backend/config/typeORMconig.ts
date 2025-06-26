@@ -12,7 +12,7 @@ export default registerAs('typeorm', () => ({
   database: process.env.DB,
   autoLoadEntities: true,
   synchronize: true, // pasar a false en producción
-  dropSchema: false, // pasar a false en producción
+  dropSchema: true, // pasar a false en producción
   logging: ['error', 'warn'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],

@@ -21,4 +21,9 @@ export class IngredientWSListener {
   handleIngredientDeleted(event: { ingredient: Ingredient }) {
     this.broadcastService.broadcast('ingredientDeleted', event.ingredient);
   }
+
+  @OnEvent('topping.updated')
+  handleToppingUpdated(event: { topping: Ingredient }) {
+    this.broadcastService.broadcast('toppingUpdated', event.topping);
+  }
 }

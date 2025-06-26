@@ -5,17 +5,6 @@ import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
 import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 
-// interface IProduct {
-//   id: string;
-//   code: number | null;
-//   name: string;
-//   description: string;
-//   type: TypeProduct | null;
-//   price: number | null;
-//   cost: number | null;
-//   isActive?: boolean;
-// }
-
 interface IProduct {
   allowsToppings: boolean;
   code: number | null;
@@ -116,7 +105,8 @@ export interface ProductResponse {
   promotionDetails: IPromotionDetails[];
   stock: IStockOfProduct;
   allowsToppings: boolean;
-  toppingsSettings: null
+  toppingsSettings: null,
+  availableToppingGroups: IProductToppingsGroupResponse[]
 }
 
 export interface ProductState {
@@ -135,10 +125,14 @@ export interface ProductsProps {
 
 export interface SelectedProductsI {
   productId: string;
-  productName: string;
+  productName?: string;
   quantity: number;
-  unitaryPrice: number | null;
+  unitaryPrice?: number | null;
   commentOfProduct?: string | null;
+  toppingsIds?: string[];
+  toppingsPerUnit?: string[][]
+  allowsToppings?: boolean;
+  availableToppingGroups?: IProductToppingsGroupResponse[];
 };
 
 export interface IConfirmedProducts {
