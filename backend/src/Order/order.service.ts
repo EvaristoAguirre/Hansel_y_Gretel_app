@@ -155,52 +155,15 @@ export class OrderService {
           }
 
           order.orderDetails.push(detail);
-          total += subtotal;
+          total += Number(subtotal);
         }
-        order.total += total;
+        order.total = Number(order.total) + total;
       }
       const updatedOrder = await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
 
       // ---------- envio a impresion de comanda  -------------------------
-      // if (updateData.productsDetails?.length) {
-      //   const printData = {
-      //     numberCustomers: updatedOrder.numberCustomers,
-      //     table: updatedOrder.table?.name || 'SIN MESA',
-      //     products: updateData.productsDetails.map((detail) => ({
-      //       name:
-      //         updatedOrder.orderDetails.find(
-      //           (d) => d.product.id === detail.productId,
-      //         )?.product.name || 'Producto',
-      //       quantity: detail.quantity,
-      //       commentOfProduct: detail.commentOfProduct,
-      //     })),
-      //     isPriority: updateData.isPriority,
-      //   };
-
-      //   try {
-      //     this.printerService.logger.log(
-      //       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-      //     );
-      //     this.printerService.logger.log('info enviada a imprimir', printData);
-      //     const commandNumber =
-      //       await this.printerService.printKitchenOrder(printData);
-
-      //     updatedOrder.commandNumber = commandNumber;
-
-      //     await this.orderRepo.save(updatedOrder);
-
-      //     this.printerService.logger.log(
-      //       `✅ Comanda impresa, número: ${commandNumber}`,
-      //     );
-      //   } catch (printError) {
-      //     this.printerService.logger.error(
-      //       '❌ Falló la impresión de la comanda',
-      //       printError.stack,
-      //     );
-      //   }
-      // }
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
       return await this.adaptResponse(updatedOrder);
@@ -518,3 +481,41 @@ export class OrderService {
     return response;
   }
 }
+
+// if (updateData.productsDetails?.length) {
+//   const printData = {
+//     numberCustomers: updatedOrder.numberCustomers,
+//     table: updatedOrder.table?.name || 'SIN MESA',
+//     products: updateData.productsDetails.map((detail) => ({
+//       name:
+//         updatedOrder.orderDetails.find(
+//           (d) => d.product.id === detail.productId,
+//         )?.product.name || 'Producto',
+//       quantity: detail.quantity,
+//       commentOfProduct: detail.commentOfProduct,
+//     })),
+//     isPriority: updateData.isPriority,
+//   };
+
+//   try {
+//     this.printerService.logger.log(
+//       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+//     );
+//     this.printerService.logger.log('info enviada a imprimir', printData);
+//     const commandNumber =
+//       await this.printerService.printKitchenOrder(printData);
+
+//     updatedOrder.commandNumber = commandNumber;
+
+//     await this.orderRepo.save(updatedOrder);
+
+//     this.printerService.logger.log(
+//       `✅ Comanda impresa, número: ${commandNumber}`,
+//     );
+//   } catch (printError) {
+//     this.printerService.logger.error(
+//       '❌ Falló la impresión de la comanda',
+//       printError.stack,
+//     );
+//   }
+// }
