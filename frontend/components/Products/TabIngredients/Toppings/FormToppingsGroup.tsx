@@ -152,7 +152,9 @@ const FormToppingsGroup = ({
                 marginTop: "8px",
               }}
             >
-              <FormGroup>
+              <FormGroup
+                key={selectedIds.join(",")}
+              >
                 {toppings.map((topping) => (
                   <Tooltip
                     title={
