@@ -6,8 +6,6 @@ export class OrderDetailsDto {
 
   @IsOptional()
   @IsArray()
-  @IsArray({ each: true })
-  @IsString({ each: true })
   toppingsPerUnit?: string[][];
 
   @IsNumber()

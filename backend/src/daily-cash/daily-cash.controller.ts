@@ -79,6 +79,12 @@ export class DailyCashController {
     return this.dailyCashService.getExpensesByDailyCashId(id);
   }
 
+  @Get('summary')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  summaryAtMoment(): Promise<object> {
+    return this.dailyCashService.summaryAtMoment();
+  }
+
   @Get('check-open')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   isTodayDailyCashOpen(): Promise<object> {

@@ -110,7 +110,6 @@ export class OrderService {
         id,
         queryRunner,
       );
-
       if (!order || !order.isActive)
         throw new NotFoundException('Order not found');
       if (order.state === OrderState.CLOSED)
@@ -203,7 +202,6 @@ export class OrderService {
       // }
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
-
       return await this.adaptResponse(updatedOrder);
     } catch (err) {
       await queryRunner.rollbackTransaction();

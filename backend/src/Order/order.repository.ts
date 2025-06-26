@@ -20,9 +20,11 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { OrderDetailToppings } from './order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class OrderRepository {
+  private readonly logger = new Logger(OrderRepository.name);
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -122,7 +124,6 @@ export class OrderRepository {
     const quantity = detailData.quantity;
     const unitaryPrice = product.price;
     const subtotal = unitaryPrice * quantity;
-
     const detail = qr.manager.create(OrderDetails, {
       quantity,
       unitaryPrice,
@@ -139,7 +140,6 @@ export class OrderRepository {
           `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
         );
       }
-
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
 
