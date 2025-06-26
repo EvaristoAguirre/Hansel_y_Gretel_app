@@ -132,9 +132,7 @@ export class OrderRepository {
       product,
       order,
     });
-    console.log('evaluando el order detail creado.....', product);
-    console.log('evaluando el order detail creado.....', subtotal);
-    console.log('evaluando el order detail creado.....', detail);
+
     const toppingDetails: OrderDetailToppings[] = [];
 
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
