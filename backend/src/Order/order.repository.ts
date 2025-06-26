@@ -121,17 +121,9 @@ export class OrderRepository {
     toppingDetails: OrderDetailToppings[];
     subtotal: number;
   }> {
-    this.logger.log('adentro del crear order con o sin topp....');
-    this.logger.log('orden....', order);
-    console.log(order);
-    this.logger.log('producto....', product);
-    console.log(product);
-    this.logger.log('product detail....', detailData);
-    console.log(detailData);
     const quantity = detailData.quantity;
     const unitaryPrice = product.price;
     const subtotal = unitaryPrice * quantity;
-    console.log(quantity, unitaryPrice, subtotal);
     const detail = qr.manager.create(OrderDetails, {
       quantity,
       unitaryPrice,
@@ -139,8 +131,7 @@ export class OrderRepository {
       product,
       order,
     });
-    this.logger.log('detalle creado....', detail);
-    console.log('detalle creaddoooo........', detail);
+
     const toppingDetails: OrderDetailToppings[] = [];
 
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
@@ -149,7 +140,6 @@ export class OrderRepository {
           `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
         );
       }
-
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
 

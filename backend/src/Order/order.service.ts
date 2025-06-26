@@ -100,7 +100,6 @@ export class OrderService {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
-    this.logger.log('data que llega del front....', updateData);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -111,7 +110,6 @@ export class OrderService {
         id,
         queryRunner,
       );
-      this.logger.log('orden rescatada..', order);
       if (!order || !order.isActive)
         throw new NotFoundException('Order not found');
       if (order.state === OrderState.CLOSED)
@@ -134,14 +132,9 @@ export class OrderService {
       let total = 0;
 
       if (updateData.productsDetails?.length) {
-        this.logger.log(
-          'data que entra por los details.....',
-          updateData.productsDetails,
-        );
         for (const pd of updateData.productsDetails) {
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: pd.productId, isActive: true },
-            relations: ['productIngredients', 'availableToppingsGroups'],
           });
           if (!product) throw new NotFoundException('Product not found');
 
@@ -209,7 +202,6 @@ export class OrderService {
       // }
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
-
       return await this.adaptResponse(updatedOrder);
     } catch (err) {
       await queryRunner.rollbackTransaction();
