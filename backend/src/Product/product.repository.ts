@@ -1261,6 +1261,7 @@ export class ProductRepository {
     return this.productRepository.findOne({
       where: { id, isActive: true },
       relations: [
+        'product',
         'productIngredients',
         'productIngredients.ingredient',
         'productIngredients.unitOfMeasure',
@@ -1279,15 +1280,15 @@ export class ProductRepository {
     const promotionProducts = await this.promotionProductRepository.find({
       where: { promotion: { id: promotionId } },
       relations: [
-        'promotionDetails',
-        'promotionDetails.product',
-        'promotionDetails.product.productIngredients',
-        'promotionDetails.product.productIngredients.ingredient',
-        'promotionDetails.product.productIngredients.unitOfMeasure',
-        'promotionDetails.product.stock',
-        'promotionDetails.product.stock.unitOfMeasure',
+        'product',
+        'product.productIngredients',
+        'product.productIngredients.ingredient',
+        'product.productIngredients.unitOfMeasure',
+        'product.stock',
+        'product.stock.unitOfMeasure',
       ],
     });
+
     return promotionProducts;
   }
 }
