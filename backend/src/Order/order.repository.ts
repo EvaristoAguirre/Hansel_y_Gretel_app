@@ -58,6 +58,7 @@ export class OrderRepository {
       where: { id, isActive: true },
       relations: ['orderDetails', 'table', 'orderDetails.product'],
     });
+    console.log('order antes de intentar cerrar', order);
 
     if (!order) {
       throw new NotFoundException(`Order with ID: ${id} not found`);
