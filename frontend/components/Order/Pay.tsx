@@ -12,7 +12,7 @@ import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";
 import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
-import { PaymentMethod } from "../Enums/dailyCash";
+import { paymentMethod } from "../Enums/dailyCash";
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -26,14 +26,14 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const { updateOrder } = useOrderStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
 
-  const [method, setMethod] = useState<PaymentMethod | ''>('');
+  const [method, setMethod] = useState<paymentMethod | ''>('');
 
 
   const token = getAccessToken();
 
 
-  const handleChangeMethod = (event: SelectChangeEvent<PaymentMethod>) => {
-    setMethod(event.target.value as PaymentMethod);
+  const handleChangeMethod = (event: SelectChangeEvent<paymentMethod>) => {
+    setMethod(event.target.value as paymentMethod);
   };
 
 
@@ -208,11 +208,11 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 label="Método de Pago"
                 onChange={handleChangeMethod}
               >
-                <MenuItem value={PaymentMethod.CASH}>Efectivo</MenuItem>
-                <MenuItem value={PaymentMethod.CREDIT_CARD}>Tarjeta de Crédito</MenuItem>
-                <MenuItem value={PaymentMethod.DEBIT_CARD}>Tarjeta de Débito</MenuItem>
-                <MenuItem value={PaymentMethod.TRANSFER}>Transferencia</MenuItem>
-                <MenuItem value={PaymentMethod.MERCADOPAGO}>MercadoPago</MenuItem>
+                <MenuItem value={paymentMethod.CASH}>Efectivo</MenuItem>
+                <MenuItem value={paymentMethod.CREDIT_CARD}>Tarjeta de Crédito</MenuItem>
+                <MenuItem value={paymentMethod.DEBIT_CARD}>Tarjeta de Débito</MenuItem>
+                <MenuItem value={paymentMethod.TRANSFER}>Transferencia</MenuItem>
+                <MenuItem value={paymentMethod.MERCADOPAGO}>MercadoPago</MenuItem>
               </Select>
             </FormControl>
 

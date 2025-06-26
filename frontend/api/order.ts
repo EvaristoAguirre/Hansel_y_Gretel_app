@@ -1,4 +1,4 @@
-import { PaymentMethod, paymentMethod } from "@/components/Enums/dailyCash";
+import { paymentMethod } from "@/components/Enums/dailyCash";
 import { IOrderDetails } from "@/components/Interfaces/IOrder";
 import { URI_ORDER, URI_TICKET } from "@/components/URI/URI";
 
@@ -36,7 +36,7 @@ export const orderToReprint = async (id: string, token: string) => {
   return await response.json();
 };
 
-export const orderToClosed = async (order: IOrderDetails, token: string, methodOfPayment: PaymentMethod) => {
+export const orderToClosed = async (order: IOrderDetails, token: string, methodOfPayment: paymentMethod) => {
   const response = await fetch(`${URI_ORDER}/close/${order.id}`, {
     method: "POST",
     headers: {
