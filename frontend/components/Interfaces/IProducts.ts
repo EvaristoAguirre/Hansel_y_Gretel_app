@@ -19,9 +19,9 @@ interface IProduct {
 }
 export interface ProductForm extends IProduct {
   [key: string]: string | number | boolean
-  | null | string[] | IingredientForm[]
+  | null | ICategory[] | IingredientForm[]
   | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
-  categories: string[];
+  categories: ICategory[];
   ingredients: IingredientForm[];
   products: IProductDataList[];
   isActive: boolean;
