@@ -38,6 +38,12 @@ export const useProducts = () => {
     availableToppingGroups: []
   });
 
+  useEffect(() => {
+    console.log("en context", form);
+
+  }, [form]);
+
+
   // Llamada inicial para cargar productos
   useEffect(() => {
     const getToken = getAccessToken();
@@ -88,7 +94,7 @@ export const useProducts = () => {
     }
   };
 
-  const handleEdit = async (token: string, selectedCategoryId?: string) => {
+  const handleEditProduct = async (token: string, selectedCategoryId?: string) => {
     try {
       if (!token) throw new Error("Token no disponible");
 
@@ -98,6 +104,7 @@ export const useProducts = () => {
         price: Number(form.price),
         cost: Number(form.cost),
         id: form.id,
+
       };
 
       const updatedProduct = await editProduct(preparedForm, token);
@@ -176,7 +183,7 @@ export const useProducts = () => {
     setModalType,
     setForm,
     handleCreateProduct,
-    handleEdit,
+    handleEditProduct,
     handleDelete,
     handleCloseModal,
     fetchAndSetProducts,

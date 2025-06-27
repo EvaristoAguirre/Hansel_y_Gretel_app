@@ -41,7 +41,7 @@ interface ProductCreationModalProps {
       | string
       | number
       | null
-      | string[]
+      | ICategory[]
       | IingredientForm[]
       | ProductForPromo[]
       | boolean
@@ -106,6 +106,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const [token, setToken] = useState<string | null>(null);
 
   const { getAccessToken } = useAuth();
+  useEffect(() => {
+    console.log("😅🟢 form en modal", form.categories);
+    console.log("🔮categorias del context", categories);
+
+
+  }, [form]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -289,6 +295,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   }
 
 
+
   return (
     <Modal open={open} onClose={onClose} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
       <Box
@@ -400,6 +407,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               size="small"
             />
           </Grid>
+          {/* ------------------------- */}
           {/* CATEGORIAS - AUTOCOMPLETE */}
           <Grid item xs={12} mt={1}>
             <FormControl fullWidth>
@@ -407,20 +415,39 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 multiple
                 options={categories}
                 getOptionLabel={(option) => option.name}
-                value={categories.filter((category) => category.id && form.categories.includes(category.id))}
+                value={
+                  form.categories
+                }
                 onChange={(_, newValue) => {
-                  const selectedIds = newValue.map((category) => category.id);
-                  onChange("categories", selectedIds.map((id) => id || ""));
+                  onChange("categories", newValue);
                 }}
-                renderInput={(params) => <TextField {...params} label="Categorías" variant="outlined" placeholder="Selecciona categorías" />}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Categorías"
+                    variant="outlined"
+                    placeholder="Selecciona categorías"
+                  />
+                )}
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => (
-                    <Chip {...getTagProps({ index })} key={option.id} label={option.name} sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }} />
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={typeof option === 'string' ? option : option.id}
+                      label={option.name}
+                      sx={{
+                        backgroundColor: "#f3d49ab8",
+                        color: "black",
+                        fontWeight: "bold",
+                      }}
+                    />
                   ))
                 }
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 size="small"
               />
+
+
             </FormControl>
           </Grid>
         </Grid>

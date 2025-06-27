@@ -34,7 +34,6 @@ export const useProductStore = create<ProductState>((set) => {
       if (!exists) {
         const parsedProduct = {
           ...data,
-          categories: parseCategories(data.categories),
           productIngredients: data.productIngredients && data.productIngredients.length > 0
             ? data.productIngredients.map((ingredient: IingredientResponse) => ({
               name: ingredient.ingredient.name,
@@ -58,6 +57,7 @@ export const useProductStore = create<ProductState>((set) => {
       products: state.products.map((product) =>
         product.id === data.id ? data : product
       ),
+
     }));
   });
 

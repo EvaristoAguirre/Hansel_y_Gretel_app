@@ -13,6 +13,7 @@ import ProductCreationModal from "./Modal/ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { FormTypeProduct } from "@/components/Enums/view-products";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
+import { ICategory } from "@/components/Interfaces/ICategories";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -27,7 +28,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     setModalType,
     setForm,
     handleCreateProduct,
-    handleEdit,
+    handleEditProduct,
     handleDelete,
     handleCloseModal,
     connectWebSocket,
@@ -50,16 +51,22 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     units.length === 0 ? setLoading(true) : setLoading(false);
   }, [units]);
 
+  useEffect(() => {
+    console.log("en Products🅾️", form);
+
+  }, [form]);
+
+
   const handleSave = () => {
     if (token) {
       if (modalType === "create") {
         return handleCreateProduct(token);
       } else {
         if (selectedCategoryId) {
-          return handleEdit(token, selectedCategoryId);
+          return handleEditProduct(token, selectedCategoryId);
 
         } else {
-          return handleEdit(token);
+          return handleEditProduct(token);
         }
       }
     }
@@ -67,7 +74,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | boolean | string[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
+    value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
   const columns = [
