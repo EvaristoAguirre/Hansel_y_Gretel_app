@@ -441,6 +441,14 @@ export class ProductRepository {
         productToCreate,
         queryRunner,
       );
+
+      const extraToppingCost = await this.calculateToppingsCostForProduct(
+        productToCreate,
+        queryRunner,
+      );
+
+      savedProduct.cost += extraToppingCost;
+      await queryRunner.manager.save(Product, savedProduct);
     }
 
     const productWithRelations =
@@ -498,6 +506,13 @@ export class ProductRepository {
         productToCreate,
         queryRunner,
       );
+      const extraToppingCost = await this.calculateToppingsCostForProduct(
+        productToCreate,
+        queryRunner,
+      );
+
+      savedProduct.cost += extraToppingCost;
+      await queryRunner.manager.save(Product, savedProduct);
     }
 
     const productWithRelations =
@@ -1315,5 +1330,61 @@ export class ProductRepository {
     });
 
     return promotionProducts;
+  }
+
+  private async calculateToppingsCostForProduct(
+    productToCreate: CreateProductDto,
+    queryRunner: QueryRunner,
+  ): Promise<number> {
+    let totalExtraCost = 0;
+
+    for (const groupDto of productToCreate.availableToppingGroups || []) {
+      const { settings, quantityOfTopping, unitOfMeasureId } = groupDto;
+
+      if (!settings?.chargeExtra || !unitOfMeasureId) continue;
+
+      const group = await queryRunner.manager.findOne(ToppingsGroup, {
+        where: { id: groupDto.toppingsGroupId, isActive: true },
+        relations: ['toppings', 'toppings.unitOfMeasure'],
+      });
+
+      if (!group) {
+        throw new BadRequestException(
+          `Toppings group with ID ${groupDto.toppingsGroupId} does not exist`,
+        );
+      }
+
+      const activeToppings = group.toppings?.filter(
+        (t) => t.isActive && t.cost != null && t.unitOfMeasure,
+      );
+
+      if (!activeToppings || activeToppings.length === 0) continue;
+
+      const toppingsWithConvertedCost = await Promise.all(
+        activeToppings.map(async (topping) => {
+          const convertedQuantity = await this.unitOfMeasureService.convertUnit(
+            unitOfMeasureId,
+            topping.unitOfMeasure.id,
+            quantityOfTopping || 1,
+          );
+          return {
+            topping,
+            cost: topping.cost * convertedQuantity,
+          };
+        }),
+      );
+
+      const maxSelection = settings.maxSelection || 1;
+      const topCheapest = toppingsWithConvertedCost
+        .sort((a, b) => a.cost - b.cost)
+        .slice(0, maxSelection);
+
+      const totalCost = topCheapest.reduce((sum, item) => sum + item.cost, 0);
+      const averageCost = totalCost / topCheapest.length;
+
+      totalExtraCost += averageCost;
+    }
+
+    return totalExtraCost;
   }
 }
