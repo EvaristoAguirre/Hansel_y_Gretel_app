@@ -52,10 +52,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     units.length === 0 ? setLoading(true) : setLoading(false);
   }, [units]);
 
-  // useEffect(() => {
-  //   console.log("en Products🅾️", form);
-
-  // }, [form]);
 
 
   const handleSave = () => {
@@ -96,7 +92,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             className="bg-[--color-primary]"
             size="small"
             onClick={() => {
-              console.log("🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️ ", params.row);
               setForm({
 
                 id: params.row.id,
