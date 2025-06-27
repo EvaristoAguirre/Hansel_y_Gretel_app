@@ -129,7 +129,7 @@ export class ProductController {
   async updateProduct(
     @Body() updateData: UpdateProductDto,
     @Param('id') id: string,
-  ) {
+  ): Promise<ProductResponseDto> {
     return await this.productService.updateProduct(id, updateData);
   }
 

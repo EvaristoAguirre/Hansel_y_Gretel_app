@@ -18,7 +18,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { Iingredient, IingredientForm } from "@/components/Interfaces/Ingredients";
+import { Iingredient, IingredientForm, IingredientResponse } from "@/components/Interfaces/Ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
@@ -59,16 +59,17 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
     if (!token) return;
     if (form.ingredients && form.ingredients.length > 0) {
 
-      const preparedIngredients = form.ingredients.map((ingredient: IingredientForm) => ({
-        name: ingredient.name,
-        ingredientId: ingredient.ingredientId,
-        quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
-        unitOfMeasureId: ingredient.unitOfMeasureId,
-        type: ingredient.type,
-        isTopping: ingredient.isTopping,
-        extraCost: ingredient.extraCost
-      }))
-      setSelectedIngredients(preparedIngredients);
+      // const preparedIngredients = form.ingredients.map((ingredient: IingredientResponse) => ({
+      //   name: ingredient.ingredient.name,
+      //   ingredientId: ingredient.ingredient.id,
+      //   quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
+      //   unitOfMeasureId: ingredient.unitOfMeasureId,
+      //   type: ingredient.type,
+      //   isTopping: ingredient.isTopping,
+      //   extraCost: ingredient.extraCost
+      // }))
+
+      setSelectedIngredients(form.ingredients);
     }
     fetchUnitsMass();
     fetchUnitsVolume();

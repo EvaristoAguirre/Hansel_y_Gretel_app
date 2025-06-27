@@ -27,8 +27,7 @@ const paymentLabelToValue: Record<string, paymentMethod> = {
   "Tarjeta Débito": paymentMethod.DEBIT_CARD,
   "Tarjeta Crédito": paymentMethod.CREDIT_CARD,
   "Transferencia": paymentMethod.TRANSFER,
-  "Mercado Pago": paymentMethod.MERCADO_PAGO,
-  "Otros": paymentMethod.OTHER,
+  "Mercado Pago": paymentMethod.MERCADOPAGO,
 };
 
 const paymentValueToLabel: Record<paymentMethod, string> = {
@@ -36,8 +35,7 @@ const paymentValueToLabel: Record<paymentMethod, string> = {
   [paymentMethod.DEBIT_CARD]: "Tarjeta Débito",
   [paymentMethod.CREDIT_CARD]: "Tarjeta Crédito",
   [paymentMethod.TRANSFER]: "Transferencia",
-  [paymentMethod.MERCADO_PAGO]: "Mercado Pago",
-  [paymentMethod.OTHER]: "Otros",
+  [paymentMethod.MERCADOPAGO]: "Mercado Pago",
 };
 
 

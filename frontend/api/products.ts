@@ -1,28 +1,37 @@
 import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
-import { ICheckStock, ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
+import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
 
 
 export const createProduct = async (form: ProductForm, token: string) => {
+  const payload = {
+    ...form,
+    categories: form.categories.map((c) => c.id),
+  };
   const response = await fetch(URI_PRODUCT, {
     method: "POST",
     headers: {
       'Content-Type': 'application/json',
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify(form),
+    body: JSON.stringify(payload),
   });
 
   return await response.json();
 };
 
 export const editProduct = async (form: ProductForm, token: string) => {
+  const payload = {
+    ...form,
+    categories: form.categories.map((c) => c.id),
+  };
   const response = await fetch(`${URI_PRODUCT}/${form.id}`, {
     method: "PUT",
     headers: {
       'Content-Type': 'application/json',
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify(form),
+
+    body: JSON.stringify(payload),
   });
 
   return await response.json();

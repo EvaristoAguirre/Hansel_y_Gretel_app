@@ -4,6 +4,7 @@ import {
   ProductResponseDto,
   UnitOfMeasureResponseDto,
 } from 'src/DTOs/productResponse.dto';
+import { PromotionResponse } from 'src/DTOs/promotionResponse.dto';
 
 export class ProductMapper {
   static toResponseDto(product: Product): ProductResponseDto {
@@ -41,6 +42,16 @@ export class ProductMapper {
           })) ?? [],
       })) ?? [];
 
+    dto.componentDetails =
+      product.promotionDetails?.map((detail) => ({
+        id: detail.id,
+        quantity: detail.quantity,
+        product: this.toResponseDto(detail.product),
+        promotion: plainToInstance(PromotionResponse, {
+          id: product.id,
+          name: product.name,
+        }),
+      })) ?? [];
     return dto;
   }
 

@@ -2,7 +2,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
-import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useAuth } from "@/app/context/authContext";
@@ -14,13 +13,14 @@ import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { exportPDF } from "@/api/exportPDF";
 import { SimCardDownload } from "@mui/icons-material";
+import { ProductResponse } from '../../Interfaces/IProducts';
 
 
 const StockControl = () => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const [productsSimple, setProductsSimple] = useState<ProductCreated[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]);
+  const [productsSimple, setProductsSimple] = useState<ProductResponse[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<ProductResponse[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
