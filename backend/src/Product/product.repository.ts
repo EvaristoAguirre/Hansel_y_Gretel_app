@@ -348,7 +348,9 @@ export class ProductRepository {
       throw new NotFoundException('Promotion not found after creation');
     }
 
-    return ProductMapper.toResponseDto(promotionWithDetails);
+    const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
+    console.log(promotionCreada);
+    return promotionCreada;
   }
 
   private async createCompositeProduct(
@@ -1151,8 +1153,10 @@ export class ProductRepository {
           ]
         : [
             'categories',
+            'unitOfMeasure',
             'promotionDetails',
             'promotionDetails.product',
+            'promotionDetails.product.unitOfMeasure',
             'promotionDetails.product.productIngredients',
             'promotionDetails.product.productIngredients.ingredient',
             'promotionDetails.product.productIngredients.unitOfMeasure',
