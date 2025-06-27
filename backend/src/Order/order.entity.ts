@@ -50,6 +50,7 @@ export class Order {
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {
     cascade: true,
     eager: false,
+    onUpdate: 'CASCADE',
   })
   @JoinColumn({ name: 'orders_orderDetails' })
   orderDetails: OrderDetails[];
