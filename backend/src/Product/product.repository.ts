@@ -167,6 +167,27 @@ export class ProductRepository {
           'product.availableToppingGroups',
           'availableToppingGroups',
         )
+        .leftJoinAndSelect(
+          'availableToppingGroups.toppingGroup',
+          'toppingGroup',
+        )
+        .leftJoinAndSelect(
+          'availableToppingGroups.unitOfMeasure',
+          'toppingUnit',
+        )
+        .leftJoinAndSelect('toppingGroup.toppings', 'groupToppings')
+        .leftJoinAndSelect(
+          'toppingGroup.productsAvailableIn',
+          'productsAvailableIn',
+        )
+        .leftJoinAndSelect(
+          'productsAvailableIn.toppingGroup',
+          'productsAvailableInGroup',
+        )
+        .leftJoinAndSelect(
+          'productsAvailableInGroup.toppings',
+          'productsAvailableInGroupToppings',
+        )
         .where((qb) => {
           const subQuery = qb
             .subQuery()
