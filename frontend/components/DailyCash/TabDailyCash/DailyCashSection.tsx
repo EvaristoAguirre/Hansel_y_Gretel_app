@@ -34,7 +34,7 @@ const DailyCashSection = () => {
       description: data.description,
       payments: data.payments.map(p => ({
         amount: p.amount,
-        paymentMethod: p.paymentMethod.toLowerCase().replace(" ", "_"),
+        paymentMethod: p.paymentMethod
       })),
     };
 
@@ -53,7 +53,6 @@ const DailyCashSection = () => {
           <NewMovementModal
             open={openMovement}
             onClose={() => setOpenMovement(false)}
-            onConfirm={handleNewMovement}
           />
 
         </Stack>

@@ -1,5 +1,5 @@
 import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
-import { ICheckStock, ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
+import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
 
 
 export const createProduct = async (form: ProductForm, token: string) => {

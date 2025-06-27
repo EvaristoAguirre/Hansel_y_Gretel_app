@@ -1,6 +1,6 @@
 import { searchProductsNotProm } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
-import { IProductDataList, ProductCreated, ProductForm, ProductForPromo, SelectedProductsI } from "@/components/Interfaces/IProducts";
+import { ProductForm, ProductForPromo, ProductResponse, SelectedProductsI } from "@/components/Interfaces/IProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
@@ -25,7 +25,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
   const [editQuantity, setEditQuantity] = useState<number>(1);
 
   // Resultado del buscador de productos
-  const [searchProductsResults, setSearchProductsResults] = useState<ProductCreated[]>([]);
+  const [searchProductsResults, setSearchProductsResults] = useState<ProductResponse[]>([]);
 
   useEffect(() => {
     if (form.products && form.products.length > 0) {
@@ -68,9 +68,9 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
    * Agrega un producto seleccionado al estado `selectedProducts`, pero solo si no está ya incluido.
    * Si el producto es nuevo, se agrega con una cantidad de 1 y su precio unitario.
    *
-   * @param {ProductCreated} product - El producto a agregar
+   * @param {ProductResponse} product - El producto a agregar
    */
-  const handleSelectProduct = (product: ProductCreated) => {
+  const handleSelectProduct = (product: ProductResponse) => {
     if (selectedProducts.some((p) => p.productId === product.id)) return;
     setSelectedProducts((prev) => [
       ...prev,
@@ -186,7 +186,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
                 />
               </Tooltip>
 
-              {item.unitaryPrice !== null && (
+              {item.unitaryPrice?.toFixed(2) !== undefined && (
                 <Typography fontSize="0.8rem">
                   ${(item.unitaryPrice * item.quantity).toFixed(2)}
                 </Typography>

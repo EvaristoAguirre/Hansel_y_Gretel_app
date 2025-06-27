@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button, Box } from "@mui/material";
 import { getProductsByCategory, searchProducts } from "@/api/products";
-import { ProductCreated, ProductTableProps } from "@/components/Interfaces/IProducts";
+import { ProductResponse, ProductTableProps } from "@/components/Interfaces/IProducts";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useProducts } from "@/components/Hooks/useProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import DataGridComponent from '../../Utils/DataGridComponent';
 import { useAuth } from "@/app/context/authContext";
-import { log } from 'console';
 import LoadingLottie from "@/components/Loader/Loading";
 import { fetchCategories } from "@/api/categories";
 import { ICategory } from "@/components/Interfaces/ICategories";
@@ -23,7 +22,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const { products, setProducts } = useProductStore();
   const { fetchAndSetProducts } = useProducts();
   const [searchResults, setSearchResults] = useState(products); // Productos filtrados
-  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]); // Productos seleccionados
+  const [selectedProducts, setSelectedProducts] = useState<ProductResponse[]>([]); // Productos seleccionados
   const [searchTerm, setSearchTerm] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [categories, setCategories] = useState<ICategory[]>([]);

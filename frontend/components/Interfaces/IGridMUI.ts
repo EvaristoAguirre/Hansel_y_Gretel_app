@@ -1,4 +1,5 @@
-import { IingredientForm } from "./Ingredients";
+import { ICategory } from "./ICategories";
+import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IPromotionDetails } from "./IProducts";
 import { IStockOfProduct } from "./IStock";
 
@@ -10,10 +11,10 @@ export interface IRowData {
   abbreviation?: string;
   price?: number | null;
   cost?: number | null;
-  categories?: string[];
+  categories?: ICategory[];
   isActive?: boolean;
   quantity?: number | null;
-  productIngredients?: IingredientForm[] | null;
+  productIngredients?: IingredientResponse[] | null;
   promotionDetails?: IPromotionDetails[] | null;
   stock?: IStockOfProduct | null;
   fecha?: string;
