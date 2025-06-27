@@ -8,7 +8,7 @@ import { ProductState } from "../Interfaces/IProducts";
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
 
-const mapIngredientResponseToForm = (
+export const mapIngredientResponseToForm = (
   ingredient: IingredientResponse
 ): IingredientForm => ({
   name: ingredient.ingredient.name,
@@ -34,14 +34,6 @@ export const useProductStore = create<ProductState>((set) => {
       if (!exists) {
         const parsedProduct = {
           ...data,
-          productIngredients: data.productIngredients && data.productIngredients.length > 0
-            ? data.productIngredients.map((ingredient: IingredientResponse) => ({
-              name: ingredient.ingredient.name,
-              ingredientId: ingredient.ingredient.id,
-              unitOfMeasureId: ingredient.unitOfMeasure?.id ?? '',
-              quantityOfIngredient: ingredient.quantityOfIngredient,
-            }))
-            : [],
           promotionDetails: data.promotionDetails ?? null,
         };
 
@@ -57,6 +49,7 @@ export const useProductStore = create<ProductState>((set) => {
       products: state.products.map((product) =>
         product.id === data.id ? data : product
       ),
+
 
     }));
   });
@@ -75,6 +68,7 @@ export const useProductStore = create<ProductState>((set) => {
   return {
     products: [],
     setProducts: (products) => set({ products }),
+
     addProduct: (product) => {
       set((state) => ({ products: [...state.products, product] }));
     },

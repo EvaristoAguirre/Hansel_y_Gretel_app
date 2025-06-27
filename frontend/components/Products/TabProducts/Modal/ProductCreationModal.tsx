@@ -107,8 +107,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   const { getAccessToken } = useAuth();
   useEffect(() => {
-    console.log("😅🟢 form en modal", form.categories);
-    console.log("🔮categorias del context", categories);
+    console.log("😅🟢 form en modal", form);
 
 
   }, [form]);

@@ -14,6 +14,7 @@ import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { FormTypeProduct } from "@/components/Enums/view-products";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { ICategory } from "@/components/Interfaces/ICategories";
+import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -51,10 +52,10 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     units.length === 0 ? setLoading(true) : setLoading(false);
   }, [units]);
 
-  useEffect(() => {
-    console.log("en Products🅾️", form);
+  // useEffect(() => {
+  //   console.log("en Products🅾️", form);
 
-  }, [form]);
+  // }, [form]);
 
 
   const handleSave = () => {
@@ -95,7 +96,9 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             className="bg-[--color-primary]"
             size="small"
             onClick={() => {
+              console.log("🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️ ", params.row);
               setForm({
+
                 id: params.row.id,
                 code: params.row.code,
                 name: params.row.name,
@@ -104,7 +107,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: parseFloat(params.row.price),
                 cost: parseFloat(params.row.cost),
                 categories: params.row.categories,
-                ingredients: params.row.productIngredients || [],
+                ingredients: params.row.productIngredients?.map(mapIngredientResponseToForm) || [],
                 products: params.row.promotionDetails || [],
                 isActive: true,
                 allowsToppings: params.row.allowsToppings,
