@@ -11,33 +11,35 @@ export class ProductMapper {
       excludeExtraneousValues: true,
     });
 
-    dto.availableToppingGroups = product.availableToppingGroups?.map(
-      (group) => ({
-        id: group.toppingGroup.id,
-        name: group.toppingGroup.name,
+    dto.availableToppingGroups =
+      product.availableToppingGroups?.map((group) => ({
+        id: group.toppingGroup?.id ?? null,
+        name: group.toppingGroup?.name || '',
         settings: group.settings,
         quantityOfTopping: group.quantityOfTopping,
         unitOfMeasure: plainToInstance(
           UnitOfMeasureResponseDto,
-          group.unitOfMeasure,
+          group.unitOfMeasure ?? {},
           {
             excludeExtraneousValues: true,
           },
         ),
-        toppings: group.toppingGroup.toppings?.map((topping) => ({
-          id: topping.id,
-          name: topping.name,
-        })),
-        toppingsGroup: group.toppingGroup.productsAvailableIn?.map((tg) => ({
-          id: tg.id,
-          name: tg.toppingGroup.name,
-          toppings: tg.toppingGroup.toppings?.map((topping) => ({
+        toppings:
+          group.toppingGroup?.toppings?.map((topping) => ({
             id: topping.id,
             name: topping.name,
-          })),
-        })),
-      }),
-    );
+          })) ?? [],
+        toppingsGroup:
+          group.toppingGroup.productsAvailableIn?.map((tg) => ({
+            id: tg.id,
+            name: tg.toppingGroup?.name ?? '',
+            toppings:
+              tg.toppingGroup?.toppings?.map((topping) => ({
+                id: topping.id,
+                name: topping.name,
+              })) ?? [],
+          })) ?? [],
+      })) ?? [];
 
     return dto;
   }
