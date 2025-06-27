@@ -13,9 +13,9 @@ import {
 } from "@mui/material";
 import Grid from '@mui/material/Grid';
 import {
-  ProductCreated,
   ProductForm,
   ProductForPromo,
+  ProductResponse,
   ProductToppingsGroupDto,
 } from "@/components/Interfaces/IProducts";
 import { ICategory } from "@/components/Interfaces/ICategories";
@@ -49,7 +49,7 @@ interface ProductCreationModalProps {
   ) => void;
   onSave: () => void;
   modalType: FormTypeProduct;
-  products: ProductCreated[];
+  products: ProductResponse[];
   units: IUnitOfMeasureForm[]
 }
 
@@ -113,11 +113,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setToken(token);
   }, [getAccessToken]);
 
-
-  useEffect(() => {
-    console.log("✅form", form);
-
-  }, [form]);
 
   useEffect(() => {
     validateForm(errors);

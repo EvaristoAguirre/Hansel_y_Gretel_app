@@ -91,26 +91,24 @@ export interface IPromotionDetails {
   product: IProduct;
 }
 
+
 export interface ProductResponse {
-  categories: ICategory[];
-  code: number;
-  cost: number;
-  description: string;
-  type: TypeProduct
   id: string;
-  isActive: boolean;
+  code: number;
   name: string;
   price: number;
+  cost: number;
+  type: TypeProduct;
+  allowsToppings: boolean;
+  categories: ICategory[];
   productIngredients: IingredientResponse[];
   promotionDetails: IPromotionDetails[];
   stock: IStockOfProduct;
-  allowsToppings: boolean;
-  toppingsSettings: null,
-  availableToppingGroups: IProductToppingsGroupResponse[]
+  availableToppingGroups: IProductToppingsGroupResponse[];
 }
 
 export interface ProductState {
-  products: ProductCreated[];
+  products: ProductResponse[];
   setProducts: (products: ProductResponse[]) => void;
   addProduct: (product: ProductResponse) => void;
   removeProduct: (id: string) => void;

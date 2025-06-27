@@ -1,21 +1,17 @@
 "use client";
 import { useAuth } from "@/app/context/authContext";
-
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { IProductDataList, IProductToppingsGroupResponse, ProductForm, ProductForPromo, ProductsProps, ProductToppingsGroupDto } from "@/components/Interfaces/IProducts";
+import { IProductToppingsGroupResponse, ProductForm, ProductForPromo, ProductsProps, ProductToppingsGroupDto } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./Modal/ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
-import { fetchUnits } from "@/api/unitOfMeasure";
-import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { FormTypeProduct } from "@/components/Enums/view-products";
-import LoadingLottie from '@/components/Loader/Loading';
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 
 

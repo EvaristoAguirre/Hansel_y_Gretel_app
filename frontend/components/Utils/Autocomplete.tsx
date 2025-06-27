@@ -1,11 +1,11 @@
 import React from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { ProductCreated } from "../Interfaces/IProducts";
+import { ProductResponse } from "../Interfaces/IProducts";
 import { capitalizeFirstLetter } from "./CapitalizeFirstLetter";
 
 interface AutoCompleteProductProps {
-  options: ProductCreated[];
+  options: ProductResponse[];
   onSearch: (value: string) => void;
   onSelect: (product: any) => void;
   label?: string;

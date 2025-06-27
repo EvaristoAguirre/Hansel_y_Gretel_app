@@ -4,7 +4,6 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { esES } from "@mui/x-data-grid/locales";
 import { IRowData } from "../Interfaces/IGridMUI";
 import { capitalizeFirstLetterTable } from "./CapitalizeFirstLetter";
-import LoadingLottie from "../Loader/Loading";
 
 interface DataGridComponentProps {
   rows: IRowData[];
