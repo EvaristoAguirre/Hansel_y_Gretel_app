@@ -92,14 +92,8 @@ export class OrderService {
     id: string,
     updateData: UpdateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Order ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
+    if (!id) throw new BadRequestException('Order ID must be provided.');
+    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -147,63 +141,59 @@ export class OrderService {
               pd,
               queryRunner,
             );
-
-          await queryRunner.manager.save(detail);
-
-          for (const td of toppingDetails) {
-            await queryRunner.manager.save(td);
+          // detail.orderDetailToppings = toppingDetails;
+          // await queryRunner.manager.save(detail);
+          // for (const td of toppingDetails) {
+          //   // console.log('→ Guardando topping:', td);
+          //   await queryRunner.manager.save(td);
+          // }
+          const savedDetail = await queryRunner.manager.save(detail);
+          for (const topping of toppingDetails) {
+            topping.orderDetails = savedDetail;
+            await queryRunner.manager.save(topping);
           }
 
-          order.orderDetails.push(detail);
-          total += subtotal;
+          // order.orderDetails.push(detail);
+          order.orderDetails.push(savedDetail);
+          total += Number(subtotal);
         }
-        order.total += total;
+        order.total = Number(order.total) + total;
       }
-      const updatedOrder = await queryRunner.manager.save(order);
 
+      // order.orderDetails = await queryRunner.manager.find(OrderDetails, {
+      //   where: { order: { id: order.id } },
+      // });
+      const updatedOrder = await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
 
       // ---------- envio a impresion de comanda  -------------------------
-      // if (updateData.productsDetails?.length) {
-      //   const printData = {
-      //     numberCustomers: updatedOrder.numberCustomers,
-      //     table: updatedOrder.table?.name || 'SIN MESA',
-      //     products: updateData.productsDetails.map((detail) => ({
-      //       name:
-      //         updatedOrder.orderDetails.find(
-      //           (d) => d.product.id === detail.productId,
-      //         )?.product.name || 'Producto',
-      //       quantity: detail.quantity,
-      //       commentOfProduct: detail.commentOfProduct,
-      //     })),
-      //     isPriority: updateData.isPriority,
-      //   };
-
-      //   try {
-      //     this.printerService.logger.log(
-      //       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-      //     );
-      //     this.printerService.logger.log('info enviada a imprimir', printData);
-      //     const commandNumber =
-      //       await this.printerService.printKitchenOrder(printData);
-
-      //     updatedOrder.commandNumber = commandNumber;
-
-      //     await this.orderRepo.save(updatedOrder);
-
-      //     this.printerService.logger.log(
-      //       `✅ Comanda impresa, número: ${commandNumber}`,
-      //     );
-      //   } catch (printError) {
-      //     this.printerService.logger.error(
-      //       '❌ Falló la impresión de la comanda',
-      //       printError.stack,
-      //     );
-      //   }
-      // }
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
       return await this.adaptResponse(updatedOrder);
+
+      //
+      //
+      //
+      // try {
+      //   console.log(
+      //     '>> Objeto order para guardar:',
+      //     JSON.stringify(order, null, 2),
+      //   );
+      //   const updatedOrder = await queryRunner.manager.save(order);
+      //   console.log('>> Orden guardada:', updatedOrder);
+
+      //   console.log('>> Emisión de evento...');
+      //   try {
+      //     // this.eventEmitter.emit('order.updated', { order: updatedOrder });
+      //   } catch (emitErr) {
+      //     console.error('❌ Error en eventEmitter.emit:', emitErr);
+      //   }
+
+      //   return await this.adaptResponse(updatedOrder);
+      // } catch (saveErr) {
+      //   console.error('❌ Error al guardar la orden:', saveErr);
+      //   throw saveErr;
+      // }
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err instanceof HttpException
@@ -518,3 +508,41 @@ export class OrderService {
     return response;
   }
 }
+
+// if (updateData.productsDetails?.length) {
+//   const printData = {
+//     numberCustomers: updatedOrder.numberCustomers,
+//     table: updatedOrder.table?.name || 'SIN MESA',
+//     products: updateData.productsDetails.map((detail) => ({
+//       name:
+//         updatedOrder.orderDetails.find(
+//           (d) => d.product.id === detail.productId,
+//         )?.product.name || 'Producto',
+//       quantity: detail.quantity,
+//       commentOfProduct: detail.commentOfProduct,
+//     })),
+//     isPriority: updateData.isPriority,
+//   };
+
+//   try {
+//     this.printerService.logger.log(
+//       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+//     );
+//     this.printerService.logger.log('info enviada a imprimir', printData);
+//     const commandNumber =
+//       await this.printerService.printKitchenOrder(printData);
+
+//     updatedOrder.commandNumber = commandNumber;
+
+//     await this.orderRepo.save(updatedOrder);
+
+//     this.printerService.logger.log(
+//       `✅ Comanda impresa, número: ${commandNumber}`,
+//     );
+//   } catch (printError) {
+//     this.printerService.logger.error(
+//       '❌ Falló la impresión de la comanda',
+//       printError.stack,
+//     );
+//   }
+// }
