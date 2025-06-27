@@ -134,7 +134,7 @@ export class OrderRepository {
     });
 
     const toppingDetails: OrderDetailToppings[] = [];
-
+    console.log('primer dato...', detailData);
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
       if (detailData.toppingsPerUnit.length !== quantity) {
         throw new BadRequestException(
@@ -143,8 +143,9 @@ export class OrderRepository {
       }
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
-
+        console.log('segundo dato a chequear...', toppingsForUnit);
         for (const toppingId of toppingsForUnit) {
+          console.log('evaluando topping individual...', toppingId);
           const topping = await qr.manager.findOne(Ingredient, {
             where: { id: toppingId, isActive: true },
             relations: ['toppingsGroups'],
@@ -184,7 +185,7 @@ export class OrderRepository {
           const td = qr.manager.create(OrderDetailToppings, {
             topping,
             orderDetails: detail,
-            quantity: config.quantityOfTopping,
+            // quantity: config.quantityOfTopping,
             unitOfMeasure: config.unitOfMeasure,
             unitOfMeasureName: config.unitOfMeasure?.name,
           });
