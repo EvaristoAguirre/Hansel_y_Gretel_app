@@ -458,8 +458,8 @@ export class ProductRepository {
   }
 
   private async createSimpleProduct(
-    queryRunner,
-    productToCreate,
+    queryRunner: QueryRunner,
+    productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const { categories, ...productData } = productToCreate;
 
@@ -1233,8 +1233,8 @@ export class ProductRepository {
   }
 
   private async createAvailableToppingsGroup(
-    savedProduct,
-    productToCreate,
+    savedProduct: Product,
+    productToCreate: CreateProductDto,
     queryRunner: QueryRunner,
   ) {
     for (const groupDto of productToCreate.availableToppingGroups) {

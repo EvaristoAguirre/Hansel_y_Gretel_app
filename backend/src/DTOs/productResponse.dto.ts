@@ -70,10 +70,10 @@ export class ProductResponseDto {
 
   @Expose()
   @Type(() => PromotionProductResponseDto)
-  promotionProducts?: PromotionProductResponseDto[];
-  @Expose()
-  @Type(() => PromotionProductResponseDto)
-  componentDetails?: PromotionProductResponseDto[];
+  promotionDetails?: PromotionProductResponseDto[];
+  // @Expose()
+  // @Type(() => PromotionProductResponseDto)
+  // componentDetails?: PromotionProductResponseDto[];
 
   @Expose()
   @Type(() => UnitOfMeasureResponseDto)
