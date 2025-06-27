@@ -23,6 +23,8 @@ export class IngredientResponseDto {
   cost: number;
   // @Expose()
   // isActive: boolean;
+  @Expose()
+  type: string;
 }
 
 export class StockSummary {
