@@ -42,7 +42,7 @@ export class ProductMapper {
           })) ?? [],
       })) ?? [];
 
-    dto.componentDetails =
+    dto.promotionDetails =
       product.promotionDetails?.map((detail) => ({
         id: detail.id,
         quantity: detail.quantity,
