@@ -670,6 +670,12 @@ export class ProductRepository {
         });
 
         await this.updateToppingsGroups(updateData, product, queryRunner);
+
+        const toppingsExtraCost = await this.calculateToppingsCostForProduct(
+          updateData,
+          queryRunner,
+        );
+        product.cost += toppingsExtraCost;
       }
 
       const updatedProduct = await queryRunner.manager.save(product);
@@ -796,6 +802,13 @@ export class ProductRepository {
         });
         await this.updateToppingsGroups(updateData, product, queryRunner);
       }
+
+      const toppingsExtraCost = await this.calculateToppingsCostForProduct(
+        updateData,
+        queryRunner,
+      );
+      product.cost += toppingsExtraCost;
+
       const updatedProduct = await queryRunner.manager.save(product);
       const updatedProductWithRelations =
         await this.getProductWithRelationsByQueryRunner(
@@ -1333,7 +1346,7 @@ export class ProductRepository {
   }
 
   private async calculateToppingsCostForProduct(
-    productToCreate: CreateProductDto,
+    productToCreate: CreateProductDto | UpdateProductDto,
     queryRunner: QueryRunner,
   ): Promise<number> {
     let totalExtraCost = 0;
@@ -1355,7 +1368,11 @@ export class ProductRepository {
       }
 
       const activeToppings = group.toppings?.filter(
-        (t) => t.isActive && t.cost != null && t.unitOfMeasure,
+        (t) =>
+          t.isActive &&
+          typeof t.cost === 'number' &&
+          t.unitOfMeasure &&
+          typeof t.unitOfMeasure.id === 'string',
       );
 
       if (!activeToppings || activeToppings.length === 0) continue;
@@ -1380,7 +1397,8 @@ export class ProductRepository {
         .slice(0, maxSelection);
 
       const totalCost = topCheapest.reduce((sum, item) => sum + item.cost, 0);
-      const averageCost = totalCost / topCheapest.length;
+      const averageCost =
+        topCheapest.length > 0 ? totalCost / topCheapest.length : 0;
 
       totalExtraCost += averageCost;
     }
