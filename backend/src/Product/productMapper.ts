@@ -56,6 +56,6 @@ export class ProductMapper {
   }
 
   static toResponseDtoArray(products: Product[]): ProductResponseDto[] {
-    return products.map(this.toResponseDto);
+    return products.map((product) => this.toResponseDto(product));
   }
 }
