@@ -111,7 +111,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 products: params.row.promotionDetails || [],
                 isActive: true,
                 allowsToppings: params.row.allowsToppings,
-                toppingsSettings: params.row.availableToppingGroups.settings,
+                toppingsSettings: params.row.availableToppingGroups?.settings || [],
                 unitOfMeasure: params.row.unitOfMeasure,
                 unitOfMeasureId: params.row.unitOfMeasureId,
                 unitOfMeasureConversions: params.row.unitOfMeasureConversions,
