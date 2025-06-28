@@ -15,7 +15,7 @@ export const addStock = async (formStock: IStock, token: string) => {
 };
 
 
-//para editar stock necesito el id de la orden
+//para editar stock necesito el id
 export const editStock = async (idStock: string, payload: IStock, token: string) => {
   const response = await fetch(`${URI_STOCK}/${idStock}`, {
     method: "PATCH",

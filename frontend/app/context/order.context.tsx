@@ -22,6 +22,7 @@ import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
 import { ITable } from "@/components/Interfaces/ITable";
 import { TableState } from "@/components/Enums/table";
+import { editTable } from "@/api/tables";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -154,11 +155,13 @@ const OrderProvider = ({
     setSelectedProducts([]);
     setConfirmedProducts([]);
     setSelectedOrderByTable(null);
+
     setSelectedToppingsByProduct({});
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
     if (selectedTable?.state === TableState.AVAILABLE) {
+
       return setSelectedOrderByTable(null);
 
     }
@@ -177,6 +180,7 @@ const OrderProvider = ({
           const data = await response.json();
 
           setSelectedOrderByTable(data);
+
 
           const productsByOrder = data.products;
 
@@ -405,11 +409,13 @@ const OrderProvider = ({
       addOrder(newOrder);
 
       setSelectedOrderByTable(newOrder);
-
+      const tableEdited = token && await editTable(
+        { ...selectedTable, state: TableState.OPEN },
+        token
+      );
 
       const updatedTable = {
-        ...newOrder.table,
-        room: selectedTable.room,
+        ...tableEdited,
         orders: [newOrder.id],
       };
       handleSelectTable(updatedTable);
@@ -465,6 +471,7 @@ const OrderProvider = ({
       handleSetProductsByOrder(productsByOrder);
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
+
       return updatedOrder;
     } catch (error) {
       console.error(error);
@@ -488,6 +495,7 @@ const OrderProvider = ({
         if (cancelledOrder) {
           removeOrder(id);
           setSelectedOrderByTable(null);
+
           setConfirmedProducts([]);
           setSelectedTable({
             ...selectedTable,
@@ -531,6 +539,8 @@ const OrderProvider = ({
       }
     }
   };
+
+  console.groupEnd();
 
   return (
     <OrderContext.Provider

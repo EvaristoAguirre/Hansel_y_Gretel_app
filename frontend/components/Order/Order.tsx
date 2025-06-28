@@ -83,7 +83,6 @@ const Order: React.FC<OrderProps> = ({
     if (tableEdited) {
       setSelectedTable({ ...selectedTable, state: tableEdited.state });
       updateTable(tableEdited);
-
     }
     handleCompleteStep();
     handleNextStep();
@@ -111,7 +110,6 @@ const Order: React.FC<OrderProps> = ({
     if (tableEdited) {
       setSelectedTable({ ...selectedTable, state: tableEdited.state });
       updateTable(tableEdited);
-
     }
     handleCompleteStep();
     handleNextStep();

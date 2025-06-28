@@ -15,7 +15,6 @@ interface TableCardProps {
   table: ITable;
   handleOpenModal: (type: TableModalType, table?: ITable) => void;
   handleDelete: (id: string) => void;
-  setSelectedTable: (table: ITable) => void;
 }
 const TableCard: React.FC<TableCardProps> = ({
   table, handleOpenModal, handleDelete
@@ -38,6 +37,7 @@ const TableCard: React.FC<TableCardProps> = ({
   const handleClickTable = (table: ITable) => {
     const isTheSameTable: boolean = table?.id === selectedTable?.id;
     return selectedTable && isTheSameTable ? handleSelectTable(null) : handleSelectTable(table);
+
   };
 
 
