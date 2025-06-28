@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import {
   Button,
   List,
@@ -86,6 +86,7 @@ const OrderEditor = ({
   useEffect(() => {
     token && fetchCategories(token).then((categories = []) => setCategories(categories));
   }, []);
+
 
 
   const confirmarPedido: () => Promise<void> = async () => {

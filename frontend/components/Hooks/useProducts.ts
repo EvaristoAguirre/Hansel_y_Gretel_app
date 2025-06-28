@@ -38,11 +38,6 @@ export const useProducts = () => {
     availableToppingGroups: []
   });
 
-  useEffect(() => {
-    console.log("en context", form);
-
-  }, [form]);
-
 
   // Llamada inicial para cargar productos
   useEffect(() => {

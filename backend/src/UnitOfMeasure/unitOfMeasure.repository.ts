@@ -65,6 +65,7 @@ export class UnitOfMeasureRepository {
 
       const referencedUnits = await this.unitOfMeasureRepository.find({
         where: { id: In(conversionUnitIds) },
+        relations: ['baseUnit'],
       });
 
       const volumeUnits = ['Litro', 'Mililitro', 'Centímetro cúbico'];
@@ -87,20 +88,40 @@ export class UnitOfMeasureRepository {
         );
       }
 
-      const baseUnitName = hasVolume ? 'Litro' : 'Kilogramo';
-      const baseUnit = await this.unitOfMeasureRepository.findOne({
-        where: { name: baseUnitName },
-      });
+      // Detectar la base unit desde la conversión
+      const targetConversion = conversions[0];
+      const targetUnit = referencedUnits.find(
+        (u) => u.id === targetConversion.toUnitId,
+      );
 
-      if (!baseUnit) {
-        throw new NotFoundException(
-          `No se encontró la unidad base ${baseUnitName}`,
+      if (!targetUnit) {
+        throw new NotFoundException('Unidad de destino no encontrada');
+      }
+
+      let baseUnit: UnitOfMeasure | null = null;
+      let equivalenceToBaseUnit: number | null = null;
+
+      if (targetUnit.name === 'Litro' || targetUnit.name === 'Kilogramo') {
+        // Caso 1: la conversión es directamente a la base
+        baseUnit = targetUnit;
+        equivalenceToBaseUnit = targetConversion.conversionFactor / 1; // ya es base
+      } else if (targetUnit.baseUnit) {
+        // Caso 2: la conversión es a un submúltiplo
+        baseUnit = targetUnit.baseUnit;
+        equivalenceToBaseUnit =
+          targetConversion.conversionFactor *
+          (targetUnit.equivalenceToBaseUnit || 1); // escalamos a base
+      } else {
+        throw new BadRequestException(
+          `No se pudo determinar la unidad base para la conversión hacia ${targetUnit.name}`,
         );
       }
 
       unitOfMeasure.baseUnit = baseUnit;
+      unitOfMeasure.equivalenceToBaseUnit = equivalenceToBaseUnit;
+
       console.log(
-        `Unidad base asignada: ${baseUnit.name} (ID: ${baseUnit.id})`,
+        `Asignada base: ${baseUnit.name} | Equivalencia: ${equivalenceToBaseUnit}`,
       );
     }
 
@@ -360,17 +381,12 @@ export class UnitOfMeasureRepository {
     id: string,
     updateData: UpdateUnitOfMeasureDto,
   ): Promise<UnitOfMeasureSummaryResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
+    if (!id || !isUUID(id)) {
+      throw new BadRequestException('Valid UUID must be provided as ID.');
     }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
+
     const { name, abbreviation, conversions } = updateData;
 
-    // 1. Verificar existencia de la unidad
     const existingUnit = await this.unitOfMeasureRepository.findOne({
       where: { id },
       relations: ['fromConversions', 'toConversions'],
@@ -380,53 +396,78 @@ export class UnitOfMeasureRepository {
       throw new NotFoundException('Unit of measure not found');
     }
 
-    // 2. Validar nombre único si se está modificando
     if (name && name !== existingUnit.name) {
       const unitWithSameName = await this.unitOfMeasureRepository.findOne({
         where: { name },
       });
-
       if (unitWithSameName) {
         throw new ConflictException('Unit of measure name already exists');
       }
     }
 
-    // 3. Validar abreviatura única si se está modificando
     if (abbreviation && abbreviation !== existingUnit.abbreviation) {
       const unitWithSameAbbreviation =
         await this.unitOfMeasureRepository.findOne({
           where: { abbreviation },
         });
-
       if (unitWithSameAbbreviation) {
-        throw new ConflictException(
-          'Unit of measure abbreviation already exists',
-        );
+        throw new ConflictException('Abbreviation already exists');
       }
     }
 
-    // 4. Actualizar propiedades básicas
     if (name) existingUnit.name = name;
     if (abbreviation) existingUnit.abbreviation = abbreviation;
 
-    // 5. Manejar transacción para actualizaciones atómicas
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // 6. Guardar cambios en la unidad
+      if (conversions?.length > 0) {
+        const conversionUnitIds = conversions.map((c) => c.toUnitId);
+
+        const referencedUnits = await this.unitOfMeasureRepository.find({
+          where: { id: In(conversionUnitIds) },
+          relations: ['baseUnit'],
+        });
+
+        const targetConversion = conversions[0];
+        const targetUnit = referencedUnits.find(
+          (u) => u.id === targetConversion.toUnitId,
+        );
+
+        if (!targetUnit) {
+          throw new NotFoundException('Unidad de destino no encontrada');
+        }
+
+        let baseUnit: UnitOfMeasure | null = null;
+        let equivalenceToBaseUnit: number | null = null;
+
+        if (targetUnit.name === 'Litro' || targetUnit.name === 'Kilogramo') {
+          baseUnit = targetUnit;
+          equivalenceToBaseUnit = targetConversion.conversionFactor / 1;
+        } else if (targetUnit.baseUnit) {
+          baseUnit = targetUnit.baseUnit;
+          equivalenceToBaseUnit =
+            targetConversion.conversionFactor *
+            (targetUnit.equivalenceToBaseUnit || 1);
+        } else {
+          throw new BadRequestException(
+            `No se pudo determinar la unidad base para la conversión hacia ${targetUnit.name}`,
+          );
+        }
+
+        existingUnit.baseUnit = baseUnit;
+        existingUnit.equivalenceToBaseUnit = equivalenceToBaseUnit;
+      }
+
       const updatedUnit = await queryRunner.manager.save(existingUnit);
 
-      // 7. Manejar conversiones si se proporcionan
       if (conversions) {
-        // Eliminar conversiones existentes
         await queryRunner.manager.delete(UnitConversion, [
           ...(existingUnit.fromConversions?.map((c) => c.id) || []),
           ...(existingUnit.toConversions?.map((c) => c.id) || []),
         ]);
-
-        // Crear nuevas conversiones
         await this.handleConversionsManager(
           updatedUnit,
           conversions,
@@ -436,7 +477,6 @@ export class UnitOfMeasureRepository {
 
       await queryRunner.commitTransaction();
 
-      // 8. Obtener la unidad actualizada con todas sus relaciones
       const unitWithRelations = await this.unitOfMeasureRepository.findOne({
         where: { id: updatedUnit.id },
         relations: [
@@ -451,14 +491,7 @@ export class UnitOfMeasureRepository {
       return this.mapUnitWithConversions(unitWithRelations);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Error updating the unit of measure',
       );
@@ -508,13 +541,37 @@ export class UnitOfMeasureRepository {
       this.getUnitWithRelations(toUnitId),
     ]);
 
+    // if (fromUnit?.baseUnit?.id === toUnitId) {
+    //   return quantity * (fromUnit.equivalenceToBaseUnit || 1);
+    // }
+
+    // if (toUnit?.baseUnit?.id === fromUnitId) {
+    //   return quantity / (toUnit.equivalenceToBaseUnit || 1);
+    // }
+
     if (fromUnit?.baseUnit?.id === toUnitId) {
-      return quantity * (fromUnit.equivalenceToBaseUnit || 1);
+      if (
+        !fromUnit.equivalenceToBaseUnit ||
+        fromUnit.equivalenceToBaseUnit <= 0
+      ) {
+        throw new BadRequestException(
+          `Unidad ${fromUnit.name} no tiene equivalencia válida hacia su base ${toUnit.name}`,
+        );
+      }
+      return quantity * fromUnit.equivalenceToBaseUnit;
+    }
+    if (fromUnit?.baseUnit?.id === fromUnitId) {
+      if (
+        !fromUnit.equivalenceToBaseUnit ||
+        fromUnit.equivalenceToBaseUnit <= 0
+      ) {
+        throw new BadRequestException(
+          `Unidad ${fromUnit.name} no tiene equivalencia válida hacia su base ${fromUnit.name}`,
+        );
+      }
+      return quantity * toUnit.equivalenceToBaseUnit;
     }
 
-    if (toUnit?.baseUnit?.id === fromUnitId) {
-      return quantity / (toUnit.equivalenceToBaseUnit || 1);
-    }
     if (!fromUnit || !toUnit) {
       throw new NotFoundException('One or both units not found.');
     }

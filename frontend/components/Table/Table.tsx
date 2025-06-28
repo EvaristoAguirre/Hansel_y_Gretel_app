@@ -83,11 +83,10 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
             <TableCard
               key={table.id}
               table={table}
-              setSelectedTable={(mesaSeleccionada) => {
-                onSelectTable(mesaSeleccionada);
-              }}
+
               handleOpenModal={handleOpenModal}
               handleDelete={handleDelete}
+
             />
           ))
         ) : (

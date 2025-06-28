@@ -29,4 +29,8 @@ export class UpdateIngredientDto {
   @IsString()
   @IsOptional()
   unitOfMeasureId?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isTopping?: boolean;
 }

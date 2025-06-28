@@ -10,7 +10,6 @@ import { useOrderContext } from '../../app/context/order.context';
 import PayOrder from '../Order/Pay';
 import TableEditor from './TableEditor';
 import OrderEditor from '../Order/OrderEditor';
-import { useEffect } from 'react';
 import { ITable } from '../Interfaces/ITable';
 import { TableState } from '../Enums/table';
 
@@ -63,7 +62,7 @@ export const StepperTable: React.FC<Props> = ({
   const handleReset = () => {
     setActiveStep(0);
     setCompleted({});
-    handleResetSelectedOrder();
+    // handleResetSelectedOrder();
   };
 
   const imprimirComanda = () => {
