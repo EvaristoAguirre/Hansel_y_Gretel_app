@@ -132,7 +132,12 @@ export class OrderService {
           });
           if (!product) throw new NotFoundException('Product not found');
 
-          await this.stockService.deductStock(product.id, pd.quantity);
+          await this.stockService.deductStock(
+            product.id,
+            pd.quantity,
+            pd.toppingsPerUnit,
+          );
+          // await this.stockService.deductStock(product.id, pd.quantity);
 
           const { detail, toppingDetails, subtotal } =
             await this.orderRepository.buildOrderDetailWithToppings(
@@ -141,59 +146,27 @@ export class OrderService {
               pd,
               queryRunner,
             );
-          // detail.orderDetailToppings = toppingDetails;
-          // await queryRunner.manager.save(detail);
-          // for (const td of toppingDetails) {
-          //   // console.log('→ Guardando topping:', td);
-          //   await queryRunner.manager.save(td);
-          // }
+
           const savedDetail = await queryRunner.manager.save(detail);
           for (const topping of toppingDetails) {
             topping.orderDetails = savedDetail;
             await queryRunner.manager.save(topping);
           }
 
-          // order.orderDetails.push(detail);
           order.orderDetails.push(savedDetail);
           total += Number(subtotal);
         }
         order.total = Number(order.total) + total;
       }
 
-      // order.orderDetails = await queryRunner.manager.find(OrderDetails, {
-      //   where: { order: { id: order.id } },
-      // });
       const updatedOrder = await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
 
       // ---------- envio a impresion de comanda  -------------------------
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
+
       return await this.adaptResponse(updatedOrder);
-
-      //
-      //
-      //
-      // try {
-      //   console.log(
-      //     '>> Objeto order para guardar:',
-      //     JSON.stringify(order, null, 2),
-      //   );
-      //   const updatedOrder = await queryRunner.manager.save(order);
-      //   console.log('>> Orden guardada:', updatedOrder);
-
-      //   console.log('>> Emisión de evento...');
-      //   try {
-      //     // this.eventEmitter.emit('order.updated', { order: updatedOrder });
-      //   } catch (emitErr) {
-      //     console.error('❌ Error en eventEmitter.emit:', emitErr);
-      //   }
-
-      //   return await this.adaptResponse(updatedOrder);
-      // } catch (saveErr) {
-      //   console.error('❌ Error al guardar la orden:', saveErr);
-      //   throw saveErr;
-      // }
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err instanceof HttpException

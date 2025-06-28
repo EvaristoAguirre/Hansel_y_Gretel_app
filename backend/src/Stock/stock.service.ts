@@ -207,7 +207,11 @@ export class StockService {
     return updatedStock;
   }
 
-  async deductStock(productId: string, quantity: number) {
+  async deductStock(
+    productId: string,
+    quantity: number,
+    toppingsPerUnit?: string[][],
+  ) {
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
     if (!product) {
@@ -227,6 +231,10 @@ export class StockService {
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
       await this.deductPromotionStock(product, quantity);
+    }
+
+    if (toppingsPerUnit?.length) {
+      await this.deductToppingsStock(toppingsPerUnit, quantity);
     }
 
     this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
@@ -319,5 +327,55 @@ export class StockService {
 
     ingredient.stock.quantityInStock -= quantityToDeduct;
     await this.stockRepository.saveStock(ingredient.stock);
+  }
+
+  private async deductToppingsStock(
+    toppingsPerUnit: string[][],
+    productQuantity: number,
+  ) {
+    const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
+    const unidadId = unidad?.id;
+    if (!unidadId) {
+      throw new InternalServerErrorException('Unidad base no encontrada');
+    }
+
+    // 1. Contar cuántas veces se usa cada topping en todas las unidades
+    const toppingCountMap: Record<string, number> = {};
+
+    for (const unitToppings of toppingsPerUnit) {
+      for (const toppingId of unitToppings) {
+        if (toppingCountMap[toppingId]) {
+          toppingCountMap[toppingId] += 1;
+        } else {
+          toppingCountMap[toppingId] = 1;
+        }
+      }
+    }
+
+    // 2. Recorrer cada topping único
+    for (const [toppingId, countPerUnit] of Object.entries(toppingCountMap)) {
+      const toppingStock =
+        await this.stockRepository.getStockByToppingId(toppingId);
+      if (!toppingStock) {
+        throw new NotFoundException(`No stock found for topping ${toppingId}`);
+      }
+
+      const totalCount = countPerUnit * productQuantity;
+
+      const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
+        unidadId,
+        toppingStock.unitOfMeasure.id,
+        totalCount,
+      );
+
+      if (Number(toppingStock.quantityInStock) < quantityToDeduct) {
+        throw new BadRequestException(
+          `Insufficient stock for topping ${toppingId}`,
+        );
+      }
+
+      toppingStock.quantityInStock -= quantityToDeduct;
+      await this.stockRepository.saveStock(toppingStock);
+    }
   }
 }
