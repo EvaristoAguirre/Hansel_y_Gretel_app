@@ -106,11 +106,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const [token, setToken] = useState<string | null>(null);
 
   const { getAccessToken } = useAuth();
-  useEffect(() => {
-    console.log("😅🟢 form en modal", form);
-
-
-  }, [form]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -263,7 +258,11 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           return form.type === TypeProduct.PROMO || form.ingredients.length > 0;
 
         case TabProductKey.PRODUCT_WITH_INGREDIENT:
-          return (form.type === TypeProduct.PRODUCT && !form.ingredients.length) || form.type === TypeProduct.PROMO;
+          return (
+            form.type === TypeProduct.SIMPLE ||
+            form.type === TypeProduct.PROMO ||
+            (form.type === TypeProduct.PRODUCT && (!Array.isArray(form.ingredients) || form.ingredients.length === 0))
+          );
 
         case TabProductKey.PROMO:
           return form.type !== TypeProduct.PROMO;
