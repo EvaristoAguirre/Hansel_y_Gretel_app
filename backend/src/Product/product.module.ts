@@ -16,6 +16,7 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
 import { StockModule } from 'src/Stock/stock.module';
 import { ProductRepository } from './product.repository';
+import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -33,6 +34,7 @@ import { ProductRepository } from './product.repository';
     UnitOfMeasurenModule,
     UserModule,
     StockModule,
+    CostCascadeModule,
   ],
   controllers: [ProductController],
   providers: [ProductService, ProductRepository],
