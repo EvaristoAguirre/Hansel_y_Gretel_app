@@ -111,6 +111,36 @@ export class StockRepository {
     }
   }
 
+  async getStockByToppingId(toppingId: string) {
+    if (!toppingId) {
+      throw new BadRequestException('Either ID must be provided.');
+    }
+    if (!isUUID(toppingId)) {
+      throw new BadRequestException(
+        'Invalid ID format. ID must be a valid UUID.',
+      );
+    }
+    try {
+      const stock = await this.stockRepository.findOne({
+        where: {
+          ingredient: { id: toppingId },
+        },
+        relations: ['ingredient', 'unitOfMeasure'],
+      });
+      if (!stock) {
+        throw new NotFoundException('Stock not found');
+      }
+
+      return stock;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(
+        'Error fetching stock',
+        error.message,
+      );
+    }
+  }
+
   async createAndSaveStock(
     quantityInStock: number,
     minimumStock: number,
