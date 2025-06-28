@@ -31,6 +31,9 @@ export class OrderDetails {
   @Column({ nullable: true })
   commentOfProduct: string;
 
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  commandNumber: string;
+
   //--------------- Relaciones ---------------- //
 
   @ManyToOne(() => Product, (product) => product.orderDetails)

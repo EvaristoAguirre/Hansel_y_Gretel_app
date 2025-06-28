@@ -51,7 +51,7 @@ export class ArchiveService {
             archived.total = order.total;
             archived.numberCustomers = order.numberCustomers;
             archived.comment = order.comment;
-            archived.commandNumber = order.commandNumber;
+            // archived.commandNumber = order.commandNumber;
             archived.tableId = order.table?.id;
 
             archived.orderDetails = order.orderDetails?.map((detail) => {

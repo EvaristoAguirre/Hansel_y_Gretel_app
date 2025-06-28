@@ -26,6 +26,7 @@ import { Product } from 'src/Product/product.entity';
 import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
+import { OrderDetailToppings } from './order_details_toppings.entity';
 
 @Injectable()
 export class OrderService {
@@ -123,9 +124,84 @@ export class OrderService {
         order.numberCustomers = updateData.numberCustomers;
       if (updateData.state) order.state = updateData.state;
 
-      let total = 0;
+      // let total = 0;
+
+      // if (updateData.productsDetails?.length) {
+      //   for (const pd of updateData.productsDetails) {
+      //     const product = await queryRunner.manager.findOne(Product, {
+      //       where: { id: pd.productId, isActive: true },
+      //     });
+      //     if (!product) throw new NotFoundException('Product not found');
+
+      //     await this.stockService.deductStock(
+      //       product.id,
+      //       pd.quantity,
+      //       pd.toppingsPerUnit,
+      //     );
+
+      //     const { detail, toppingDetails, subtotal } =
+      //       await this.orderRepository.buildOrderDetailWithToppings(
+      //         order,
+      //         product,
+      //         pd,
+      //         queryRunner,
+      //       );
+
+      //     const savedDetail = await queryRunner.manager.save(detail);
+      //     for (const topping of toppingDetails) {
+      //       topping.orderDetails = savedDetail;
+      //       await queryRunner.manager.save(topping);
+      //     }
+
+      //     order.orderDetails.push(savedDetail);
+      //     total += Number(subtotal);
+      //   }
+      //   order.total = Number(order.total) + total;
+      // }
+
+      // ---------- envio a impresion de comanda  -------------------------
+      // if (updateData.productsDetails?.length) {
+      //   const printData = {
+      //     numberCustomers: order.numberCustomers,
+      //     table: order.table?.name || 'SIN MESA',
+      //     products: updateData.productsDetails.map((detail) => ({
+      //       name:
+      //         order.orderDetails.find((d) => d.product.id === detail.productId)
+      //           ?.product.name || 'Producto',
+      //       quantity: detail.quantity,
+      //       commentOfProduct: detail.commentOfProduct,
+      //     })),
+      //     isPriority: updateData.isPriority,
+      //   };
+
+      //   try {
+      //     this.printerService.logger.log(
+      //       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+      //     );
+      //     this.printerService.logger.log('info enviada a imprimir', printData);
+      //     const commandNumber =
+      //       await this.printerService.printKitchenOrder(printData);
+
+      //     order.commandNumber = commandNumber;
+
+      //     await this.orderRepo.save(order);
+
+      //     this.printerService.logger.log(
+      //       `✅ Comanda impresa, número: ${commandNumber}`,
+      //     );
+      //   } catch (printError) {
+      //     this.printerService.logger.error(
+      //       '❌ Falló la impresión de la comanda',
+      //       printError.stack,
+      //     );
+      //   }
+      // }
 
       if (updateData.productsDetails?.length) {
+        let total = 0;
+        const detailsToSave: OrderDetails[] = [];
+        const toppingsToSave: OrderDetailToppings[] = [];
+
         for (const pd of updateData.productsDetails) {
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: pd.productId, isActive: true },
@@ -137,7 +213,6 @@ export class OrderService {
             pd.quantity,
             pd.toppingsPerUnit,
           );
-          // await this.stockService.deductStock(product.id, pd.quantity);
 
           const { detail, toppingDetails, subtotal } =
             await this.orderRepository.buildOrderDetailWithToppings(
@@ -147,22 +222,81 @@ export class OrderService {
               queryRunner,
             );
 
+          detailsToSave.push(detail);
+          toppingsToSave.push(...toppingDetails);
+          total += Number(subtotal);
+        }
+
+        // 🖨️ Generar número de comanda (una sola vez)
+        const printData = {
+          numberCustomers: order.numberCustomers,
+          table: order.table?.name || 'SIN MESA',
+          // products: updateData.productsDetails.map((detail) => ({
+          //   name:
+          //     detailsToSave.find((d) => d.product.id === detail.productId)
+          //       ?.product.name || 'Producto',
+          //   quantity: detail.quantity,
+          //   commentOfProduct: detail.commentOfProduct,
+          // })),
+          products: updateData.productsDetails.map((detail) => {
+            const matchedDetail = order.orderDetails.find(
+              (d) => d.product.id === detail.productId,
+            );
+
+            return {
+              name: matchedDetail?.product.name || 'Producto',
+              quantity: detail.quantity,
+              commentOfProduct: detail.commentOfProduct,
+              toppings:
+                matchedDetail?.orderDetailToppings?.map(
+                  (t) => t.topping.name,
+                ) || [],
+            };
+          }),
+          isPriority: updateData.isPriority,
+        };
+
+        let commandNumber: string | null = null;
+
+        try {
+          this.printerService.logger.log(
+            `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+          );
+          this.printerService.logger.log('info enviada a imprimir', printData);
+          // commandNumber =
+          //   await this.printerService.printKitchenOrder(printData);
+          commandNumber = 'grabandoTextFijo';
+          this.printerService.logger.log(
+            `✅ Comanda impresa, número: ${commandNumber}`,
+          );
+        } catch (printError) {
+          this.printerService.logger.error(
+            '❌ Falló la impresión de la comanda',
+            printError.stack,
+          );
+        }
+
+        // 💾 Guardar detalles y toppings con el número de comanda
+        for (const detail of detailsToSave) {
+          detail.commandNumber = commandNumber;
           const savedDetail = await queryRunner.manager.save(detail);
-          for (const topping of toppingDetails) {
+
+          for (const topping of toppingsToSave.filter(
+            (t) => t.orderDetails?.product.id === detail.product.id,
+          )) {
             topping.orderDetails = savedDetail;
             await queryRunner.manager.save(topping);
           }
 
           order.orderDetails.push(savedDetail);
-          total += Number(subtotal);
         }
+
         order.total = Number(order.total) + total;
       }
 
       const updatedOrder = await queryRunner.manager.save(order);
-      await queryRunner.commitTransaction();
 
-      // ---------- envio a impresion de comanda  -------------------------
+      await queryRunner.commitTransaction();
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
@@ -481,41 +615,3 @@ export class OrderService {
     return response;
   }
 }
-
-// if (updateData.productsDetails?.length) {
-//   const printData = {
-//     numberCustomers: updatedOrder.numberCustomers,
-//     table: updatedOrder.table?.name || 'SIN MESA',
-//     products: updateData.productsDetails.map((detail) => ({
-//       name:
-//         updatedOrder.orderDetails.find(
-//           (d) => d.product.id === detail.productId,
-//         )?.product.name || 'Producto',
-//       quantity: detail.quantity,
-//       commentOfProduct: detail.commentOfProduct,
-//     })),
-//     isPriority: updateData.isPriority,
-//   };
-
-//   try {
-//     this.printerService.logger.log(
-//       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-//     );
-//     this.printerService.logger.log('info enviada a imprimir', printData);
-//     const commandNumber =
-//       await this.printerService.printKitchenOrder(printData);
-
-//     updatedOrder.commandNumber = commandNumber;
-
-//     await this.orderRepo.save(updatedOrder);
-
-//     this.printerService.logger.log(
-//       `✅ Comanda impresa, número: ${commandNumber}`,
-//     );
-//   } catch (printError) {
-//     this.printerService.logger.error(
-//       '❌ Falló la impresión de la comanda',
-//       printError.stack,
-//     );
-//   }
-// }
