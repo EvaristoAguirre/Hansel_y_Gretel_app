@@ -35,9 +35,6 @@ export class Order {
   @Column({ nullable: true })
   comment: string;
 
-  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
-  commandNumber: string;
-
   @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
   methodOfPayment: PaymentMethod;
 

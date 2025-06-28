@@ -19,10 +19,6 @@ export class PrintComandaDTO {
   @IsOptional()
   numberCustomers?: number;
 
-  @IsString()
-  @IsOptional()
-  commentOfProduct?: string;
-
   @IsOptional()
   @IsBoolean()
   isPriority?: boolean;
@@ -31,8 +27,12 @@ export class PrintComandaDTO {
 class Details {
   @IsString()
   name: string;
+
   @IsString()
   quantity: number;
+
+  @IsArray()
+  toppings?: string[];
 
   @IsString()
   @IsOptional()

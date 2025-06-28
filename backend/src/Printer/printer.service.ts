@@ -123,9 +123,40 @@ export class PrinterService {
         '----------------------------------------\n',
         '\x1D\x21\x00', // Tamaño normal para productos
         '\x1B\x4D\x00', // Tipografía estándar
-        ...orderData.products.map((p) => {
+        // ...orderData.products.map((p) => {
+        //   const name = this.normalizeText(p.name);
+        //   const comment = this.normalizeText(p.commentOfProduct || '');
+        //   const quantityText = `x${p.quantity.toString().padStart(2)}`;
+        //   const maxLineLength = 48;
+        //   const lines = [];
+
+        //   if (name.length + quantityText.length + 1 <= maxLineLength) {
+        //     lines.push(
+        //       name.padEnd(maxLineLength - quantityText.length) + quantityText,
+        //     );
+        //   } else {
+        //     const nameLine1 = name.substring(0, maxLineLength);
+        //     const nameLine2 =
+        //       name
+        //         .substring(maxLineLength, maxLineLength * 2)
+        //         .padEnd(maxLineLength - quantityText.length) + quantityText;
+        //     lines.push(nameLine1);
+        //     lines.push(nameLine2);
+        //   }
+
+        //   if (comment) {
+        //     lines.push(comment);
+        //   }
+
+        //   lines.push(''); // espacio entre productos
+        //   return lines.join('\n');
+        // }),
+        ...orderData.products.flatMap((p) => {
           const name = this.normalizeText(p.name);
           const comment = this.normalizeText(p.commentOfProduct || '');
+          const toppings = (p.toppings || []).map(
+            (t) => `+ ${this.normalizeText(t)}`,
+          );
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
           const lines = [];
@@ -144,12 +175,11 @@ export class PrinterService {
             lines.push(nameLine2);
           }
 
-          if (comment) {
-            lines.push(comment);
-          }
-
+          if (comment) lines.push(comment);
+          if (toppings.length > 0) lines.push(...toppings);
           lines.push(''); // espacio entre productos
-          return lines.join('\n');
+
+          return lines;
         }),
         '\x1B\x61\x01', // Centrar
         '----------------------------------------\n',
@@ -200,7 +230,8 @@ export class PrinterService {
       });
 
       const tableName = order.table.name;
-      const commandNumber = order.commandNumber || 'S/N';
+      //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
+      // const commandNumber = order.commandNumber || 'S/N';
 
       const products = order.orderDetails
         .filter((detail) => detail.isActive)
@@ -241,7 +272,8 @@ export class PrinterService {
         '-----------------------------------\n',
         `${dateStr} - ${timeStr}\n`,
         `Mesa: ${this.normalizeTextToTicket(tableName)}\n`,
-        `Comanda: ${commandNumber}\n`,
+        //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
+        // `Comanda: ${commandNumber}\n`,
         '-----------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
         'CANT PRODUCTO           P.UNIT  TOTAL\n',

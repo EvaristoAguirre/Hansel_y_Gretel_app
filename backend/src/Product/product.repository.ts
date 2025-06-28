@@ -506,12 +506,14 @@ export class ProductRepository {
         productToCreate,
         queryRunner,
       );
+
       const extraToppingCost = await this.calculateToppingsCostForProduct(
         productToCreate,
         queryRunner,
       );
 
       savedProduct.cost += extraToppingCost;
+
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -1353,7 +1355,6 @@ export class ProductRepository {
 
     for (const groupDto of productToCreate.availableToppingGroups || []) {
       const { settings, quantityOfTopping, unitOfMeasureId } = groupDto;
-
       if (!settings?.chargeExtra || !unitOfMeasureId) continue;
 
       const group = await queryRunner.manager.findOne(ToppingsGroup, {
@@ -1370,7 +1371,7 @@ export class ProductRepository {
       const activeToppings = group.toppings?.filter(
         (t) =>
           t.isActive &&
-          typeof t.cost === 'number' &&
+          !isNaN(Number(t.cost)) &&
           t.unitOfMeasure &&
           typeof t.unitOfMeasure.id === 'string',
       );
@@ -1386,7 +1387,7 @@ export class ProductRepository {
           );
           return {
             topping,
-            cost: topping.cost * convertedQuantity,
+            cost: Number(topping.cost) * convertedQuantity,
           };
         }),
       );

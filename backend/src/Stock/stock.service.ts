@@ -378,4 +378,20 @@ export class StockService {
       await this.stockRepository.saveStock(toppingStock);
     }
   }
+
+  //   async restoreStockFromOrder(order: Order) {
+  //   for (const detail of order.orderDetails) {
+  //     const { product, quantity, toppingDetails } = detail;
+
+  //     // 1. Restituir stock del producto o sus ingredientes
+  //     await this.restockProduct(product, quantity);
+
+  //     // 2. Restituir stock de toppings
+  //     for (const td of toppingDetails) {
+  //       await this.restockTopping(td.topping, td.quantity, td.unitOfMeasure.id);
+  //     }
+  //   }
+
+  //   this.eventEmitter.emit('stock.restituted', { orderId: order.id });
+  // }
 }
