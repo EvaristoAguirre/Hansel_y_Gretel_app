@@ -17,6 +17,7 @@ import { ProductMapper } from './productMapper';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
 
 @Injectable()
 export class ProductService {
@@ -25,6 +26,7 @@ export class ProductService {
     private readonly eventEmitter: EventEmitter2,
     private readonly stockService: StockService,
     private readonly unitOfMeasureService: UnitOfMeasureService,
+    private readonly costCascadeService: CostCascadeService,
   ) {}
 
   async getAllProducts(
@@ -128,10 +130,37 @@ export class ProductService {
     id: string,
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
+    const currentProduct = await this.productRepository.getProductById(id);
+
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,
     );
+
+    if (
+      currentProduct.type === 'simple' &&
+      typeof updateData.cost === 'number' &&
+      updateData.cost !== currentProduct.cost
+    ) {
+      console.log(
+        `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,
+      );
+      const cascadeResult =
+        await this.costCascadeService.updateSimpleProductCostAndCascade(
+          productUpdated.id,
+          updateData.cost,
+        );
+      if (cascadeResult.success) {
+        console.log(`📦 Producto ${id} actualizado. Promociones afectadas:`);
+        for (const promoId of cascadeResult.updatedPromotions) {
+          console.log(`🎁 -> Promoción recalculada: ${promoId}`);
+        }
+      } else {
+        console.error(
+          `⚠️ Falló la cascada de costos para producto ${id}: ${cascadeResult.message}`,
+        );
+      }
+    }
 
     this.eventEmitter.emit('product.updated', {
       product: productUpdated,

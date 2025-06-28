@@ -235,6 +235,81 @@ export class CostCascadeService {
     }
   }
 
+  async updateSimpleProductCostAndCascade(
+    productId: string,
+    newCost: number,
+    externalQueryRunner?: QueryRunner,
+  ): Promise<CostCascadeResult> {
+    this.logger.log(
+      `🔁 Iniciando cascada de costo para producto simple ${productId} con nuevo costo ${newCost}`,
+    );
+    if (!productId || !isUUID(productId)) {
+      throw new BadRequestException('Invalid product ID format');
+    }
+
+    const queryRunner =
+      externalQueryRunner ?? this.dataSource.createQueryRunner();
+    const isExternal = !!externalQueryRunner;
+
+    if (!isExternal) {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+    }
+
+    const updatedPromotions = new Set<string>();
+
+    try {
+      // // 1. Actualizar costo del producto simple
+      // await queryRunner.manager.update(Product, productId, {
+      //   cost: newCost,
+      // });
+      // this.logger.log(
+      //   `✅ Producto simple ${productId} actualizado con nuevo costo: ${newCost}`,
+      // );
+
+      // 2. Buscar promociones afectadas
+      const promoLinks = await queryRunner.manager.find(PromotionProduct, {
+        where: { product: { id: productId } },
+        relations: ['promotion', 'product'],
+      });
+
+      for (const link of promoLinks) {
+        updatedPromotions.add(link.promotion.id);
+      }
+
+      for (const promotionId of updatedPromotions) {
+        await this.calculatePromotionCost(promotionId, queryRunner);
+      }
+
+      if (!isExternal) await queryRunner.commitTransaction();
+
+      this.logger.log(
+        `✅ Cascada finalizada para producto simple ${productId}`,
+      );
+
+      return {
+        success: true,
+        updatedProducts: [productId],
+        updatedPromotions: Array.from(updatedPromotions),
+      };
+    } catch (error) {
+      if (!isExternal) await queryRunner.rollbackTransaction();
+
+      this.logger.error(
+        `❌ Error durante la cascada de producto simple ${productId}: ${error.message}`,
+      );
+
+      return {
+        success: false,
+        updatedProducts: [productId],
+        updatedPromotions: Array.from(updatedPromotions),
+        message: error.message,
+      };
+    } finally {
+      if (!isExternal) await queryRunner.release();
+    }
+  }
+
   private async getProductWithRelations(
     queryRunner: QueryRunner,
     productId: string,
