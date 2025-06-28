@@ -281,7 +281,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       return form.type === TypeProduct.PRODUCT ? "Crear producto" : "Crear promo";
     }
     if (modalType === FormTypeProduct.EDIT) {
-      return form.type === TypeProduct.PRODUCT ? "Guardar producto" : "Guardar promo";
+      return (form.type === TypeProduct.PRODUCT) || (form.type === TypeProduct.SIMPLE) ? "Guardar producto" : "Guardar promo";
     }
     return "Guardar producto";
   };
