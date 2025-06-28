@@ -8,8 +8,9 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "rootDir": ".",
     "outDir": "./dist",
-    "baseUrl": "./",
+    "baseUrl": ".",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -20,8 +21,11 @@
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "paths": {
       "escpos": ["node_modules/escpos"],
-      "escpos-usb": ["node_modules/escpos-usb"]
+      "escpos-usb": ["node_modules/escpos-usb"],
+      "src/*": ["src/*"],
     }
-  }
+   
+  },
+  "include": ["src/**/*", "config/**/*", "typeORMconig.ts"]
   }
 

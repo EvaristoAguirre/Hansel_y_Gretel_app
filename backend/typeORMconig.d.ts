@@ -1,0 +1,33 @@
+import { DataSource } from 'typeorm';
+import 'dotenv/config';
+declare const _default: (() => {
+    type: string;
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    database: string;
+    autoLoadEntities: boolean;
+    synchronize: boolean;
+    dropSchema: boolean;
+    logging: string[];
+    schema: string;
+    entities: string[];
+    migrations: string[];
+}) & import("@nestjs/config").ConfigFactoryKeyHost<{
+    type: string;
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    database: string;
+    autoLoadEntities: boolean;
+    synchronize: boolean;
+    dropSchema: boolean;
+    logging: string[];
+    schema: string;
+    entities: string[];
+    migrations: string[];
+}>;
+export default _default;
+export declare const connectionSource: DataSource;
