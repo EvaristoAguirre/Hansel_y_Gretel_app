@@ -83,7 +83,9 @@ const TableEditor = ({
       { ...selectedTable, state: TableState.OPEN },
       token
     );
+
     setSelectedTable(tableEdited);
+
     handleNextStep();
   };
 
@@ -187,7 +189,6 @@ const TableEditor = ({
                       comentario
                     );
                     onAbrirPedido();
-                    handleOpenTable(selectedTable);
                     handleCompleteStep();
                     handleNextStep();
 
