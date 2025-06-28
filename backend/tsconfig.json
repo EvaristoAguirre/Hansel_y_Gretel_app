@@ -22,10 +22,10 @@
     "paths": {
       "escpos": ["node_modules/escpos"],
       "escpos-usb": ["node_modules/escpos-usb"],
-      "src/*": ["src/*"],
+      "src/*": ["src/*"]
     }
    
   },
-  "include": ["src/**/*", "config/**/*", "typeORMconig.ts"]
+  "include": ["src/**/*", "config/**/*"]
   }
 
