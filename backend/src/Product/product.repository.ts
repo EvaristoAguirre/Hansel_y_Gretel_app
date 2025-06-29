@@ -84,9 +84,8 @@ export class ProductRepository {
         'promotionDetails',
         'availableToppingGroups',
         'availableToppingGroups.unitOfMeasure',
-        'availableToppingGroups.toppings',
-        'availableToppingGroups.toppings.unitOfMeasure',
         'availableToppingGroups.toppingGroup.toppings',
+        'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
       ],
     });
     if (!product) {
