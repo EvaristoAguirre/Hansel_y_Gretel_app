@@ -95,7 +95,7 @@ export class OrderService {
   ): Promise<OrderSummaryResponseDto> {
     if (!id) throw new BadRequestException('Order ID must be provided.');
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-
+    console.log('entrando a updateOrder', updateData.productsDetails);
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -124,79 +124,6 @@ export class OrderService {
         order.numberCustomers = updateData.numberCustomers;
       if (updateData.state) order.state = updateData.state;
 
-      // let total = 0;
-
-      // if (updateData.productsDetails?.length) {
-      //   for (const pd of updateData.productsDetails) {
-      //     const product = await queryRunner.manager.findOne(Product, {
-      //       where: { id: pd.productId, isActive: true },
-      //     });
-      //     if (!product) throw new NotFoundException('Product not found');
-
-      //     await this.stockService.deductStock(
-      //       product.id,
-      //       pd.quantity,
-      //       pd.toppingsPerUnit,
-      //     );
-
-      //     const { detail, toppingDetails, subtotal } =
-      //       await this.orderRepository.buildOrderDetailWithToppings(
-      //         order,
-      //         product,
-      //         pd,
-      //         queryRunner,
-      //       );
-
-      //     const savedDetail = await queryRunner.manager.save(detail);
-      //     for (const topping of toppingDetails) {
-      //       topping.orderDetails = savedDetail;
-      //       await queryRunner.manager.save(topping);
-      //     }
-
-      //     order.orderDetails.push(savedDetail);
-      //     total += Number(subtotal);
-      //   }
-      //   order.total = Number(order.total) + total;
-      // }
-
-      // ---------- envio a impresion de comanda  -------------------------
-      // if (updateData.productsDetails?.length) {
-      //   const printData = {
-      //     numberCustomers: order.numberCustomers,
-      //     table: order.table?.name || 'SIN MESA',
-      //     products: updateData.productsDetails.map((detail) => ({
-      //       name:
-      //         order.orderDetails.find((d) => d.product.id === detail.productId)
-      //           ?.product.name || 'Producto',
-      //       quantity: detail.quantity,
-      //       commentOfProduct: detail.commentOfProduct,
-      //     })),
-      //     isPriority: updateData.isPriority,
-      //   };
-
-      //   try {
-      //     this.printerService.logger.log(
-      //       `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-      //     );
-      //     this.printerService.logger.log('info enviada a imprimir', printData);
-      //     const commandNumber =
-      //       await this.printerService.printKitchenOrder(printData);
-
-      //     order.commandNumber = commandNumber;
-
-      //     await this.orderRepo.save(order);
-
-      //     this.printerService.logger.log(
-      //       `✅ Comanda impresa, número: ${commandNumber}`,
-      //     );
-      //   } catch (printError) {
-      //     this.printerService.logger.error(
-      //       '❌ Falló la impresión de la comanda',
-      //       printError.stack,
-      //     );
-      //   }
-      // }
-
       if (updateData.productsDetails?.length) {
         let total = 0;
         const detailsToSave: OrderDetails[] = [];
@@ -207,7 +134,7 @@ export class OrderService {
             where: { id: pd.productId, isActive: true },
           });
           if (!product) throw new NotFoundException('Product not found');
-
+          console.log('datos a product type....', product.type);
           await this.stockService.deductStock(
             product.id,
             pd.quantity,

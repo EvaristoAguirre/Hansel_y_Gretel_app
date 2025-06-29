@@ -70,6 +70,25 @@ export class UnitOfMeasureService {
     );
   }
 
+  async convertUnitWithDetails(
+    fromUnitId: string,
+    toUnitId: string,
+    quantity: number,
+    visited: Set<string> = new Set(),
+  ): Promise<{
+    convertedQuantity: number;
+    originalQuantity: number;
+    originalUnit: UnitOfMeasure;
+    targetUnit: UnitOfMeasure;
+  }> {
+    return await this.unitOfMeasureRepository.convertUnitWithDetails(
+      fromUnitId,
+      toUnitId,
+      quantity,
+      visited,
+    );
+  }
+
   async findConversionUnit() {
     return await this.unitOfMeasureRepository.findConversionUnit();
   }
