@@ -619,6 +619,35 @@ export class UnitOfMeasureRepository {
     );
   }
 
+  async convertUnitWithDetails(
+    fromUnitId: string,
+    toUnitId: string,
+    quantity: number,
+    visited: Set<string> = new Set(),
+  ): Promise<{
+    convertedQuantity: number;
+    originalQuantity: number;
+    originalUnit: UnitOfMeasure;
+    targetUnit: UnitOfMeasure;
+  }> {
+    const fromUnit = await this.getUnitWithRelations(fromUnitId);
+    const toUnit = await this.getUnitWithRelations(toUnitId);
+
+    const convertedQuantity = await this.convertUnit(
+      fromUnitId,
+      toUnitId,
+      quantity,
+      visited,
+    );
+
+    return {
+      convertedQuantity,
+      originalQuantity: quantity,
+      originalUnit: fromUnit,
+      targetUnit: toUnit,
+    };
+  }
+
   private async findDirectConversion(fromUnitId: string, toUnitId: string) {
     return this.unitConversionRepository.findOne({
       where: [

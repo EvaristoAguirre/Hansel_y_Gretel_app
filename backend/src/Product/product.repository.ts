@@ -621,7 +621,7 @@ export class ProductRepository {
     }
   }
 
-  private async updateNormalProduct(
+  async updateNormalProduct(
     queryRunner: QueryRunner,
     id: string,
     updateData: UpdateProductDto,
@@ -631,15 +631,16 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
     const { categories, ingredients, ...otherAttributes } = updateData;
-    //producto simple
+
+    // Producto simple
     if (
       !updateData.ingredients ||
       updateData.ingredients.length === 0 ||
       updateData.type === 'simple'
     ) {
       const product = await this.getProductWithRelations(id, 'simple');
-
       if (!product) {
         throw new NotFoundException(`Product with ID: ${id} not found`);
       }
@@ -651,7 +652,6 @@ export class ProductRepository {
           const categoryEntities = await queryRunner.manager.find(Category, {
             where: { id: In(categories), isActive: true },
           });
-
           const foundIds = categoryEntities.map((cat) => cat.id);
           const invalidIds = categories.filter((id) => !foundIds.includes(id));
           if (invalidIds.length > 0) {
@@ -659,7 +659,6 @@ export class ProductRepository {
               `Invalid category IDs: ${invalidIds.join(', ')}`,
             );
           }
-
           product.categories = categoryEntities;
         } else {
           product.categories = [];
@@ -672,7 +671,6 @@ export class ProductRepository {
         });
 
         await this.updateToppingsGroups(updateData, product, queryRunner);
-
         const toppingsExtraCost = await this.calculateToppingsCostForProduct(
           updateData,
           queryRunner,
@@ -689,138 +687,144 @@ export class ProductRepository {
         );
 
       return ProductMapper.toResponseDto(updatedProductWithRelations);
+    }
 
-      //------- cierre de la actualizacion de producto simple
-    } else {
-      //producto compuesto
-      if (!ingredients) {
-        throw new BadRequestException(
-          'Ingredients are required for composite products',
-        );
-      }
-      const product = await this.getProductWithRelations(id, updateData.type);
-
-      Object.assign(product, otherAttributes);
-      product.cost = 0;
-
-      if (categories) {
-        if (categories.length > 0) {
-          const categoryEntities = await queryRunner.manager.find(Category, {
-            where: { id: In(categories), isActive: true },
-          });
-
-          const foundIds = categoryEntities.map((cat) => cat.id);
-          const invalidIds = categories.filter((id) => !foundIds.includes(id));
-          if (invalidIds.length > 0) {
-            throw new BadRequestException(
-              `Invalid category IDs: ${invalidIds.join(', ')}`,
-            );
-          }
-
-          product.categories = categoryEntities;
-        } else {
-          product.categories = [];
-        }
-      }
-      const existingIngredientIds = product.productIngredients.map(
-        (pi) => pi.ingredient.id,
+    // Producto compuesto
+    if (!ingredients) {
+      throw new BadRequestException(
+        'Ingredients are required for composite products',
       );
-      const newIngredientIds = ingredients.map((i) => i.ingredientId);
+    }
 
-      const ingredientsToRemove = product.productIngredients.filter(
-        (pi) => !newIngredientIds.includes(pi.ingredient.id),
-      );
+    const product = await this.getProductWithRelations(id, updateData.type);
+    Object.assign(product, otherAttributes);
+    product.cost = 0;
 
-      if (ingredientsToRemove.length > 0) {
-        await queryRunner.manager.remove(
-          ProductIngredient,
-          ingredientsToRemove,
-        );
-      }
-
-      const updatedIngredients = await Promise.all(
-        ingredients.map(async (ingredientDto) => {
-          const ingredient = await queryRunner.manager.findOne(Ingredient, {
-            where: {
-              id: ingredientDto.ingredientId,
-              isActive: true,
-            },
-            relations: ['unitOfMeasure'],
-          });
-
-          if (!ingredient) {
-            throw new BadRequestException(
-              `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
-            );
-          }
-
-          const unitOfMeasure = await queryRunner.manager.findOne(
-            UnitOfMeasure,
-            { where: { id: ingredientDto.unitOfMeasureId } },
+    if (categories) {
+      if (categories.length > 0) {
+        const categoryEntities = await queryRunner.manager.find(Category, {
+          where: { id: In(categories), isActive: true },
+        });
+        const foundIds = categoryEntities.map((cat) => cat.id);
+        const invalidIds = categories.filter((id) => !foundIds.includes(id));
+        if (invalidIds.length > 0) {
+          throw new BadRequestException(
+            `Invalid category IDs: ${invalidIds.join(', ')}`,
           );
+        }
+        product.categories = categoryEntities;
+      } else {
+        product.categories = [];
+      }
+    }
 
-          if (!unitOfMeasure) {
-            throw new BadRequestException(
-              `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
-            );
-          }
+    const existingIngredientIds = product.productIngredients.map(
+      (pi) => pi.ingredient.id,
+    );
+    const newIngredientIds = ingredients.map((i) => i.ingredientId);
 
-          const convertedQuantity = await this.unitOfMeasureService.convertUnit(
+    const ingredientsToRemove = product.productIngredients.filter(
+      (pi) => !newIngredientIds.includes(pi.ingredient.id),
+    );
+    if (ingredientsToRemove.length > 0) {
+      await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
+    }
+
+    const updatedIngredients = await Promise.all(
+      ingredients.map(async (ingredientDto) => {
+        const ingredient = await queryRunner.manager.findOne(Ingredient, {
+          where: { id: ingredientDto.ingredientId, isActive: true },
+          relations: ['unitOfMeasure'],
+        });
+        if (!ingredient) {
+          throw new BadRequestException(
+            `Ingredient with id ${ingredientDto.ingredientId} does not exist or is inactive`,
+          );
+        }
+
+        const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
+          where: { id: ingredientDto.unitOfMeasureId },
+        });
+        if (!unitOfMeasure) {
+          throw new BadRequestException(
+            `Unit of measure ${ingredientDto.unitOfMeasureId} does not exist`,
+          );
+        }
+
+        const conversion =
+          await this.unitOfMeasureService.convertUnitWithDetails(
             ingredientDto.unitOfMeasureId,
             ingredient.unitOfMeasure.id,
             ingredientDto.quantityOfIngredient,
           );
 
-          const existingRelation = product.productIngredients.find(
-            (pi) => pi.ingredient.id === ingredientDto.ingredientId,
+        const existingRelation = product.productIngredients.find(
+          (pi) => pi.ingredient.id === ingredientDto.ingredientId,
+        );
+
+        if (existingRelation) {
+          existingRelation.quantityOfIngredient = conversion.convertedQuantity;
+          existingRelation.unitOfMeasure = conversion.targetUnit;
+          product.cost += ingredient.cost * conversion.convertedQuantity;
+
+          const savedRelation =
+            await queryRunner.manager.save(existingRelation);
+
+          // 🟡 Restaurar valores originales para respuesta
+          savedRelation.quantityOfIngredient = conversion.originalQuantity;
+          savedRelation.unitOfMeasure = conversion.originalUnit;
+
+          return savedRelation;
+        } else {
+          const newProductIngredient = queryRunner.manager.create(
+            ProductIngredient,
+            {
+              product,
+              ingredient,
+              quantityOfIngredient: conversion.convertedQuantity,
+              unitOfMeasure: conversion.targetUnit,
+            },
           );
 
-          if (existingRelation) {
-            existingRelation.quantityOfIngredient = convertedQuantity;
-            existingRelation.unitOfMeasure = unitOfMeasure;
-            product.cost += ingredient.cost * convertedQuantity;
-            return queryRunner.manager.save(existingRelation);
-          } else {
-            const newProductIngredient = queryRunner.manager.create(
-              ProductIngredient,
-              {
-                product,
-                ingredient,
-                quantityOfIngredient: convertedQuantity,
-                unitOfMeasure,
-              },
-            );
-            product.cost += ingredient.cost * convertedQuantity;
-            return queryRunner.manager.save(newProductIngredient);
-          }
-        }),
-      );
+          product.cost += ingredient.cost * conversion.convertedQuantity;
 
-      product.productIngredients = updatedIngredients;
+          const savedNew = await queryRunner.manager.save(newProductIngredient);
 
-      if (updateData.availableToppingGroups) {
-        await queryRunner.manager.delete(ProductAvailableToppingGroup, {
-          product: { id: product.id },
-        });
-        await this.updateToppingsGroups(updateData, product, queryRunner);
-      }
+          // 🟡 Restaurar valores originales para respuesta
+          savedNew.quantityOfIngredient = conversion.originalQuantity;
+          savedNew.unitOfMeasure = conversion.originalUnit;
 
-      const toppingsExtraCost = await this.calculateToppingsCostForProduct(
-        updateData,
-        queryRunner,
-      );
-      product.cost += toppingsExtraCost;
+          return savedNew;
+        }
+      }),
+    );
 
-      const updatedProduct = await queryRunner.manager.save(product);
-      const updatedProductWithRelations =
-        await this.getProductWithRelationsByQueryRunner(
-          queryRunner,
-          updatedProduct.id,
-          updatedProduct.type,
-        );
-      return ProductMapper.toResponseDto(updatedProductWithRelations);
+    product.productIngredients = updatedIngredients;
+
+    if (updateData.availableToppingGroups) {
+      await queryRunner.manager.delete(ProductAvailableToppingGroup, {
+        product: { id: product.id },
+      });
+      await this.updateToppingsGroups(updateData, product, queryRunner);
     }
+
+    const toppingsExtraCost = await this.calculateToppingsCostForProduct(
+      updateData,
+      queryRunner,
+    );
+    product.cost += toppingsExtraCost;
+
+    const updatedProduct = await queryRunner.manager.save(product);
+    const updatedProductWithRelations =
+      await this.getProductWithRelationsByQueryRunner(
+        queryRunner,
+        updatedProduct.id,
+        updatedProduct.type,
+      );
+
+    return ProductMapper.toResponseDto(updatedProductWithRelations);
   }
+
   private async updatePromotion(
     queryRunner: QueryRunner,
     id: string,

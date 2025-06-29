@@ -131,10 +131,18 @@ export class ProductService {
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const currentProduct = await this.productRepository.getProductById(id);
+    console.log('costo actual...', currentProduct.cost);
+    console.log('data entrante...', updateData.ingredients);
 
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,
+    );
+
+    console.log('costo actualizado....', productUpdated.cost);
+    console.log(
+      'datos del producto actualizado...',
+      productUpdated.productIngredients,
     );
 
     if (
