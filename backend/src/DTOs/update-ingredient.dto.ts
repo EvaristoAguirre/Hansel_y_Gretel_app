@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   IsBoolean,
   IsNotEmpty,
@@ -33,4 +34,8 @@ export class UpdateIngredientDto {
   @IsBoolean()
   @IsOptional()
   isTopping?: boolean;
+
+  @IsOptional()
+  @Exclude()
+  stock?: any;
 }
