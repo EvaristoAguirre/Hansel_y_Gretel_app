@@ -57,6 +57,7 @@ export class ProductService {
     }
     try {
       const product = await this.productRepository.getProductById(id);
+      // return product;
       return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {

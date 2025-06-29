@@ -60,6 +60,7 @@ export class ProductRepository {
         'availableToppingGroups',
         'availableToppingGroups.unitOfMeasure',
         'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
       ],
     });
   }
@@ -81,6 +82,11 @@ export class ProductRepository {
         'productIngredients.ingredient',
         'productIngredients.unitOfMeasure',
         'promotionDetails',
+        'availableToppingGroups',
+        'availableToppingGroups.unitOfMeasure',
+        'availableToppingGroups.toppings',
+        'availableToppingGroups.toppings.unitOfMeasure',
+        'availableToppingGroups.toppingGroup.toppings',
       ],
     });
     if (!product) {
@@ -357,7 +363,8 @@ export class ProductRepository {
     queryRunner: QueryRunner,
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const { categories, ingredients, ...productData } = productToCreate;
+    const { categories, availableToppingGroups, ingredients, ...productData } =
+      productToCreate;
 
     let categoryEntities: Category[] = [];
 
@@ -432,13 +439,10 @@ export class ProductRepository {
       await queryRunner.manager.save(Product, savedProduct);
     }
 
-    if (
-      productToCreate.allowsToppings &&
-      productToCreate.availableToppingGroups?.length
-    ) {
+    if (productToCreate.allowsToppings && availableToppingGroups?.length) {
       await this.createAvailableToppingsGroup(
         savedProduct,
-        productToCreate,
+        availableToppingGroups,
         queryRunner,
       );
 
@@ -469,7 +473,8 @@ export class ProductRepository {
     queryRunner: QueryRunner,
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const { categories, ...productData } = productToCreate;
+    const { categories, availableToppingGroups, ...productData } =
+      productToCreate;
 
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
@@ -495,15 +500,12 @@ export class ProductRepository {
       type: 'simple',
     });
 
-    const savedProduct = await queryRunner.manager.save(product);
+    const savedProduct = await queryRunner.manager.save(Product, product);
 
-    if (
-      productToCreate.allowsToppings &&
-      productToCreate.availableToppingGroups?.length
-    ) {
+    if (productToCreate.allowsToppings && availableToppingGroups?.length) {
       await this.createAvailableToppingsGroup(
         savedProduct,
-        productToCreate,
+        availableToppingGroups,
         queryRunner,
       );
 
@@ -1268,10 +1270,10 @@ export class ProductRepository {
 
   private async createAvailableToppingsGroup(
     savedProduct: Product,
-    productToCreate: CreateProductDto,
+    toppingGroups,
     queryRunner: QueryRunner,
   ) {
-    for (const groupDto of productToCreate.availableToppingGroups) {
+    for (const groupDto of toppingGroups) {
       const group = await queryRunner.manager.findOne(ToppingsGroup, {
         where: { id: groupDto.toppingsGroupId, isActive: true },
       });
@@ -1291,18 +1293,46 @@ export class ProductRepository {
           `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
         );
       }
-
-      const association = queryRunner.manager.create(
-        ProductAvailableToppingGroup,
-        {
-          product: savedProduct,
-          toppingGroup: group,
-          quantityOfTopping: groupDto.quantityOfTopping,
-          unitOfMeasure: unit,
-          settings: groupDto.settings ?? null,
-        },
+      console.log(
+        '➡️ Product ID dentro de createAvailableToppingsGroup:',
+        savedProduct.id,
       );
+      console.log('➡️ Producto completo:', savedProduct);
+
+      // const association = queryRunner.manager.create(
+      //   ProductAvailableToppingGroup,
+      //   {
+      //     product: savedProduct,
+      //     productId: savedProduct.id,
+      //     toppingGroup: group,
+      //     quantityOfTopping: groupDto.quantityOfTopping,
+      //     unitOfMeasure: unit,
+      //     settings: groupDto.settings ?? null,
+      //   },
+      // );
+      const association = new ProductAvailableToppingGroup();
+      association.product = savedProduct;
+      association.productId = savedProduct.id;
+      association.toppingGroup = group;
+      association.unitOfMeasure = unit;
+      association.quantityOfTopping = groupDto.quantityOfTopping;
+      association.settings = groupDto.settings ?? null;
+
       await queryRunner.manager.save(association);
+      //---------------- log para cheaquear si anda ---------------
+      const productWithToppings = await queryRunner.manager.findOne(Product, {
+        where: { id: savedProduct.id },
+        relations: [
+          'availableToppingGroups',
+          'availableToppingGroups.toppingGroup',
+          'availableToppingGroups.unitOfMeasure',
+        ],
+      });
+
+      console.log(
+        '✅ Verificación post-save:',
+        JSON.stringify(productWithToppings, null, 2),
+      );
     }
   }
 

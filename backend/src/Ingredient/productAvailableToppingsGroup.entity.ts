@@ -36,6 +36,8 @@ export class ProductAvailableToppingGroup {
   })
   @JoinColumn({ name: 'productId' })
   product: Product;
+  @Column({ name: 'productId' })
+  productId: string;
 
   @ManyToOne(() => ToppingsGroup, (group) => group.productsAvailableIn, {
     eager: true,
