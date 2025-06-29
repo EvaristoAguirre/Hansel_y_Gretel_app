@@ -93,7 +93,29 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         if ((selectedItem?.stock) || (selectedItem?.min) || (selectedItem?.unit)) {
           if (selectedItem.type === StockModalType.PRODUCT) {
             try {
-              selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
+              if (selectedItem.idStock) {
+                const result = await editStock(selectedItem.idStock, payload, token);
+                if (result.statusCode === 400) {
+                  handleClose();
+                  if (
+                    result.message?.includes("Unit of measure") &&
+                    result.message?.includes("not compatible")
+                  ) {
+                    Swal.fire(
+                      "Unidad incompatible",
+                      "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
+                      "warning"
+                    );
+                  } else {
+                    Swal.fire("Error", result.message || "Error al editar stock.", "error");
+                  }
+                  return;
+                }
+
+                fetchAndSetProducts(token);
+                Swal.fire("Éxito", "Stock editado correctamente.", "success");
+              }
+
               fetchAndSetProducts(token);
               Swal.fire("Éxito", "Stock editado correctamente.", "success");
             } catch (error) {
@@ -103,7 +125,24 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           if (selectedItem.type === StockModalType.INGREDIENT) {
             if (selectedItem.id) {
               try {
-                selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
+                const result = selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
+
+                if (result.statusCode === 400) {
+                  handleClose();
+                  if (
+                    result.message?.includes("Unit of measure") &&
+                    result.message?.includes("not compatible")
+                  ) {
+                    Swal.fire(
+                      "Unidad incompatible",
+                      "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
+                      "warning"
+                    );
+                  } else {
+                    Swal.fire("Error", result.message || "Error al editar stock.", "error");
+                  }
+                  return;
+                }
                 const updatedIngredient = await ingredientsById(selectedItem.id, token);
                 updateIngredient(updatedIngredient);
                 Swal.fire("Éxito", "Stock editado correctamente.", "success");
@@ -116,14 +155,33 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         } else {
           // Si no hay stock, se agrega
           const result = await addStock(payload, token);
+
+          if (result.statusCode === 400) {
+            handleClose();
+            if (
+              result.message?.includes("Unit of measure") &&
+              result.message?.includes("not compatible")
+            ) {
+              Swal.fire(
+                "Unidad incompatible",
+                "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
+                "warning"
+              );
+            } else {
+              Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+            }
+            return;
+          }
+
           if (selectedItem.type === StockModalType.PRODUCT) {
             fetchAndSetProducts(token);
           } else if (selectedItem.type === StockModalType.INGREDIENT) {
             const updatedIngredient = selectedItem.id && await ingredientsById(selectedItem.id, token);
-
             updateIngredient(updatedIngredient);
           }
+
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
+
         }
         onSave();
         handleClose();
