@@ -114,7 +114,7 @@ export class PrinterService {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false,
-        })}\n`,
+        })}hs\n`,
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
         '----------------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
@@ -285,7 +285,7 @@ export class PrinterService {
         'HANSEL Y GRETEL\n',
         '\x1D\x21\x00', // Texto normal
         '-----------------------------------\n',
-        `${dateStr} - ${timeStr}\n`,
+        `${dateStr} - ${timeStr}hs\n`,
         `Mesa: ${this.normalizeTextToTicket(tableName)}\n`,
         //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
         `\x1B\x61\x00`,
