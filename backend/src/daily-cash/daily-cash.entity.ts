@@ -44,6 +44,12 @@ export class DailyCash {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalMercadoPago: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  totalIncomes: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  totalExpenses: number;
+
   // --------- Relaciones ---------
 
   @OneToMany(() => Order, (order) => order.dailyCash)
