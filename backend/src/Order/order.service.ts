@@ -187,9 +187,9 @@ export class OrderService {
             `📤 Enviando comanda a impresión para mesa ${printData.table}`,
           );
           console.log('info enviada a imprimir.......', printData);
-          commandNumber =
-            await this.printerService.printKitchenOrder(printData);
-          // commandNumber = 'grabandoTextFijo - 1111111111';
+          // commandNumber =
+          //   await this.printerService.printKitchenOrder(printData);
+          commandNumber = 'grabandoTextFijo - 1111111111';
           this.printerService.logger.log(
             `✅ Comanda impresa, número: ${commandNumber}`,
           );
@@ -377,11 +377,11 @@ export class OrderService {
       );
       const orderPending = await this.orderRepo.save(order);
 
-      try {
-        await this.printerService.printTicketOrder(order);
-      } catch (error) {
-        throw new ConflictException(error.message);
-      }
+      // try {
+      //   await this.printerService.printTicketOrder(order);
+      // } catch (error) {
+      //   throw new ConflictException(error.message);
+      // }
 
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
