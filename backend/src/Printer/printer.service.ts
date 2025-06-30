@@ -125,10 +125,10 @@ export class PrinterService {
         '\x1B\x4D\x00', // Tipografía estándar
         ...orderData.products.flatMap((p) => {
           const name = this.normalizeText(p.name.toLocaleUpperCase());
-          const comment = this.normalizeText(p.commentOfProduct || '');
           const toppings = (p.toppings || []).map(
             (t) => `+ ${this.normalizeText(t)}\n`,
           );
+          const comment = `${this.normalizeText(p.commentOfProduct || '')}\n`;
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
           const lines: string[] = [];
@@ -151,12 +151,15 @@ export class PrinterService {
 
           lines.push('\x1B\x45\x00'); // Negrita OFF
 
+          if (toppings.length > 0) lines.push(...toppings);
+
           if (comment) {
             lines.push('\x1B\x61\x00'); // Alinear izquierda
             lines.push(comment);
+            // lines.push('--------------------------\n');
             lines.push('\x1B\x61\x01'); // Centrar
+            lines.push('\n');
           }
-          if (toppings.length > 0) lines.push(...toppings);
 
           lines.push(''); // espacio entre productos
 
@@ -239,22 +242,6 @@ export class PrinterService {
       const tip = subtotal * 0.1;
       const total = subtotal + tip;
 
-      // const formatProductLine = (product: {
-      //   name: string;
-      //   quantity: number;
-      //   price: number;
-      // }) => {
-      //   const name = this.normalizeTextToTicket(product.name)
-      //     .substring(0, 32)
-      //     .padEnd(32);
-      //   const quantity = `x${product.quantity.toString().padStart(2)}`;
-      //   const price = `$${product.price.toFixed(2).padStart(6)}`;
-      //   const totalLine = `Total: $${(product.price * product.quantity).toFixed(2).padStart(8)}`;
-      //   return (
-      //     `${quantity} ${name} ${price}\n`.padEnd(48) +
-      //     `${' '.repeat(48 - totalLine.length)}${totalLine}\n`
-      //   );
-      // };
       const formatProductLine = (product: {
         name: string;
         quantity: number;
@@ -264,12 +251,12 @@ export class PrinterService {
           .substring(0, 32)
           .padEnd(32);
         const quantity = `x${product.quantity.toString().padStart(2)}`;
-        const price = `$${Math.round(product.price).toString().padStart(5)}`;
+        const price = `$${Math.round(product.price).toLocaleString('es-AR').padStart(5)}`;
         const totalLine = `Total: $${Math.round(
           product.price * product.quantity,
         )
-          .toString()
-          .padStart(6)}`;
+          .toLocaleString('es-AR')
+          .padStart(8)}`;
 
         return [
           `${quantity} ${name} ${price}`,
@@ -301,8 +288,9 @@ export class PrinterService {
         '\x1B\x61\x02', // Alinear derecha
         // `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
         // `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
-        `Subtotal: $${Math.round(subtotal).toString().padStart(6)}\n`,
-        `Propina sugerida (10%): $${Math.round(tip).toString().padStart(4)}\n`,
+        `Subtotal: $${Math.round(subtotal).toLocaleString('es-AR').padStart(6)}\n`,
+        `Propina sugerida (10%): $${Math.round(tip).toLocaleString('es-AR').padStart(6)}\n`,
+
         '\x1B\x61\x01', // Centrar texto
         '\x1B\x45\x01', // Negrita ON
         '-----------------------------------\n',
@@ -311,7 +299,7 @@ export class PrinterService {
         `\x1B\x4D\x01`, // 2da tipografia
         // `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
         // `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
-        `TOTAL (sin propina): $${Math.round(subtotal).toString().padStart(8)}\n`,
+        `TOTAL (sin propina): $${Math.round(subtotal).toLocaleString('es-AR').padStart(8)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x00', // Texto normal
@@ -320,7 +308,7 @@ export class PrinterService {
         '\x1B\x45\x01', // Negrita ON
         '\x1D\x21\x11', // Texto doble tamaño
         `\x1B\x4D\x01`, // 2da tipografia
-        `TOTAL (con propina): $${Math.round(total).toString().padStart(8)}\n`,
+        `TOTAL (con propina): $${Math.round(total).toLocaleString('es-AR').padStart(8)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x00', // Texto normal
