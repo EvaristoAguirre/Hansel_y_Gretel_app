@@ -155,6 +155,114 @@ export class DailyCashService {
     }
   }
 
+  // async closeDailyCash(
+  //   id: string,
+  //   closeDailyCashDto: CloseDailyCash,
+  // ): Promise<DailyCash> {
+  //   if (!id) {
+  //     throw new BadRequestException('Daily cash report ID must be provided.');
+  //   }
+  //   if (!isUUID(id)) {
+  //     throw new BadRequestException(
+  //       'Invalid ID format. ID must be a valid UUID.',
+  //     );
+  //   }
+
+  //   try {
+  //     const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
+  //     if (!dailyCash) {
+  //       throw new NotFoundException('Daily cash report not found.');
+  //     }
+  //     if (dailyCash.state === DailyCashState.CLOSED) {
+  //       throw new ConflictException('Daily cash report is already closed.');
+  //     }
+
+  //     dailyCash.state = DailyCashState.CLOSED;
+  //     dailyCash.comment = closeDailyCashDto.comment || '';
+
+  //     // --- Filtrado de movimientos ---
+  //     const incomes = dailyCash.movements.filter(
+  //       (mov) => mov.type === DailyCashMovementType.INCOME,
+  //     );
+  //     const expenses = dailyCash.movements.filter(
+  //       (mov) => mov.type === DailyCashMovementType.EXPENSE,
+  //     );
+
+  //     // --- Totales generales ---
+  //     const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
+  //     const totalIncomes = this.sumTotal(incomes);
+  //     const totalExpenses = this.sumTotal(expenses);
+
+  //     // --- Agrupación por método de pago ---
+  //     const orderPayments = this.groupRecordsByPaymentMethod(
+  //       dailyCash.orders.map((o) => ({
+  //         amount: Number(o.total),
+  //         methodOfPayment: o.methodOfPayment,
+  //       })),
+  //     );
+  //     const incomePayments = this.groupRecordsByPaymentMethod(incomes);
+  //     const expensePayments = this.groupRecordsByPaymentMethod(expenses);
+
+  //     // --- Totales por método (ventas + ingresos - egresos) ---
+  //     const totalCashSales =
+  //       (orderPayments[PaymentMethod.CASH] || 0) +
+  //       (incomePayments[PaymentMethod.CASH] || 0);
+  //     const totalCashExpenses = expensePayments[PaymentMethod.CASH] || 0;
+  //     dailyCash.totalCash = totalCashSales - totalCashExpenses;
+
+  //     const totalCreditSales =
+  //       (orderPayments[PaymentMethod.CREDIT_CARD] || 0) +
+  //       (incomePayments[PaymentMethod.CREDIT_CARD] || 0);
+  //     const totalCreditExpenses =
+  //       expensePayments[PaymentMethod.CREDIT_CARD] || 0;
+  //     dailyCash.totalCreditCard = totalCreditSales - totalCreditExpenses;
+
+  //     const totalDebitSales =
+  //       (orderPayments[PaymentMethod.DEBIT_CARD] || 0) +
+  //       (incomePayments[PaymentMethod.DEBIT_CARD] || 0);
+  //     const totalDebitExpenses = expensePayments[PaymentMethod.DEBIT_CARD] || 0;
+  //     dailyCash.totalDebitCard = totalDebitSales - totalDebitExpenses;
+
+  //     const totalTransferSales =
+  //       (orderPayments[PaymentMethod.TRANSFER] || 0) +
+  //       (incomePayments[PaymentMethod.TRANSFER] || 0);
+  //     const totalTransferExpenses =
+  //       expensePayments[PaymentMethod.TRANSFER] || 0;
+  //     dailyCash.totalTransfer = totalTransferSales - totalTransferExpenses;
+
+  //     const totalMPsales =
+  //       (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
+  //       (incomePayments[PaymentMethod.MERCADOPAGO] || 0);
+  //     const totalMPexpenses = expensePayments[PaymentMethod.MERCADOPAGO] || 0;
+  //     dailyCash.totalMercadoPago = totalMPsales - totalMPexpenses;
+
+  //     // --- Totales globales ---
+  //     dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
+  //     dailyCash.totalPayments = totalExpenses;
+  //     dailyCash.totalIncomes = totalIncomes;
+  //     dailyCash.totalExpenses = totalExpenses;
+
+  //     // 💰 Saldo final proyectado (podés guardar esta propiedad si existe en la entidad)
+  //     dailyCash.finalCash = dailyCash.initialCash + dailyCash.totalCash;
+
+  //     const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
+
+  //     this.eventEmitter.emit('dailyCash.closed', {
+  //       dailyCash: dailyCashClosed,
+  //     });
+
+  //     return dailyCashClosed;
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException(
+  //       'Error closing the daily cash report. Please try again later.',
+  //       error.message,
+  //     );
+  //   }
+  // }
+
   async closeDailyCash(
     id: string,
     closeDailyCashDto: CloseDailyCash,
@@ -170,9 +278,11 @@ export class DailyCashService {
 
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
+
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
+
       if (dailyCash.state === DailyCashState.CLOSED) {
         throw new ConflictException('Daily cash report is already closed.');
       }
@@ -180,7 +290,7 @@ export class DailyCashService {
       dailyCash.state = DailyCashState.CLOSED;
       dailyCash.comment = closeDailyCashDto.comment || '';
 
-      // --- Filtrado de movimientos ---
+      // --- Separar movimientos por tipo ---
       const incomes = dailyCash.movements.filter(
         (mov) => mov.type === DailyCashMovementType.INCOME,
       );
@@ -188,10 +298,14 @@ export class DailyCashService {
         (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
 
-      // --- Totales generales ---
+      // --- Totales individuales ---
       const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
       const totalIncomes = this.sumTotal(incomes);
       const totalExpenses = this.sumTotal(expenses);
+
+      // --- Guardar ingresos y egresos directos (nuevos campos) ---
+      dailyCash.totalIncomes = totalIncomes;
+      dailyCash.totalExpenses = totalExpenses;
 
       // --- Agrupación por método de pago ---
       const orderPayments = this.groupRecordsByPaymentMethod(
@@ -203,44 +317,37 @@ export class DailyCashService {
       const incomePayments = this.groupRecordsByPaymentMethod(incomes);
       const expensePayments = this.groupRecordsByPaymentMethod(expenses);
 
-      // --- Totales por método (ventas + ingresos - egresos) ---
-      const totalCashSales =
+      // --- Totales netos por método de pago ---
+      dailyCash.totalCash =
         (orderPayments[PaymentMethod.CASH] || 0) +
-        (incomePayments[PaymentMethod.CASH] || 0);
-      const totalCashExpenses = expensePayments[PaymentMethod.CASH] || 0;
-      dailyCash.totalCash = totalCashSales - totalCashExpenses;
+        (incomePayments[PaymentMethod.CASH] || 0) -
+        (expensePayments[PaymentMethod.CASH] || 0);
 
-      const totalCreditSales =
+      dailyCash.totalCreditCard =
         (orderPayments[PaymentMethod.CREDIT_CARD] || 0) +
-        (incomePayments[PaymentMethod.CREDIT_CARD] || 0);
-      const totalCreditExpenses =
-        expensePayments[PaymentMethod.CREDIT_CARD] || 0;
-      dailyCash.totalCreditCard = totalCreditSales - totalCreditExpenses;
+        (incomePayments[PaymentMethod.CREDIT_CARD] || 0) -
+        (expensePayments[PaymentMethod.CREDIT_CARD] || 0);
 
-      const totalDebitSales =
+      dailyCash.totalDebitCard =
         (orderPayments[PaymentMethod.DEBIT_CARD] || 0) +
-        (incomePayments[PaymentMethod.DEBIT_CARD] || 0);
-      const totalDebitExpenses = expensePayments[PaymentMethod.DEBIT_CARD] || 0;
-      dailyCash.totalDebitCard = totalDebitSales - totalDebitExpenses;
+        (incomePayments[PaymentMethod.DEBIT_CARD] || 0) -
+        (expensePayments[PaymentMethod.DEBIT_CARD] || 0);
 
-      const totalTransferSales =
+      dailyCash.totalTransfer =
         (orderPayments[PaymentMethod.TRANSFER] || 0) +
-        (incomePayments[PaymentMethod.TRANSFER] || 0);
-      const totalTransferExpenses =
-        expensePayments[PaymentMethod.TRANSFER] || 0;
-      dailyCash.totalTransfer = totalTransferSales - totalTransferExpenses;
+        (incomePayments[PaymentMethod.TRANSFER] || 0) -
+        (expensePayments[PaymentMethod.TRANSFER] || 0);
 
-      const totalMPsales =
+      dailyCash.totalMercadoPago =
         (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
-        (incomePayments[PaymentMethod.MERCADOPAGO] || 0);
-      const totalMPexpenses = expensePayments[PaymentMethod.MERCADOPAGO] || 0;
-      dailyCash.totalMercadoPago = totalMPsales - totalMPexpenses;
+        (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
+        (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
 
       // --- Totales globales ---
       dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
       dailyCash.totalPayments = totalExpenses;
 
-      // 💰 Saldo final proyectado (podés guardar esta propiedad si existe en la entidad)
+      // --- Cálculo de saldo final proyectado ---
       dailyCash.finalCash = dailyCash.initialCash + dailyCash.totalCash;
 
       const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
@@ -536,5 +643,267 @@ export class DailyCashService {
         error.message,
       );
     }
+  }
+
+  // ------------------- metricas -----------------------
+  async getMonthlySummary(
+    month: number,
+    year: number,
+  ): Promise<{
+    income: number;
+    expenses: number;
+    profit: number;
+  }> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const results = await this.dailyCashRepo.find({
+      where: {
+        date: Between(startDate, endDate),
+        state: DailyCashState.CLOSED,
+      },
+    });
+
+    const income = results.reduce(
+      (acc, dc) => acc + Number(dc.totalSales) + Number(dc.totalIncomes),
+      0,
+    );
+    const expenses = results.reduce(
+      (acc, dc) => acc + Number(dc.totalExpenses),
+      0,
+    );
+    const profit = income - expenses;
+
+    return { income, expenses, profit };
+  }
+
+  async getAnnualSummary(year: number): Promise<{
+    income: number;
+    expenses: number;
+    profit: number;
+  }> {
+    const startDate = new Date(`${year}-01-01T00:00:00`);
+    const endDate = new Date(`${year}-12-31T23:59:59`);
+
+    // Total ventas del año
+    const cashes = await this.dailyCashRepo.find({
+      where: {
+        date: Between(startDate, endDate),
+      },
+      select: ['totalSales'], // solo ventas
+    });
+
+    const totalSales = cashes.reduce(
+      (acc, cash) => acc + Number(cash.totalSales),
+      0,
+    );
+
+    // Ingresos del año
+    const incomeMovements = await this.cashMovementRepo.find({
+      where: {
+        type: DailyCashMovementType.INCOME,
+        createdAt: Between(startDate, endDate),
+      },
+    });
+
+    const totalIncomes = incomeMovements.reduce(
+      (acc, m) => acc + Number(m.amount),
+      0,
+    );
+
+    // Egresos del año
+    const expenseMovements = await this.cashMovementRepo.find({
+      where: {
+        type: DailyCashMovementType.EXPENSE,
+        createdAt: Between(startDate, endDate),
+      },
+    });
+
+    const totalExpenses = expenseMovements.reduce(
+      (acc, m) => acc + Number(m.amount),
+      0,
+    );
+
+    const income = totalSales + totalIncomes;
+    const profit = income - totalExpenses;
+
+    return {
+      income,
+      expenses: totalExpenses,
+      profit,
+    };
+  }
+
+  async getAnnualDistribution(
+    year: number,
+  ): Promise<{ mes: string; income: number; expenses: number }[]> {
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+
+    const results = [];
+
+    for (let month = 0; month < 12; month++) {
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+      const cashes = await this.dailyCashRepo.find({
+        where: {
+          date: Between(start, end),
+        },
+        select: ['totalSales'],
+      });
+
+      const totalSales = cashes.reduce(
+        (acc, cash) => acc + Number(cash.totalSales),
+        0,
+      );
+
+      const incomes = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.INCOME,
+          createdAt: Between(start, end),
+        },
+      });
+
+      const totalIncomes = incomes.reduce(
+        (acc, i) => acc + Number(i.amount),
+        0,
+      );
+
+      const expenses = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.EXPENSE,
+          createdAt: Between(start, end),
+        },
+      });
+
+      const totalExpenses = expenses.reduce(
+        (acc, e) => acc + Number(e.amount),
+        0,
+      );
+
+      results.push({
+        mes: months[month],
+        income: totalSales + totalIncomes,
+        expenses: totalExpenses,
+      });
+    }
+
+    return results;
+  }
+
+  async getDailyMetrics(
+    month: number,
+    year: number,
+  ): Promise<{ day: string; income: number; expenses: number }[]> {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const results = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+      const cashes = await this.dailyCashRepo.find({
+        where: { date: Between(start, end) },
+        select: ['totalSales'],
+      });
+      const totalSales = cashes.reduce(
+        (acc, cash) => acc + Number(cash.totalSales),
+        0,
+      );
+
+      const incomes = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.INCOME,
+          createdAt: Between(start, end),
+        },
+      });
+      const totalIncomes = incomes.reduce(
+        (acc, m) => acc + Number(m.amount),
+        0,
+      );
+
+      const expenses = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.EXPENSE,
+          createdAt: Between(start, end),
+        },
+      });
+      const totalExpenses = expenses.reduce(
+        (acc, m) => acc + Number(m.amount),
+        0,
+      );
+
+      results.push({
+        day: String(day).padStart(2, '0'),
+        income: totalSales + totalIncomes,
+        expenses: totalExpenses,
+      });
+    }
+
+    return results;
+  }
+
+  async getDailyProfit(
+    month: number,
+    year: number,
+  ): Promise<{ day: string; profit: number }[]> {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const results = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+      const cashes = await this.dailyCashRepo.find({
+        where: { date: Between(start, end) },
+        select: ['totalSales'],
+      });
+      const totalSales = cashes.reduce(
+        (acc, cash) => acc + Number(cash.totalSales),
+        0,
+      );
+
+      const incomes = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.INCOME,
+          createdAt: Between(start, end),
+        },
+      });
+      const totalIncomes = incomes.reduce(
+        (acc, m) => acc + Number(m.amount),
+        0,
+      );
+
+      const expenses = await this.cashMovementRepo.find({
+        where: {
+          type: DailyCashMovementType.EXPENSE,
+          createdAt: Between(start, end),
+        },
+      });
+      const totalExpenses = expenses.reduce(
+        (acc, m) => acc + Number(m.amount),
+        0,
+      );
+
+      results.push({
+        day: String(day).padStart(2, '0'),
+        profit: totalSales + totalIncomes - totalExpenses,
+      });
+    }
+
+    return results;
   }
 }
