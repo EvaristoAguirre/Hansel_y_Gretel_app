@@ -5,7 +5,7 @@ import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
-import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
 import {
   Button,
   Dialog,
@@ -42,10 +42,10 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   const [formValues, setFormValues] = useState(initialState);
   const { fetchAndSetProducts } = useProducts();
   const { updateIngredient } = useIngredientsContext();
-  const { units } = useUnitContext()
+  const { conventionalUnits } = useUnitContext()
 
   useEffect(() => {
-    let selectedUnit = units.find((u: IUnitOfMeasureForm) => u.name === selectedItem.unit);
+    let selectedUnit = conventionalUnits.find((u: IUnitOfMeasureResponse) => u.name === selectedItem.unit);
     setFormValues({
       quantityInStock: selectedItem?.stock?.toString() || "",
       minimumStock: selectedItem?.min?.toString() || "",
@@ -238,7 +238,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
               },
             }}
           >
-            {units.map((u) => (
+            {conventionalUnits.map((u) => (
               <MenuItem key={u.id} value={u.id}>
                 {u.name}
               </MenuItem>
