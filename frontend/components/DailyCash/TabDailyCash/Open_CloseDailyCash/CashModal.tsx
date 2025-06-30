@@ -36,6 +36,14 @@ const CashModal = ({ open, onClose, type }: Props) => {
     }));
   };
 
+  const isFormValid = () => {
+    if (type === dailyCashModalType.OPEN) {
+      return form.initialCash && form.initialCash !== undefined && form.initialCash !== null;
+    } else {
+      return form.totalCash !== undefined && form.totalCash !== null;
+    }
+  };
+
 
   const handleClose = () => {
     setForm(initialForm);
@@ -58,6 +66,8 @@ const CashModal = ({ open, onClose, type }: Props) => {
       setLoading(false);
     }
   };
+
+
 
 
   return (
@@ -84,6 +94,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
                 [type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"]: num,
               }));
             }}
+            onBlur={isFormValid}
           />
 
           <TextField
@@ -99,7 +110,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={loading}>Cancelar</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+        <Button onClick={handleSubmit} variant="contained" disabled={loading || !isFormValid()}>
           {type === dailyCashModalType.OPEN ? "Abrir Caja" : "Cerrar Caja"}
         </Button>
       </DialogActions>
