@@ -240,7 +240,7 @@ export class PrinterService {
           const name = this.normalizeText(p.name.toLocaleUpperCase());
           const comment = this.normalizeText(p.commentOfProduct || '');
           const toppings = (p.toppings || []).map(
-            (t) => `+ ${this.normalizeText(t)}`,
+            (t) => `+ ${this.normalizeText(t)}\n`,
           );
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;

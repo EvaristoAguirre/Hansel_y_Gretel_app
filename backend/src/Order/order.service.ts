@@ -158,41 +158,27 @@ export class OrderService {
         const printData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
-          // products: updateData.productsDetails.map((detail) => ({
-          //   name:
-          //     detailsToSave.find((d) => d.product.id === detail.productId)
-          //       ?.product.name || 'Producto',
-          //   quantity: detail.quantity,
-          //   commentOfProduct: detail.commentOfProduct,
-          // })),
-          products: updateData.productsDetails.map((detail) => {
-            const matchedDetail = order.orderDetails.find(
-              (d) => d.product.id === detail.productId,
-            );
-
-            return {
-              name: matchedDetail?.product.name || 'Producto',
-              quantity: detail.quantity,
-              commentOfProduct: detail.commentOfProduct,
-              toppings:
-                matchedDetail?.orderDetailToppings?.map(
-                  (t) => t.topping.name,
-                ) || [],
-            };
-          }),
+          products: detailsToSave.map((detail) => ({
+            name: detail.product.name,
+            quantity: detail.quantity,
+            commentOfProduct: detail?.commentOfProduct,
+            toppings: toppingsToSave
+              .filter((t) => t.orderDetails?.product.id === detail.product.id)
+              .map((t) => t.topping.name),
+          })),
           isPriority: updateData.isPriority,
         };
 
         let commandNumber: string | null = null;
 
         try {
-          this.printerService.logger.log(
+          console.log(
             `📤 Enviando comanda a impresión para mesa ${printData.table}`,
           );
-          this.printerService.logger.log('info enviada a imprimir', printData);
-          // commandNumber =
-          //   await this.printerService.printKitchenOrder(printData);
-          commandNumber = 'grabandoTextFijo';
+          console.log('info enviada a imprimir.......', printData);
+          commandNumber =
+            await this.printerService.printKitchenOrder(printData);
+          // commandNumber = 'grabandoTextFijo - 1111111111';
           this.printerService.logger.log(
             `✅ Comanda impresa, número: ${commandNumber}`,
           );
