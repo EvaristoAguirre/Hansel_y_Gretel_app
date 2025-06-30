@@ -290,7 +290,7 @@ export class IngredientService {
 
       const updatedIngredient = await queryRunner.manager.findOne(Ingredient, {
         where: { id: id, isActive: true },
-        relations: ['unitOfMeasure'],
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
 
       if (!updatedIngredient) {
