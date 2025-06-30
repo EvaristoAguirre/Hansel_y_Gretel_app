@@ -52,7 +52,22 @@ const Ingredients = () => {
         params.value ? "Sí" : "No",
     },
     { field: "description", headerName: "Descripción", width: 300 },
-    { field: "cost", headerName: "Costo", width: 100 },
+    {
+      field: "cost",
+      headerName: "Costo",
+      width: 100,
+      renderCell: (params: GridCellParams) => {
+        const value = Number(params.value);
+        if (!isNaN(value)) {
+          return value.toLocaleString("es-AR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        }
+        return "-";
+      },
+    },
+
     {
       field: "unitOfMeasure",
       headerName: "Unidad",
