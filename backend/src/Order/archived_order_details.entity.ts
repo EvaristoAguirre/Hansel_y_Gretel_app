@@ -15,8 +15,11 @@ export class ArchivedOrderDetails {
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
 
-  @Column()
+  @Column({ type: 'uuid' })
   productId: string;
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  commandNumber: string;
 
   @ManyToOne(() => ArchivedOrder, (archivedOrder) => archivedOrder.orderDetails)
   order: ArchivedOrder;
