@@ -43,7 +43,9 @@ export const FormIngredient = ({
   const validateField = (field: string, value: any) => {
     let error = "";
 
-    if (!value) {
+    const requiredFields: (keyof Iingredient)[] = ["name", "cost"];
+
+    if (requiredFields.includes(field as keyof Iingredient) && !value) {
       error = "Este campo es obligatorio";
     } else if (field === "cost" && value <= 0) {
       error = "Debe ser un número positivo";
@@ -51,6 +53,7 @@ export const FormIngredient = ({
 
     setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
   };
+
 
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error);
@@ -60,16 +63,16 @@ export const FormIngredient = ({
     setIsFormValid(!hasErrors && !hasEmptyFields);
   }, [errors, formIngredients]);
 
-  const fieldLabels: Record<keyof Iingredient, string> = {
-    id: "ID",
-    isActive: "Activo",
-    name: "Nombre",
-    description: "Descripción",
-    cost: "Costo",
-    stock: "Stock",
-    unitOfMeasureId: "Unidad de Medida",
-    type: "Tipo",
-  };
+  // const fieldLabels: Record<keyof Iingredient, string> = {
+  //   id: "ID",
+  //   isActive: "Activo",
+  //   name: "Nombre",
+  //   description: "Descripción",
+  //   cost: "Costo",
+  //   stock: "Stock",
+  //   unitOfMeasureId: "Unidad de Medida",
+  //   type: "Tipo",
+  // };
 
   const checkNameAvailability = async (name: string) => {
     const token = getAccessToken();
