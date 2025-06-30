@@ -29,6 +29,7 @@ import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { NumericFormat } from "react-number-format";
 import { CheckAllowsToppings } from "./Toppings/CheckAllowsToppings";
 import { AvailableToppingsGroups } from "./Toppings/AvailableToppingsGroups";
+import NumericInput from "@/components/Utils/NumericInput";
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -327,23 +328,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           {fieldsToRender.map((field, index) => (
             <Grid item xs={12} sm={6} key={field}>
               {(field === 'price' || field === 'cost') ? (
-                <NumericFormat
-                  customInput={TextField}
+                <NumericInput
                   label={fieldLabels[field]}
-                  value={form[field] != null ? form[field] : ''}
-                  // separadores
-                  thousandSeparator='.'
-                  decimalSeparator=','
-                  decimalScale={2}
-                  allowNegative={false}
-                  type='text'
-                  fullWidth
-                  size='small'
-                  onValueChange={(values) => {
-                    const num = values.floatValue ?? null;
+                  value={form[field]}
+                  onChange={(num) => {
                     onChange(field as keyof ProductForm, num);
                     validateField(field, num);
                   }}
+                  error={!!errors[field]}
+                  helperText={errors[field]}
                 />
               ) : (
                 <TextField
