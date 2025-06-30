@@ -125,10 +125,10 @@ export class PrinterService {
         '\x1B\x4D\x00', // Tipografía estándar
         ...orderData.products.flatMap((p) => {
           const name = this.normalizeText(p.name.toLocaleUpperCase());
-          const comment = this.normalizeText(p.commentOfProduct || '');
           const toppings = (p.toppings || []).map(
             (t) => `+ ${this.normalizeText(t)}\n`,
           );
+          const comment = `${this.normalizeText(p.commentOfProduct || '')}\n`;
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
           const lines: string[] = [];
@@ -151,12 +151,15 @@ export class PrinterService {
 
           lines.push('\x1B\x45\x00'); // Negrita OFF
 
+          if (toppings.length > 0) lines.push(...toppings);
+
           if (comment) {
             lines.push('\x1B\x61\x00'); // Alinear izquierda
             lines.push(comment);
+            // lines.push('--------------------------\n');
             lines.push('\x1B\x61\x01'); // Centrar
+            lines.push('\n');
           }
-          if (toppings.length > 0) lines.push(...toppings);
 
           lines.push(''); // espacio entre productos
 

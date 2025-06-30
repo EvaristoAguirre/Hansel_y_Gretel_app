@@ -148,7 +148,7 @@ export class OrderService {
               pd,
               queryRunner,
             );
-
+          detail.commentOfProduct = pd.commentOfProduct;
           detailsToSave.push(detail);
           toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
