@@ -100,6 +100,10 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   }, []);
   const addUnit = (unit: IUnitOfMeasureForm) => {
     setNoConventionalUnits([...noConventionalUnits, unit]);
+    //agregamos a la lista de unidades de medida
+    setUnits((prevUnits) =>
+      prevUnits.filter((prevUnits) => prevUnits.id !== unit.id).concat(unit)
+    );
   }
 
   const updateUnit = (unit: IUnitOfMeasureForm) => {
