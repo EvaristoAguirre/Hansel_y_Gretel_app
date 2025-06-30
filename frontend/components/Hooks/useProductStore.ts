@@ -82,6 +82,7 @@ export const useProductStore = create<ProductState>((set) => {
           product.id === updatedProduct.id ? updatedProduct : product
         ),
       }));
+
     },
     connectWebSocket: () => { }, // La conexión se establece al cargar el store
   };
