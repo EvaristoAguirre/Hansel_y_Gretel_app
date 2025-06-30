@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { DailyCashService } from './daily-cash.service';
 import { CreateDailyCashDto } from '../DTOs/create-daily-cash.dto';
@@ -110,5 +111,49 @@ export class DailyCashController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   deleteDailyCash(@Param('id') id: string) {
     return this.dailyCashService.deleteDailyCash(+id);
+  }
+
+  // -------------------------- metricas -----------------------
+  @Get('metrics/monthly')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async getMonthlyMetrics(
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<{ income: number; expenses: number; profit: number }> {
+    return this.dailyCashService.getMonthlySummary(month, year);
+  }
+
+  @Get('metrics/annual')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async getAnnualSummary(
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<{ income: number; expenses: number; profit: number }> {
+    return this.dailyCashService.getAnnualSummary(year);
+  }
+
+  @Get('metrics/annual-distribution')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async getAnnualDistribution(
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<{ mes: string; income: number; expenses: number }[]> {
+    return this.dailyCashService.getAnnualDistribution(year);
+  }
+
+  @Get('metrics/daily')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async getDailyMetrics(
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<{ day: string; income: number; expenses: number }[]> {
+    return this.dailyCashService.getDailyMetrics(month, year);
+  }
+
+  @Get('metrics/daily-profit')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async getDailyProfit(
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<{ day: string; profit: number }[]> {
+    return this.dailyCashService.getDailyProfit(month, year);
   }
 }

@@ -197,6 +197,7 @@ export class IngredientService {
     try {
       const ingredientToUpdate = await queryRunner.manager.findOne(Ingredient, {
         where: { id, isActive: true },
+        relations: ['unitOfMeasure', 'stock'],
       });
 
       if (!ingredientToUpdate) {
@@ -215,6 +216,34 @@ export class IngredientService {
         );
       }
 
+      // if (updateData.unitOfMeasureId) {
+      //   const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
+      //     where: { id: updateData.unitOfMeasureId },
+      //   });
+      //   if (!unitOfMeasure) {
+      //     throw new BadRequestException('Unit of measure not found');
+      //   }
+
+      //   ingredientToUpdate.unitOfMeasure = unitOfMeasure;
+      //   delete updateData.unitOfMeasureId;
+      // }
+
+      // if (shouldRecalculateCost) {
+      //   delete updateData.cost;
+      // }
+
+      // 1. Guardar referencia al stock existente
+      const existingStock = ingredientToUpdate.stock;
+
+      // 2. Actualización selectiva (excluyendo relaciones)
+      const updatableFields = ['name', 'description', 'cost', 'type'];
+      updatableFields.forEach((field) => {
+        if (updateData[field] !== undefined) {
+          ingredientToUpdate[field] = updateData[field];
+        }
+      });
+
+      // 3. Manejo especial para unitOfMeasure
       if (updateData.unitOfMeasureId) {
         const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
           where: { id: updateData.unitOfMeasureId },
@@ -222,17 +251,8 @@ export class IngredientService {
         if (!unitOfMeasure) {
           throw new BadRequestException('Unit of measure not found');
         }
-
         ingredientToUpdate.unitOfMeasure = unitOfMeasure;
-        delete updateData.unitOfMeasureId;
       }
-
-      // if (shouldRecalculateCost) {
-      //   delete updateData.cost;
-      // }
-
-      Object.assign(ingredientToUpdate, updateData);
-
       // ---------------- Actualizacion de costos --------------------
       if (shouldRecalculateCost) {
         this.logger.log(
@@ -260,11 +280,17 @@ export class IngredientService {
       }
       // ---------------- Cierre de actualizacion de costos ----------
 
-      await queryRunner.manager.save(ingredientToUpdate);
+      // 4. Restaurar stock manualmente
+      ingredientToUpdate.stock = existingStock;
+
+      // 5. Guardar normalmente (sin opciones adicionales)
+      await queryRunner.manager.save(Ingredient, ingredientToUpdate);
+
+      // await queryRunner.manager.save(ingredientToUpdate);
 
       const updatedIngredient = await queryRunner.manager.findOne(Ingredient, {
         where: { id: id, isActive: true },
-        relations: ['unitOfMeasure'],
+        relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
 
       if (!updatedIngredient) {

@@ -20,9 +20,11 @@ import { ProductService } from 'src/Product/product.service';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { isUUID } from 'class-validator';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class StockService {
+  private readonly logger = new Logger(StockService.name);
   constructor(
     private readonly stockRepository: StockRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -463,15 +465,17 @@ export class StockService {
     }
 
     if (product.type === 'simple') {
+      console.log('deberia haeber entrado por aca....');
       await this.deductSimpleStock(product, quantity, unidadId);
     } else if (product.type === 'product') {
+      console.log('producto compuesto deberia haber entrado....');
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
       await this.deductPromotionStock(product, quantity);
     }
 
     if (toppingsPerUnit?.length) {
-      await this.deductToppingsStock(toppingsPerUnit, quantity);
+      await this.deductToppingsStock(toppingsPerUnit, quantity, product);
     }
 
     this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
@@ -491,6 +495,7 @@ export class StockService {
     }
 
     const stockUnitId = product.stock.unitOfMeasure.id;
+    console.log('stockUnitId.....', stockUnitId);
 
     const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
       unidadId,
@@ -569,27 +574,40 @@ export class StockService {
   private async deductToppingsStock(
     toppingsPerUnit: string[][],
     productQuantity: number,
+    product: Product,
   ) {
-    const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
-    const unidadId = unidad?.id;
-    if (!unidadId) {
-      throw new InternalServerErrorException('Unidad base no encontrada');
-    }
+    this.logger.log(
+      `🧾 Toppings por unidad: ${JSON.stringify(toppingsPerUnit)} | Cantidad de producto: ${productQuantity}`,
+    );
 
-    // 1. Contar cuántas veces se usa cada topping en todas las unidades
     const toppingCountMap: Record<string, number> = {};
 
+    // 1. Contar cuántas veces se usa cada topping en todas las unidades
     for (const unitToppings of toppingsPerUnit) {
       for (const toppingId of unitToppings) {
-        if (toppingCountMap[toppingId]) {
-          toppingCountMap[toppingId] += 1;
-        } else {
-          toppingCountMap[toppingId] = 1;
-        }
+        toppingCountMap[toppingId] = (toppingCountMap[toppingId] || 0) + 1;
       }
     }
 
-    // 2. Recorrer cada topping único
+    this.logger.log(
+      `📊 Toppings totales por ID: ${JSON.stringify(toppingCountMap)}`,
+    );
+
+    // 2. Obtener el producto y sus grupos de toppings
+    // const product = await this.productRepository.findOne({
+    //   where: { id: productId },
+    //   relations: [
+    //     'availableToppingGroups',
+    //     'availableToppingGroups.unitOfMeasure',
+    //     'availableToppingGroups.toppings',
+    //   ],
+    // });
+
+    // if (!product) {
+    //   throw new NotFoundException(`Producto ${productId} no encontrado`);
+    // }
+
+    // 3. Recorrer cada topping único
     for (const [toppingId, countPerUnit] of Object.entries(toppingCountMap)) {
       const toppingStock =
         await this.stockRepository.getStockByToppingId(toppingId);
@@ -597,22 +615,58 @@ export class StockService {
         throw new NotFoundException(`No stock found for topping ${toppingId}`);
       }
 
-      const totalCount = countPerUnit * productQuantity;
+      const topping =
+        await this.ingredientService.getIngredientByIdToAnotherService(
+          toppingId,
+        );
+
+      const toppingGroup = product.availableToppingGroups.find((group) =>
+        group.toppingGroup?.toppings?.some((t) => t.id === toppingId),
+      );
+
+      if (!toppingGroup) {
+        throw new NotFoundException(
+          `Topping group for topping ${topping.name} (${toppingId}) not found`,
+        );
+      }
+
+      const quantityPerUse = Number(toppingGroup.quantityOfTopping);
+      const sourceUnitId = toppingGroup.unitOfMeasure.id;
+      const targetUnitId = toppingStock.unitOfMeasure.id;
+      const totalToDeductInSource =
+        countPerUnit * productQuantity * quantityPerUse;
+
+      this.logger.log(
+        `🔍 Procesando topping ${topping.name} (${toppingId}) - Usos: ${countPerUnit}, Por uso: ${quantityPerUse} ${toppingGroup.unitOfMeasure.abbreviation}, Total: ${totalToDeductInSource} ${toppingGroup.unitOfMeasure.abbreviation}`,
+      );
 
       const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
-        unidadId,
-        toppingStock.unitOfMeasure.id,
-        totalCount,
+        sourceUnitId,
+        targetUnitId,
+        totalToDeductInSource,
+      );
+
+      this.logger.log(
+        `🔁 Conversión de ${totalToDeductInSource} ${toppingGroup.unitOfMeasure.abbreviation} a ${quantityToDeduct} ${toppingStock.unitOfMeasure.abbreviation}`,
+      );
+
+      this.logger.log(
+        `📦 Stock disponible antes de descontar: ${toppingStock.quantityInStock} ${toppingStock.unitOfMeasure.abbreviation}`,
       );
 
       if (Number(toppingStock.quantityInStock) < quantityToDeduct) {
         throw new BadRequestException(
-          `Insufficient stock for topping ${toppingId}`,
+          `Insufficient stock for topping ${topping.name}`,
         );
       }
 
       toppingStock.quantityInStock -= quantityToDeduct;
+
       await this.stockRepository.saveStock(toppingStock);
+
+      this.logger.log(
+        `✅ Descontado ${quantityToDeduct} ${toppingStock.unitOfMeasure.abbreviation} del topping ${topping.name} (${toppingId}). Stock restante: ${toppingStock.quantityInStock}`,
+      );
     }
   }
 

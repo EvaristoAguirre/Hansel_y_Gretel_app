@@ -58,17 +58,6 @@ const IngredientDialog: React.FC<IngredientDialogProps> = ({ onSave, form, units
     const token = getAccessToken();
     if (!token) return;
     if (form.ingredients && form.ingredients.length > 0) {
-
-      // const preparedIngredients = form.ingredients.map((ingredient: IingredientResponse) => ({
-      //   name: ingredient.ingredient.name,
-      //   ingredientId: ingredient.ingredient.id,
-      //   quantityOfIngredient: Number(ingredient?.quantityOfIngredient),
-      //   unitOfMeasureId: ingredient.unitOfMeasureId,
-      //   type: ingredient.type,
-      //   isTopping: ingredient.isTopping,
-      //   extraCost: ingredient.extraCost
-      // }))
-
       setSelectedIngredients(form.ingredients);
     }
     fetchUnitsMass();

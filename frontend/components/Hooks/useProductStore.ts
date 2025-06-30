@@ -14,7 +14,7 @@ export const mapIngredientResponseToForm = (
   name: ingredient.ingredient.name,
   ingredientId: ingredient.ingredient.id ?? "",
   unitOfMeasureId: ingredient.unitOfMeasure?.id ?? "",
-  quantityOfIngredient: ingredient.quantityOfIngredient,
+  quantityOfIngredient: +ingredient.quantityOfIngredient,
   type: ingredient.ingredient.type,
   isTopping: ingredient.isTopping ?? false,
   extraCost: ingredient.extraCost ?? 0,
@@ -82,6 +82,7 @@ export const useProductStore = create<ProductState>((set) => {
           product.id === updatedProduct.id ? updatedProduct : product
         ),
       }));
+
     },
     connectWebSocket: () => { }, // La conexión se establece al cargar el store
   };

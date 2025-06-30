@@ -32,6 +32,12 @@ export interface IDailyCheck {
   dailyCashOpenId: string | null;
 }
 
+export interface IDailyResume {
+  incomes?: number;
+  expenses?: number;
+  result?: string;
+}
+
 export interface IDailyCash {
   id?: string;
   comment?: string;

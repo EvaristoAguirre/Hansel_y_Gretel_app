@@ -11,8 +11,7 @@ import OpenCashButton from './Open_CloseDailyCash/OpenCashButton';
 import NewMovementButton from './NewMovement/NewMovementButton';
 
 const DailyCashSection = () => {
-  const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
-  const [year, setYear] = useState<number>(new Date().getFullYear());
+
   const [openMovement, setOpenMovement] = useState(false);
 
   const { dailyCash, registerMovement } = useDailyCash();
@@ -44,8 +43,7 @@ const DailyCashSection = () => {
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3} mt={2}>
-        <Typography variant="h5">Caja Diaria</Typography>
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={3} mt={2}>
         <Stack direction="row" spacing={2}>
           <OpenCashButton />
           <NewMovementButton handleNewMovement={handleOpenMovement} />
@@ -57,7 +55,6 @@ const DailyCashSection = () => {
 
         </Stack>
       </Stack>
-      <CashFilters month={month} year={year} setMonth={setMonth} setYear={setYear} />
       <CashTable />
     </Box>
   );

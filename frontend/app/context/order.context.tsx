@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  use,
 } from "react";
 import Swal from "sweetalert2";
 import {
@@ -242,6 +243,7 @@ const OrderProvider = ({
         unitaryPrice: product.price,
         productName: product.name,
         allowsToppings: product.allowsToppings,
+        commentOfProduct: product.commentOfProduct,
         availableToppingGroups: product.availableToppingGroups
       };
       setSelectedProducts([...selectedProducts, newProduct]);
@@ -261,6 +263,11 @@ const OrderProvider = ({
           : p
       )
     );
+  };
+
+  const clearToppings = () => {
+    setToppingsByProductGroup({});
+    setSelectedToppingsByProduct({});
   };
 
   const updateToppingForUnit = (
@@ -308,6 +315,7 @@ const OrderProvider = ({
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
+    clearToppings();
   };
 
   const increaseProductNumber = async (product: SelectedProductsI) => {
@@ -362,8 +370,12 @@ const OrderProvider = ({
         selectedProducts.map((p) =>
           p.productId === id ? { ...p, commentOfProduct: comment } : p
         )
+
       );
+
+
     }
+
   };
 
   const clearSelectedProducts = () => {
@@ -434,6 +446,8 @@ const OrderProvider = ({
     if (!id) {
       return;
     }
+    console.log("selectedProducts en handleEditOrder", selectedProducts);
+
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
@@ -471,6 +485,8 @@ const OrderProvider = ({
       handleSetProductsByOrder(productsByOrder);
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
+
+      clearToppings();
 
       return updatedOrder;
     } catch (error) {
@@ -539,8 +555,6 @@ const OrderProvider = ({
       }
     }
   };
-
-  console.groupEnd();
 
   return (
     <OrderContext.Provider
