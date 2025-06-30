@@ -9,7 +9,7 @@ interface Props {
 
 const CashFilters = ({ month, year, setMonth, setYear }: Props) => {
   return (
-    <Stack direction="row" spacing={2} mb={2}>
+    <Stack direction="row" spacing={2} mt={3} mb={2}>
       <FormControl>
         <InputLabel>Mes</InputLabel>
         <Select value={month} onChange={(e) => setMonth(Number(e.target.value))} label="Mes" size="small">

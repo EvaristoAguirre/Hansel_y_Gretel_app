@@ -85,21 +85,39 @@ const IngredientsProvider = ({ children }: Readonly<{ children: React.ReactNode 
 
   const addIngredient = (ingredient: Iingredient) => {
     setIngredientsAndToppings((prevIngredient) => [...prevIngredient, ingredient]);
+    if (ingredient.isTopping) {
+      setIngredients((prevIngredient) => [...prevIngredient, ingredient]);
+    }
+
   };
 
   const updateIngredient = (ingredient: Iingredient) => {
-
     setIngredientsAndToppings((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
         prevIngredient.id === ingredient.id ? ingredient : prevIngredient
       )
     );
+
+    if (ingredient.isTopping) {
+      setIngredients((prevIngredients) =>
+        prevIngredients.map((prevIngredient) =>
+          prevIngredient.id === ingredient.id ? ingredient : prevIngredient
+        )
+      );
+    }
+
+
   };
 
   const removeIngredient = (id: string) => {
     setIngredientsAndToppings((prevIngredients) =>
       prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
     );
+    if (formIngredients.isTopping) {
+      setIngredients((prevIngredients) =>
+        prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
+      );
+    }
   };
 
   const handleCreateIngredient = async () => {

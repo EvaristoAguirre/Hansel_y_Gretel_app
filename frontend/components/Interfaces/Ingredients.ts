@@ -11,7 +11,9 @@ export interface Iingredient {
   cost: number | null,
   stock?: IStockOfProduct | null,
   unitOfMeasureId?: (string | IUnitOfMeasureStandard) | null
-  type: TypeBaseUnitIngredient | null
+  type: TypeBaseUnitIngredient | null,
+  isTopping?: boolean,
+  extraCost?: number
 }
 export interface IingredientForm {
   name: string,
