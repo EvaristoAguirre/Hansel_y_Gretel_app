@@ -1,6 +1,18 @@
 import { INewMovement, IDailyCash, I_DC_Open_Close } from "@/components/Interfaces/IDailyCash";
 import { URI_DAILY_CASH } from "@/components/URI/URI";
 
+
+export const fetchDailyCashResume = async (token: string) => {
+  const response = await fetch(`${URI_DAILY_CASH}/summary`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await response.json();
+  return data;
+};
+
 export const fetchAllDailyCash = async (token: string) => {
   const response = await fetch(`${URI_DAILY_CASH}`, {
     method: "GET",

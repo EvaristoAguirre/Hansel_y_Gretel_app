@@ -1,8 +1,8 @@
 import { dailyCashModalType, dailyCashState } from "@/components/Enums/dailyCash";
 import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
-import { IconButton, Tooltip } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
+import { IconButton, Tooltip, Typography } from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useEffect, useState } from "react";
 import CashDetailModal from "./CashDetailModal";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -12,6 +12,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import { Box } from "@mui/system";
 import { useDailyCash } from "@/app/context/dailyCashContext";
 import CashModal from "../Open_CloseDailyCash/CashModal";
+import { esES } from "@mui/x-data-grid/locales";
+import CashFilters from "./CashFilters";
+
 
 
 
@@ -20,13 +23,23 @@ const CashTable = () => {
   const [openModal, setOpenModal] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const { allDailyCash, fetchAllCash, selectedCash } = useDailyCash();
+
+  const { allDailyCash, dailyCashSummary, fetchAllCash, selectedCash, fetchCashSummary } = useDailyCash();
+
+  const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
 
 
   useEffect(() => {
     fetchAllCash();
+    fetchCashSummary();
   }, []);
 
+  const columsCash: GridColDef[] = [
+    { field: "date", headerName: "Fecha", flex: 1 },
+    { field: "incomes", headerName: "Ingresos", flex: 1 },
+    { field: "expenses", headerName: "Egresos", flex: 1 },
+  ];
 
   const columns: GridColDef[] = [
     {
@@ -139,15 +152,93 @@ const CashTable = () => {
       },
     }
 
-
   ];
+
+  const filteredCash = allDailyCash.filter((cash) => {
+    if (!cash.date) return false;
+    const date = new Date(cash.date);
+    return date.getFullYear() === year && date.getMonth() + 1 === month;
+  });
+
   return (
     <>
+      {dailyCashSummary?.result === 'no hay resumen disponible' ? (
+        <Box textAlign="center" mt={2} mb={4}>
+          <strong style={{ fontSize: 16, color: "#555" }}>
+            No hay resumen disponible para la caja del día.
+          </strong>
+        </Box>
+      ) : (
+        <>
+          <Typography variant="h6" gutterBottom textAlign="start">
+            Resumen Parcial de la Caja del Día
+          </Typography>
+          <Box
+            bgcolor="#fff"
+            borderRadius={2}
+            boxShadow={1}
+            maxWidth={500}
+
+          >
+
+            <DataGrid
+              rows={[
+                {
+                  id: 1,
+                  incomes: dailyCashSummary?.incomes ?? 0,
+                  expenses: dailyCashSummary?.expenses ?? 0,
+                },
+              ]}
+              columns={[
+                {
+                  field: "incomes",
+                  headerName: "Ingresos",
+                  flex: 1,
+                  renderCell: (params) => (
+                    <span style={{ color: "green" }}>
+                      $
+                      {new Intl.NumberFormat("es-AR", {
+                        minimumFractionDigits: 2,
+                      }).format(params.value)}
+                    </span>
+                  ),
+                },
+                {
+                  field: "expenses",
+                  headerName: "Egresos",
+                  flex: 1,
+                  renderCell: (params) => (
+                    <span style={{ color: "red" }}>
+                      $
+                      {new Intl.NumberFormat("es-AR", {
+                        minimumFractionDigits: 2,
+                      }).format(params.value)}
+                    </span>
+                  ),
+                },
+              ]}
+              autoHeight
+              hideFooter
+              disableColumnMenu
+              localeText={esES.components.MuiDataGrid.defaultProps.localeText}
+              sx={{
+                backgroundColor: "#fff",
+                border: "none",
+              }}
+            />
+          </Box>
+        </>
+      )}
+
+
+      <CashFilters month={month} year={year} setMonth={setMonth} setYear={setYear} />
+
       <DataGridComponent
-        rows={allDailyCash}
+        rows={filteredCash}
         columns={columns}
         capitalize={[]}
       />
+
 
       <CashDetailModal
         open={openModal}

@@ -2,21 +2,23 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-import { IDailyCash, IDailyCheck, INewMovement, I_DC_Open_Close } from '@/components/Interfaces/IDailyCash';
+import { IDailyCash, IDailyCheck, IDailyResume, INewMovement, I_DC_Open_Close } from '@/components/Interfaces/IDailyCash';
 import { useAuth } from "@/app/context/authContext";
-import { checkOpenDailyCash, closeDailyCash, fetchAllDailyCash, fetchDailyCashByID, newMovement, openDailyCash } from "@/api/dailyCash";
+import { checkOpenDailyCash, closeDailyCash, fetchAllDailyCash, fetchDailyCashByID, fetchDailyCashResume, newMovement, openDailyCash } from "@/api/dailyCash";
 import Swal from "sweetalert2";
 
 interface DailyCashContextType {
   allDailyCash: IDailyCash[];
   dailyCash: IDailyCheck | null;
   loading: boolean;
+  dailyCashSummary: IDailyResume | null;
   fetchAllCash: () => Promise<void>;
   fetchCash: () => Promise<void>;
   selectedCash: (cash: string) => void;
   openCash: (data: I_DC_Open_Close) => Promise<void>;
   closeCash: (data: I_DC_Open_Close) => Promise<void>;
   registerMovement: (data: INewMovement) => Promise<void>;
+  fetchCashSummary: () => Promise<void>;
 }
 
 const DailyCashContext = createContext<DailyCashContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   const [dailyCash, setDailyCash] = useState<IDailyCheck | null>(null);
   const [allDailyCash, setAllDailyCash] = useState<IDailyCash[]>([]);
   const [selectedDailyCashId, setSelectedDailyCashID] = useState<string | null>(null);
+  const [dailyCashSummary, setDailyCashSummary] = useState<IDailyResume | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +53,15 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
       console.error("Error al obtener la caja actual", error);
     } finally {
       setLoading(false);
+    }
+  };
+  const fetchCashSummary = async () => {
+    if (!token) return;
+    try {
+      const currentCash = await fetchDailyCashResume(token);
+      setDailyCashSummary(currentCash);
+    } catch (error) {
+      console.error("Error al obtener la caja actual", error);
     }
   };
 
@@ -89,6 +101,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
     }
     const response = await newMovement(token, body);
     await fetchAllCash();
+    await fetchCashSummary();
     return response;
   };
 
@@ -102,12 +115,14 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
         allDailyCash,
         dailyCash,
         loading,
+        dailyCashSummary,
         fetchAllCash,
         fetchCash,
         selectedCash,
         openCash,
         closeCash,
-        registerMovement
+        registerMovement,
+        fetchCashSummary
       }}>
       {children}
     </DailyCashContext.Provider>
