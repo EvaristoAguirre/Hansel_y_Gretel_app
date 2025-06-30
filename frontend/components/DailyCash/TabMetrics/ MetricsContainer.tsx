@@ -7,6 +7,7 @@ import MonthlySummary from "./MonthlySummary";
 const MetricsContainer = () => {
   return (
     <Box sx={{ p: 2 }}>
+      <Typography variant="h5" color="warning" mb={2}>*Métricas Ficticias a modo de representación</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <MonthlySummary />

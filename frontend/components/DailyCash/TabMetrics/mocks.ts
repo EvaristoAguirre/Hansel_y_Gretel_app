@@ -2,15 +2,15 @@ import { DailyIncomeExpense, DailyProfit, MonthlyDistributionItem, SummaryRespon
 
 
 export const mockMonthlySummary: SummaryResponse = {
-  ingresos: 0,
-  egresos: 0,
-  ganancia: 0,
+  ingresos: 2405000,
+  egresos: 500000,
+  ganancia: (2405000 - 500000),
 };
 
 export const mockAnnualSummary: SummaryResponse = {
-  ingresos: 100,
-  egresos: NaN,
-  ganancia: 50,
+  ingresos: 6710000,
+  egresos: 1200500,
+  ganancia: (6710000 - 1200500),
 };
 
 export const mockAnnualDistribution: MonthlyDistributionItem[] = [
