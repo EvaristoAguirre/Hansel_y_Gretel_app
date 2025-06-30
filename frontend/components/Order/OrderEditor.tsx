@@ -93,7 +93,9 @@ const OrderEditor = ({
     const productDetails = selectedProducts.map((product) => ({
       productId: product.productId,
       quantity: product.quantity,
-      toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? []
+      toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
+      comment: commentInputs[product.productId]
+
     }));
 
     if (selectedOrderByTable) {

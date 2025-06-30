@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  use,
 } from "react";
 import Swal from "sweetalert2";
 import {
@@ -242,6 +243,7 @@ const OrderProvider = ({
         unitaryPrice: product.price,
         productName: product.name,
         allowsToppings: product.allowsToppings,
+        commentOfProduct: product.commentOfProduct,
         availableToppingGroups: product.availableToppingGroups
       };
       setSelectedProducts([...selectedProducts, newProduct]);
@@ -362,8 +364,12 @@ const OrderProvider = ({
         selectedProducts.map((p) =>
           p.productId === id ? { ...p, commentOfProduct: comment } : p
         )
+
       );
+
+
     }
+
   };
 
   const clearSelectedProducts = () => {
@@ -434,6 +440,8 @@ const OrderProvider = ({
     if (!id) {
       return;
     }
+    console.log("selectedProducts en handleEditOrder", selectedProducts);
+
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
@@ -540,8 +548,11 @@ const OrderProvider = ({
     }
   };
 
-  console.groupEnd();
+  useEffect(() => {
+    console.log("🌼 selectedProducts", selectedProducts);
 
+
+  }, [selectedProducts])
   return (
     <OrderContext.Provider
       value={{

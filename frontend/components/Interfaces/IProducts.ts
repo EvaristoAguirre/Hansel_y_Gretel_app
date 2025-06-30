@@ -99,6 +99,7 @@ export interface ProductResponse {
   price: number;
   cost: number;
   type: TypeProduct;
+  commentOfProduct?: string;
   allowsToppings: boolean;
   categories: ICategory[];
   productIngredients: IingredientResponse[];
