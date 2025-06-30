@@ -158,14 +158,25 @@ export class OrderService {
         const printData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
-          products: detailsToSave.map((detail) => ({
-            name: detail.product.name,
-            quantity: detail.quantity,
-            commentOfProduct: detail?.commentOfProduct,
-            toppings: toppingsToSave
-              .filter((t) => t.orderDetails?.product.id === detail.product.id)
-              .map((t) => t.topping.name),
-          })),
+          products: detailsToSave.flatMap((detail) => {
+            return Array.from({ length: detail.quantity }, (_, index) => {
+              const toppingsForThisUnit = toppingsToSave
+                .filter(
+                  (t) =>
+                    t.orderDetails?.product.id === detail.product.id &&
+                    t.unitIndex === index,
+                )
+                .map((t) => t.topping.name);
+
+              return {
+                name: detail.product.name,
+                quantity: 1,
+                commentOfProduct:
+                  index === 0 ? detail.commentOfProduct : undefined,
+                toppings: toppingsForThisUnit,
+              };
+            });
+          }),
           isPriority: updateData.isPriority,
         };
 
@@ -366,11 +377,11 @@ export class OrderService {
       );
       const orderPending = await this.orderRepo.save(order);
 
-      // try {
-      //   await this.printerService.printTicketOrder(order);
-      // } catch (error) {
-      //   throw new ConflictException(error.message);
-      // }
+      try {
+        await this.printerService.printTicketOrder(order);
+      } catch (error) {
+        throw new ConflictException(error.message);
+      }
 
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
