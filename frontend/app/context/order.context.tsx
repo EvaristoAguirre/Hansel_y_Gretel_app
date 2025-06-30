@@ -265,6 +265,11 @@ const OrderProvider = ({
     );
   };
 
+  const clearToppings = () => {
+    setToppingsByProductGroup({});
+    setSelectedToppingsByProduct({});
+  };
+
   const updateToppingForUnit = (
     productId: string,
     unitIndex: number,
@@ -310,6 +315,7 @@ const OrderProvider = ({
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
+    clearToppings();
   };
 
   const increaseProductNumber = async (product: SelectedProductsI) => {
@@ -480,6 +486,8 @@ const OrderProvider = ({
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
 
+      clearToppings();
+
       return updatedOrder;
     } catch (error) {
       console.error(error);
@@ -548,11 +556,6 @@ const OrderProvider = ({
     }
   };
 
-  useEffect(() => {
-    console.log("🌼 selectedProducts", selectedProducts);
-
-
-  }, [selectedProducts])
   return (
     <OrderContext.Provider
       value={{
