@@ -1,6 +1,7 @@
 import { OrderState } from 'src/Enums/states.enum';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 @Entity({ name: 'archived_orders' })
 export class ArchivedOrder {
@@ -25,8 +26,14 @@ export class ArchivedOrder {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   commandNumber: string;
 
+  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
+  methodOfPayment: PaymentMethod;
+
   @Column()
   tableId: string;
+
+  @Column()
+  dailyCashId: string;
 
   @OneToMany(
     () => ArchivedOrderDetails,
