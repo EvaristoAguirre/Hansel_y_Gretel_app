@@ -94,7 +94,7 @@ const OrderEditor = ({
       productId: product.productId,
       quantity: product.quantity,
       toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
-      comment: commentInputs[product.productId]
+      commentOfProduct: commentInputs[product.productId]
 
     }));
 
