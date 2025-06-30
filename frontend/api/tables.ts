@@ -1,4 +1,4 @@
-import { MesaForm } from "@/components/Interfaces/Cafe_interfaces";
+import { TableForm } from "@/components/Interfaces/ITable";
 import { URI_TABLE } from "@/components/URI/URI";
 
 
@@ -75,20 +75,29 @@ export const tableToOpen = async (id: string, token: string) => {
 };
 
 
-export const editTable = async (id: string, data: MesaForm, token: string) => {
-  const response = await fetch(`${URI_TABLE}/${id}`, {
-    method: "PATCH",
-    headers: {
-      'Content-Type': 'application/json',
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify({ ...data }),
-  });
+export const editTable = async (data: TableForm, token: string) => {
+  try {
+    const response = await fetch(`${URI_TABLE}/${data.id}`, {
+      method: "PATCH",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...data }),
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Error:", errorData);
-    throw new Error(`Error: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error:", errorData);
+      if (response.status >= 500) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      } else {
+        throw new Error(`Error: ${errorData.message}`);
+      }
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
-  return await response.json();
 }

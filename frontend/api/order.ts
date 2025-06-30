@@ -1,4 +1,6 @@
-import { URI_ORDER } from "@/components/URI/URI";
+import { paymentMethod } from "@/components/Enums/dailyCash";
+import { IOrderDetails } from "@/components/Interfaces/IOrder";
+import { URI_ORDER, URI_TICKET } from "@/components/URI/URI";
 
 export const orderToPending = async (id: string, token: string) => {
   const response = await fetch(`${URI_ORDER}/pending/${id}`, {
@@ -17,8 +19,8 @@ export const orderToPending = async (id: string, token: string) => {
   return await response.json();
 };
 
-export const orderToClosed = async (id: string, token: string) => {
-  const response = await fetch(`${URI_ORDER}/close/${id}`, {
+export const orderToReprint = async (id: string, token: string) => {
+  const response = await fetch(`${URI_TICKET}/${id}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -30,6 +32,25 @@ export const orderToClosed = async (id: string, token: string) => {
     const errorData = await response.json();
     console.error("Error:", errorData);
     throw new Error(`Error: ${response.status} ${response.statusText}`);
+  }
+  return await response.json();
+};
+
+export const orderToClosed = async (order: IOrderDetails, token: string, methodOfPayment: paymentMethod) => {
+  const response = await fetch(`${URI_ORDER}/close/${order.id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({ methodOfPayment: methodOfPayment, total: order.total }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    const error = new Error(errorData.message || 'Error al cerrar la orden') as any;
+    error.statusCode = errorData.statusCode || response.status;
+    throw error;
   }
   return await response.json();
 };

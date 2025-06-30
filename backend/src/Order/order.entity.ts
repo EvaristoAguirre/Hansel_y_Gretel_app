@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { OrderDetails } from './order_details.entity';
 import { OrderState } from 'src/Enums/states.enum';
+import { DailyCash } from 'src/daily-cash/daily-cash.entity';
+import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 
 @Entity({ name: 'orders' })
 export class Order {
@@ -33,9 +35,10 @@ export class Order {
   @Column({ nullable: true })
   comment: string;
 
-  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
-  commandNumber: string;
+  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
+  methodOfPayment: PaymentMethod;
 
+  // --------- Relaciones ---------
   @ManyToOne(() => Table, (table) => table.orders, {
     onDelete: 'SET NULL',
   })
@@ -44,7 +47,15 @@ export class Order {
   @OneToMany(() => OrderDetails, (orderDetails) => orderDetails.order, {
     cascade: true,
     eager: false,
+    onUpdate: 'CASCADE',
   })
   @JoinColumn({ name: 'orders_orderDetails' })
   orderDetails: OrderDetails[];
+
+  @ManyToOne(() => DailyCash, (dailyCash) => dailyCash.orders, {
+    onDelete: 'SET NULL',
+    eager: true,
+  })
+  @JoinColumn({ name: 'dailyCashId' })
+  dailyCash: DailyCash;
 }

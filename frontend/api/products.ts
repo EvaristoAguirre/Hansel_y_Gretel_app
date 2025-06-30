@@ -1,28 +1,37 @@
 import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
-import { ICheckStock, ProductCreated, ProductForm } from '../components/Interfaces/IProducts';
+import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
 
 
 export const createProduct = async (form: ProductForm, token: string) => {
+  const payload = {
+    ...form,
+    categories: form.categories.map((c) => c.id),
+  };
   const response = await fetch(URI_PRODUCT, {
     method: "POST",
     headers: {
       'Content-Type': 'application/json',
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify(form),
+    body: JSON.stringify(payload),
   });
 
   return await response.json();
 };
 
 export const editProduct = async (form: ProductForm, token: string) => {
+  const payload = {
+    ...form,
+    categories: form.categories.map((c) => c.id),
+  };
   const response = await fetch(`${URI_PRODUCT}/${form.id}`, {
     method: "PUT",
     headers: {
       'Content-Type': 'application/json',
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify(form),
+
+    body: JSON.stringify(payload),
   });
 
   return await response.json();
@@ -137,7 +146,10 @@ export const searchProducts = async (searchTerm: string, token: string, selected
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ "categories": [selectedCategoryId] })
+      body: JSON.stringify(
+        selectedCategoryId ? { categories: [selectedCategoryId] } : {}
+      )
+
     });
 
     if (!response.ok) {
@@ -156,7 +168,7 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 };
 
 
-export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
+export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string[] | null) => {
   try {
     const isNumeric = !isNaN(Number(searchTerm));
     const queryParams = new URLSearchParams({
@@ -170,7 +182,7 @@ export const searchProductsNotProm = async (searchTerm: string, token: string, s
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({ "categories": [selectedCategoryId] })
+      body: JSON.stringify({ "categories": selectedCategoryId })
     });
 
     if (!response.ok) {

@@ -3,11 +3,13 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   RelationId,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Exclude } from 'class-transformer';
+import { OrderDetailToppings } from './order_details_toppings.entity';
 
 @Entity({ name: 'order_details' })
 export class OrderDetails {
@@ -26,11 +28,11 @@ export class OrderDetails {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column()
-  batchId: string;
+  @Column({ nullable: true })
+  commentOfProduct: string;
 
-  // @Column({nullable: true})
-  // comment: string;
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  commandNumber: string;
 
   //--------------- Relaciones ---------------- //
 
@@ -45,4 +47,9 @@ export class OrderDetails {
 
   @RelationId((orderDetails: OrderDetails) => orderDetails.order)
   orderId: string;
+
+  @OneToMany(() => OrderDetailToppings, (topping) => topping.orderDetails, {
+    cascade: true,
+  })
+  orderDetailToppings: OrderDetailToppings[];
 }

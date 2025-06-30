@@ -54,10 +54,6 @@ export class PrinterService {
     return `${datePart}-${count}`;
   }
 
-  private normalizeText(text: string): string {
-    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-
   private async sendRawCommand(command: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       const socket = net.createConnection(this.printerConfig);
@@ -105,33 +101,81 @@ export class PrinterService {
 
       const commands = [
         '\x1B\x40', // Inicializar impresora
-        '\x1B\x74\x02', // Establecer codificación Windows-1252 (para caracteres latinos)
-        '\x1B\x61\x01', // Centrar texto
+        '\x1B\x74\x02', // Codificación Windows-1252
+        '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
-        'COMANDA COCINA\n\n',
-        '\x1D\x21\x00', // Texto normal
-        '------------------------------\n',
+        `${orderData.isPriority ? '- PEDIDO PRIORITARIO -' : ' '} \n\n`,
+        '\x1B\x61\x01', // Centrar
         '\x1D\x21\x11', // Texto doble tamaño
-        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR')}\n`,
-        '\x1D\x21\x00', // Texto normal
+        '=== COMANDA COCINA ===\n',
+        '\x1D\x21\x00', // Tamaño normal
+        '----------------------------------------\n',
+        `COD: ${orderCode}  ${now.toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })}hs\n`,
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
-        '------------------------------\n',
+        '----------------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
-        `${'PRODUCTO'.padEnd(22)}CANT\n`,
+        `PRODUCTO${' '.repeat(35)}CANT\n`,
         '\x1B\x45\x00', // Negrita OFF
-        '------------------------------\n',
-        '\x1D\x21\x11', // Texto doble tamaño
-        ...orderData.products.map(
-          (p) =>
-            `${this.normalizeText(p.name).substring(0, 22).padEnd(22)}x ${p.quantity.toString().padStart(2)}\n`,
-        ),
-        '------------------------------\n',
+        '----------------------------------------\n',
+        '\x1D\x21\x00', // Tamaño normal para productos
+        '\x1B\x4D\x00', // Tipografía estándar
+        ...orderData.products.flatMap((p) => {
+          const name = this.normalizeText(p.name.toLocaleUpperCase());
+          const toppings = (p.toppings || []).map(
+            (t) => `+ ${this.normalizeText(t)}\n`,
+          );
+          const comment = `${this.normalizeText(p.commentOfProduct || '')}\n`;
+          const quantityText = `x${p.quantity.toString().padStart(2)}`;
+          const maxLineLength = 48;
+          const lines: string[] = [];
+
+          lines.push('\x1B\x45\x01'); // Negrita ON
+
+          if (name.length + quantityText.length + 1 <= maxLineLength) {
+            lines.push(
+              name.padEnd(maxLineLength - quantityText.length) + quantityText,
+            );
+          } else {
+            const nameLine1 = name.substring(0, maxLineLength);
+            const nameLine2 =
+              name
+                .substring(maxLineLength, maxLineLength * 2)
+                .padEnd(maxLineLength - quantityText.length) + quantityText;
+            lines.push(nameLine1);
+            lines.push(nameLine2);
+          }
+
+          lines.push('\x1B\x45\x00'); // Negrita OFF
+
+          if (toppings.length > 0) lines.push(...toppings);
+
+          if (comment) {
+            lines.push('\x1B\x61\x00'); // Alinear izquierda
+            lines.push(comment);
+            // lines.push('--------------------------\n');
+            lines.push('\x1B\x61\x01'); // Centrar
+            lines.push('\n');
+          }
+
+          lines.push(''); // espacio entre productos
+
+          return lines;
+        }),
+        '\x1B\x61\x01', // Centrar
+        '----------------------------------------\n',
+
         '\x1B\x42\x01\x02', // Pitido
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');
 
-      const printSuccess = await this.sendRawCommand(commands);
-      if (!printSuccess) {
+      const firstPrintSuccess = await this.sendRawCommand(commands);
+      // const secondPrintSuccess = await this.sendRawCommand(commands);
+
+      if (!firstPrintSuccess) {
         throw new Error('Print command failed');
       }
 
@@ -143,6 +187,10 @@ export class PrinterService {
       );
       throw new Error(`Error al imprimir: ${error.message}`);
     }
+  }
+
+  private normalizeText(text: string): string {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
   async printTicketOrder(order: Order): Promise<string> {
@@ -164,10 +212,20 @@ export class PrinterService {
       const timeStr = now.toLocaleTimeString('es-AR', {
         hour: '2-digit',
         minute: '2-digit',
+        hour12: false,
       });
 
+      const commandNumbers = order.orderDetails
+        .filter((detail) => detail.isActive && detail.commandNumber)
+        .map((detail) => detail.commandNumber);
+
+      const commandNumberToPrint = commandNumbers
+        .map((cn) => cn?.split('-')?.[1] || 'XXXX')
+        .join('/');
+
       const tableName = order.table.name;
-      const commandNumber = order.commandNumber || 'S/N';
+      //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
+      // const commandNumber = commandNumberToPrint || 'S/N';
 
       const products = order.orderDetails
         .filter((detail) => detail.isActive)
@@ -190,12 +248,20 @@ export class PrinterService {
         price: number;
       }) => {
         const name = this.normalizeTextToTicket(product.name)
-          .substring(0, 20)
-          .padEnd(20);
+          .substring(0, 32)
+          .padEnd(32);
         const quantity = `x${product.quantity.toString().padStart(2)}`;
-        const price = `$${product.price.toFixed(2).padStart(6)}`;
-        const total = `$${(product.price * product.quantity).toFixed(2).padStart(7)}`;
-        return `${quantity} ${name} ${price} ${total}\n`;
+        const price = `$${Math.round(product.price).toLocaleString('es-AR').padStart(5)}`;
+        const totalLine = `Total: $${Math.round(
+          product.price * product.quantity,
+        )
+          .toLocaleString('es-AR')
+          .padStart(8)}`;
+
+        return [
+          `${quantity} ${name} ${price}`,
+          `${' '.repeat(48 - totalLine.length)}${totalLine}`,
+        ].join('\n');
       };
 
       const commands = [
@@ -205,30 +271,49 @@ export class PrinterService {
         '\x1D\x21\x11', // Texto doble tamaño
         'HANSEL Y GRETEL\n',
         '\x1D\x21\x00', // Texto normal
-        '-----------------------------\n',
-        `${dateStr} - ${timeStr}\n`,
+        '-----------------------------------\n',
+        `${dateStr} - ${timeStr}hs\n`,
         `Mesa: ${this.normalizeTextToTicket(tableName)}\n`,
-        `Comanda: ${commandNumber}\n`,
-        '-----------------------------\n',
+        //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
+        `\x1B\x61\x00`,
+        `Comanda: ${commandNumberToPrint}\n`,
+        '\x1B\x61\x01', // Centrar texto
+        '-----------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
-        'CANT PRODUCTO           P.UNIT  TOTAL\n',
+        'CANT PRODUCTO              P.UNIT  \n',
         '\x1B\x45\x00', // Negrita OFF
-        '-----------------------------\n',
+        '-----------------------------------\n',
         ...products.map(formatProductLine),
-        '-----------------------------\n',
+        '-----------------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
-        `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
-        `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
+        // `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
+        // `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
+        `Subtotal: $${Math.round(subtotal).toLocaleString('es-AR').padStart(6)}\n`,
+        `Propina sugerida (10%): $${Math.round(tip).toLocaleString('es-AR').padStart(6)}\n`,
+
         '\x1B\x61\x01', // Centrar texto
         '\x1B\x45\x01', // Negrita ON
-        '-----------------------------\n',
+        '-----------------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
-        `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
-        `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
+        `\x1B\x4D\x01`, // 2da tipografia
+        // `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
+        // `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
+        `TOTAL (sin propina): $${Math.round(subtotal).toLocaleString('es-AR').padStart(8)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
-        '-----------------------------\n',
+        '\x1D\x21\x00', // Texto normal
+        '-----------------------------------\n',
+        '\x1B\x61\x02', // Alinear derecha
+        '\x1B\x45\x01', // Negrita ON
+        '\x1D\x21\x11', // Texto doble tamaño
+        `\x1B\x4D\x01`, // 2da tipografia
+        `TOTAL (con propina): $${Math.round(total).toLocaleString('es-AR').padStart(8)}\n`,
+        '\x1B\x45\x00', // Negrita OFF
+        '\x1B\x61\x01', // Centrar texto
+        '\x1D\x21\x00', // Texto normal
+        `\x1B\x4D\x00`,
+        '-----------------------------------\n',
         'DOCUMENTO NO VALIDO COMO FACTURA\n',
         'Solicite su factura en caja.\n',
         'Gracias por su visita!\n',
@@ -236,9 +321,11 @@ export class PrinterService {
         '\x1D\x56\x41\x50', // Cortar papel con avance
       ].join('');
 
-      const printSuccess = await this.sendRawCommand(commands);
-      if (!printSuccess) {
-        throw new Error('Error al enviar comando de impresión');
+      const firstPrintSuccess = await this.sendRawCommand(commands);
+      const secondPrintSuccess = await this.sendRawCommand(commands);
+
+      if (!firstPrintSuccess || !secondPrintSuccess) {
+        throw new Error('Print command failed');
       }
 
       return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
@@ -253,5 +340,75 @@ export class PrinterService {
 
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  private splitCommentWithPrefix(
+    comment: string,
+    maxLineLength: number,
+    prefix: string,
+  ): string[] {
+    const prefixLength = prefix.length;
+    const remainingLineLength = maxLineLength - prefixLength;
+    const normalizedComment = this.normalizeText(comment);
+
+    if (!normalizedComment) return [prefix];
+
+    const lines: string[] = [];
+    let firstLineContent = '';
+    const words = normalizedComment.split(/(\s+)/);
+
+    for (const word of words) {
+      if ((firstLineContent + word).length <= remainingLineLength) {
+        firstLineContent += word;
+      } else {
+        break;
+      }
+    }
+
+    lines.push(`${prefix}${firstLineContent.trim()}`);
+
+    const remainingText = normalizedComment
+      .substring(firstLineContent.length)
+      .trim();
+    if (remainingText) {
+      const remainingLines = this.splitTextIntoLines(
+        remainingText,
+        maxLineLength,
+      );
+      lines.push(...remainingLines);
+    }
+
+    return lines;
+  }
+
+  private splitTextIntoLines(
+    text: string,
+    maxLength: number,
+    prefix: string = '',
+  ): string[] {
+    const words = this.normalizeText(text).split(/(\s+)/);
+    let currentLine = prefix;
+    const lines = [];
+
+    for (let word of words) {
+      if ((currentLine + word).length > maxLength) {
+        if (currentLine === prefix) {
+          while (word.length > 0) {
+            const chunk = word.substring(0, maxLength - prefix.length);
+            lines.push(prefix + chunk);
+            word = word.substring(maxLength - prefix.length);
+          }
+          continue;
+        }
+        lines.push(currentLine.trim());
+        currentLine = prefix;
+      }
+      currentLine += word;
+    }
+
+    if (currentLine !== prefix) {
+      lines.push(currentLine.trim());
+    }
+
+    return lines;
   }
 }

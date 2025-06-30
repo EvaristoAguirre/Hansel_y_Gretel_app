@@ -11,6 +11,7 @@ import { UnitConversion } from './unitConversion.entity';
 import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 
 @Entity({ name: 'units_of_measure' })
 export class UnitOfMeasure {
@@ -67,4 +68,11 @@ export class UnitOfMeasure {
 
   @OneToMany(() => Product, (product) => product.unitOfMeasure)
   products: Product[];
+
+  @OneToMany(
+    () => ProductAvailableToppingGroup,
+    (ProductAvailableToppingGroup) =>
+      ProductAvailableToppingGroup.unitOfMeasure,
+  )
+  ProductAvailableToppingGroup: ProductAvailableToppingGroup[];
 }

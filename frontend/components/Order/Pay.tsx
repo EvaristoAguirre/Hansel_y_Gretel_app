@@ -3,15 +3,16 @@ import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
 import { Payment, TableBar } from "@mui/icons-material";
-import { Button, Typography } from "@mui/material";
+import { Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
-import { TableState } from "../Enums/Enums";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 import { UserRole } from "../Enums/user";
+import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
+import { paymentMethod } from "../Enums/dailyCash";
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -20,52 +21,79 @@ export interface PayOrderProps {
 const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts, fetchOrderBySelectedTable } =
     useOrderContext();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
+  const { selectedTable, setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
-    setToken(token);
-  }, []);
+  const [method, setMethod] = useState<paymentMethod | ''>('');
+
+
+  const token = getAccessToken();
+
+
+  const handleChangeMethod = (event: SelectChangeEvent<paymentMethod>) => {
+    setMethod(event.target.value as paymentMethod);
+  };
+
 
   const handlePayOrder = async () => {
     const token = getAccessToken();
     if (!token) return;
 
-    if (selectedOrderByTable && selectedMesa) {
-      const paidOrder = await orderToClosed(selectedOrderByTable.id, token);
-      const closedTable = await editTable(
-        selectedMesa.id,
-        { ...selectedMesa, state: TableState.CLOSED },
-        token
-      );
-      if (paidOrder) {
-        setSelectedOrderByTable(paidOrder);
-        updateOrder(paidOrder);
-      } else if (closedTable) {
-        setSelectedMesa(closedTable);
-      } else {
-        Swal.fire("Error", "No se pudo pagar la orden.", "error");
+    if (!method) {
+      Swal.fire("Selecciona un método de pago", "", "warning");
+      return;
+    }
+
+    try {
+      if (selectedOrderByTable && selectedTable) {
+        const paidOrder = await orderToClosed(
+          selectedOrderByTable,
+          token,
+          method
+        );
+
+        const closedTable = await editTable(
+          { ...selectedTable, state: TableState.CLOSED },
+          token
+        );
+
+        if (paidOrder) {
+          setSelectedOrderByTable(paidOrder);
+          updateOrder(paidOrder);
+        }
+
+        if (closedTable) {
+          setSelectedTable(closedTable);
+        }
+
+        updateTable(closedTable);
       }
-      updateTable(closedTable);
+    } catch (error: any) {
+      if (error.statusCode === 409) {
+        Swal.fire({
+          icon: "info",
+          title: "Caja no abierta",
+          text: "Debes abrir una caja diaria antes de registrar un pago.",
+        });
+      } else {
+        Swal.fire("Error", error.message || "Error al cerrar la orden", "error");
+      }
     }
   };
 
+
   const handleTableAvailable = async (
-    selectedMesa: MesaInterface,
+    selectedTable: ITable,
     token: string
   ) => {
     const tableEdited = await editTable(
-      selectedMesa.id,
-      { ...selectedMesa, state: TableState.AVAILABLE },
+      { ...selectedTable, state: TableState.AVAILABLE },
       token
     );
     if (tableEdited) {
-      setSelectedMesa(tableEdited);
+      setSelectedTable(tableEdited);
       updateTable(tableEdited);
       setSelectedOrderByTable(null);
       fetchOrderBySelectedTable();
@@ -160,8 +188,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               ] || "MESA SIN ORDEN"}
             </p>
           ) : (
-            selectedMesa &&
-            selectedMesa.state === TableState.CLOSED && (
+            selectedTable &&
+            selectedTable.state === TableState.CLOSED && (
               <p className="text-red-500">MESA SIN ORDEN ABIERTA</p>
             )
           )}
@@ -172,6 +200,22 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         (userRoleFromToken() === UserRole.ADMIN || userRoleFromToken() === UserRole.ENCARGADO) &&
         <div>
           <>
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel id="payment-method-label">Método de Pago</InputLabel>
+              <Select
+                labelId="payment-method-label"
+                value={method}
+                label="Método de Pago"
+                onChange={handleChangeMethod}
+              >
+                <MenuItem value={paymentMethod.CASH}>Efectivo</MenuItem>
+                <MenuItem value={paymentMethod.CREDIT_CARD}>Tarjeta de Crédito</MenuItem>
+                <MenuItem value={paymentMethod.DEBIT_CARD}>Tarjeta de Débito</MenuItem>
+                <MenuItem value={paymentMethod.TRANSFER}>Transferencia</MenuItem>
+                <MenuItem value={paymentMethod.MERCADOPAGO}>MercadoPago</MenuItem>
+              </Select>
+            </FormControl>
+
             {selectedOrderByTable &&
               selectedOrderByTable.state === "pending_payment" && (
                 <Button
@@ -189,8 +233,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   Pagada
                 </Button>
               )}
-            {(selectedMesa && selectedMesa.state === TableState.CLOSED) ||
-              (selectedMesa &&
+            {(selectedTable && selectedTable.state === TableState.CLOSED) ||
+              (selectedTable &&
                 orderStates[
                 selectedOrderByTable?.state as keyof typeof orderStates
                 ] === "ORDEN PAGADA/CERRADA") ? (
@@ -203,7 +247,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   color: "black",
                   "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
-                onClick={() => handleTableAvailable(selectedMesa, token!)}
+                onClick={() => handleTableAvailable(selectedTable, token!)}
               >
                 <TableBar style={{ marginRight: "5px" }} /> Pasar Mesa a:
                 <span style={{ color: "green", marginLeft: "5px" }}>

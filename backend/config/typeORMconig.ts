@@ -1,23 +1,35 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
-import { config as dotenvConfig } from 'dotenv';
 import { registerAs } from '@nestjs/config';
 import * as path from 'path';
-dotenvConfig({ path: '.env' });
+import { DataSource } from 'typeorm';
+import 'dotenv/config';
 
-const config = {
+export default registerAs('typeorm', () => ({
   type: 'postgres',
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT),
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB,
   autoLoadEntities: true,
-  synchronize: true,
-  dropSchema: false,
-  logging: ['errors'],
+  synchronize: true, // pasar a false en producción
+  dropSchema: true, // pasar a false en producción
+  logging: ['error', 'warn'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
-};
-export default registerAs('typeorm', () => config);
-export const connectionSource = new DataSource(config as DataSourceOptions);
+
+  // migrationsRun: true, // para activar las migraciones automáticamente al iniciar la aplicación
+}));
+
+export const connectionSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB,
+  entities: ['dist/**/*.entity{.ts,.js}'],
+  migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
+  schema: 'public',
+  logging: ['error', 'warn'],
+});

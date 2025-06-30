@@ -11,11 +11,19 @@ export const addStock = async (formStock: IStock, token: string) => {
     body: JSON.stringify(formStock),
   });
 
-  return await response.json();
+  const data = await response.json();
+
+  return {
+    statusCode: response.status,
+    ...data,
+  };
 };
 
 
-//para editar stock necesito el id de la orden
+
+
+
+//para editar stock necesito el id
 export const editStock = async (idStock: string, payload: IStock, token: string) => {
   const response = await fetch(`${URI_STOCK}/${idStock}`, {
     method: "PATCH",
@@ -26,8 +34,14 @@ export const editStock = async (idStock: string, payload: IStock, token: string)
     body: JSON.stringify(payload),
   });
 
-  return await response.json();
+  const data = await response.json();
+
+  return {
+    statusCode: response.status,
+    ...data,
+  };
 };
+
 
 export const getStockByProduct = async (id: string, token: string) => {
   const response = await fetch(`${URI_STOCK}/product/${id}`, {

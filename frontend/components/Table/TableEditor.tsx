@@ -1,15 +1,16 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
-import { Button } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import { useOrderContext } from "../../app/context/order.context";
 import { editTable } from "@/api/tables";
-import { TableState } from "../Enums/Enums";
 import { useRoomContext } from "../../app/context/room.context";
 import { useAuth } from "@/app/context/authContext";
 import io from 'socket.io-client';
 import { useTableStore } from "./useTableStore";
+import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
+import { checkOpenDailyCash } from "@/api/dailyCash";
 
 
 
@@ -28,15 +29,29 @@ const TableEditor = ({
   handleCompleteStep,
 }: Props) => {
   const { getAccessToken } = useAuth();
-  const { selectedMesa, setSelectedMesa } = useRoomContext();
+  const { selectedTable, setSelectedTable } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
+  const [openDailyCash, setOpenDailyCash] = useState(false);
   const {
     handleCreateOrder,
     handleEditOrder,
     selectedProducts,
     selectedOrderByTable,
   } = useOrderContext();
+
+  const token = getAccessToken();
+
+  useEffect(() => {
+    const cashOpen = async () => {
+      const cash = token && await checkOpenDailyCash(token)
+      if (cash?.dailyCashOpenId) {
+        setOpenDailyCash(true)
+      }
+    }
+    cashOpen()
+
+  }, []);
 
   const setTableFields = useCallback(() => {
     if (selectedOrderByTable && selectedOrderByTable.comment) {
@@ -50,26 +65,27 @@ const TableEditor = ({
     } else {
       setCantidadPersonas(null);
     }
-  }, [selectedMesa, selectedOrderByTable]);
+  }, [selectedTable, selectedOrderByTable]);
 
   useEffect(() => {
     setTableFields();
   }, [setTableFields]);
 
   /**
-   * @param selectedMesa - Es la Mesa que se selecciona.
+   * @param selectedTable - Es la Table que se selecciona.
    * se llama al endopoint para abrir la mesa
    * este cambia estado de la mesa a 'OPEN'
    */
-  const handleOpenTable = async (selectedMesa: MesaInterface) => {
+  const handleOpenTable = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
     const tableEdited = await editTable(
-      selectedMesa.id,
-      { ...selectedMesa, state: TableState.OPEN },
+      { ...selectedTable, state: TableState.OPEN },
       token
     );
-    setSelectedMesa(tableEdited);
+
+    setSelectedTable(tableEdited);
+
     handleNextStep();
   };
 
@@ -78,7 +94,7 @@ const TableEditor = ({
   useEffect(() => {
     connectWebSocket();
   }, []);
-  
+
   return (
     <div
       style={{
@@ -146,12 +162,18 @@ const TableEditor = ({
                 marginTop: "30px",
               }}
             >
+              {!openDailyCash && (
+                <p style={{ color: "red", textAlign: "start", fontSize: "14px" }}>
+                  *Debes abrir una caja antes de habilitar esta acción.
+                </p>
+              )}
               <Button
                 type="button"
                 fullWidth
                 color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
+                disabled={!openDailyCash}
                 onClick={() => {
                   if (cantidadPersonas === null || cantidadPersonas <= 0) {
                     Swal.fire(
@@ -160,17 +182,16 @@ const TableEditor = ({
                       "error"
                     );
                     return;
-                  } else if (selectedMesa?.state === "available") {
+                  } else if (selectedTable?.state === "available") {
                     handleCreateOrder(
-                      selectedMesa,
+                      selectedTable,
                       cantidadPersonas,
                       comentario
                     );
                     onAbrirPedido();
-                    handleOpenTable(selectedMesa);
                     handleCompleteStep();
                     handleNextStep();
-                   
+
                   } else {
                     if (selectedOrderByTable?.id) {
 
@@ -186,7 +207,7 @@ const TableEditor = ({
                   }
                 }}
               >
-                {selectedMesa?.state === "open"
+                {selectedTable?.state === "open"
                   ? "Guardar Cambios"
                   : "Abrir Mesa"}
               </Button>

@@ -33,7 +33,11 @@ export const useProducts = () => {
     ingredients: [],
     products: [],
     isActive: true,
+    allowsToppings: false,
+    toppingsSettings: null,
+    availableToppingGroups: []
   });
+
 
   // Llamada inicial para cargar productos
   useEffect(() => {
@@ -85,7 +89,7 @@ export const useProducts = () => {
     }
   };
 
-  const handleEdit = async (token: string, selectedCategoryId?: string) => {
+  const handleEditProduct = async (token: string, selectedCategoryId?: string) => {
     try {
       if (!token) throw new Error("Token no disponible");
 
@@ -95,11 +99,40 @@ export const useProducts = () => {
         price: Number(form.price),
         cost: Number(form.cost),
         id: form.id,
+
       };
 
       const updatedProduct = await editProduct(preparedForm, token);
 
       updateProduct(updatedProduct);
+
+      //Lógica para actualizar promos que usan el producto
+      const promosAfectadas = products.filter(p =>
+        p.type === "promotion" &&
+        p.promotionDetails?.some(detail => detail.product.id === updatedProduct.id)
+      );
+
+      if (promosAfectadas.length > 0) {
+        for (const promo of promosAfectadas) {
+          try {
+            const response = await fetch(`${URI_PRODUCT}/${promo.id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error("No se pudo obtener la promo actualizada");
+            }
+
+            const promoActualizada = await response.json();
+            updateProduct(promoActualizada);
+          } catch (error) {
+            console.error("Error actualizando promo afectada:", error);
+          }
+        }
+      }
+
 
       Swal.fire("Éxito", "Producto editado correctamente.", "success");
 
@@ -156,6 +189,9 @@ export const useProducts = () => {
       ingredients: [],
       products: [],
       isActive: true,
+      allowsToppings: false,
+      toppingsSettings: null,
+      availableToppingGroups: []
     });
   };
 
@@ -170,7 +206,7 @@ export const useProducts = () => {
     setModalType,
     setForm,
     handleCreateProduct,
-    handleEdit,
+    handleEditProduct,
     handleDelete,
     handleCloseModal,
     fetchAndSetProducts,

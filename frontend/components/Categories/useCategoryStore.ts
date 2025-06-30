@@ -35,7 +35,9 @@ export const useCategoryStore = create<CategoryState>((set) => {
   socket.on("categoryDeleted", (data) => {
     console.log("🔴 Categoría eliminada:", data);
     set((state) => ({
-      categories: state.categories.filter((category) => category.id !== data.id),
+      categories: state.categories.filter(
+        (category) => category.id !== data.id
+      ),
     }));
   });
 
@@ -46,15 +48,18 @@ export const useCategoryStore = create<CategoryState>((set) => {
   return {
     categories: [],
     setCategories: (categories) => set({ categories }),
-    addCategory: (category) => set((state) => ({ categories: [...state.categories, category] })),
+    addCategory: (category) =>
+      set((state) => ({ categories: [...state.categories, category] })),
     removeCategory: (id) =>
-      set((state) => ({ categories: state.categories.filter((c) => c.id !== id) })),
+      set((state) => ({
+        categories: state.categories.filter((c) => c.id !== id),
+      })),
     updateCategory: (updatedCategory) =>
       set((state) => ({
         categories: state.categories.map((c) =>
           c.id === updatedCategory.id ? updatedCategory : c
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece automáticamente al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece automáticamente al cargar el store
   };
 });

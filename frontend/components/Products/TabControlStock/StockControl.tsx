@@ -1,8 +1,7 @@
 'use client';
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { esES } from "@mui/x-data-grid/locales/esES";
 import { DataGrid } from "@mui/x-data-grid";
-import { ProductCreated, ProductsProps } from "@/components/Interfaces/IProducts";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/components/Hooks/useProductStore";
 import { useAuth } from "@/app/context/authContext";
@@ -12,20 +11,23 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
+import { exportPDF } from "@/api/exportPDF";
+import { SimCardDownload } from "@mui/icons-material";
+import { ProductResponse } from '../../Interfaces/IProducts';
 
 
 const StockControl = () => {
   const { products, connectWebSocket } = useProductStore();
   const { getAccessToken } = useAuth();
-  const [productsSimple, setProductsSimple] = useState<ProductCreated[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<ProductCreated[]>([]);
+  const [productsSimple, setProductsSimple] = useState<ProductResponse[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<ProductResponse[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [noStock, setNoStock] = useState(false);
 
-  const { ingredients } = useIngredientsContext();
+  const { ingredientsAndToppings } = useIngredientsContext();
 
   useEffect(() => {
     connectWebSocket();
@@ -62,7 +64,7 @@ const StockControl = () => {
     idStock: product.stock?.id || null
   }));
 
-  const formattedIngredients = ingredients.map((ingredient) => ({
+  const formattedIngredients = ingredientsAndToppings.map((ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
     stock: Number(ingredient.stock?.quantityInStock) || null,
@@ -197,18 +199,36 @@ const StockControl = () => {
     }
   }, [filteredProducts, filteredIngredients]);
 
-
+  const handleExportPDF = () => {
+    token && exportPDF(token);
+  }
 
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
-
-      <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
-      {noStock &&
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 2 }}>
+        <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<SimCardDownload />}
+          onClick={handleExportPDF}
+          sx={{
+            mt: { xs: 2, sm: 0 },
+            "&:hover": {
+              color: "white",
+            }
+          }}
+        >
+          Exportar Stock (PDF)
+        </Button>
+      </Box>
+      {noStock && (
         <Typography variant="h6" sx={{ mt: 2 }} color="error">
           ❗️Hay productos o ingredientes sin stock asignado.
           Seleccione la fila correspondiente en la tabla para agregar stock.
         </Typography>
-      }
+      )}
+
       {/* DataGrids */}
       <Box display="flex" gap={2} sx={{ mt: 3 }}>
 

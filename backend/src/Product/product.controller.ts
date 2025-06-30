@@ -93,7 +93,7 @@ export class ProductController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductById(@Param('id') id: UUID): Promise<Product> {
+  async getProductById(@Param('id') id: UUID): Promise<ProductResponseDto> {
     return this.productService.getProductById(id);
   }
   @Get('by-code/:code')
@@ -121,7 +121,6 @@ export class ProductController {
   async createProduct(
     @Body() productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    console.log('controlador', productToCreate);
     return await this.productService.createProduct(productToCreate);
   }
 
@@ -130,7 +129,7 @@ export class ProductController {
   async updateProduct(
     @Body() updateData: UpdateProductDto,
     @Param('id') id: string,
-  ) {
+  ): Promise<ProductResponseDto> {
     return await this.productService.updateProduct(id, updateData);
   }
 

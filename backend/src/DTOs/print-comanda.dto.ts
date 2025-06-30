@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class PrintComandaDTO {
   @IsString()
@@ -12,11 +18,23 @@ export class PrintComandaDTO {
   @IsNumber()
   @IsOptional()
   numberCustomers?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isPriority?: boolean;
 }
 
 class Details {
   @IsString()
   name: string;
+
   @IsString()
   quantity: number;
+
+  @IsArray()
+  toppings?: string[];
+
+  @IsString()
+  @IsOptional()
+  commentOfProduct?: string;
 }

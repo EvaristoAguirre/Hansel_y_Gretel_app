@@ -1,5 +1,4 @@
 "use client";
-import { MesaInterface } from "@/components/Interfaces/Cafe_interfaces";
 import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
 import {
   createContext,
@@ -7,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  use,
 } from "react";
 import Swal from "sweetalert2";
 import {
@@ -16,12 +16,14 @@ import {
 } from "../../components/Interfaces/IProducts";
 import { useOrderStore } from "../../components/Order/useOrderStore";
 import { useRoomContext } from "./room.context";
-import { TableState } from "@/components/Enums/Enums";
-import { IOrderDetails } from "@/components/Interfaces/IOrderDetails";
+import { IOrderDetails } from "@/components/Interfaces/IOrder";
 import { useAuth } from "./authContext";
 import { checkStock } from "@/api/products";
 import { cancelOrder } from "@/api/order";
 import { useTableStore } from "@/components/Table/useTableStore";
+import { ITable } from "@/components/Interfaces/ITable";
+import { TableState } from "@/components/Enums/table";
+import { editTable } from "@/api/tables";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -31,13 +33,17 @@ type OrderContextType = {
   selectedOrderByTable: IOrderDetails | null;
   setSelectedOrderByTable: (order: IOrderDetails | null) => void;
   handleSelectedProducts: (product: ProductResponse) => void;
+  highlightedProducts: Set<string>;
+  addHighlightedProduct: (id: string) => void;
+  removeHighlightedProduct: (id: string) => void;
   handleDeleteSelectedProduct: (productId: string) => void;
-  increaseProductNumber: (productId: string) => void;
+  increaseProductNumber: (product: SelectedProductsI) => void;
   decreaseProductNumber: (productId: string) => void;
+  productComment: (id: string, comment: string) => void;
   clearSelectedProducts: () => void;
   deleteConfirmProduct: (productId: string) => void;
   handleCreateOrder: (
-    mesa: MesaInterface,
+    table: ITable,
     cantidadPersonas: number,
     comentario: string
   ) => Promise<void>;
@@ -45,12 +51,24 @@ type OrderContextType = {
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => Promise<void>;
   handleDeleteOrder: (orderId: string | null) => Promise<void>;
   handleResetSelectedOrder: () => void;
   fetchOrderBySelectedTable: () => void;
   handleCancelOrder: (orderId: string) => Promise<void>;
+  handleAddTopping: (productId: string, toppingIds: string[]) => Promise<void>;
+  selectedToppingsByProduct: { [productId: string]: string[][] };
+  updateToppingForUnit: (
+    productId: string,
+    unitIndex: number,
+    updatedGroup: { [groupId: string]: string[] }
+  ) => void;
+  toppingsByProductGroup: {
+    [productId: string]: Array<{ [groupId: string]: string[] }>
+  };
+
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -61,9 +79,13 @@ const OrderContext = createContext<OrderContextType>({
   selectedOrderByTable: null,
   setSelectedOrderByTable: () => { },
   handleSelectedProducts: () => { },
+  highlightedProducts: new Set(),
+  addHighlightedProduct: () => { },
+  removeHighlightedProduct: () => { },
   handleDeleteSelectedProduct: () => { },
   increaseProductNumber: () => { },
   decreaseProductNumber: () => { },
+  productComment: () => { },
   clearSelectedProducts: () => { },
   deleteConfirmProduct: () => { },
   handleCreateOrder: async () => { },
@@ -72,6 +94,10 @@ const OrderContext = createContext<OrderContextType>({
   handleResetSelectedOrder: () => { },
   fetchOrderBySelectedTable: () => { },
   handleCancelOrder: async () => { },
+  handleAddTopping: async () => { },
+  selectedToppingsByProduct: {},
+  updateToppingForUnit: () => { },
+  toppingsByProductGroup: {}
 });
 
 export const useOrderContext = () => {
@@ -87,16 +113,28 @@ const OrderProvider = ({
   const [token, setToken] = useState<string | null>(null);
   const { tables } = useTableStore();
   const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
-  const { selectedMesa, setSelectedMesa, handleSelectMesa } = useRoomContext();
+  const { selectedTable, setSelectedTable, handleSelectTable } = useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
     []
   );
+
+  const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
+    [productId: string]: string[][];
+  }>({});
+
   const [confirmedProducts, setConfirmedProducts] = useState<
     SelectedProductsI[]
   >([]);
 
   const [selectedOrderByTable, setSelectedOrderByTable] =
     useState<IOrderDetails | null>(null);
+
+  const [highlightedProducts, setHighlightedProducts] = useState<Set<string>>(new Set());
+
+  const [toppingsByProductGroup, setToppingsByProductGroup] = useState<{
+    [productId: string]: Array<{ [groupId: string]: string[] }>
+  }>({});
+
 
   useEffect(() => {
     const token = getAccessToken();
@@ -108,29 +146,31 @@ const OrderProvider = ({
   /**
    *
    * Al cambiar la Mesa o la Sala seleccionada se limpia
-   *  la información de la mesa saliente mediante `handleResetSelectedOrder`.
+   *  la información de la Mesa saliente mediante `handleResetSelectedOrder`.
    */
   useEffect(() => {
     handleResetSelectedOrder();
-  }, [selectedMesa]);
-
+  }, [selectedTable]);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
     setConfirmedProducts([]);
     setSelectedOrderByTable(null);
+
+    setSelectedToppingsByProduct({});
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    if (selectedMesa?.state === TableState.AVAILABLE) {
+    if (selectedTable?.state === TableState.AVAILABLE) {
+
       return setSelectedOrderByTable(null);
 
     }
-    if (selectedMesa && selectedMesa.orders) {
+    if (selectedTable && selectedTable.orders) {
       try {
-        if (selectedMesa?.orders.length > 0) {
+        if (selectedTable?.orders.length > 0) {
           const response = await fetch(
-            `${URI_ORDER}/${selectedMesa.orders[0]}`,
+            `${URI_ORDER}/${selectedTable.orders[0]}`,
             {
               method: "GET",
               headers: {
@@ -142,6 +182,7 @@ const OrderProvider = ({
 
           setSelectedOrderByTable(data);
 
+
           const productsByOrder = data.products;
 
           handleSetProductsByOrder(productsByOrder);
@@ -150,7 +191,7 @@ const OrderProvider = ({
         console.error("Error al obtener el pedido:", error);
       }
     }
-  }, [selectedMesa]);
+  }, [selectedTable]);
 
   useEffect(() => {
     fetchOrderBySelectedTable();
@@ -172,14 +213,14 @@ const OrderProvider = ({
   };
 
   const handleSelectedProducts = async (product: ProductResponse) => {
+
     const foundProduct = selectedProducts.find(
       (p) => p.productId === product.id
     );
 
+
     const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
-
     const stockResponse = await checkStockAvailability(product.id, newQuantity);
-
     if (!stockResponse?.available) {
       Swal.fire({
         icon: "error",
@@ -189,20 +230,82 @@ const OrderProvider = ({
       return;
     }
 
+
     if (foundProduct) {
       const updatedDetails = selectedProducts.map((p) =>
         p.productId === product.id ? { ...p, quantity: newQuantity } : p
       );
       setSelectedProducts(updatedDetails);
-    } else {
+    } else if (!foundProduct || product.allowsToppings) {
       const newProduct = {
         productId: product.id,
         quantity: 1,
         unitaryPrice: product.price,
         productName: product.name,
+        allowsToppings: product.allowsToppings,
+        commentOfProduct: product.commentOfProduct,
+        availableToppingGroups: product.availableToppingGroups
       };
       setSelectedProducts([...selectedProducts, newProduct]);
+
     }
+    if (product.allowsToppings) {
+      setHighlightedProducts(prev => new Set(prev).add(product.id));
+    }
+
+  };
+
+  const handleAddTopping = async (productId: string, toppingIds: string[]) => {
+    setSelectedProducts((prevProducts) =>
+      prevProducts.map((p) =>
+        p.productId === productId
+          ? { ...p, toppingsIds: toppingIds }
+          : p
+      )
+    );
+  };
+
+  const clearToppings = () => {
+    setToppingsByProductGroup({});
+    setSelectedToppingsByProduct({});
+  };
+
+  const updateToppingForUnit = (
+    productId: string,
+    unitIndex: number,
+    updatedGroup: { [groupId: string]: string[] }
+  ) => {
+    setToppingsByProductGroup((prev) => {
+      const productData = [...(prev[productId] || [])];
+      productData[unitIndex] = updatedGroup;
+
+      const flattened = productData.map((groupMap) => {
+        return Object.values(groupMap || {}).flat();
+      });
+
+      setSelectedToppingsByProduct((prevFlat) => ({
+        ...prevFlat,
+        [productId]: flattened,
+      }));
+
+      return {
+        ...prev,
+        [productId]: productData,
+      };
+    });
+  };
+
+
+  const addHighlightedProduct = (id: string) => {
+    setHighlightedProducts((prev) => new Set(prev).add(id));
+  };
+
+  const removeHighlightedProduct = (id: string) => {
+    setHighlightedProducts(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
 
@@ -212,14 +315,15 @@ const OrderProvider = ({
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
+    clearToppings();
   };
 
-  const increaseProductNumber = async (id: string) => {
-    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+  const increaseProductNumber = async (product: SelectedProductsI) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === product.productId);
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity + 1;
       // Verifica el stock antes de actualizar
-      const stockResponse = await checkStockAvailability(id, newQuantity);
+      const stockResponse = await checkStockAvailability(product.productId, newQuantity);
       if (!stockResponse?.available) {
         Swal.fire({
           icon: "error",
@@ -230,10 +334,11 @@ const OrderProvider = ({
       }
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === id ? { ...p, quantity: newQuantity } : p
+          p.productId === product.productId ? { ...p, quantity: newQuantity } : p
         )
       );
     }
+
   };
 
   const decreaseProductNumber = async (id: string) => {
@@ -258,6 +363,21 @@ const OrderProvider = ({
     }
   };
 
+  const productComment = async (id: string, comment: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+    if (productToUpdate) {
+      setSelectedProducts(
+        selectedProducts.map((p) =>
+          p.productId === id ? { ...p, commentOfProduct: comment } : p
+        )
+
+      );
+
+
+    }
+
+  };
+
   const clearSelectedProducts = () => {
     setSelectedProducts([]);
   };
@@ -269,13 +389,13 @@ const OrderProvider = ({
   };
 
   const handleCreateOrder = async (
-    selectedMesa: MesaInterface,
+    selectedTable: ITable,
     cantidadPersonas: number,
     comentario: string
   ) => {
     try {
       const pedido = {
-        tableId: selectedMesa.id,
+        tableId: selectedTable.id,
         numberCustomers: cantidadPersonas,
         comment: comentario,
         productsDetails: [],
@@ -301,14 +421,16 @@ const OrderProvider = ({
       addOrder(newOrder);
 
       setSelectedOrderByTable(newOrder);
-
+      const tableEdited = token && await editTable(
+        { ...selectedTable, state: TableState.OPEN },
+        token
+      );
 
       const updatedTable = {
-        ...newOrder.table,
-        room: selectedMesa.room,
+        ...tableEdited,
         orders: [newOrder.id],
       };
-      handleSelectMesa(updatedTable);
+      handleSelectTable(updatedTable);
     } catch (error) {
       Swal.fire("Error", "No se pudo abrir la mesa.", "error");
     }
@@ -318,11 +440,14 @@ const OrderProvider = ({
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
-    comment: string
+    comment: string,
+    isPriority?: boolean
   ) => {
     if (!id) {
       return;
     }
+    console.log("selectedProducts en handleEditOrder", selectedProducts);
+
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
         method: "PATCH",
@@ -334,6 +459,7 @@ const OrderProvider = ({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,
           comment: comment,
+          isPriority: isPriority
         }),
       });
 
@@ -359,6 +485,9 @@ const OrderProvider = ({
       handleSetProductsByOrder(productsByOrder);
       updateOrder(updatedOrder);
       setSelectedOrderByTable(updatedOrder);
+
+      clearToppings();
+
       return updatedOrder;
     } catch (error) {
       console.error(error);
@@ -382,12 +511,13 @@ const OrderProvider = ({
         if (cancelledOrder) {
           removeOrder(id);
           setSelectedOrderByTable(null);
+
           setConfirmedProducts([]);
-          setSelectedMesa({
-            ...selectedMesa,
+          setSelectedTable({
+            ...selectedTable,
             orders: [],
             state: TableState.AVAILABLE
-          } as MesaInterface);
+          } as ITable);
           Swal.fire({
             icon: "success",
             title: "Pedido cancelado",
@@ -426,8 +556,6 @@ const OrderProvider = ({
     }
   };
 
-
-
   return (
     <OrderContext.Provider
       value={{
@@ -438,9 +566,13 @@ const OrderProvider = ({
         selectedOrderByTable,
         setSelectedOrderByTable,
         handleSelectedProducts,
+        highlightedProducts,
+        addHighlightedProduct,
+        removeHighlightedProduct,
         handleDeleteSelectedProduct,
         increaseProductNumber,
         decreaseProductNumber,
+        productComment,
         clearSelectedProducts,
         deleteConfirmProduct,
         handleCreateOrder,
@@ -448,7 +580,11 @@ const OrderProvider = ({
         handleDeleteOrder,
         handleResetSelectedOrder,
         fetchOrderBySelectedTable,
-        handleCancelOrder
+        handleCancelOrder,
+        handleAddTopping,
+        selectedToppingsByProduct,
+        updateToppingForUnit,
+        toppingsByProductGroup
       }}
     >
       {children}

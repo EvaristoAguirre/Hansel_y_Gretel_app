@@ -1,5 +1,5 @@
 // printer/printer.controller.ts
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { PrinterService } from './printer.service';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 
@@ -9,6 +9,10 @@ export class PrinterController {
 
   @Post('printTicket')
   async printSampleTicket(@Body() orderData) {
+    return await this.printerService.printTicketOrder(orderData);
+  }
+  @Post('printTicket/:id')
+  async rePrintSampleTicket(@Param('id') id: string, @Body() orderData) {
     return await this.printerService.printTicketOrder(orderData);
   }
 

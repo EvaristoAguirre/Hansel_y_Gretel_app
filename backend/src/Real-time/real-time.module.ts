@@ -8,6 +8,8 @@ import { TableWSListener } from './listeners/table-events.listener';
 import { OrderDetailsWSListener } from './listeners/orderDetails-events.listener';
 import { StockWSListener } from './listeners/stock-events.listener';
 import { IngredientWSListener } from './listeners/ingredient-events.listener';
+import { DailyCashWSListener } from './listeners/daily-cash.listener';
+import { ToppingsGroupWSListener } from './listeners/toppingsGroup-events.listener';
 
 @Module({
   imports: [],
@@ -21,6 +23,8 @@ import { IngredientWSListener } from './listeners/ingredient-events.listener';
     OrderDetailsWSListener,
     StockWSListener,
     IngredientWSListener,
+    DailyCashWSListener,
+    ToppingsGroupWSListener,
   ],
   exports: [
     BroadcastService,
@@ -31,6 +35,8 @@ import { IngredientWSListener } from './listeners/ingredient-events.listener';
     OrderDetailsWSListener,
     StockWSListener,
     IngredientWSListener,
+    DailyCashWSListener,
+    ToppingsGroupWSListener,
   ],
 })
 export class RealTimeModule {

@@ -4,6 +4,7 @@ export const URI_CATEGORY = "http://192.168.0.50:3000/category";
 
 //PRODUCTS
 
+
 export const URI_PRODUCT = "http://192.168.0.50:3000/product";
 
 export const URI_PRODUCT_BY_CATEGORY =
@@ -12,6 +13,10 @@ export const URI_PRODUCT_BY_CATEGORY =
 //INGREDIENTS
 
 export const URI_INGREDIENT = "http://192.168.0.50:3000/ingredient";
+
+// TOPPINGS-GROUP
+export const URI_TOPPINGS_GROUP = "http://192.168.0.50:3000/toppings-group";
+export const URI_TOPPINGS = "http://192.168.0.50:3000/ingredient/toppings";
 
 // UNITS OF MEASURE
 
@@ -31,6 +36,10 @@ export const URI_ORDER_OPEN = "http://192.168.0.50:3000/order/open";
 
 export const URI_ORDER = "http://192.168.0.50:3000/order";
 
+//PRINTS TICKETS
+
+export const URI_TICKET = "http://192.168.0.50:3000/printer/printTicket";
+
 //USERS
 
 export const URI_USER = "http://192.168.0.50:3000/user";
@@ -38,3 +47,13 @@ export const URI_USER = "http://192.168.0.50:3000/user";
 //STOCK
 
 export const URI_STOCK = "http://192.168.0.50:3000/stock";
+
+//PDF
+
+export const URI_PDF = "http://192.168.0.50:3000/export/stock/pdf";
+
+// DAILY CASH
+
+export const URI_DAILY_CASH = "http://192.168.0.50:3000/daily-cash";
+
+

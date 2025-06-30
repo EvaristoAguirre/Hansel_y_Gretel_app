@@ -1,22 +1,20 @@
 "use client";
 import { useAuth } from "@/app/context/authContext";
-
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { ProductForm, ProductForPromo, ProductsProps } from "@/components/Interfaces/IProducts";
+import { IProductToppingsGroupResponse, ProductForm, ProductForPromo, ProductsProps, ProductToppingsGroupDto } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { ProductTable } from "./ProductTable";
-import ProductCreationModal from "./ProductCreationModal";
+import ProductCreationModal from "./Modal/ProductCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
-import { fetchUnits } from "@/api/unitOfMeasure";
-import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { FormTypeProduct } from "@/components/Enums/view-products";
-import LoadingLottie from '@/components/Loader/Loading';
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
+import { ICategory } from "@/components/Interfaces/ICategories";
+import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -31,7 +29,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     setModalType,
     setForm,
     handleCreateProduct,
-    handleEdit,
+    handleEditProduct,
     handleDelete,
     handleCloseModal,
     connectWebSocket,
@@ -54,16 +52,18 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     units.length === 0 ? setLoading(true) : setLoading(false);
   }, [units]);
 
+
+
   const handleSave = () => {
     if (token) {
       if (modalType === "create") {
         return handleCreateProduct(token);
       } else {
         if (selectedCategoryId) {
-          return handleEdit(token, selectedCategoryId);
+          return handleEditProduct(token, selectedCategoryId);
 
         } else {
-          return handleEdit(token);
+          return handleEditProduct(token);
         }
       }
     }
@@ -71,8 +71,8 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | null | string[] | IingredientForm[] | ProductForPromo[]
-  ) => setForm({ ...form, [field]: value });
+    value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
+  ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
@@ -93,6 +93,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             size="small"
             onClick={() => {
               setForm({
+
                 id: params.row.id,
                 code: params.row.code,
                 name: params.row.name,
@@ -101,9 +102,20 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 price: parseFloat(params.row.price),
                 cost: parseFloat(params.row.cost),
                 categories: params.row.categories,
-                ingredients: params.row.productIngredients || [],
+                ingredients: params.row.productIngredients?.map(mapIngredientResponseToForm) || [],
                 products: params.row.promotionDetails || [],
                 isActive: true,
+                allowsToppings: params.row.allowsToppings,
+                toppingsSettings: params.row.availableToppingGroups?.settings || [],
+                unitOfMeasure: params.row.unitOfMeasure,
+                unitOfMeasureId: params.row.unitOfMeasureId,
+                unitOfMeasureConversions: params.row.unitOfMeasureConversions,
+                availableToppingGroups: params.row.availableToppingGroups?.map((group: IProductToppingsGroupResponse) => ({
+                  toppingsGroupId: group.id,
+                  quantityOfTopping: parseFloat(group.quantityOfTopping),
+                  settings: group.settings,
+                  unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
+                })) || [],
               });
               setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);

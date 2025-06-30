@@ -6,6 +6,8 @@ import { ArchivedOrder } from './archived_order.entity';
 import { Cron } from '@nestjs/schedule';
 import { OrderState } from 'src/Enums/states.enum';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class ArchiveService {
@@ -17,6 +19,7 @@ export class ArchiveService {
   ) {}
 
   @Cron('10 21 * * 0')
+  // @Cron('35 17 * * *') // todos los dias para probarlo ahora
   async archiveOrders() {
     const maxAttempts = 3;
     const delayBetweenAttempts = 60000;
@@ -40,7 +43,12 @@ export class ArchiveService {
               ]),
               date: Between(start, end),
             },
-            relations: ['orderDetails'],
+            relations: [
+              'orderDetails',
+              'orderDetails.product',
+              'table',
+              'dailyCash',
+            ],
           });
 
           const archivedOrders = ordersToArchive.map((order) => {
@@ -51,16 +59,19 @@ export class ArchiveService {
             archived.total = order.total;
             archived.numberCustomers = order.numberCustomers;
             archived.comment = order.comment;
-            archived.commandNumber = order.commandNumber;
+            archived.methodOfPayment = order.methodOfPayment;
             archived.tableId = order.table?.id;
+            archived.dailyCashId = order.dailyCash?.id;
+            archived.commandNumber = (order as any).commandNumber ?? null;
 
             archived.orderDetails = order.orderDetails?.map((detail) => {
               const archivedDetail = new ArchivedOrderDetails();
               archivedDetail.id = detail.id;
               archivedDetail.quantity = detail.quantity;
-              archivedDetail.productId = detail.product?.id;
               archivedDetail.unitaryPrice = detail.unitaryPrice;
               archivedDetail.subtotal = detail.subtotal;
+              archivedDetail.productId = detail.product?.id;
+              archivedDetail.commandNumber = detail.commandNumber ?? null;
               return archivedDetail;
             });
 
@@ -68,6 +79,35 @@ export class ArchiveService {
           });
 
           await manager.save(ArchivedOrder, archivedOrders);
+          // -------- nuevo ----------
+          const backupData = {
+            archivedAt: new Date().toISOString(),
+            totalArchived: archivedOrders.length,
+            orders: archivedOrders,
+          };
+
+          const backupDir = path.join(
+            process.cwd(),
+            'backups',
+            'archived-orders',
+          );
+          // Crear carpeta si no existe
+          if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+          }
+
+          const fileName = `archived-orders-${new Date().toISOString().slice(0, 10)}.json`;
+          const filePath = path.join(backupDir, fileName);
+          fs.writeFileSync(
+            filePath,
+            JSON.stringify(backupData, null, 2),
+            'utf-8',
+          );
+
+          this.logger.log(
+            `Backup de órdenes archivadas guardado en ${filePath}`,
+          );
+          // ---------------------------------------------------------
           await manager.remove(Order, ordersToArchive);
 
           this.logger.log(`Archivadas ${archivedOrders.length} órdenes`);
@@ -104,4 +144,14 @@ export class ArchiveService {
 
     return { start, end };
   }
+  // private getPreviousWeekRange(): { start: Date; end: Date } {
+  //   const now = new Date();
+  //   const start = new Date(now);
+  //   start.setHours(0, 0, 0, 0);
+
+  //   const end = new Date(now);
+  //   end.setHours(23, 59, 59, 999);
+
+  //   return { start, end };
+  // }
 }

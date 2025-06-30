@@ -1,7 +1,7 @@
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
-import { FormType } from "@/components/Enums/Ingredients";
+import { FormType } from "@/components/Enums/ingredients";
 import LoadingLottie from "@/components/Loader/Loading";
-import DataGridComponent from "@/components/Utils/ProductTable";
+import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Typography } from "@mui/material";

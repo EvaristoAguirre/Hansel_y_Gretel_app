@@ -3,32 +3,69 @@ import { TypeProduct } from "../Enums/view-products";
 import { ICategory } from './ICategories';
 import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
+import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 
 interface IProduct {
-  id: string;
+  allowsToppings: boolean;
   code: number | null;
-  name: string;
-  description: string;
-  type: TypeProduct | null;
-  price: number | null;
   cost: number | null;
-  isActive?: boolean;
+  description: string;
+  id: string;
+  isActive: boolean;
+  name: string;
+  price: number | null;
+  toppingsSettings: null;
+  type: TypeProduct;
 }
 export interface ProductForm extends IProduct {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | ProductForPromo[];
-  categories: string[];
+  [key: string]: string | number | boolean
+  | null | ICategory[] | IingredientForm[]
+  | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
+  categories: ICategory[];
   ingredients: IingredientForm[];
-  products: ProductForPromo[];
+  products: IProductDataList[];
   isActive: boolean;
-}
+  availableToppingGroups: ProductToppingsGroupDto[];
 
+}
+export interface ProductToppingsGroupDto {
+  toppingsGroupId: string;
+  quantityOfTopping: number;
+  unitOfMeasureId?: string;
+  name?: string;
+  settings: {
+    maxSelection: number;
+    chargeExtra: boolean;
+  }
+}
+export interface IProductToppingsGroupResponse {
+  id: string;
+  name: string;
+  isActive: boolean;
+  settings: {
+    chargeExtra: boolean;
+    maxSelection: number;
+  };
+  unitOfMeasure: IUnitOfMeasureStandard;
+  quantityOfTopping: string;
+  toppings: IProduct[];
+}
 export interface ProductForPromo {
   productId: string;
   quantity: number;
   id?: string;
   name?: string;
   price?: number;
+
 }
+
+export interface IProductDataList {
+  id: string;
+  product: IProduct;
+  quantity: number;
+}
+
+
 export interface ProductTableProps {
   rows: GridRowsProp;
   columns: GridColDef[];
@@ -56,22 +93,23 @@ export interface IPromotionDetails {
 
 
 export interface ProductResponse {
-  categories: ICategory[];
-  code: number;
-  cost: number;
-  description: string;
-  type: TypeProduct
   id: string;
-  isActive: boolean;
+  code: number;
   name: string;
   price: number;
-  productIngredients: IingredientResponse[]
-  promotionDetails: IPromotionDetails[]
-  stock: IStockOfProduct
+  cost: number;
+  type: TypeProduct;
+  commentOfProduct?: string;
+  allowsToppings: boolean;
+  categories: ICategory[];
+  productIngredients: IingredientResponse[];
+  promotionDetails: IPromotionDetails[];
+  stock: IStockOfProduct;
+  availableToppingGroups: IProductToppingsGroupResponse[];
 }
 
 export interface ProductState {
-  products: ProductCreated[];
+  products: ProductResponse[];
   setProducts: (products: ProductResponse[]) => void;
   addProduct: (product: ProductResponse) => void;
   removeProduct: (id: string) => void;
@@ -86,9 +124,14 @@ export interface ProductsProps {
 
 export interface SelectedProductsI {
   productId: string;
-  productName: string;
+  productName?: string;
   quantity: number;
-  unitaryPrice: number | null;
+  unitaryPrice?: number | null;
+  commentOfProduct?: string | null;
+  toppingsIds?: string[];
+  toppingsPerUnit?: string[][]
+  allowsToppings?: boolean;
+  availableToppingGroups?: IProductToppingsGroupResponse[];
 };
 
 export interface IConfirmedProducts {

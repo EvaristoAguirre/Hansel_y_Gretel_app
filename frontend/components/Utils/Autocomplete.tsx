@@ -1,12 +1,11 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { ProductCreated } from "../Interfaces/IProducts";
-import { Iingredient } from "../Interfaces/Ingredients";
-import { use } from 'react';
+import { ProductResponse } from "../Interfaces/IProducts";
+import { capitalizeFirstLetter } from "./CapitalizeFirstLetter";
 
 interface AutoCompleteProductProps {
-  options: ProductCreated[];
+  options: ProductResponse[];
   onSearch: (value: string) => void;
   onSelect: (product: any) => void;
   label?: string;
@@ -36,7 +35,7 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
       )}
       renderOption={(props, product) => (
         <li {...props} key={String(product.id)}>
-          {`${product.name} - (Código: ${product.code})`}
+          {`${capitalizeFirstLetter(product.name)}  - (Código: ${product.code})`}
         </li>
       )}
     />

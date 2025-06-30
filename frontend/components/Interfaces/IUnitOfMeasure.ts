@@ -24,4 +24,5 @@ export interface IUnitOfMeasureStandard {
   id: string;
   name: string;
   abbreviation: string;
+  isActive?: boolean;
 }

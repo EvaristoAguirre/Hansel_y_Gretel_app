@@ -1,6 +1,7 @@
 import { GridValidRowModel } from "@mui/x-data-grid";
 
-export function capitalizeFirstLetter(text: string): string {
+export function capitalizeFirstLetter(text?: string): string {
+  if (!text) return "";
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 export const capitalizeFirstLetterTable = (rows: readonly GridValidRowModel[], fields: string[]) => {

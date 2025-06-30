@@ -8,21 +8,22 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { MesaInterface } from "../Interfaces/Cafe_interfaces";
 import { useOrderContext } from "../../app/context/order.context";
-import { orderToPending } from "@/api/order";
+import { orderToPending, orderToReprint } from "@/api/order";
 import { SelectedProductsI } from "../Interfaces/IProducts";
 import { useRoomContext } from "@/app/context/room.context";
 import { editTable } from "@/api/tables";
-import { OrderState, TableState } from "../Enums/Enums";
+import { OrderState } from "../Enums/order";
 import { useOrderStore } from "./useOrderStore";
 import { useTableStore } from "../Table/useTableStore";
 import { useAuth } from "@/app/context/authContext";
+import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
 
 export interface OrderProps {
   imprimirComanda: any;
   handleDeleteOrder: any;
-  selectedMesa: MesaInterface;
+  selectedTable: ITable;
   handleNextStep: () => void;
   handleCompleteStep: () => void;
   handleReset: () => void;
@@ -40,7 +41,7 @@ const Order: React.FC<OrderProps> = ({
     setConfirmedProducts,
     handleCancelOrder,
   } = useOrderContext();
-  const { selectedMesa, setSelectedMesa, setOrderSelectedTable } = useRoomContext();
+  const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
@@ -59,7 +60,7 @@ const Order: React.FC<OrderProps> = ({
     calcularTotal();
   }, [confirmedProducts]);
 
-  const handlePayOrder = async (selectedMesa: MesaInterface) => {
+  const handlePayOrder = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
@@ -76,19 +77,43 @@ const Order: React.FC<OrderProps> = ({
     }
 
     const tableEdited = await editTable(
-      selectedMesa.id,
-      { ...selectedMesa, state: TableState.PENDING_PAYMENT },
+      { ...selectedTable, state: TableState.PENDING_PAYMENT },
       token
     );
     if (tableEdited) {
-      setSelectedMesa({ ...selectedMesa, state: tableEdited.state });
+      setSelectedTable({ ...selectedTable, state: tableEdited.state });
       updateTable(tableEdited);
-
     }
     handleCompleteStep();
     handleNextStep();
   };
 
+  const handleReprintOrder = async (selectedTable: ITable) => {
+    const token = getAccessToken();
+    if (!token) return;
+
+    if (selectedOrderByTable) {
+      const ordenPendingPay = await orderToReprint(
+        selectedOrderByTable.id,
+        token
+      );
+
+      setSelectedOrderByTable(ordenPendingPay);
+      setOrderSelectedTable(ordenPendingPay.id);
+      addOrder(ordenPendingPay);
+    }
+
+    const tableEdited = await editTable(
+      { ...selectedTable, state: TableState.PENDING_PAYMENT },
+      token
+    );
+    if (tableEdited) {
+      setSelectedTable({ ...selectedTable, state: tableEdited.state });
+      updateTable(tableEdited);
+    }
+    handleCompleteStep();
+    handleNextStep();
+  };
   const cancelOrder = async (orderId: string) => {
     const token = getAccessToken();
     if (!token) return;
@@ -98,12 +123,20 @@ const Order: React.FC<OrderProps> = ({
     handleReset();
   }
 
+  const isPendingPayment = selectedOrderByTable?.state === OrderState.PENDING_PAYMENT;
+  const isClosed = selectedOrderByTable?.state === OrderState.CLOSED;
+  const shouldShowPrintButton = !isClosed && !isPendingPayment;
+
+  const commonButtonStyles = {
+    backgroundColor: "#7e9d8a",
+    "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+  };
 
   return (
     <>
-      {selectedMesa &&
-        (selectedMesa.state === TableState.OPEN ||
-          selectedMesa.state === TableState.PENDING_PAYMENT) ? (
+      {selectedTable &&
+        (selectedTable.state === TableState.OPEN ||
+          selectedTable.state === TableState.PENDING_PAYMENT) ? (
         <div
           style={{
             width: "100%",
@@ -214,24 +247,27 @@ const Order: React.FC<OrderProps> = ({
             </Typography>
           </div>
           <div>
-            {
-              ((selectedOrderByTable?.state === OrderState.PENDING_PAYMENT) || (selectedOrderByTable?.state === OrderState.CLOSED)) ? (
-                null
-              ) :
-                <Button
-                  fullWidth
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "#7e9d8a",
-                    "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-                  }}
-                  onClick={() => {
-                    handlePayOrder(selectedMesa);
-                  }}
-                >
-                  <Print style={{ marginRight: "5px" }} /> Imprimir ticket
-                </Button>
-            }
+            {isPendingPayment && (
+              <Button
+                fullWidth
+                variant="contained"
+                sx={commonButtonStyles}
+                onClick={() => handleReprintOrder(selectedTable)}
+              >
+                <Print style={{ marginRight: "5px" }} /> Reimprimir ticket
+              </Button>
+            )}
+
+            {shouldShowPrintButton && (
+              <Button
+                fullWidth
+                variant="contained"
+                sx={commonButtonStyles}
+                onClick={() => handlePayOrder(selectedTable)}
+              >
+                <Print style={{ marginRight: "5px" }} /> Imprimir ticket
+              </Button>
+            )}
 
             {confirmedProducts?.length > 0 && (
               <Button
@@ -242,14 +278,13 @@ const Order: React.FC<OrderProps> = ({
                   marginTop: "1rem",
                   boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                 }}
-                onClick={() =>
-                  cancelOrder(selectedOrderByTable?.id!)
-                }
+                onClick={() => cancelOrder(selectedOrderByTable?.id!)}
               >
                 Anular Pedido
               </Button>
             )}
           </div>
+
         </div>
       ) : (
         <div className="flex justify-center text-red-500 font-bold my-16">

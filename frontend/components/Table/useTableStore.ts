@@ -1,26 +1,13 @@
-
 import { create } from "zustand";
-import { TableState } from "../Enums/Enums";
-import { IOrder, ISala } from "../Interfaces/Cafe_interfaces";
 import { io } from "socket.io-client";
-
-export interface TableCreated {
-  id: string;
-  name: string;
-  coment: string;
-  number: number;
-  state: TableState;
-  room: ISala;
-  // orders: string[];
-  orders: IOrder[];
-}
+import { ITable } from "../Interfaces/ITable";
 
 interface TableStateZustand {
-  tables: TableCreated[];
-  setTables: (tables: TableCreated[]) => void;
-  addTable: (table: TableCreated) => void;
+  tables: ITable[];
+  setTables: (tables: ITable[]) => void;
+  addTable: (table: ITable) => void;
   removeTable: (id: string) => void;
-  updateTable: (updatedTable: TableCreated) => void;
+  updateTable: (updatedTable: ITable) => void;
   connectWebSocket: () => void;
 }
 
@@ -68,6 +55,6 @@ export const useTableStore = create<TableStateZustand>((set) => {
           t.id === updatedTable.id ? updatedTable : t
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece al cargar el store
   };
 });
