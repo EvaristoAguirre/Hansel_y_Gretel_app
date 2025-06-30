@@ -123,6 +123,7 @@ export class PrinterService {
         '----------------------------------------\n',
         '\x1D\x21\x00', // Tamaño normal para productos
         '\x1B\x4D\x00', // Tipografía estándar
+        // ----------------------------------------- FORMATO QUE TENIA EN MASTER SIN CAMBIOS --------------
         // ...orderData.products.map((p) => {
         //   const name = this.normalizeText(p.name);
         //   const comment = this.normalizeText(p.commentOfProduct || '');
@@ -151,15 +152,101 @@ export class PrinterService {
         //   lines.push(''); // espacio entre productos
         //   return lines.join('\n');
         // }),
+        // ---------------------------------------------------------------------- CIERRO-----
+
+        // -------------------------------------------- FORMATO QUE TENIA EN GITHUB HACE UN MES ----
+        //   ...orderData.products.map((p) => {
+        //     const name = this.normalizeText(p.name.toLocaleUpperCase());
+        //     const comment = this.normalizeText(p.commentOfProduct || '');
+        //     const quantityText = `x${p.quantity.toString().padStart(2)}`;
+        //     const maxLineLength = 48;
+        //     const lines = [];
+
+        //     lines.push('\x1B\x45\x01'); // Negrita ON
+
+        //     if (name.length + quantityText.length + 1 <= maxLineLength) {
+        //       lines.push(
+        //         name.padEnd(maxLineLength - quantityText.length) + quantityText,
+        //       );
+        //     } else {
+        //       const nameLine1 = name.substring(0, maxLineLength);
+        //       const nameLine2 =
+        //         name
+        //           .substring(maxLineLength, maxLineLength * 2)
+        //           .padEnd(maxLineLength - quantityText.length) + quantityText;
+        //       lines.push(nameLine1);
+        //       lines.push(nameLine2);
+        //     }
+
+        //     lines.push('\x1B\x45\x00'); // Negrita OFF
+
+        //     if (comment) {
+        //       lines.push('\x1B\x61\x00'); // Alinear izquierda
+        //       lines.push(comment);
+        //       lines.push('\x1B\x61\x01'); // Centrar
+        //     }
+
+        //     lines.push(' '); // espacio entre productos
+        //     return lines.join('\n');
+        //   }),
+        //   '\x1B\x61\x01', // Centrar
+        //   '----------------------------------------\n',
+        //   '\x1B\x42\x01\x02', // Pitido
+        //   '\x1D\x56\x41\x30', // Cortar papel
+        // ].join('');
+        // ----------------------------------------------------------- CIERRO ---------------
+
+        // ------------------------------------------------ VERSION DE CHAT GPT CON TOPP ----
+        //   ...orderData.products.flatMap((p) => {
+        //     const name = this.normalizeText(p.name);
+        //     const comment = this.normalizeText(p.commentOfProduct || '');
+        //     const toppings = (p.toppings || []).map(
+        //       (t) => `+ ${this.normalizeText(t)}`,
+        //     );
+        //     const quantityText = `x${p.quantity.toString().padStart(2)}`;
+        //     const maxLineLength = 48;
+        //     const lines = [];
+
+        //     if (name.length + quantityText.length + 1 <= maxLineLength) {
+        //       lines.push(
+        //         name.padEnd(maxLineLength - quantityText.length) + quantityText,
+        //       );
+        //     } else {
+        //       const nameLine1 = name.substring(0, maxLineLength);
+        //       const nameLine2 =
+        //         name
+        //           .substring(maxLineLength, maxLineLength * 2)
+        //           .padEnd(maxLineLength - quantityText.length) + quantityText;
+        //       lines.push(nameLine1);
+        //       lines.push(nameLine2);
+        //     }
+
+        //     if (comment) lines.push(comment);
+        //     if (toppings.length > 0) lines.push(...toppings);
+        //     lines.push(''); // espacio entre productos
+
+        //     return lines;
+        //   }),
+        //   '\x1B\x61\x01', // Centrar
+        //   '----------------------------------------\n',
+        //   '\x1B\x42\x01\x02', // Pitido
+        //   '\x1D\x56\x41\x30', // Cortar papel
+        // ].join('');
+
+        // --------------------------------------------------------------- CIERRO -------------
+
+        // --------------------------------------- METODO ADAPTADO - CHINITA + MI METODO ------
         ...orderData.products.flatMap((p) => {
-          const name = this.normalizeText(p.name);
+          const name = this.normalizeText(p.name.toLocaleUpperCase());
           const comment = this.normalizeText(p.commentOfProduct || '');
           const toppings = (p.toppings || []).map(
-            (t) => `+ ${this.normalizeText(t)}`,
+            (t) => `+ ${this.normalizeText(t)}\n`,
           );
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
-          const lines = [];
+          const lines: string[] = [];
+
+          lines.push('\x1B\x45\x01'); // Negrita ON
 
           if (name.length + quantityText.length + 1 <= maxLineLength) {
             lines.push(
@@ -175,14 +262,22 @@ export class PrinterService {
             lines.push(nameLine2);
           }
 
-          if (comment) lines.push(comment);
+          lines.push('\x1B\x45\x00'); // Negrita OFF
+
+          if (comment) {
+            lines.push('\x1B\x61\x00'); // Alinear izquierda
+            lines.push(comment);
+            lines.push('\x1B\x61\x01'); // Centrar
+          }
           if (toppings.length > 0) lines.push(...toppings);
+
           lines.push(''); // espacio entre productos
 
           return lines;
         }),
         '\x1B\x61\x01', // Centrar
         '----------------------------------------\n',
+
         '\x1B\x42\x01\x02', // Pitido
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');

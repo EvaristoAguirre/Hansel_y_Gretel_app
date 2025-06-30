@@ -188,6 +188,7 @@ export class OrderRepository {
             // quantity: config.quantityOfTopping,
             unitOfMeasure: config.unitOfMeasure,
             unitOfMeasureName: config.unitOfMeasure?.name,
+            unitIndex: unitIndex,
           });
 
           toppingDetails.push(td);

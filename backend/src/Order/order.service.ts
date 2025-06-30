@@ -158,27 +158,24 @@ export class OrderService {
         const printData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
-          // products: updateData.productsDetails.map((detail) => ({
-          //   name:
-          //     detailsToSave.find((d) => d.product.id === detail.productId)
-          //       ?.product.name || 'Producto',
-          //   quantity: detail.quantity,
-          //   commentOfProduct: detail.commentOfProduct,
-          // })),
-          products: updateData.productsDetails.map((detail) => {
-            const matchedDetail = order.orderDetails.find(
-              (d) => d.product.id === detail.productId,
-            );
+          products: detailsToSave.flatMap((detail) => {
+            return Array.from({ length: detail.quantity }, (_, index) => {
+              const toppingsForThisUnit = toppingsToSave
+                .filter(
+                  (t) =>
+                    t.orderDetails?.product.id === detail.product.id &&
+                    t.unitIndex === index,
+                )
+                .map((t) => t.topping.name);
 
-            return {
-              name: matchedDetail?.product.name || 'Producto',
-              quantity: detail.quantity,
-              commentOfProduct: detail.commentOfProduct,
-              toppings:
-                matchedDetail?.orderDetailToppings?.map(
-                  (t) => t.topping.name,
-                ) || [],
-            };
+              return {
+                name: detail.product.name,
+                quantity: 1,
+                commentOfProduct:
+                  index === 0 ? detail.commentOfProduct : undefined,
+                toppings: toppingsForThisUnit,
+              };
+            });
           }),
           isPriority: updateData.isPriority,
         };
@@ -186,13 +183,13 @@ export class OrderService {
         let commandNumber: string | null = null;
 
         try {
-          this.printerService.logger.log(
+          console.log(
             `📤 Enviando comanda a impresión para mesa ${printData.table}`,
           );
-          this.printerService.logger.log('info enviada a imprimir', printData);
-          // commandNumber =
-          //   await this.printerService.printKitchenOrder(printData);
-          commandNumber = 'grabandoTextFijo';
+          console.log('info enviada a imprimir.......', printData);
+          commandNumber =
+            await this.printerService.printKitchenOrder(printData);
+          // commandNumber = 'grabandoTextFijo - 1111111111';
           this.printerService.logger.log(
             `✅ Comanda impresa, número: ${commandNumber}`,
           );
@@ -380,11 +377,11 @@ export class OrderService {
       );
       const orderPending = await this.orderRepo.save(order);
 
-      // try {
-      //   await this.printerService.printTicketOrder(order);
-      // } catch (error) {
-      //   throw new ConflictException(error.message);
-      // }
+      try {
+        await this.printerService.printTicketOrder(order);
+      } catch (error) {
+        throw new ConflictException(error.message);
+      }
 
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
