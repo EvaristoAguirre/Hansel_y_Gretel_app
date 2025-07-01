@@ -60,8 +60,10 @@ export class OrderRepository {
     });
     console.log('order antes de intentar cerrar', order);
 
+
     if (!order) {
       throw new NotFoundException(`Order with ID: ${id} not found`);
+
     }
 
     if (order.state !== OrderState.PENDING_PAYMENT) {
@@ -83,8 +85,6 @@ export class OrderRepository {
         'No open daily cash report found. Cannot close the order.',
       );
     }
-
-    // -------- revisar si el ticket esta generando un numero y guardarlo en la orden
 
     order.methodOfPayment = closeOrderDto.methodOfPayment;
     order.dailyCash = openDailyCash;
@@ -134,7 +134,6 @@ export class OrderRepository {
     });
 
     const toppingDetails: OrderDetailToppings[] = [];
-    console.log('primer dato...', detailData);
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
       if (detailData.toppingsPerUnit.length !== quantity) {
         throw new BadRequestException(
@@ -143,9 +142,7 @@ export class OrderRepository {
       }
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
-        console.log('segundo dato a chequear...', toppingsForUnit);
         for (const toppingId of toppingsForUnit) {
-          console.log('evaluando topping individual...', toppingId);
           const topping = await qr.manager.findOne(Ingredient, {
             where: { id: toppingId, isActive: true },
             relations: ['toppingsGroups'],
