@@ -52,11 +52,7 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
       value: data.totalMercadoPago,
       icon: <AccountBalanceWalletIcon color="secondary" fontSize="small" />,
     },
-    {
-      label: "Otros",
-      value: data.totalOtherPayments,
-      icon: <MonetizationOnIcon color="warning" fontSize="small" />,
-    },
+
   ];
 
 
