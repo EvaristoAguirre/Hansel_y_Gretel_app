@@ -54,6 +54,9 @@ export const URI_PDF = "http://192.168.0.50:3000/export/stock/pdf";
 
 // DAILY CASH
 
-export const URI_DAILY_CASH = "http://192.168.0.50:3000/daily-cash";
 
+export const URI_DAILY_CASH = "http://localhost:3000/daily-cash";
+
+//MÉTRICAS
+export const URI_METRICS = "http://localhost:3000/daily-cash/metrics";
 
