@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { IDailyCash, IDailyCheck, IDailyResume, INewMovement, I_DC_Open_Close } from '@/components/Interfaces/IDailyCash';
 import { useAuth } from "@/app/context/authContext";
-import { checkOpenDailyCash, closeDailyCash, fetchAllDailyCash, fetchDailyCashByID, fetchDailyCashResume, newMovement, openDailyCash } from "@/api/dailyCash";
+import { checkOpenDailyCash, closeDailyCash, deleteDailyCash, fetchAllDailyCash, fetchDailyCashByID, fetchDailyCashResume, newMovement, openDailyCash } from "@/api/dailyCash";
 import Swal from "sweetalert2";
 
 interface DailyCashContextType {
@@ -19,6 +19,7 @@ interface DailyCashContextType {
   closeCash: (data: I_DC_Open_Close) => Promise<void>;
   registerMovement: (data: INewMovement) => Promise<void>;
   fetchCashSummary: () => Promise<void>;
+  deleteCash: (id: string) => Promise<void>;
 }
 
 const DailyCashContext = createContext<DailyCashContextType | undefined>(undefined);
@@ -109,6 +110,30 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
     fetchCash();
   }, [token]);
 
+  const deleteCash = async (id: string) => {
+    if (!token) return;
+
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (confirm.isConfirmed) {
+      try {
+        await deleteDailyCash(token, id);
+        Swal.fire("Eliminado", "Producto eliminado correctamente.", "success");
+        await fetchAllCash();
+      } catch (error) {
+        console.error("Error al eliminar la caja", error);
+        Swal.fire("Error", "No se pudo eliminar la caja.", "error");
+      }
+    }
+
+  };
+
   return (
     <DailyCashContext.Provider
       value={{
@@ -122,7 +147,8 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
         openCash,
         closeCash,
         registerMovement,
-        fetchCashSummary
+        fetchCashSummary,
+        deleteCash
       }}>
       {children}
     </DailyCashContext.Provider>

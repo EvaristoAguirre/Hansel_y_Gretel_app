@@ -32,7 +32,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "totalCash" || name === "initialCash" ? Number(value) : value,
+      [name]: name === "finalCash" || name === "initialCash" ? Number(value) : value,
     }));
   };
 
@@ -40,7 +40,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
     if (type === dailyCashModalType.OPEN) {
       return form.initialCash && form.initialCash !== undefined && form.initialCash !== null;
     } else {
-      return form.totalCash !== undefined && form.totalCash !== null;
+      return form.finalCash !== undefined && form.finalCash !== null;
     }
   };
 
@@ -77,9 +77,9 @@ const CashModal = ({ open, onClose, type }: Props) => {
         <Box mt={2} display="flex" flexDirection="column" gap={2}>
           <NumericFormat
             customInput={TextField}
-            label={type === dailyCashModalType.OPEN ? "Monto inicial" : "Total en caja"}
+            label={type === dailyCashModalType.OPEN ? "Monto inicial" : "Monto final en caja"}
             name={type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"}
-            value={type === dailyCashModalType.OPEN ? form.initialCash : form.totalCash}
+            value={type === dailyCashModalType.OPEN ? form.initialCash : form.finalCash}
             thousandSeparator="."
             decimalSeparator=","
             decimalScale={2}
@@ -91,7 +91,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
               const num = values.floatValue ?? 0;
               setForm((prev) => ({
                 ...prev,
-                [type === dailyCashModalType.OPEN ? "initialCash" : "totalCash"]: num,
+                [type === dailyCashModalType.OPEN ? "initialCash" : "finalCash"]: num,
               }));
             }}
             onBlur={isFormValid}

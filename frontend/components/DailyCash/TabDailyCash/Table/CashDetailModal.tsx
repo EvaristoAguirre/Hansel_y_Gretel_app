@@ -7,6 +7,7 @@ import {
   Typography,
   Grid,
   Chip,
+  Divider,
 } from "@mui/material";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
@@ -16,6 +17,7 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { dailyCashState } from "@/components/Enums/dailyCash";
 import { IDailyCash } from "@/components/Interfaces/IDailyCash";
+import DifferenceIcon from "@mui/icons-material/CompareArrows";
 
 interface Props {
   open: boolean;
@@ -52,20 +54,20 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
       value: data.totalMercadoPago,
       icon: <AccountBalanceWalletIcon color="secondary" fontSize="small" />,
     },
-    {
-      label: "Otros",
-      value: data.totalOtherPayments,
-      icon: <MonetizationOnIcon color="warning" fontSize="small" />,
-    },
+
   ];
 
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle color="primary" fontWeight="bold" fontSize="1rem"
-        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }} >
+      <DialogTitle
+        color="primary"
+        fontWeight="bold"
+        fontSize="1rem"
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
         Detalle de Caja –{" "}
-        {new Date(data.date ?? '').toLocaleDateString("es-AR", {
+        {new Date(data.date ?? "").toLocaleDateString("es-AR", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
@@ -78,10 +80,41 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
         />
       </DialogTitle>
       <DialogContent dividers>
-        <Typography variant="subtitle1" gutterBottom>
-          Comentario: {data.comment && (data.comment.length < 0 ? capitalizeFirstLetter(data.comment) : "Sin comentarios")}
+
+
+        {/* Sección: Resumen de caja */}
+        <Typography variant="subtitle1" mt={1} gutterBottom fontWeight="bold" color="primary">
+          Resumen de Caja
         </Typography>
-        <Grid container spacing={2} mt={1}>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Typography display="flex" alignItems="center" gap={1}>
+              <AttachMoneyIcon color="info" fontSize="small" />
+              <strong>Dinero Inicial:</strong> ${Number(data.initialCash).toFixed(2)}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography display="flex" alignItems="center" gap={1}>
+              <MonetizationOnIcon color="success" fontSize="small" />
+              <strong>Dinero Final:</strong> ${Number(data.totalCash).toFixed(2)}
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography display="flex" alignItems="center" gap={1}>
+              <DifferenceIcon color="warning" fontSize="small" />
+              <strong>Diferencia:</strong>{" "}
+              {data.cashDifference ?? 0 >= 0 ? "+" : "-"}${Math.abs(data.cashDifference ?? 0).toFixed(2)}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ mt: 2, mb: 2, borderWidth: 2 }} />
+
+        {/* Métodos de pago */}
+        <Typography variant="subtitle1" mt={3} gutterBottom fontWeight="bold" color="primary">
+          Total por Medio de Pago
+        </Typography>
+        <Grid container spacing={2}>
           {totals.map((t) => (
             <Grid item xs={6} key={t.label}>
               <Typography display="flex" alignItems="center" gap={1}>
@@ -91,12 +124,21 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
             </Grid>
           ))}
         </Grid>
+
       </DialogContent>
+      <Typography variant="subtitle1" gutterBottom fontFamily={"italic"}
+        sx={{ mx: 2 }}>
+        Comentario:{" "}
+        {data.comment && data.comment.length > 0
+          ? capitalizeFirstLetter(data.comment)
+          : "Sin comentarios"}
+      </Typography>
       <DialogActions>
         <Button onClick={onClose}>Cerrar</Button>
       </DialogActions>
     </Dialog>
   );
 };
+
 
 export default CashDetailModal;

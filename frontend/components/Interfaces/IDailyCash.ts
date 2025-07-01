@@ -12,7 +12,7 @@ export interface ICashMovement {
 export interface I_DC_Open_Close {
   comment: string;
   initialCash?: number | null;
-  totalCash?: number | null;
+  finalCash?: number | null;
 }
 
 export interface INewMovement {
@@ -47,6 +47,9 @@ export interface IDailyCash {
   totalExpenses?: number;
   newExpense?: number;
   totalPayments?: number;
+  initialCash?: number;
+  finalCash?: number;
+  cashDifference?: number;
   totalCash?: number;
   totalCreditCard?: number;
   totalDebitCard?: number;
