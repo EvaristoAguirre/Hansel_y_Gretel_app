@@ -12,7 +12,8 @@ interface TableStateZustand {
 }
 
 export const useTableStore = create<TableStateZustand>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  // const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Usa la IP de tu backend
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket");
@@ -55,6 +56,6 @@ export const useTableStore = create<TableStateZustand>((set) => {
           t.id === updatedTable.id ? updatedTable : t
         ),
       })),
-    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    connectWebSocket: () => {}, // La conexión se establece al cargar el store
   };
 });

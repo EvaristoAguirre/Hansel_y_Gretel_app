@@ -33,6 +33,9 @@ export class DailyCash {
   totalCash: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  cashDifference: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalCreditCard: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
