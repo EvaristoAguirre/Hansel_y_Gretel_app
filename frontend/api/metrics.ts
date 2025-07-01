@@ -1,30 +1,79 @@
-import { mockAnnualDistribution, mockAnnualSummary, mockDaily, mockDailyProfit, mockMonthlySummary, mockTopProducts } from "@/components/DailyCash/TabMetrics/mocks";
+import { URI_METRICS } from "@/components/URI/URI";
 
-
-export const getMonthlySummary = async (month: number, year: number) => {
-  return mockMonthlySummary;
+// Ingresos y egresos diarios del mes: 
+export const getMonthlySummary = async (token: string, month: number, year: number) => {
+  const response = await fetch(
+    `${URI_METRICS}/daily?month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
 };
 
-export const getAnnualSummary = async (year: number) => {
-  return mockAnnualSummary;
+
+export const getAnnualSummary = async (token: string, year: number) => {
+  const response = await fetch(
+    `${URI_METRICS}/annual?year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
 };
 
-export const getAnnualDistribution = async (year: number) => {
-  return mockAnnualDistribution;
+
+export const getAnnualDistribution = async (token: string, year: number) => {
+  const response = await fetch(
+    `${URI_METRICS}/annual-distribution?year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
 };
 
-export const getDailyIncomeExpense = async (month: number, year: number) => {
-  return mockDaily;
+
+export const getDailyIncomeExpense = async (token: string, month: number, year: number) => {
+  const response = await fetch(
+    `${URI_METRICS}/daily?month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
 };
 
-export const getDailyProfit = async (month: number, year: number) => {
-  return mockDailyProfit;
+
+export const getDailyProfit = async (token: string, month: number, year: number) => {
+  const response = await fetch(
+    `${URI_METRICS}/daily-profit?month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
 };
 
-export const getTopProducts = async (
-  unidad: string,
-  month?: number,
-  year?: number
-) => {
-  return mockTopProducts;
-};
+
+

@@ -1,16 +1,18 @@
 import { Box, Card, CardContent, Typography, Stack } from "@mui/material";
 
 interface SummaryCardProps {
-  title: string;
-  ingresos: number;
-  egresos: number;
-  ganancia: number;
+  income: number;
+  expenses: number;
+  profit: number;
   icon?: React.ReactNode;
+  title: string;
 }
 
-const SummaryCard = ({ title, ingresos, egresos, ganancia, icon }: SummaryCardProps) => {
-  const formatCurrency = (value: number) =>
-    `$ ${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")}`;
+const SummaryCard = ({ title, income, expenses, profit, icon }: SummaryCardProps) => {
+  const formatCurrency = (value?: number) =>
+    typeof value === "number"
+      ? `$ ${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")}`
+      : "$ 0.00";
 
   return (
     <Card elevation={3} sx={{ borderRadius: 3 }}>
@@ -30,7 +32,7 @@ const SummaryCard = ({ title, ingresos, egresos, ganancia, icon }: SummaryCardPr
           }}
         >
           <Typography>Ingresos</Typography>
-          <Typography fontWeight="bold">{formatCurrency(ingresos)}</Typography>
+          <Typography fontWeight="bold">{formatCurrency(income)}</Typography>
         </Box>
 
         <Box
@@ -45,7 +47,7 @@ const SummaryCard = ({ title, ingresos, egresos, ganancia, icon }: SummaryCardPr
         >
           <Typography>Egresos</Typography>
           <Typography fontWeight="bold">
-            {isNaN(egresos) ? "NaN" : formatCurrency(egresos)}
+            {isNaN(expenses) ? "NaN" : formatCurrency(expenses)}
           </Typography>
         </Box>
 
@@ -58,7 +60,7 @@ const SummaryCard = ({ title, ingresos, egresos, ganancia, icon }: SummaryCardPr
           }}
         >
           <Typography>Ganancia</Typography>
-          <Typography fontWeight="bold">{formatCurrency(ganancia)}</Typography>
+          <Typography fontWeight="bold">{formatCurrency(profit)}</Typography>
         </Box>
       </CardContent>
     </Card>

@@ -1,27 +1,27 @@
 export interface SummaryResponse {
-  ingresos: number;
-  egresos: number;
-  ganancia: number;
+  income: number;
+  expenses: number;
+  profit: number;
 }
 
 export interface MonthlyDistributionItem {
   mes: string;
-  ingresos: number;
-  egresos: number;
+  income: number;
+  expenses: number;
 }
 
 export interface DailyIncomeExpense {
-  dia: string;
-  ingresos: number;
-  egresos: number;
+  day: string;
+  income: number;
+  expenses: number;
 }
 
 export interface DailyProfit {
-  dia: string;
-  ganancia: number;
+  day: string;
+  profit: number;
 }
 
 export interface TopProduct {
-  producto: string;
+  product: string;
   cantidadVendida: number;
 }
