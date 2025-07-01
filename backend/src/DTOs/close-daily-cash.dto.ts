@@ -6,5 +6,5 @@ export class CloseDailyCash {
   comment: string;
 
   @IsNumber()
-  totalCash: number;
+  finalCash: number;
 }

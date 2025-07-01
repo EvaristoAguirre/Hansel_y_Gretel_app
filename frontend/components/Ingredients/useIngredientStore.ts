@@ -1,18 +1,25 @@
-import { create } from 'zustand';
-import { io } from 'socket.io-client';
-import { IngredientCreated, IngredientState, IngredientResponseDTO } from '../Interfaces/IIngredients';
+import { create } from "zustand";
+import { io } from "socket.io-client";
+import {
+  IngredientCreated,
+  IngredientState,
+  IngredientResponseDTO,
+} from "../Interfaces/IIngredients";
 
 export const useIngredientStore = create<IngredientState>((set) => {
-  const socket = io('http://localhost:3000'); // Cambiar por la IP de tu backend si es necesario
+  // const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Cambiar por la IP de tu backend si es necesario
 
-  socket.on('connect', () => {
-    console.log('✅ Conectado a WebSocket - Ingredients');
+  socket.on("connect", () => {
+    console.log("✅ Conectado a WebSocket - Ingredients");
   });
 
-  socket.on('ingredientCreated', (data) => {
-    console.log('🟢 Ingrediente creado:', data);
+  socket.on("ingredientCreated", (data) => {
+    console.log("🟢 Ingrediente creado:", data);
     set((state) => {
-      const exists = state.ingredients.some((ingredient) => ingredient.id === data.id);
+      const exists = state.ingredients.some(
+        (ingredient) => ingredient.id === data.id
+      );
       if (!exists) {
         const parsedIngredient: IngredientCreated = {
           ...data,
@@ -25,8 +32,8 @@ export const useIngredientStore = create<IngredientState>((set) => {
     });
   });
 
-  socket.on('ingredientUpdated', (data) => {
-    console.log('🟡 Ingrediente actualizado:', data);
+  socket.on("ingredientUpdated", (data) => {
+    console.log("🟡 Ingrediente actualizado:", data);
     set((state) => ({
       ingredients: state.ingredients.map((ingredient) =>
         ingredient.id === data.id ? data : ingredient
@@ -34,15 +41,17 @@ export const useIngredientStore = create<IngredientState>((set) => {
     }));
   });
 
-  socket.on('ingredientDeleted', (data) => {
-    console.log('🔴 Ingrediente eliminado:', data);
+  socket.on("ingredientDeleted", (data) => {
+    console.log("🔴 Ingrediente eliminado:", data);
     set((state) => ({
-      ingredients: state.ingredients.filter((ingredient) => ingredient.id !== data.id),
+      ingredients: state.ingredients.filter(
+        (ingredient) => ingredient.id !== data.id
+      ),
     }));
   });
 
-  socket.on('disconnect', () => {
-    console.log('❌ Desconectado del servidor WebSocket - Ingredients');
+  socket.on("disconnect", () => {
+    console.log("❌ Desconectado del servidor WebSocket - Ingredients");
   });
 
   return {
@@ -60,17 +69,23 @@ export const useIngredientStore = create<IngredientState>((set) => {
     },
     removeIngredient: (id: string) => {
       set((state) => ({
-        ingredients: state.ingredients.filter((ingredient) => ingredient.id !== id),
+        ingredients: state.ingredients.filter(
+          (ingredient) => ingredient.id !== id
+        ),
       }));
     },
     updateIngredient: (updatedIngredient: IngredientCreated) => {
       set((state) => ({
         ingredients: state.ingredients.map((ingredient) =>
-          ingredient.id === updatedIngredient.id ? updatedIngredient : ingredient
+          ingredient.id === updatedIngredient.id
+            ? updatedIngredient
+            : ingredient
         ),
       }));
-      console.log('✅ Ingrediente actualizado:', updatedIngredient);
+      console.log("✅ Ingrediente actualizado:", updatedIngredient);
     },
-    connectWebSocket: () => { /* conexión automática */ },
+    connectWebSocket: () => {
+      /* conexión automática */
+    },
   };
 });
