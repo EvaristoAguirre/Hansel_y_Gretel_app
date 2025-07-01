@@ -32,7 +32,7 @@ const Navbar = () => {
   ];
 
   const filteredSections = sections.filter(
-    (section) => !(userRole === UserRole.MOZO && section.label === "Productos")
+    (section) => !(userRole === UserRole.MOZO && (section.label === "Productos" || section.label === "Registros/Cajas"))
   );
 
   return (
