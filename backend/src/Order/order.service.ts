@@ -27,6 +27,7 @@ import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { OrderDetailToppings } from './order_details_toppings.entity';
+import { transferOrderData } from 'src/DTOs/transfer-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -494,6 +495,75 @@ export class OrderService {
         'Error cancelling the order.',
         error.message,
       );
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async transferOrder(
+    orderId: string,
+    transferOrder: transferOrderData,
+  ): Promise<OrderSummaryResponseDto> {
+    if (!orderId || !isUUID(orderId)) {
+      throw new BadRequestException('Invalid or missing order ID.');
+    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const currentTable = await queryRunner.manager.findOne(Table, {
+        where: { id: transferOrder.fromTableId },
+      });
+      if (!currentTable || currentTable.isActive === false)
+        throw new NotFoundException(`Table with ID not found`);
+
+      const tableToTransfer = await queryRunner.manager.findOne(Table, {
+        where: { id: transferOrder.toTableId },
+      });
+
+      if (!tableToTransfer || tableToTransfer.isActive === false)
+        throw new NotFoundException(
+          `Table with ID: ${tableToTransfer.id} not found`,
+        );
+
+      if (tableToTransfer.state !== TableState.AVAILABLE)
+        throw new ConflictException(
+          `Table with ID: ${tableToTransfer.id} is not available`,
+        );
+
+      const currentOrder = await queryRunner.manager.findOne(Order, {
+        where: { id: orderId },
+      });
+      if (!currentOrder) {
+        throw new NotFoundException(`Order with ID: ${orderId} not found`);
+      }
+
+      currentOrder.table = tableToTransfer;
+
+      await queryRunner.manager.update(
+        Table,
+        { id: currentTable.id },
+        { state: TableState.AVAILABLE },
+      );
+      await queryRunner.manager.update(
+        Table,
+        { id: tableToTransfer.id },
+        { state: TableState.OPEN },
+      );
+
+      await queryRunner.manager.save(currentOrder);
+      await queryRunner.commitTransaction();
+
+      this.eventEmitter.emit('order.updated', { order: currentOrder });
+      this.eventEmitter.emit('table.updated', { table: currentTable });
+      this.eventEmitter.emit('table.updated', { table: tableToTransfer });
+
+      return await this.getOrderById(currentOrder.id);
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err instanceof HttpException) throw err;
+      throw err;
     } finally {
       await queryRunner.release();
     }
