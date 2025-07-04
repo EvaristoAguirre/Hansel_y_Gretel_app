@@ -545,6 +545,24 @@ export class DailyCashService {
     }
   }
 
+  async getDailyCashWithOrdersByDate(
+    day: number,
+    month: number,
+    year: number,
+  ): Promise<DailyCash | null> {
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    const dailyCash = await this.dailyCashRepo.findOne({
+      where: {
+        date: Between(startOfDay, endOfDay),
+      },
+      relations: ['orders', 'movements'],
+    });
+    if (!dailyCash) throw new NotFoundException('Daily cash not found');
+    return dailyCash;
+  }
+
   // ------------------- metricas -----------------------
   async getMonthlySummary(
     month: number,
