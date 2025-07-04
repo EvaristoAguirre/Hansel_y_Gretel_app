@@ -251,4 +251,27 @@ export class TableRepository {
       );
     }
   }
+
+  async getAllTablesAvailable(page: number, limit: number): Promise<Table[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    try {
+      const tables = await this.tableRepository.find({
+        where: { state: TableState.AVAILABLE },
+      });
+      if (!tables || tables.length === 0)
+        throw new NotFoundException(
+          'There are no tables available for transfer.',
+        );
+      return tables;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error fetching tables', error);
+    }
+  }
 }
