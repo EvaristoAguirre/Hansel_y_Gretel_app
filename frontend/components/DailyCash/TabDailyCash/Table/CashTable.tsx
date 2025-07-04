@@ -24,7 +24,7 @@ const CashTable = () => {
   const [open, setOpen] = useState(false);
 
 
-  const { allDailyCash, dailyCashSummary, fetchAllCash, selectedCash, fetchCashSummary } = useDailyCash();
+  const { allDailyCash, dailyCashSummary, fetchAllCash, selectedCash, fetchCashSummary, deleteCash } = useDailyCash();
 
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -141,7 +141,7 @@ const CashTable = () => {
               <IconButton
                 size="small"
                 onClick={() => {
-                  console.log("Eliminar caja:", params.row.id);
+                  deleteCash(params.row.id);
                 }}
               >
                 <DeleteIcon fontSize="small" color="primary" />
