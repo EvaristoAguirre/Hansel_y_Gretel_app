@@ -544,7 +544,7 @@ export class OrderService {
       await queryRunner.manager.update(
         Table,
         { id: currentTable.id },
-        { state: TableState.AVAILABLE },
+        { state: TableState.CLOSED },
       );
       await queryRunner.manager.update(
         Table,
