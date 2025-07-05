@@ -385,6 +385,8 @@ export class ProductRepository {
 
     const product = queryRunner.manager.create(Product, {
       ...productData,
+      baseCost: 0,
+      toppingsCost: 0,
       cost: 0,
       categories: categoryEntities,
       unitOfMeasure: unitToCompositeProduct,
@@ -429,7 +431,7 @@ export class ProductRepository {
         );
 
         if (ingredient.cost) {
-          savedProduct.cost += ingredient.cost * convertedQuantity;
+          savedProduct.baseCost += ingredient.cost * convertedQuantity;
         }
         return queryRunner.manager.save(productIngredient);
       });
@@ -450,7 +452,9 @@ export class ProductRepository {
         queryRunner,
       );
 
-      savedProduct.cost += extraToppingCost;
+      savedProduct.toppingsCost += extraToppingCost;
+      savedProduct.cost =
+        Number(savedProduct.baseCost || 0) + Number(extraToppingCost);
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -497,6 +501,9 @@ export class ProductRepository {
       categories: categoryEntities,
       unitOfMeasure: unitToSimpleProduct,
       type: 'simple',
+      baseCost: productData.cost,
+      toppingsCost: 0,
+      cost: productData.cost,
     });
 
     const savedProduct = await queryRunner.manager.save(Product, product);
@@ -513,7 +520,9 @@ export class ProductRepository {
         queryRunner,
       );
 
-      savedProduct.cost += extraToppingCost;
+      savedProduct.toppingsCost += extraToppingCost;
+      savedProduct.cost =
+        Number(savedProduct.baseCost || 0) + Number(extraToppingCost);
 
       await queryRunner.manager.save(Product, savedProduct);
     }
@@ -672,12 +681,16 @@ export class ProductRepository {
         });
 
         await this.updateToppingsGroups(updateData, product, queryRunner);
+
         const toppingsExtraCost = await this.calculateToppingsCostForProduct(
           updateData,
           queryRunner,
         );
-        product.cost += toppingsExtraCost;
+        product.toppingsCost += toppingsExtraCost;
       }
+
+      product.cost =
+        Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
       const updatedProduct = await queryRunner.manager.save(product);
       const updatedProductWithRelations =
@@ -699,7 +712,6 @@ export class ProductRepository {
 
     const product = await this.getProductWithRelations(id, updateData.type);
     Object.assign(product, otherAttributes);
-    product.cost = 0;
 
     if (categories) {
       if (categories.length > 0) {
@@ -730,6 +742,10 @@ export class ProductRepository {
     if (ingredientsToRemove.length > 0) {
       await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
     }
+
+    product.baseCost = 0;
+
+    let totalBaseCost = 0;
 
     const updatedIngredients = await Promise.all(
       ingredients.map(async (ingredientDto) => {
@@ -763,15 +779,17 @@ export class ProductRepository {
           (pi) => pi.ingredient.id === ingredientDto.ingredientId,
         );
 
+        const ingredientCost = ingredient.cost * conversion.convertedQuantity;
+        totalBaseCost += ingredientCost;
+
         if (existingRelation) {
           existingRelation.quantityOfIngredient = conversion.convertedQuantity;
           existingRelation.unitOfMeasure = conversion.targetUnit;
-          product.cost += ingredient.cost * conversion.convertedQuantity;
 
           const savedRelation =
             await queryRunner.manager.save(existingRelation);
 
-          // 🟡 Restaurar valores originales para respuesta
+          // Restaurar valores originales para respuesta
           savedRelation.quantityOfIngredient = conversion.originalQuantity;
           savedRelation.unitOfMeasure = conversion.originalUnit;
 
@@ -787,11 +805,9 @@ export class ProductRepository {
             },
           );
 
-          product.cost += ingredient.cost * conversion.convertedQuantity;
-
           const savedNew = await queryRunner.manager.save(newProductIngredient);
 
-          // 🟡 Restaurar valores originales para respuesta
+          // Restaurar valores originales para respuesta
           savedNew.quantityOfIngredient = conversion.originalQuantity;
           savedNew.unitOfMeasure = conversion.originalUnit;
 
@@ -799,6 +815,8 @@ export class ProductRepository {
         }
       }),
     );
+
+    product.baseCost = totalBaseCost;
 
     product.productIngredients = updatedIngredients;
 
@@ -813,7 +831,10 @@ export class ProductRepository {
       updateData,
       queryRunner,
     );
-    product.cost += toppingsExtraCost;
+
+    product.toppingsCost += toppingsExtraCost;
+    product.cost =
+      Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
     const updatedProduct = await queryRunner.manager.save(product);
     const updatedProductWithRelations =

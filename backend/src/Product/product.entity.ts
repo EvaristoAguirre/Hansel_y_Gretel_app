@@ -47,6 +47,16 @@ export class Product {
   @Min(0)
   cost: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @IsNumber()
+  @Min(0)
+  baseCost: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @IsNumber()
+  @Min(0)
+  toppingsCost: number;
+
   @Column({ default: true })
   isActive: boolean;
 
