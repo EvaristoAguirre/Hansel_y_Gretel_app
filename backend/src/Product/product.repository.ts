@@ -230,7 +230,6 @@ export class ProductRepository {
     await queryRunner.startTransaction();
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const {
         categories,
         ingredients,
