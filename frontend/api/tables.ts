@@ -1,3 +1,4 @@
+import { useAuth } from "@/app/context/authContext";
 import { TableForm } from "@/components/Interfaces/ITable";
 import { URI_TABLE } from "@/components/URI/URI";
 
@@ -94,6 +95,31 @@ export const editTable = async (data: TableForm, token: string) => {
       } else {
         throw new Error(`Error: ${errorData.message}`);
       }
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+
+
+
+export const getTablesAvailable = async (token: string) => {
+  try {
+    const response = await fetch(`${URI_TABLE}/available`, {
+      method: "GET",
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error:", errorData);
+      throw new Error(`Error: ${response.status} ${response.statusText}`);
     }
     return await response.json();
   } catch (error) {

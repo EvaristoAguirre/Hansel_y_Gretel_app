@@ -7,9 +7,15 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Button, ListItemText, Tooltip, Typography } from "@mui/material";
 import { useRoomContext } from '@/app/context/room.context';
 import { useAuth } from "@/app/context/authContext";
-import { UserRole } from "../Enums/user";
-import { TableModalType } from "../Enums/table";
-import { ITable } from "../Interfaces/ITable";
+import { UserRole } from "../../Enums/user";
+import { TableModalType } from "../../Enums/table";
+import { ITable } from "../../Interfaces/ITable";
+import PivotTableChartIcon from '@mui/icons-material/PivotTableChart';
+import { transferOrder } from "@/api/order";
+import { useOrderContext } from "@/app/context/order.context";
+import { IOrderTranfer } from "../../Interfaces/IOrder";
+import TransferTableModal from "./ModalTranfer";
+import Swal from "sweetalert2";
 
 interface TableCardProps {
   table: ITable;
@@ -30,6 +36,14 @@ const TableCard: React.FC<TableCardProps> = ({
   const { userRoleFromToken } = useAuth();
   const [role, setRole] = useState<string | null>(null);
 
+  const { getAccessToken } = useAuth();
+  const token = getAccessToken();
+
+
+  const {
+    selectedOrderByTable,
+  } = useOrderContext();
+
   useEffect(() => {
     setRole(userRoleFromToken());
   }, []);
@@ -38,6 +52,39 @@ const TableCard: React.FC<TableCardProps> = ({
     const isTheSameTable: boolean = table?.id === selectedTable?.id;
     return selectedTable && isTheSameTable ? handleSelectTable(null) : handleSelectTable(table);
 
+  };
+
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModalTranfer = () => setIsModalOpen(true);
+  const handleCloseModalTranfer = () => setIsModalOpen(false);
+
+  const handleConfirmTransfer = async (toTableId: string) => {
+    console.log("1️⃣entra a confirmar transferencia");
+    console.log("2️⃣selectedOrderByTable:", selectedOrderByTable);
+
+
+    if (selectedOrderByTable) {
+      console.log("3️⃣entra porque hay orden");
+
+      const data: IOrderTranfer = {
+        id: selectedOrderByTable.id,
+        fromTableId: table.id,
+        toTableId,
+      };
+      const response = token && (await transferOrder(token, data));
+      // quizás mostrar una notificación de éxito
+      if (response) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Mesa transferida correctamente',
+          showConfirmButton: false,
+          timer: 1500
+        })
+      }
+    }
+    setIsModalOpen(false);
   };
 
 
@@ -102,10 +149,21 @@ const TableCard: React.FC<TableCardProps> = ({
             }
           </Button>
         </Tooltip>
+        <Tooltip title="Mover mesa" arrow>
+          <Button
+            sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenModalTranfer();
+            }}
+          >
+            <PivotTableChartIcon />
+          </Button>
+        </Tooltip>
         {
           role !== UserRole.MOZO && (
             <>
-              <Tooltip title="Editar table" arrow>
+              <Tooltip title="Editar mesa" arrow>
                 <Button
                   sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
                   onClick={(e) => {
@@ -116,7 +174,8 @@ const TableCard: React.FC<TableCardProps> = ({
                   <EditIcon />
                 </Button>
               </Tooltip>
-              <Tooltip title="Eliminar table" arrow>
+
+              <Tooltip title="Eliminar mesa" arrow>
                 <Button
                   sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
                   onClick={(e) => {
@@ -131,6 +190,12 @@ const TableCard: React.FC<TableCardProps> = ({
           )
         }
       </div>
+      <TransferTableModal
+        open={isModalOpen}
+        onClose={handleCloseModalTranfer}
+        onConfirm={handleConfirmTransfer}
+        excludeTableId={table.id}
+      />
     </div>
   );
 };

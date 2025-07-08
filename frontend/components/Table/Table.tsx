@@ -5,7 +5,7 @@ import { useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
 import { useRoomContext } from '../../app/context/room.context';
 import TablesStatus from "./TablesStatus";
-import TableCard from "./TableCard";
+import TableCard from "./TableCard/TableCard";
 import { UserRole } from "../Enums/user";
 import { useAuth } from "@/app/context/authContext";
 import { useNameTableForm } from "./useNameTableForm";
@@ -103,7 +103,7 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
 
               : (modalType === TableModalType.EDIT && form?.id)
                 ? () => handleEdit(form ?? {})
-                : () => Promise.resolve() // valor por defecto
+                : () => Promise.resolve()
           }
           nombre={nameTable}
           room={selectedRoom?.name ?? ''}
