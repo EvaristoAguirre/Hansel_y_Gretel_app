@@ -118,6 +118,8 @@ const OrderProvider = ({
     []
   );
 
+
+
   const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
     [productId: string]: string[][];
   }>({});
@@ -196,6 +198,11 @@ const OrderProvider = ({
   useEffect(() => {
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
+
+
+  useEffect(() => {
+    console.log("ORden seleccionada🤌🏽", selectedOrderByTable);
+  }, [selectedOrderByTable]);
 
   const checkStockAvailability = async (productId: string, quantity: number) => {
     const form: ICheckStock = {
