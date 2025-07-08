@@ -61,28 +61,19 @@ const TableCard: React.FC<TableCardProps> = ({
   const handleCloseModalTranfer = () => setIsModalOpen(false);
 
   const handleConfirmTransfer = async (toTableId: string) => {
-    console.log("1️⃣entra a confirmar transferencia");
-    console.log("2️⃣selectedOrderByTable:", selectedOrderByTable);
-
-
     if (selectedOrderByTable) {
-      console.log("3️⃣entra porque hay orden");
-
       const data: IOrderTranfer = {
         id: selectedOrderByTable.id,
         fromTableId: table.id,
         toTableId,
       };
       const response = token && (await transferOrder(token, data));
-      // quizás mostrar una notificación de éxito
       if (response) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Mesa transferida correctamente',
-          showConfirmButton: false,
-          timer: 1500
-        })
+        Swal.fire("Éxito", "Mesa tranferida correctamente.", "success");
       }
+
+    } else {
+      Swal.fire("Disculpe", "No se pudo transferir la mesa. Vuelva a intentarlo", "warning");
     }
     setIsModalOpen(false);
   };

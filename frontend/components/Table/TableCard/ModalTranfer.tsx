@@ -1,5 +1,6 @@
 import { getTablesAvailable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
+import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import {
   Dialog,
   DialogTitle,
@@ -11,6 +12,7 @@ import {
   ListItemButton,
   ListItemText,
   CircularProgress,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -30,6 +32,7 @@ export default function TransferTableModal({
   const [tables, setTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [noTablesMessage, setNoTablesMessage] = useState<string | null>(null);
 
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
@@ -38,8 +41,15 @@ export default function TransferTableModal({
     const fetchTables = async () => {
       setLoading(true);
       const result = token && await getTablesAvailable(token);
-      const filtered = result.filter((t: any) => t.id !== excludeTableId);
-      setTables(filtered);
+
+      if (result?.noTablesAvailable) {
+        setTables([]);
+        setNoTablesMessage("No hay mesas disponibles");
+      } else {
+        setTables(result);
+        setNoTablesMessage(null);
+      }
+
       setLoading(false);
     };
 
@@ -57,11 +67,15 @@ export default function TransferTableModal({
       <DialogTitle
         sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1.2rem", display: "flex", justifyContent: "center" }}
       >
-        Seleccioná la mesa de destino:
+        Selecciona la mesa de destino:
       </DialogTitle>
       <DialogContent>
         {loading ? (
           <CircularProgress />
+        ) : noTablesMessage ? (
+          <Typography color="textSecondary" sx={{ mt: 2 }}>
+            {noTablesMessage}
+          </Typography>
         ) : (
           <List
             sx={{
@@ -78,12 +92,13 @@ export default function TransferTableModal({
                   onClick={() => setSelectedTableId(table.id)}
                   sx={{ borderBottom: "1px solid #ccc" }}
                 >
-                  <ListItemText primary={`${table.name}`} />
+                  <ListItemText primary={capitalizeFirstLetter(table.name)} />
                 </ListItemButton>
               </ListItem>
             ))}
           </List>
         )}
+
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>

@@ -118,16 +118,21 @@ export const getTablesAvailable = async (token: string) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Error:", errorData);
+
+      if (response.status === 404) {
+        return { noTablesAvailable: true, message: errorData.message };
+      }
+
       throw new Error(`Error: ${response.status} ${response.statusText}`);
     }
+
     return await response.json();
   } catch (error) {
     console.error(error);
     throw error;
   }
 }
-//mesas por sala
+
 
 export const getTableByRoom = async (token: string, roomId: string) => {
   try {
