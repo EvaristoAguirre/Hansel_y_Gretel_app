@@ -235,6 +235,7 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.find({
         where: { room: { id: roomId } },
+        relations: ['orders'],
       });
       if (!table) {
         throw new NotFoundException(`Tables with Room ID: ${roomId} not found`);
