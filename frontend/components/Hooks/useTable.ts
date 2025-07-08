@@ -25,6 +25,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
     removeTable,
     updateTable,
     connectWebSocket,
+    updateTablesByRoom
   } = useTableStore();
 
   const { orders } = useOrderStore();
@@ -63,17 +64,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
       setToken(token);
     }
     async function fetchTables() {
-      try {
-        const response = await fetch(URI_TABLE, {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${token}`, },
-        });
-        const data = await response.json();
-        setTables(data);
-      } catch (error) {
-        Swal.fire("Error", "No se pudieron cargar las mesas.", "error");
-        console.error(error);
-      }
+      token && updateTablesByRoom(salaId, token);
     }
 
     fetchTables();

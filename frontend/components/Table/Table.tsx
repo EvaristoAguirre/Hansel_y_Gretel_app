@@ -36,7 +36,6 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
 
   const { tables, updateTablesByRoom } = useTableStore();
 
-  const { selectedTable } = useRoomContext();
   const [filterState, setFilterState] = useState<string | null>(null);
   const { userRoleFromToken } = useAuth();
   const role = userRoleFromToken();

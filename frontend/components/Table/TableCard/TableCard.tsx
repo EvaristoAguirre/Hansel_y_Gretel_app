@@ -13,9 +13,9 @@ import { ITable } from "../../Interfaces/ITable";
 import PivotTableChartIcon from '@mui/icons-material/PivotTableChart';
 import { transferOrder } from "@/api/order";
 import { useOrderContext } from "@/app/context/order.context";
-import { IOrderTranfer } from "../../Interfaces/IOrder";
 import TransferTableModal from "./ModalTranfer";
 import Swal from "sweetalert2";
+import { IOrderTranfer } from "@/components/Interfaces/IOrder";
 
 interface TableCardProps {
   table: ITable;
@@ -87,7 +87,9 @@ const TableCard: React.FC<TableCardProps> = ({
     setIsModalOpen(false);
   };
 
-
+  useEffect(() => {
+    console.log("ORden seleccionada🤌🏽", selectedOrderByTable);
+  }, [table, selectedOrderByTable]);
 
   return (
     <div
@@ -153,7 +155,7 @@ const TableCard: React.FC<TableCardProps> = ({
           <Button
             sx={{ minWidth: "2.5rem", color: "#bab6b6" }}
             onClick={(e) => {
-              e.stopPropagation();
+              () => handleClickTable(table);
               handleOpenModalTranfer();
             }}
           >
