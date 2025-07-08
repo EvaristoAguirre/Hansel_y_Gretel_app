@@ -252,10 +252,6 @@ export class TableRepository {
         name: table.name,
         isActive: table.isActive,
         state: table.state,
-        room: {
-          id: table.room?.id,
-          name: table.room?.name,
-        },
         orders: table.orders.map((order) => order.id),
       }));
 
