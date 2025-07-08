@@ -170,7 +170,7 @@ const CashTable = () => {
         </Box>
       ) : (
         <>
-          <Typography variant="h6" gutterBottom textAlign="start">
+          <Typography variant="h4" color="primary" gutterBottom textAlign="start">
             Resumen Parcial de la Caja del Día
           </Typography>
           <Box
@@ -178,7 +178,7 @@ const CashTable = () => {
             borderRadius={2}
             boxShadow={1}
             maxWidth={500}
-
+            mt={2}
           >
 
             <DataGrid

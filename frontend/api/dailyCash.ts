@@ -134,3 +134,17 @@ export const newMovement = async (token: string, body: INewMovement) => {
 };
 
 
+
+export const getMovements = async (token: string, day: number, month: number, year: number) => {
+  const response = await fetch(
+    `${URI_DAILY_CASH}/movements/by-date?day=${day}&month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
+};
