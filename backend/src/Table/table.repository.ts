@@ -228,20 +228,34 @@ export class TableRepository {
     }
   }
 
-  async getTablesByRoom(roomId: string): Promise<Table[]> {
+  async getTablesByRoom(roomId: string): Promise<any[]> {
     if (!roomId) {
       throw new BadRequestException('Either Room ID must be provided.');
     }
     try {
-      const table = await this.tableRepository.find({
-        where: { room: { id: roomId } },
-        relations: ['orders'],
-      });
-      if (!table) {
+      const tables = await this.tableRepository
+        .createQueryBuilder('table')
+        .leftJoinAndSelect(
+          'table.orders',
+          'order',
+          'order.state IN (:...states)',
+          { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
+        )
+        .where('table.roomId = :roomId', { roomId })
+        .getMany();
+      if (!tables) {
         throw new NotFoundException(`Tables with Room ID: ${roomId} not found`);
       }
 
-      return table;
+      const result = tables.map((table) => ({
+        id: table.id,
+        name: table.name,
+        isActive: table.isActive,
+        state: table.state,
+        orders: table.orders.map((order) => order.id),
+      }));
+
+      return result;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
