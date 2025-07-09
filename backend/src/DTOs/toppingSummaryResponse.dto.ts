@@ -12,6 +12,5 @@ export class ToppingResponseDto {
   stock?: StockResponseDTO | null;
   type: 'masa' | 'volumen' | 'unidad';
   unitOfMeasure?: UnitOfMeasureResponseDTO | null;
-  isTopping: boolean;
   extraCost?: number | null;
 }
