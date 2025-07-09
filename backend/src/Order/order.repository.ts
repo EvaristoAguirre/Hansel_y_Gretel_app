@@ -21,6 +21,7 @@ import { OrderDetailToppings } from './order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 import { Logger } from '@nestjs/common';
+import { OrderPayment } from './order_payment.entity';
 
 @Injectable()
 export class OrderRepository {
@@ -30,6 +31,8 @@ export class OrderRepository {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    @InjectRepository(OrderPayment)
+    private readonly orderPaymentRepository: Repository<OrderPayment>,
   ) {}
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
@@ -60,10 +63,8 @@ export class OrderRepository {
     });
     console.log('order antes de intentar cerrar', order);
 
-
     if (!order) {
       throw new NotFoundException(`Order with ID: ${id} not found`);
-
     }
 
     if (order.state !== OrderState.PENDING_PAYMENT) {
@@ -76,8 +77,8 @@ export class OrderRepository {
       throw new BadRequestException(`Total amount must be greater than 0`);
     }
 
-    if (!closeOrderDto.methodOfPayment) {
-      throw new BadRequestException(`Method of payment must be provided`);
+    if (!closeOrderDto.payments || !closeOrderDto.payments.length) {
+      throw new BadRequestException(`At least one payment must be provided`);
     }
 
     if (!openDailyCash) {
@@ -86,10 +87,29 @@ export class OrderRepository {
       );
     }
 
-    order.methodOfPayment = closeOrderDto.methodOfPayment;
+    const totalPayments = closeOrderDto.payments.reduce(
+      (acc, payment) => acc + payment.amount,
+      0,
+    );
+
+    if (totalPayments !== closeOrderDto.total) {
+      throw new BadRequestException(
+        `Total amount of payments (${totalPayments}) does not match the order total (${closeOrderDto.total})`,
+      );
+    }
+
     order.dailyCash = openDailyCash;
     order.state = OrderState.CLOSED;
     order.table.state = TableState.AVAILABLE;
+
+    const orderPayments = closeOrderDto.payments.map((p) =>
+      this.orderPaymentRepository.create({
+        order,
+        amount: p.amount,
+        methodOfPayment: p.methodOfPayment,
+      }),
+    );
+    await this.orderPaymentRepository.save(orderPayments);
 
     await this.tableRepository.save(order.table);
     await this.orderRepository.save(order);
@@ -108,6 +128,7 @@ export class OrderRepository {
         'orderDetails.product',
         'orderDetails.orderDetailToppings',
         'orderDetails.orderDetailToppings.topping',
+        'payments',
       ],
     });
   }
@@ -232,9 +253,12 @@ export class OrderRepository {
       name: order.table.name,
       state: order.table.state,
     };
-    response.total = Number(order.total);
-    response.methodOfPayment = order.methodOfPayment;
     response.products = productLines;
+    response.payments = (order.payments || []).map((p) => ({
+      amount: Number(p.amount),
+      methodOfPayment: p.methodOfPayment,
+    }));
+    response.total = Number(order.total);
 
     return response;
   }
