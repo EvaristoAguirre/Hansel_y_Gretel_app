@@ -226,18 +226,19 @@ export class StockSummary {
 export class ProductResponseDto {
   @Expose()
   id: string;
+
   @Expose()
   code?: number;
+
   @Expose()
   name?: string;
-  // @Expose()
-  // description?: string;
+
   @Expose()
   price?: number;
+
   @Expose()
   cost?: number;
-  // @Expose()
-  // isActive?: boolean;
+
   @Expose()
   type: 'product' | 'promotion' | 'simple';
 
@@ -255,6 +256,7 @@ export class ProductResponseDto {
   @Expose()
   @Type(() => PromotionProductResponseDto)
   promotionDetails?: PromotionProductResponseDto[];
+
   // @Expose()
   // @Type(() => PromotionProductResponseDto)
   // componentDetails?: PromotionProductResponseDto[];
@@ -310,13 +312,11 @@ export class AvailableToppingGroupDto {
   @Expose()
   name?: string;
 
-  // @Expose()
-  // description?: string;
-
   @Expose()
   settings: {
     maxSelection?: number;
     chargeExtra?: boolean;
+    extraCost?: number;
   };
 
   @Expose()
@@ -332,9 +332,6 @@ export class ToppingGroupResponseDto {
 
   @Expose()
   name?: string;
-
-  // @Expose()
-  // description?: string;
 
   @Expose()
   toppings?: ToppingResponseDto[];
