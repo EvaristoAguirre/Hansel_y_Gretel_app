@@ -114,7 +114,11 @@ export class OrderRepository {
     await this.tableRepository.save(order.table);
     await this.orderRepository.save(order);
 
-    const responseAdapted = await this.adaptResponse(order);
+    const updatedOrder = await this.orderRepository.findOne({
+      where: { id: order.id },
+      relations: ['orderDetails', 'table', 'orderDetails.product', 'payments'],
+    });
+    const responseAdapted = await this.adaptResponse(updatedOrder);
     return responseAdapted;
   }
 
