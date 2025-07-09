@@ -118,7 +118,6 @@ export class DailyCashService {
         error.message,
       );
     }
-    return await this.dailyCashRepository.getDailyCashById(id);
   }
 
   async updateDailyCash(id: string, updateDailyCashDto: UpdateDailyCashDto) {
@@ -170,7 +169,7 @@ export class DailyCashService {
 
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
-
+      console.log('orders con payments....', dailyCash.orders);
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -200,11 +199,17 @@ export class DailyCashService {
       dailyCash.totalExpenses = totalExpenses;
 
       // --- Agrupación por método de pago ---
+      console.log(
+        'pagos individuales de ordenes.....,',
+        dailyCash.orders.flatMap((order) => order.payments),
+      );
       const orderPayments = this.groupRecordsByPaymentMethod(
-        dailyCash.orders.map((o) => ({
-          amount: Number(o.total),
-          methodOfPayment: o.methodOfPayment,
-        })),
+        dailyCash.orders.flatMap((order) =>
+          (order.payments || []).map((p) => ({
+            amount: Number(p.amount),
+            methodOfPayment: p.methodOfPayment,
+          })),
+        ),
       );
       const incomePayments = this.groupRecordsByPaymentMethod(incomes);
       const expensePayments = this.groupRecordsByPaymentMethod(expenses);
@@ -481,9 +486,39 @@ export class DailyCashService {
     return records.reduce((acc, r) => acc + Number(r.total), 0);
   }
 
+  // private groupRecordsByPaymentMethod(
+  //   records: {
+  //     amount: number;
+  //     methodOfPayment?: PaymentMethod;
+  //     payments?: { amount: number; paymentMethod: PaymentMethod }[];
+  //   }[],
+  // ): Record<PaymentMethod, number> {
+  //   const totals: Record<PaymentMethod, number> = {
+  //     [PaymentMethod.CASH]: 0,
+  //     [PaymentMethod.CREDIT_CARD]: 0,
+  //     [PaymentMethod.DEBIT_CARD]: 0,
+  //     [PaymentMethod.TRANSFER]: 0,
+  //     [PaymentMethod.MERCADOPAGO]: 0,
+  //   };
+
+  //   for (const record of records) {
+  //     if (record.methodOfPayment && typeof record.amount === 'number') {
+  //       totals[record.methodOfPayment] += record.amount;
+  //     }
+
+  //     if (record.payments && Array.isArray(record.payments)) {
+  //       for (const p of record.payments) {
+  //         totals[p.paymentMethod] += Number(p.amount);
+  //       }
+  //     }
+  //   }
+
+  //   return totals;
+  // }
+
   private groupRecordsByPaymentMethod(
     records: {
-      amount: number;
+      amount?: number;
       methodOfPayment?: PaymentMethod;
       payments?: { amount: number; paymentMethod: PaymentMethod }[];
     }[],
@@ -496,14 +531,28 @@ export class DailyCashService {
       [PaymentMethod.MERCADOPAGO]: 0,
     };
 
+    const validMethods = Object.values(PaymentMethod);
+
     for (const record of records) {
-      if (record.methodOfPayment && typeof record.amount === 'number') {
-        totals[record.methodOfPayment] += record.amount;
+      // Caso 1: método directo
+      if (
+        record.methodOfPayment &&
+        typeof record.amount === 'number' &&
+        validMethods.includes(record.methodOfPayment)
+      ) {
+        totals[record.methodOfPayment] += Number(record.amount);
       }
 
+      // Caso 2: pagos anidados
       if (record.payments && Array.isArray(record.payments)) {
         for (const p of record.payments) {
-          totals[p.paymentMethod] += Number(p.amount);
+          if (
+            p.paymentMethod &&
+            typeof p.amount === 'number' &&
+            validMethods.includes(p.paymentMethod)
+          ) {
+            totals[p.paymentMethod] += Number(p.amount);
+          }
         }
       }
     }
@@ -557,7 +606,7 @@ export class DailyCashService {
       where: {
         date: Between(startOfDay, endOfDay),
       },
-      relations: ['orders', 'movements'],
+      relations: ['orders', 'movements', 'orders.payments'],
     });
     if (!dailyCash) throw new NotFoundException('Daily cash not found');
     return dailyCash;

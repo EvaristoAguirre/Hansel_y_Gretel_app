@@ -18,14 +18,14 @@ export class DailyCashRepository {
     return await this.dailyCashRepository.find({
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['movements', 'orders'],
+      relations: ['movements', 'orders', 'orders.payments'],
     });
   }
 
   async getDailyCashById(id: string): Promise<DailyCash> {
     return await this.dailyCashRepository.findOne({
       where: { id },
-      relations: ['movements', 'orders'],
+      relations: ['movements', 'orders', 'orders.payments'],
     });
   }
 

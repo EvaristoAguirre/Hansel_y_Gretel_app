@@ -273,6 +273,7 @@ export class OrderService {
           'orderDetails.product',
           'orderDetails.orderDetailToppings',
           'orderDetails.orderDetailToppings.topping',
+          'payments',
         ],
       });
     } catch (error) {
@@ -303,6 +304,7 @@ export class OrderService {
           'orderDetails.product',
           'orderDetails.orderDetailToppings',
           'orderDetails.orderDetailToppings.topping',
+          'payments',
         ],
       });
       if (!order) {
@@ -357,7 +359,12 @@ export class OrderService {
     try {
       const order = await this.orderRepo.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'orderDetails.product',
+          'payments',
+        ],
       });
 
       if (!order) {
@@ -411,9 +418,9 @@ export class OrderService {
       throw new BadRequestException('Total amount must be greater than 0');
     }
 
-    if (!closeOrderDto.methodOfPayment) {
-      throw new BadRequestException('Payment method must be provided');
-    }
+    // if (!closeOrderDto.methodOfPayment) {
+    //   throw new BadRequestException('Payment method must be provided');
+    // }
 
     const openDailyCash = await this.dailyCashService.getTodayOpenDailyCash();
     if (!openDailyCash) {
@@ -602,9 +609,12 @@ export class OrderService {
       name: order.table.name,
       state: order.table.state,
     };
-    response.total = Number(order.total);
-    response.methodOfPayment = order.methodOfPayment;
     response.products = productLines;
+    response.payments = (order.payments || []).map((p) => ({
+      amount: Number(p.amount),
+      methodOfPayment: p.methodOfPayment,
+    }));
+    response.total = Number(order.total);
 
     return response;
   }
