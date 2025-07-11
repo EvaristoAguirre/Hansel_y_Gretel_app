@@ -841,7 +841,7 @@ export class ProductRepository {
       queryRunner,
     );
 
-    product.toppingsCost += toppingsExtraCost;
+    product.toppingsCost = toppingsExtraCost;
     product.cost =
       Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
