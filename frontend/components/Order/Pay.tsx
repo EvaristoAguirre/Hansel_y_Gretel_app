@@ -189,6 +189,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         payments
       );
 
+      if (paidOrder) {
+        Swal.fire("Orden cerrada con exito", "", "success");
+      }
+
       const closedTable = await editTable(
         { ...selectedTable, state: TableState.CLOSED },
         token
@@ -202,8 +206,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         setSelectedTable(closedTable);
         updateTable(closedTable);
       }
+
     } catch (error: any) {
-      /* tu manejo de errores */
+      console.error(error);
+      Swal.fire("Error", "No se pudo cerrar la mesa.", "error");
     }
   };
 
