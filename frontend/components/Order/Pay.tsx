@@ -20,7 +20,8 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Divider
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -34,6 +35,7 @@ import { paymentMethod } from "../Enums/dailyCash";
 import { Box } from "@mui/system";
 import Grid from '@mui/material/Grid';
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 
 
 export interface PayOrderProps {
@@ -50,6 +52,13 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
 
   const [draftPayment, setDraftPayment] = useState<{ productIds: string[], method: paymentMethod | '', tipType: 'none' | '10' | 'custom', customTip: number }>({ productIds: [], method: '', tipType: 'none', customTip: 0 });
   const [confirmedPayments, setConfirmedPayments] = useState<{ productIds: string[], methodOfPayment: paymentMethod, amount: number }[]>([]);
+
+
+  useEffect(() => {
+    console.log("🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️confirmed payments", confirmedPayments);
+
+  }, [confirmedPayments]);
+
 
   const total = selectedOrderByTable?.total || 0;
   const orderStates = {
@@ -106,6 +115,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       ...prev,
       productIds: allSelected ? [] : unpaidProducts
     }));
+
+
   };
 
 
@@ -180,7 +191,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     // **Calcular el total a enviar** (suma de todos los amounts)
     const totalToSend = payments.reduce((sum, x) => sum + x.amount, 0);
 
-    console.log("🚀 Payload listo:", { total: totalToSend, payments });
 
     try {
       const paidOrder = await orderToClosed(
@@ -309,91 +319,124 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         </Grid>
       </Box>
 
-      {/* Paso 1: Selección de productos */}
-      <Typography mt={3} fontWeight="bold">
-        1. Seleccionar productos para pagar:
-      </Typography>
+      <Divider />
 
-      <Box display="flex" flexDirection="column" mt={1} overflow="auto" maxHeight="200px">
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={allSelected}
-              onChange={toggleAllProducts}
+      <Box mt={2} display="flex" flexDirection="row">
+        {/* Paso 1: Selección de productos */}
+        <Box display="flex" flexDirection="column" width="50%">
+          <Typography mt={3} fontWeight="bold">
+            1. Seleccionar productos:
+          </Typography>
+
+          <Box>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={allSelected}
+                  onChange={toggleAllProducts}
+                />
+              }
+              label="Todos los productos."
+              sx={{ mt: 1 }}
+
             />
+            <Box
+              display="grid"
+              gridTemplateColumns="20px 3fr 1fr"
+              alignItems="center"
+              overflow="auto"
+              maxHeight="200px"
+            >
 
-          }
-          label="Todos los productos."
-        />
 
-        {confirmedProducts.map((p) => {
-          const isPaid = (index: number) =>
-            confirmedPayments.some((cp) => cp.productIds.includes(`${p.productId}-${index}`));
+              {confirmedProducts.map((p) => {
+                const isPaid = (index: number) =>
+                  confirmedPayments.some((cp) => cp.productIds.includes(`${p.productId}-${index}`));
 
-          return Array.from({ length: p.quantity || 1 }, (_, index) => {
-            const compositeId = `${p.productId}-${index}`;
-            const isDisabled = isPaid(index);
-            const isChecked = draftPayment.productIds.includes(compositeId);
+                return Array.from({ length: p.quantity || 1 }, (_, index) => {
+                  const compositeId = `${p.productId}-${index}`;
+                  const isDisabled = isPaid(index);
+                  const isChecked = draftPayment.productIds.includes(compositeId);
 
-            return (
-              <FormControlLabel
-                key={compositeId}
-                control={
-                  <Checkbox
-                    checked={isChecked}
-                    onChange={() => toggleProductSelection(compositeId)}
-                    disabled={isDisabled}
-                  />
-                }
-                label={`${p.productName} - $${p.unitaryPrice}`}
-              />
-            );
-          });
-        })}
+                  return (
+                    <>
+
+                      <Checkbox
+                        checked={isChecked}
+                        onChange={() => toggleProductSelection(compositeId)}
+                        disabled={isDisabled}
+                      />
+                      <Typography sx={{ ml: 1.5 }} color={isDisabled ? "text.disabled" : "text.primary"}>
+                        {capitalizeFirstLetter(p.productName)}
+                      </Typography>
+                      <Typography color={isDisabled ? "text.disabled" : "text.primary"}>
+                        ${p.unitaryPrice}
+                      </Typography>
+                    </>
+                  );
+                });
+              })}
+            </Box>
+          </Box>
+
+        </Box>
+        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+        {/* Paso 2: Tipo de total */}
+        <Box width="50%" mt={3}>
+          <Typography fontWeight="bold">2. Seleccionar tipo de total:</Typography>
+          <Box
+            display="grid"
+            gridTemplateColumns="30px 3fr 1fr"
+            alignItems="center"
+            mt={1}
+          >
+            <Radio
+              checked={draftPayment.tipType === "none"}
+              onChange={() => setDraftPayment({ ...draftPayment, tipType: "none" })}
+              value="none"
+            />
+            <Typography>Total sin propina</Typography>
+            <Typography>${baseAmount.toFixed(2)}</Typography>
+
+            <Radio
+              checked={draftPayment.tipType === "10"}
+              onChange={() => setDraftPayment({ ...draftPayment, tipType: "10" })}
+              value="10"
+            />
+            <Typography>Total + 10% propina</Typography>
+            <Typography>${total10}</Typography>
+
+            <Radio
+              checked={draftPayment.tipType === "custom"}
+              onChange={() => setDraftPayment({ ...draftPayment, tipType: "custom" })}
+              value="custom"
+            />
+            <Typography>Total + propina personalizada</Typography>
+            <Typography>${totalCustom}</Typography>
+          </Box>
+
+          {draftPayment.tipType === "custom" && (
+            <TextField
+              type="number"
+              inputProps={{ min: 0 }}
+              value={draftPayment.customTip}
+              onChange={(e) =>
+                setDraftPayment({ ...draftPayment, customTip: Number(e.target.value) })
+              }
+              fullWidth
+              placeholder="Ingresá monto de propina"
+              sx={{ mt: 2 }}
+            />
+          )}
+        </Box>
+
 
       </Box>
 
+      <Divider sx={{ mt: 3 }} />
 
 
-      {/* Paso 2: Tipo de total */}
       <Box mt={3}>
-        <Typography fontWeight="bold">2. Seleccionar tipo de total:</Typography>
-        <RadioGroup
-          value={draftPayment.tipType}
-          onChange={(e) =>
-            setDraftPayment({ ...draftPayment, tipType: e.target.value as any })
-          }
-        >
-          <FormControlLabel
-            value="none"
-            control={<Radio />}
-            label={`Total sin propina: $${baseAmount.toFixed(2)}`}
-          />
-          <FormControlLabel
-            value="10"
-            control={<Radio />}
-            label={`Total + 10% propina sugerida: $${total10}`}
-          />
-          <FormControlLabel
-            value="custom"
-            control={<Radio />}
-            label={`Total + propina personalizada: $${totalCustom}`}
-          />
-        </RadioGroup>
-
-        {draftPayment.tipType === "custom" && (
-          <TextField
-            type="number"
-            inputProps={{ min: 0 }}
-            value={draftPayment.customTip}
-            onChange={(e) =>
-              setDraftPayment({ ...draftPayment, customTip: Number(e.target.value) })
-            }
-            fullWidth
-            placeholder="Ingresá monto de propina"
-          />
-        )}
-
         {/* Paso 3: Método de pago */}
         <Typography mt={3} fontWeight="bold">
           3. Seleccionar el método de pago:
@@ -417,10 +460,15 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           </Select>
         </FormControl>
 
-        <Button variant="outlined" sx={{ mt: 2 }} onClick={handleAddDraftAsConfirmed}>
+        <Button variant="outlined"
+          color="success"
+          fullWidth sx={{ mt: 2 }}
+          onClick={handleAddDraftAsConfirmed}
+          disabled={(draftPayment.productIds.length === 0) || (draftPayment.method === "")}        >
           Confirmar pago parcial
         </Button>
       </Box>
+
 
       {/* Pagos confirmados */}
       <Typography mt={4} fontWeight="bold">
@@ -428,30 +476,47 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       </Typography>
 
       {confirmedPayments.map((pay, index) => {
+        // Contar cantidades por ID
+        const quantities: Record<string, number> = {};
+        pay.productIds.forEach((id) => {
+          quantities[id] = (quantities[id] || 0) + 1;
+        });
+
+        // Filtrar productos únicos de esta orden parcial
         const products = confirmedProducts.filter((p) =>
           pay.productIds.some(id => id.startsWith(p.productId))
         );
-        const base = products.reduce((sum, p) => sum + (p.unitaryPrice || 0), 0);
 
         return (
           <Paper key={index} elevation={3} sx={{ p: 2, mt: 2 }}>
             <Typography fontWeight="bold">Orden Parcial #{index + 1}</Typography>
             <List dense>
-              {products.map((p) => (
-                <ListItem key={p.productId} disableGutters>
-                  <ListItemIcon sx={{ minWidth: 24 }}>
-                    <FiberManualRecordIcon fontSize="small" sx={{ color: "#7e9d8a" }} />
-                  </ListItemIcon>
-                  <ListItemText primary={`${p.productName} - $${p.unitaryPrice}`} />
-                </ListItem>
-              ))}
+              {products.map((p) => {
+                // Encontrar cuántas veces aparece este producto en los IDs
+                const count = Object.entries(quantities).filter(([id]) =>
+                  id.startsWith(p.productId)
+                ).reduce((acc, [_, qty]) => acc + qty, 0);
+
+                return (
+                  <ListItem key={p.productId} disableGutters>
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <FiberManualRecordIcon fontSize="small" sx={{ color: "#7e9d8a" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={`${count} x ${capitalizeFirstLetter(p?.productName || '')} - $${p?.unitaryPrice}`}
+                    />
+                  </ListItem>
+                );
+              })}
             </List>
-            <Typography>Total base: ${base.toFixed(2)}</Typography>
-            <Typography>Total con propina: ${pay.amount.toFixed(2)}</Typography>
-            <Typography>Método: {pay.methodOfPayment}</Typography>
+
+            <Typography>Total: ${pay.amount.toFixed(2)}</Typography>
+            <Typography>Método: {capitalizeFirstLetter(pay.methodOfPayment)}</Typography>
           </Paper>
         );
       })}
+
+
 
       {/* Confirmar orden pagada */}
       {selectedOrderByTable?.state === "pending_payment" && isAllPaid && (
