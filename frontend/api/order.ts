@@ -36,24 +36,44 @@ export const orderToReprint = async (id: string, token: string) => {
   return await response.json();
 };
 
-export const orderToClosed = async (order: IOrderDetails, token: string, methodOfPayment: paymentMethod) => {
-  const response = await fetch(`${URI_ORDER}/close/${order.id}`, {
+interface PaymentDTO {
+  amount: number;
+  methodOfPayment: paymentMethod;
+}
+
+export const orderToClosed = async (
+  orderId: string,
+  token: string,
+  payments: PaymentDTO[],
+  commandNumber?: string
+) => {
+  const total = payments.reduce((sum, p) => sum + p.amount, 0);
+
+  const body = {
+    total,
+    payments,
+    ...(commandNumber && { commandNumber }),
+  };
+
+  const response = await fetch(`${URI_ORDER}/close/${orderId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
     },
-    body: JSON.stringify({ methodOfPayment: methodOfPayment, total: order.total }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    const error = new Error(errorData.message || 'Error al cerrar la orden') as any;
+    const error = new Error(errorData.message || "Error al cerrar la orden") as any;
     error.statusCode = errorData.statusCode || response.status;
     throw error;
   }
+
   return await response.json();
 };
+
 
 export const deleteOrder = async (id: string, token: string) => {
   const response = await fetch(`${URI_ORDER}/${id}`, {
