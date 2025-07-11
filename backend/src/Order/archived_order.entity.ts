@@ -2,6 +2,7 @@ import { OrderState } from 'src/Enums/states.enum';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
+import { ArchivedOrderPayment } from './archived_order_payments.entity';
 
 @Entity({ name: 'archived_orders' })
 export class ArchivedOrder {
@@ -43,4 +44,9 @@ export class ArchivedOrder {
     },
   )
   orderDetails: ArchivedOrderDetails[];
+
+  @OneToMany(() => ArchivedOrderPayment, (payment) => payment.order, {
+    cascade: true,
+  })
+  payments: ArchivedOrderPayment[];
 }

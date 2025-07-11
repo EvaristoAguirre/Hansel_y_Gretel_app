@@ -8,6 +8,7 @@ import { OrderState } from 'src/Enums/states.enum';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ArchivedOrderPayment } from './archived_order_payments.entity';
 
 @Injectable()
 export class ArchiveService {
@@ -48,6 +49,7 @@ export class ArchiveService {
               'orderDetails.product',
               'table',
               'dailyCash',
+              'payments',
             ],
           });
 
@@ -59,7 +61,6 @@ export class ArchiveService {
             archived.total = order.total;
             archived.numberCustomers = order.numberCustomers;
             archived.comment = order.comment;
-            archived.methodOfPayment = order.methodOfPayment;
             archived.tableId = order.table?.id;
             archived.dailyCashId = order.dailyCash?.id;
             archived.commandNumber = (order as any).commandNumber ?? null;
@@ -73,6 +74,14 @@ export class ArchiveService {
               archivedDetail.productId = detail.product?.id;
               archivedDetail.commandNumber = detail.commandNumber ?? null;
               return archivedDetail;
+            });
+
+            archived.payments = (order.payments || []).map((payment) => {
+              const archivedPayment = new ArchivedOrderPayment();
+              archivedPayment.amount = payment.amount;
+              archivedPayment.methodOfPayment = payment.methodOfPayment;
+              archivedPayment.createdAt = payment.createdAt;
+              return archivedPayment;
             });
 
             return archived;
