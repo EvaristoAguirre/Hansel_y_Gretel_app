@@ -46,7 +46,7 @@ import { PrinterModule } from './Printer/printer.module';
           database: dbConfig.database,
           autoLoadEntities: true,
           synchronize: isDev, // solo true en desarrollo
-          dropSchema: true, // nunca true salvo que lo necesites puntualmente
+          dropSchema: false, // nunca true salvo que lo necesites puntualmente
           logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,
@@ -75,4 +75,4 @@ import { PrinterModule } from './Printer/printer.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
