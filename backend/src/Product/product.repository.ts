@@ -674,6 +674,8 @@ export class ProductRepository {
         }
       }
 
+      const toppingsExtraCost = 0;
+
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
           product: { id: product.id },
@@ -686,6 +688,14 @@ export class ProductRepository {
           queryRunner,
         );
         product.toppingsCost += toppingsExtraCost;
+      }
+
+      if (
+        typeof updateData.cost === 'number' &&
+        !isNaN(updateData.cost) &&
+        updateData.cost >= 0
+      ) {
+        product.baseCost = updateData.cost;
       }
 
       product.cost =
