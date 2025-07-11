@@ -73,7 +73,7 @@ export class IngredientService {
 
     try {
       const ingredients = await this.ingredientRepo.find({
-        where: { isActive: true, isTopping: false },
+        where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
@@ -365,7 +365,7 @@ export class IngredientService {
 
     try {
       const toppings = await this.ingredientRepo.find({
-        where: { isActive: true, isTopping: true },
+        where: { isActive: true },
         skip: (page - 1) * limit,
         take: limit,
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
@@ -391,7 +391,7 @@ export class IngredientService {
     }
     try {
       const topping = await this.ingredientRepo.findOne({
-        where: { id, isActive: true, isTopping: true },
+        where: { id, isActive: true },
         relations: ['stock', 'stock.unitOfMeasure', 'unitOfMeasure'],
       });
       if (!topping) {
@@ -422,7 +422,7 @@ export class IngredientService {
     }
     try {
       const topping = await this.ingredientRepo.findOne({
-        where: { id, isActive: true, isTopping: true },
+        where: { id, isActive: true },
         relations: ['unitOfMeasure', 'stock', 'stock.unitOfMeasure'],
       });
       if (!topping) {
@@ -504,7 +504,6 @@ export class IngredientService {
       description: topping.description,
       cost: topping.cost,
       type: topping.type,
-      isTopping: topping.isTopping,
       extraCost: topping.extraCost ?? null,
       unitOfMeasure: topping.unitOfMeasure
         ? {

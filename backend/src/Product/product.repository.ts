@@ -1318,17 +1318,6 @@ export class ProductRepository {
       );
       console.log('➡️ Producto completo:', savedProduct);
 
-      // const association = queryRunner.manager.create(
-      //   ProductAvailableToppingGroup,
-      //   {
-      //     product: savedProduct,
-      //     productId: savedProduct.id,
-      //     toppingGroup: group,
-      //     quantityOfTopping: groupDto.quantityOfTopping,
-      //     unitOfMeasure: unit,
-      //     settings: groupDto.settings ?? null,
-      //   },
-      // );
       const association = new ProductAvailableToppingGroup();
       association.product = savedProduct;
       association.productId = savedProduct.id;
@@ -1338,7 +1327,7 @@ export class ProductRepository {
       association.settings = groupDto.settings ?? null;
 
       await queryRunner.manager.save(association);
-      //---------------- log para cheaquear si anda ---------------
+
       const productWithToppings = await queryRunner.manager.findOne(Product, {
         where: { id: savedProduct.id },
         relations: [
@@ -1408,7 +1397,7 @@ export class ProductRepository {
 
     for (const groupDto of productToCreate.availableToppingGroups || []) {
       const { settings, quantityOfTopping, unitOfMeasureId } = groupDto;
-      if (!settings?.chargeExtra || !unitOfMeasureId) continue;
+      if (!unitOfMeasureId) continue;
 
       const group = await queryRunner.manager.findOne(ToppingsGroup, {
         where: { id: groupDto.toppingsGroupId, isActive: true },
