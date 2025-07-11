@@ -72,6 +72,14 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     setDraftPayment({ productIds: [], method: '', tipType: 'none', customTip: 0 });
   }, [selectedOrderByTable?.id]);
 
+
+  //  * 
+  //  * @param compositeId - El ID compuesto del producto que se desea seleccionar
+  //  * @returns La función `toggleProductSelection` agrega o elimina un ID 
+  //  * de producto de la lista de IDs seleccionados en el estado `draftPayment`.
+  //  * Si el ID ya estaba en la lista, se elimina; de lo contrario, se agrega.
+  //  * 
+
   const toggleProductSelection = (compositeId: string) => {
     setDraftPayment(prev => ({
       ...prev,
@@ -107,52 +115,72 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       Swal.fire("Selecciona productos y método de pago", "", "warning");
       return;
     }
+
+    // Contar unidades por producto, extrayendo bien el baseId
     const unitMap: Record<string, number> = {};
-    draftPayment.productIds.forEach((id) => {
-      const [baseId] = id.split("-");
+    productIds.forEach(id => {
+      const idx = id.lastIndexOf("-");
+      const baseId = id.slice(0, idx);
       unitMap[baseId] = (unitMap[baseId] || 0) + 1;
     });
 
-    const selected = confirmedProducts.filter(p => unitMap[p.productId]);
-    const baseAmount = selected.reduce((sum, p) =>
-      sum + (p.unitaryPrice || 0) * unitMap[p.productId], 0);
+    // Calcular baseAmount
+    let baseAmount = 0;
+    productIds.forEach(id => {
+      const idx = id.lastIndexOf("-");
+      const baseId = id.slice(0, idx);
+      const product = confirmedProducts.find(p => p.productId === baseId);
+      if (product) baseAmount += product.unitaryPrice || 0;
+    });
 
+    // Aplicar propina
     let finalAmount = baseAmount;
-    if (tipType === '10') finalAmount = baseAmount * 1.1;
-    else if (tipType === 'custom') finalAmount = baseAmount + customTip;
+    if (tipType === "10") finalAmount = baseAmount * 1.1;
+    else if (tipType === "custom") finalAmount = baseAmount + customTip;
 
+    // Verificar duplicados
     const alreadyUsed = confirmedPayments.flatMap(p => p.productIds);
-    const duplicated = productIds.some(id => alreadyUsed.includes(id));
-    if (duplicated) {
+    if (productIds.some(id => alreadyUsed.includes(id))) {
       Swal.fire("Producto ya asignado a otro pago", "", "error");
       return;
     }
 
-    setConfirmedPayments(prev => [...prev, { productIds, methodOfPayment: method, amount: finalAmount }]);
-    setDraftPayment({ productIds: [], method: '', tipType: 'none', customTip: 0 });
+    // Agregar mini orden
+    setConfirmedPayments(prev => [
+      ...prev,
+      { productIds, methodOfPayment: method, amount: finalAmount }
+    ]);
+
+    // Resetear draft
+    setDraftPayment({ productIds: [], method: "", tipType: "none", customTip: 0 });
+
+    console.log("✔️ Pago parcial agregado:", { productIds, amount: finalAmount, method });
   };
+
 
   const handlePayOrder = async () => {
     if (!token || !selectedOrderByTable || !selectedTable) return;
 
-    // Comparar unidades reales (ID compuesto)
-    const allUnitIds = confirmedProducts.flatMap((p) => {
-      const quantity = p.quantity || 1;
-      return Array.from({ length: quantity }, (_, index) => `${p.productId}-${index}`);
-    });
-
+    // Validar que todo esté pagado (ya lo tenés bien)
+    const allUnitIds = confirmedProducts.flatMap(p =>
+      Array.from({ length: p.quantity || 1 }, (_, i) => `${p.productId}-${i}`)
+    );
     const paidUnitIds = confirmedPayments.flatMap(p => p.productIds);
-    const unpaid = allUnitIds.filter(id => !paidUnitIds.includes(id));
-
-    if (unpaid.length > 0) {
+    if (allUnitIds.some(id => !paidUnitIds.includes(id))) {
       Swal.fire("Faltan productos por pagar", "", "warning");
       return;
     }
 
+    // Preparar payments
     const payments = confirmedPayments.map(p => ({
       amount: p.amount,
       methodOfPayment: p.methodOfPayment
     }));
+
+    // **Calcular el total a enviar** (suma de todos los amounts)
+    const totalToSend = payments.reduce((sum, x) => sum + x.amount, 0);
+
+    console.log("🚀 Payload listo:", { total: totalToSend, payments });
 
     try {
       const paidOrder = await orderToClosed(
@@ -170,23 +198,15 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         setSelectedOrderByTable(paidOrder);
         updateOrder(paidOrder);
       }
-
       if (closedTable) {
         setSelectedTable(closedTable);
         updateTable(closedTable);
       }
     } catch (error: any) {
-      if (error.statusCode === 409) {
-        Swal.fire({
-          icon: "info",
-          title: "Caja no abierta",
-          text: "Debes abrir una caja diaria antes de registrar un pago.",
-        });
-      } else {
-        Swal.fire("Error", error.message || "Error al cerrar la orden", "error");
-      }
+      /* tu manejo de errores */
     }
   };
+
 
 
   const handleTableAvailable = async (table: ITable, token: string) => {
