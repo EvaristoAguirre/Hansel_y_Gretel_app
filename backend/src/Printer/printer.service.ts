@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/order.entity';
+import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 
 @Injectable()
 export class PrinterService {
@@ -341,44 +342,45 @@ export class PrinterService {
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
-  private splitCommentWithPrefix(
-    comment: string,
-    maxLineLength: number,
-    prefix: string,
-  ): string[] {
-    const prefixLength = prefix.length;
-    const remainingLineLength = maxLineLength - prefixLength;
-    const normalizedComment = this.normalizeText(comment);
 
-    if (!normalizedComment) return [prefix];
+  // private splitCommentWithPrefix(
+  //   comment: string,
+  //   maxLineLength: number,
+  //   prefix: string,
+  // ): string[] {
+  //   const prefixLength = prefix.length;
+  //   const remainingLineLength = maxLineLength - prefixLength;
+  //   const normalizedComment = this.normalizeText(comment);
 
-    const lines: string[] = [];
-    let firstLineContent = '';
-    const words = normalizedComment.split(/(\s+)/);
+  //   if (!normalizedComment) return [prefix];
 
-    for (const word of words) {
-      if ((firstLineContent + word).length <= remainingLineLength) {
-        firstLineContent += word;
-      } else {
-        break;
-      }
-    }
+  //   const lines: string[] = [];
+  //   let firstLineContent = '';
+  //   const words = normalizedComment.split(/(\s+)/);
 
-    lines.push(`${prefix}${firstLineContent.trim()}`);
+  //   for (const word of words) {
+  //     if ((firstLineContent + word).length <= remainingLineLength) {
+  //       firstLineContent += word;
+  //     } else {
+  //       break;
+  //     }
+  //   }
 
-    const remainingText = normalizedComment
-      .substring(firstLineContent.length)
-      .trim();
-    if (remainingText) {
-      const remainingLines = this.splitTextIntoLines(
-        remainingText,
-        maxLineLength,
-      );
-      lines.push(...remainingLines);
-    }
+  //   lines.push(`${prefix}${firstLineContent.trim()}`);
 
-    return lines;
-  }
+  //   const remainingText = normalizedComment
+  //     .substring(firstLineContent.length)
+  //     .trim();
+  //   if (remainingText) {
+  //     const remainingLines = this.splitTextIntoLines(
+  //       remainingText,
+  //       maxLineLength,
+  //     );
+  //     lines.push(...remainingLines);
+  //   }
+
+  //   return lines;
+  // }
 
   private splitTextIntoLines(
     text: string,
@@ -410,5 +412,67 @@ export class PrinterService {
     }
 
     return lines;
+  }
+
+  async printerStock(stockData: ProductsToExportDto[]) {
+    try {
+      const now = new Date();
+
+      const dateFormatted = now.toLocaleDateString('es-Ar');
+      const commands = [
+        '\x1B\x40', // Inicializar impresora
+        '\x1B\x74\x02', // Codificación Windows-1252
+        '\x1B\x61\x01', // Centrar
+        '\x1D\x21\x01', // Tamaño de texto mediano
+        '=== STOCK ===\n',
+        '\x1D\x21\x00', // Tamaño de texto normal
+        `Fecha: ${dateFormatted}\n`,
+        '----------------------------------------\n',
+        '\x1B\x61\x00', // Alinear izquierda
+        ...stockData.flatMap((item) => {
+          const name = this.normalizeText(item.name.toUpperCase()).substring(
+            0,
+            40,
+          );
+          const quantity = this.formatNumber(item.quantityInStock);
+          const unit = item.unitOfMeasure;
+          const cost = `$ ${this.formatNumber(item.cost)}`;
+          const lines: string[] = [];
+
+          lines.push('\x1B\x45\x01'); // Negrita ON
+          lines.push(`${name}`);
+          lines.push('\x1B\x45\x00'); // Negrita OFF
+          lines.push(`Cantidad: ${quantity} ${unit}`);
+          lines.push(`Costo:    ${cost}`);
+          lines.push(''); // Espacio entre productos
+
+          return lines;
+        }),
+        '----------------------------------------\n',
+        '\x1B\x42\x01\x02', // Pitido
+        '\x1D\x56\x41\x30', // Cortar papel
+      ].join('\n');
+
+      const printSuccess = await this.sendRawCommand(commands);
+
+      if (!printSuccess) {
+        throw new Error('Print command failed');
+      }
+
+      return 'Reporte de stock impreso correctamente.';
+    } catch (error) {
+      this.logger.error(
+        `Error al imprimir reporte de stock: ${error.message}`,
+        error.stack,
+      );
+      throw new Error(`Error al imprimir: ${error.message}`);
+    }
+  }
+
+  private formatNumber(value: number | null | undefined): string {
+    return (value ?? 0).toLocaleString('es-AR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    });
   }
 }
