@@ -53,11 +53,7 @@ export class IngredientRepository {
 
     try {
       const ingredient = this.ingredientRepository.create(createData);
-      if (createData.isTopping === true) {
-        ingredient.isTopping = true;
-      } else {
-        ingredient.isTopping = false;
-      }
+
       if (unitOfMeasureId) {
         const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
@@ -117,7 +113,6 @@ export class IngredientRepository {
       const topping = await this.ingredientRepository.findOne({
         where: {
           name: ILike(trimmedName),
-          isTopping: true,
         },
       });
 
@@ -142,7 +137,7 @@ export class IngredientRepository {
     }
 
     const topping = await this.ingredientRepository.findOne({
-      where: { id, isTopping: true },
+      where: { id },
       relations: ['unitOfMeasure'],
     });
 
@@ -152,7 +147,7 @@ export class IngredientRepository {
 
     if (updateToppingDto.name && updateToppingDto.name !== topping.name) {
       const existing = await this.ingredientRepository.findOne({
-        where: { name: updateToppingDto.name, isTopping: true },
+        where: { name: updateToppingDto.name },
       });
       if (existing) {
         throw new ConflictException(
@@ -201,7 +196,6 @@ export class IngredientRepository {
       description: topping.description,
       cost: topping.cost,
       type: topping.type,
-      isTopping: topping.isTopping,
       extraCost: topping.extraCost ?? null,
       unitOfMeasure: topping.unitOfMeasure
         ? {

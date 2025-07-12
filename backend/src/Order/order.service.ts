@@ -135,7 +135,6 @@ export class OrderService {
             where: { id: pd.productId, isActive: true },
           });
           if (!product) throw new NotFoundException('Product not found');
-          console.log('datos a product type....', product.type);
           await this.stockService.deductStock(
             product.id,
             pd.quantity,

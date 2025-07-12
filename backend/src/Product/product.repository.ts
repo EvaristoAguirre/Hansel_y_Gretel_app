@@ -674,6 +674,8 @@ export class ProductRepository {
         }
       }
 
+      const toppingsExtraCost = 0;
+
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
           product: { id: product.id },
@@ -686,6 +688,14 @@ export class ProductRepository {
           queryRunner,
         );
         product.toppingsCost += toppingsExtraCost;
+      }
+
+      if (
+        typeof updateData.cost === 'number' &&
+        !isNaN(updateData.cost) &&
+        updateData.cost >= 0
+      ) {
+        product.baseCost = updateData.cost;
       }
 
       product.cost =
@@ -831,7 +841,7 @@ export class ProductRepository {
       queryRunner,
     );
 
-    product.toppingsCost += toppingsExtraCost;
+    product.toppingsCost = toppingsExtraCost;
     product.cost =
       Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
@@ -1318,17 +1328,6 @@ export class ProductRepository {
       );
       console.log('➡️ Producto completo:', savedProduct);
 
-      // const association = queryRunner.manager.create(
-      //   ProductAvailableToppingGroup,
-      //   {
-      //     product: savedProduct,
-      //     productId: savedProduct.id,
-      //     toppingGroup: group,
-      //     quantityOfTopping: groupDto.quantityOfTopping,
-      //     unitOfMeasure: unit,
-      //     settings: groupDto.settings ?? null,
-      //   },
-      // );
       const association = new ProductAvailableToppingGroup();
       association.product = savedProduct;
       association.productId = savedProduct.id;
@@ -1338,7 +1337,7 @@ export class ProductRepository {
       association.settings = groupDto.settings ?? null;
 
       await queryRunner.manager.save(association);
-      //---------------- log para cheaquear si anda ---------------
+
       const productWithToppings = await queryRunner.manager.findOne(Product, {
         where: { id: savedProduct.id },
         relations: [
@@ -1408,7 +1407,7 @@ export class ProductRepository {
 
     for (const groupDto of productToCreate.availableToppingGroups || []) {
       const { settings, quantityOfTopping, unitOfMeasureId } = groupDto;
-      if (!settings?.chargeExtra || !unitOfMeasureId) continue;
+      if (!unitOfMeasureId) continue;
 
       const group = await queryRunner.manager.findOne(ToppingsGroup, {
         where: { id: groupDto.toppingsGroupId, isActive: true },

@@ -110,5 +110,6 @@ export class ProductToppingsGroupDto {
   settings?: {
     maxSelection: number;
     chargeExtra: boolean;
+    extraCost: number;
   };
 }

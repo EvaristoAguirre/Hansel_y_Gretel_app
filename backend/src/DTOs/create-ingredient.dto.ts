@@ -30,8 +30,4 @@ export class CreateIngredientDto {
   @IsString()
   @IsOptional()
   unitOfMeasureId?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isTopping?: boolean;
 }

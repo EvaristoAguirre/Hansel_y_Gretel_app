@@ -132,7 +132,6 @@ export class ProductService {
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const currentProduct = await this.productRepository.getProductById(id);
-
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,

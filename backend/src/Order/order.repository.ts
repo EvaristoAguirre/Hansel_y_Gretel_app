@@ -137,6 +137,94 @@ export class OrderRepository {
     });
   }
 
+  // async buildOrderDetailWithToppings(
+  //   order: Order,
+  //   product: Product,
+  //   detailData: OrderDetailsDto,
+  //   qr: QueryRunner,
+  // ): Promise<{
+  //   detail: OrderDetails;
+  //   toppingDetails: OrderDetailToppings[];
+  //   subtotal: number;
+  // }> {
+  //   const quantity = detailData.quantity;
+  //   const unitaryPrice = product.price;
+  //   const subtotal = unitaryPrice * quantity;
+  //   const detail = qr.manager.create(OrderDetails, {
+  //     quantity,
+  //     unitaryPrice,
+  //     subtotal,
+  //     product,
+  //     order,
+  //   });
+
+  //   const toppingDetails: OrderDetailToppings[] = [];
+  //   if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
+  //     if (detailData.toppingsPerUnit.length !== quantity) {
+  //       throw new BadRequestException(
+  //         `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
+  //       );
+  //     }
+  //     for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+  //       const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+  //       for (const toppingId of toppingsForUnit) {
+  //         const topping = await qr.manager.findOne(Ingredient, {
+  //           where: { id: toppingId, isActive: true },
+  //           relations: ['toppingsGroups'],
+  //         });
+
+  //         if (!topping) {
+  //           throw new NotFoundException(
+  //             `Topping con ID ${toppingId} no encontrado`,
+  //           );
+  //         }
+
+  //         const toppingGroup = topping.toppingsGroups?.[0];
+
+  //         if (!toppingGroup) {
+  //           throw new BadRequestException(
+  //             `El topping ${topping.name} no tiene grupo de topping asignado`,
+  //           );
+  //         }
+
+  //         const config = await qr.manager.findOne(
+  //           ProductAvailableToppingGroup,
+  //           {
+  //             where: {
+  //               product: { id: product.id },
+  //               toppingGroup: { id: toppingGroup.id },
+  //             },
+  //             relations: ['unitOfMeasure'],
+  //           },
+  //         );
+
+  //         if (!config) {
+  //           throw new BadRequestException(
+  //             `El producto ${product.name} no tiene configuración para el grupo de topping del ingrediente ${topping.name}`,
+  //           );
+  //         }
+
+  //         const td = qr.manager.create(OrderDetailToppings, {
+  //           topping,
+  //           orderDetails: detail,
+  //           // quantity: config.quantityOfTopping,
+  //           unitOfMeasure: config.unitOfMeasure,
+  //           unitOfMeasureName: config.unitOfMeasure?.name,
+  //           unitIndex: unitIndex,
+  //         });
+
+  //         toppingDetails.push(td);
+  //       }
+  //     }
+  //   }
+
+  //   return {
+  //     detail,
+  //     toppingDetails,
+  //     subtotal,
+  //   };
+  // }
+
   async buildOrderDetailWithToppings(
     order: Order,
     product: Product,
@@ -148,25 +236,21 @@ export class OrderRepository {
     subtotal: number;
   }> {
     const quantity = detailData.quantity;
-    const unitaryPrice = product.price;
-    const subtotal = unitaryPrice * quantity;
-    const detail = qr.manager.create(OrderDetails, {
-      quantity,
-      unitaryPrice,
-      subtotal,
-      product,
-      order,
-    });
 
     const toppingDetails: OrderDetailToppings[] = [];
+
+    let totalExtraCost = 0;
+
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
       if (detailData.toppingsPerUnit.length !== quantity) {
         throw new BadRequestException(
           `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
         );
       }
+
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+
         for (const toppingId of toppingsForUnit) {
           const topping = await qr.manager.findOne(Ingredient, {
             where: { id: toppingId, isActive: true },
@@ -180,7 +264,6 @@ export class OrderRepository {
           }
 
           const toppingGroup = topping.toppingsGroups?.[0];
-
           if (!toppingGroup) {
             throw new BadRequestException(
               `El topping ${topping.name} no tiene grupo de topping asignado`,
@@ -204,10 +287,20 @@ export class OrderRepository {
             );
           }
 
+          // 🟡 Acumular costo extra si corresponde
+          if (
+            config.settings?.chargeExtra &&
+            typeof config.settings.extraCost === 'number'
+          ) {
+            console.log(
+              `💸 Agregando extraCost de ${config.settings.extraCost} por topping ${topping.name}`,
+            );
+            totalExtraCost += Number(config.settings.extraCost);
+          }
+
           const td = qr.manager.create(OrderDetailToppings, {
             topping,
-            orderDetails: detail,
-            // quantity: config.quantityOfTopping,
+            orderDetails: null,
             unitOfMeasure: config.unitOfMeasure,
             unitOfMeasureName: config.unitOfMeasure?.name,
             unitIndex: unitIndex,
@@ -217,6 +310,23 @@ export class OrderRepository {
         }
       }
     }
+
+    const unitaryToppingsCost = totalExtraCost / quantity;
+    const unitaryPrice = Number(product.price) + Number(unitaryToppingsCost);
+    const subtotal = unitaryPrice * quantity;
+
+    const detail = qr.manager.create(OrderDetails, {
+      quantity,
+      unitaryPrice,
+      subtotal,
+      toppingsExtraCost: totalExtraCost, // 🟢 Guardamos el total extra aquí
+      product,
+      order,
+    });
+
+    console.log(`🧾 Precio base: ${product.price}`);
+    console.log(`🧾 Costo extra por toppings: ${totalExtraCost}`);
+    console.log(`🧾 Precio unitario final: ${unitaryPrice}`);
 
     return {
       detail,
