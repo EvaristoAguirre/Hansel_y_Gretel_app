@@ -87,6 +87,62 @@ export class ExportService {
     });
   }
 
+  async exportStockAndPrint() {
+    try {
+      const stockData = await this.getStockToExport();
+      const now = new Date();
+
+      const dateFormatted = now.toLocaleDateString('es-Ar');
+      const commands = [
+        '\x1B\x40', // Inicializar impresora
+        '\x1B\x74\x02', // Codificación Windows-1252
+        '\x1B\x61\x01', // Centrar
+        '\x1D\x21\x01', // Tamaño de texto mediano
+        '=== STOCK ===\n',
+        '\x1D\x21\x00', // Tamaño de texto normal
+        `Fecha: ${dateFormatted}\n`,
+        '----------------------------------------\n',
+        '\x1B\x61\x00', // Alinear izquierda
+        ...stockData.flatMap((item) => {
+          const name = this.normalizeText(item.name.toUpperCase()).substring(
+            0,
+            40,
+          );
+          const quantity = this.formatNumber(item.quantityInStock);
+          const unit = item.unitOfMeasure;
+          const cost = `$ ${this.formatNumber(item.cost)}`;
+          const lines: string[] = [];
+
+          lines.push('\x1B\x45\x01'); // Negrita ON
+          lines.push(`${name}`);
+          lines.push('\x1B\x45\x00'); // Negrita OFF
+          lines.push(`Cantidad: ${quantity} ${unit}`);
+          lines.push(`Costo:    ${cost}`);
+          lines.push(''); // Espacio entre productos
+
+          return lines;
+        }),
+        '----------------------------------------\n',
+        '\x1B\x42\x01\x02', // Pitido
+        '\x1D\x56\x41\x30', // Cortar papel
+      ].join('\n');
+
+      const printSuccess = await this.sendRawCommand(commands);
+
+      if (!printSuccess) {
+        throw new Error('Print command failed');
+      }
+
+      return 'Reporte de stock impreso correctamente.';
+    } catch (error) {
+      this.logger.error(
+        `Error al imprimir reporte de stock: ${error.message}`,
+        error.stack,
+      );
+      throw new Error(`Error al imprimir: ${error.message}`);
+    }
+  }
+
   async getStockToExport() {
     const products = await this.productService.getProductsWithStock();
     const ingredients = await this.ingredientService.getIngredientsWithStock();
