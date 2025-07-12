@@ -47,17 +47,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const { selectedTable, setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
-  const { getAccessToken, userRoleFromToken } = useAuth();
+  const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
   const [draftPayment, setDraftPayment] = useState<{ productIds: string[], method: paymentMethod | '', tipType: 'none' | '10' | 'custom', customTip: number }>({ productIds: [], method: '', tipType: 'none', customTip: 0 });
   const [confirmedPayments, setConfirmedPayments] = useState<{ productIds: string[], methodOfPayment: paymentMethod, amount: number }[]>([]);
 
-
-  useEffect(() => {
-    console.log("🏄🏾‍♀️🏄🏾‍♀️🏄🏾‍♀️confirmed payments", confirmedPayments);
-
-  }, [confirmedPayments]);
 
 
   const total = selectedOrderByTable?.total || 0;
@@ -219,21 +214,13 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
 
     } catch (error: any) {
       console.error(error);
-      Swal.fire("Error", "No se pudo cerrar la mesa.", "error");
+
+      if (error.statusCode === 409) {
+        Swal.fire("No se pudo cerrar la orden", "No hay una caja del dia abierta", "warning");
+      } else {
+        Swal.fire("Error", error.message || "No se pudo cerrar la mesa.", "error");
+      }
     }
-  };
-
-
-
-  const handleTableAvailable = async (table: ITable, token: string) => {
-    const tableEdited = await editTable({ ...table, state: TableState.AVAILABLE }, token);
-    if (tableEdited) {
-      setSelectedTable(tableEdited);
-      updateTable(tableEdited);
-      setSelectedOrderByTable(null);
-      fetchOrderBySelectedTable();
-    }
-    handleComplete();
   };
 
   const allUnitIds = confirmedProducts.flatMap((p) => {
@@ -327,7 +314,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           <Typography mt={3} fontWeight="bold">
             1. Seleccionar productos:
           </Typography>
-
           <Box>
             <FormControlLabel
               control={
@@ -338,7 +324,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               }
               label="Todos los productos."
               sx={{ mt: 1 }}
-
             />
             <Box
               display="grid"
@@ -346,9 +331,23 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               alignItems="center"
               overflow="auto"
               maxHeight="200px"
+              sx={{
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: '#f0e6dc',
+                  borderRadius: '8px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#7e9d8a',
+                  borderRadius: '8px',
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  backgroundColor: '#5d786a',
+                },
+              }}
             >
-
-
               {confirmedProducts.map((p) => {
                 const isPaid = (index: number) =>
                   confirmedPayments.some((cp) => cp.productIds.includes(`${p.productId}-${index}`));
@@ -369,7 +368,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                       <Typography sx={{ ml: 1.5 }} color={isDisabled ? "text.disabled" : "text.primary"}>
                         {capitalizeFirstLetter(p.productName)}
                       </Typography>
-                      <Typography color={isDisabled ? "text.disabled" : "text.primary"}>
+                      <Typography sx={{ display: "flex", justifyContent: "flex-end", mr: 1 }} color={isDisabled ? "text.disabled" : "text.primary"}>
                         ${p.unitaryPrice}
                       </Typography>
                     </>
@@ -380,7 +379,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           </Box>
 
         </Box>
-        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+        <Divider orientation="vertical" flexItem sx={{ mr: 2 }} />
         {/* Paso 2: Tipo de total */}
         <Box width="50%" mt={3}>
           <Typography fontWeight="bold">2. Seleccionar tipo de total:</Typography>
@@ -474,47 +473,52 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       <Typography mt={4} fontWeight="bold">
         Pagos confirmados:
       </Typography>
+      <Grid container spacing={2} mt={2}>
+        {confirmedPayments.map((pay, index) => {
+          // Contar cantidades por ID
+          const quantities: Record<string, number> = {};
+          pay.productIds.forEach((id) => {
+            quantities[id] = (quantities[id] || 0) + 1;
+          });
 
-      {confirmedPayments.map((pay, index) => {
-        // Contar cantidades por ID
-        const quantities: Record<string, number> = {};
-        pay.productIds.forEach((id) => {
-          quantities[id] = (quantities[id] || 0) + 1;
-        });
+          // Filtrar productos únicos de esta orden parcial
+          const products = confirmedProducts.filter((p) =>
+            pay.productIds.some(id => id.startsWith(p.productId))
+          );
 
-        // Filtrar productos únicos de esta orden parcial
-        const products = confirmedProducts.filter((p) =>
-          pay.productIds.some(id => id.startsWith(p.productId))
-        );
+          return (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Paper key={index} elevation={3} sx={{ p: 2 }}>
+                <Typography fontWeight="bold">Orden Parcial #{index + 1}</Typography>
+                <List dense>
+                  {products.map((p) => {
+                    // Encontrar cuántas veces aparece este producto en los IDs
+                    const count = Object.entries(quantities).filter(([id]) =>
+                      id.startsWith(p.productId)
+                    ).reduce((acc, [_, qty]) => acc + qty, 0);
 
-        return (
-          <Paper key={index} elevation={3} sx={{ p: 2, mt: 2 }}>
-            <Typography fontWeight="bold">Orden Parcial #{index + 1}</Typography>
-            <List dense>
-              {products.map((p) => {
-                // Encontrar cuántas veces aparece este producto en los IDs
-                const count = Object.entries(quantities).filter(([id]) =>
-                  id.startsWith(p.productId)
-                ).reduce((acc, [_, qty]) => acc + qty, 0);
+                    return (
+                      <ListItem key={p.productId} disableGutters>
+                        <ListItemIcon sx={{ minWidth: 24 }}>
+                          <FiberManualRecordIcon fontSize="small" sx={{ color: "#7e9d8a" }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${count} x ${capitalizeFirstLetter(p?.productName || '')} - $${p?.unitaryPrice}`}
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
 
-                return (
-                  <ListItem key={p.productId} disableGutters>
-                    <ListItemIcon sx={{ minWidth: 24 }}>
-                      <FiberManualRecordIcon fontSize="small" sx={{ color: "#7e9d8a" }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={`${count} x ${capitalizeFirstLetter(p?.productName || '')} - $${p?.unitaryPrice}`}
-                    />
-                  </ListItem>
-                );
-              })}
-            </List>
+                <Typography>Total: ${pay.amount.toFixed(2)}</Typography>
+                <Typography>Método: {capitalizeFirstLetter(pay.methodOfPayment)}</Typography>
+              </Paper>
+            </Grid>
+          );
+        })}
 
-            <Typography>Total: ${pay.amount.toFixed(2)}</Typography>
-            <Typography>Método: {capitalizeFirstLetter(pay.methodOfPayment)}</Typography>
-          </Paper>
-        );
-      })}
+      </Grid>
+
 
 
 
@@ -538,26 +542,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         </Button>
       )}
 
-      {/* Pasar mesa a disponible */}
-      {selectedTable?.state === TableState.CLOSED && (
-        <Button
-          fullWidth
-          variant="outlined"
-          sx={{
-            mt: 2,
-            borderColor: "#7e9d8a",
-            color: "black",
-            "&:hover": {
-              backgroundColor: "#f9b32d",
-              color: "black",
-            },
-          }}
-          onClick={() => handleTableAvailable(selectedTable, token!)}
-        >
-          <TableBar sx={{ mr: 1 }} />
-          Pasar Mesa a: <Box component="span" sx={{ color: "green", ml: 1 }}>Disponible</Box>
-        </Button>
-      )}
+
     </Box>
 
   );
