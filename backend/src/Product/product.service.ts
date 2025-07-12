@@ -132,20 +132,16 @@ export class ProductService {
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const currentProduct = await this.productRepository.getProductById(id);
-    console.log('current product....', currentProduct);
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,
     );
-    console.log('product updated....', productUpdated);
 
     if (
       currentProduct.type === 'simple' &&
       typeof updateData.cost === 'number' &&
       updateData.cost !== currentProduct.cost
     ) {
-      console.log('....current cost', currentProduct.cost);
-      console.log('....update cost', updateData.cost);
       console.log(
         `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,
       );
