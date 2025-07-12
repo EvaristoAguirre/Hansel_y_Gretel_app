@@ -11,8 +11,8 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import { exportPDF } from "@/api/exportPDF";
-import { SimCardDownload } from "@mui/icons-material";
+import { exportPDF, printStock } from "@/api/exportPDF";
+import { Print, SimCardDownload } from "@mui/icons-material";
 import { ProductResponse } from '../../Interfaces/IProducts';
 
 
@@ -203,24 +203,49 @@ const StockControl = () => {
     token && exportPDF(token);
   }
 
+  const handlePrintStock = () => {
+    token && printStock(token);
+  }
+
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 2 }}>
         <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<SimCardDownload />}
-          onClick={handleExportPDF}
-          sx={{
-            mt: { xs: 2, sm: 0 },
-            "&:hover": {
-              color: "white",
-            }
-          }}
+        <Box
+          sx={{ gap: 2, display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}
         >
-          Exportar Stock (PDF)
-        </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<SimCardDownload />}
+            onClick={handleExportPDF}
+            sx={{
+              mt: { xs: 2, sm: 0 },
+              "&:hover": {
+                color: "white",
+                backgroundColor: "#856d5e",
+              }
+            }}
+
+          >
+            Exportar Stock (PDF)
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<Print />}
+            onClick={handlePrintStock}
+            sx={{
+              mt: { xs: 2, sm: 0 },
+              "&:hover": {
+                color: "white",
+                backgroundColor: "#856d5e",
+              }
+            }}
+          >
+            Imprimir Stock (Comandera)
+          </Button>
+        </Box>
       </Box>
       {noStock && (
         <Typography variant="h6" sx={{ mt: 2 }} color="error">
