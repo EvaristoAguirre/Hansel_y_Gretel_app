@@ -36,6 +36,7 @@ export interface ProductToppingsGroupDto {
   settings: {
     maxSelection: number;
     chargeExtra: boolean;
+    extraCost: number;
   }
 }
 export interface IProductToppingsGroupResponse {
@@ -45,6 +46,7 @@ export interface IProductToppingsGroupResponse {
   settings: {
     chargeExtra: boolean;
     maxSelection: number;
+    extraCost: number;
   };
   unitOfMeasure: IUnitOfMeasureStandard;
   quantityOfTopping: string;
