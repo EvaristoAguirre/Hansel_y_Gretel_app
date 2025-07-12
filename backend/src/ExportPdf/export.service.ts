@@ -8,12 +8,14 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import table from 'pdfkit-table';
+import { PrinterService } from 'src/Printer/printer.service';
 
 @Injectable()
 export class ExportService {
   constructor(
     private productService: ProductService,
     private ingredientService: IngredientService,
+    private printerService: PrinterService,
   ) {}
 
   async generateStockPDF(): Promise<Buffer> {
@@ -85,6 +87,12 @@ export class ExportService {
 
       doc.end();
     });
+  }
+
+  async exportStockAndPrint() {
+    const stockData = await this.getStockToExport();
+
+    await this.printerService.printerStock(stockData);
   }
 
   async getStockToExport() {

@@ -18,4 +18,9 @@ export class ExportController {
 
     res.send(pdfBuffer);
   }
+
+  @Get('stock/printer')
+  async exportStockAndPrint() {
+    await this.exportService.exportStockAndPrint();
+  }
 }
