@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import PDFDocument from 'pdfkit-table';
 import * as fs from 'fs';
 import { ProductService } from 'src/Product/product.service';
@@ -12,6 +12,7 @@ import { PrinterService } from 'src/Printer/printer.service';
 
 @Injectable()
 export class ExportService {
+  readonly logger = new Logger(ExportService.name);
   constructor(
     private productService: ProductService,
     private ingredientService: IngredientService,
@@ -90,9 +91,13 @@ export class ExportService {
   }
 
   async exportStockAndPrint() {
-    const stockData = await this.getStockToExport();
-
-    await this.printerService.printerStock(stockData);
+    try {
+      const stockData = await this.getStockToExport();
+      await this.printerService.printerStock(stockData);
+    } catch (error) {
+      this.logger.warn('Fallo la impresión, no se exportó el stock.');
+      throw error;
+    }
   }
 
   async getStockToExport() {
