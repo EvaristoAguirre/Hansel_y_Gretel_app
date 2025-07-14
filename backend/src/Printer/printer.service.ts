@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -345,44 +349,44 @@ export class PrinterService {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  // private splitCommentWithPrefix(
-  //   comment: string,
-  //   maxLineLength: number,
-  //   prefix: string,
-  // ): string[] {
-  //   const prefixLength = prefix.length;
-  //   const remainingLineLength = maxLineLength - prefixLength;
-  //   const normalizedComment = this.normalizeText(comment);
+  private splitCommentWithPrefix(
+    comment: string,
+    maxLineLength: number,
+    prefix: string,
+  ): string[] {
+    const prefixLength = prefix.length;
+    const remainingLineLength = maxLineLength - prefixLength;
+    const normalizedComment = this.normalizeText(comment);
 
-  //   if (!normalizedComment) return [prefix];
+    if (!normalizedComment) return [prefix];
 
-  //   const lines: string[] = [];
-  //   let firstLineContent = '';
-  //   const words = normalizedComment.split(/(\s+)/);
+    const lines: string[] = [];
+    let firstLineContent = '';
+    const words = normalizedComment.split(/(\s+)/);
 
-  //   for (const word of words) {
-  //     if ((firstLineContent + word).length <= remainingLineLength) {
-  //       firstLineContent += word;
-  //     } else {
-  //       break;
-  //     }
-  //   }
+    for (const word of words) {
+      if ((firstLineContent + word).length <= remainingLineLength) {
+        firstLineContent += word;
+      } else {
+        break;
+      }
+    }
 
-  //   lines.push(`${prefix}${firstLineContent.trim()}`);
+    lines.push(`${prefix}${firstLineContent.trim()}`);
 
-  //   const remainingText = normalizedComment
-  //     .substring(firstLineContent.length)
-  //     .trim();
-  //   if (remainingText) {
-  //     const remainingLines = this.splitTextIntoLines(
-  //       remainingText,
-  //       maxLineLength,
-  //     );
-  //     lines.push(...remainingLines);
-  //   }
+    const remainingText = normalizedComment
+      .substring(firstLineContent.length)
+      .trim();
+    if (remainingText) {
+      const remainingLines = this.splitTextIntoLines(
+        remainingText,
+        maxLineLength,
+      );
+      lines.push(...remainingLines);
+    }
 
-  //   return lines;
-  // }
+    return lines;
+  }
 
   private splitTextIntoLines(
     text: string,
@@ -467,7 +471,13 @@ export class PrinterService {
         `Error al imprimir reporte de stock: ${error.message}`,
         error.stack,
       );
-      throw new Error(`Error al imprimir: ${error.message}`);
+      if (error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+
+      throw new ServiceUnavailableException(
+        'No se pudo imprimir el reporte. Verificá la conexión con la impresora.',
+      );
     }
   }
 
