@@ -67,7 +67,7 @@ export class PrinterService {
           socket.end();
           if (err) {
             this.logger.error('Write error', err);
-            reject(false);
+            reject(new Error('Error al enviar comandos a la impresora'));
           } else {
             resolve(true);
           }
@@ -76,13 +76,15 @@ export class PrinterService {
 
       socket.on('error', (err) => {
         this.logger.error('Printer connection error', err);
-        reject(false);
+        reject(new Error('Error de conexión con la impresora'));
       });
 
       socket.on('timeout', () => {
         this.logger.error('Printer connection timeout');
         socket.destroy();
-        reject(false);
+        reject(
+          new Error('Tiempo de espera agotado al conectar con la impresora'),
+        );
       });
     });
   }
