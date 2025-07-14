@@ -391,6 +391,7 @@ export class ProductRepository {
       unitOfMeasure: unitToCompositeProduct,
     });
     const savedProduct = await queryRunner.manager.save(product);
+    let totalBaseCost = 0;
 
     if (ingredients && ingredients.length > 0) {
       const productIngredients = ingredients.map(async (ingredientDto) => {
@@ -430,12 +431,15 @@ export class ProductRepository {
         );
 
         if (ingredient.cost) {
-          savedProduct.baseCost += ingredient.cost * convertedQuantity;
+          const partialCost = ingredient.cost * convertedQuantity;
+          totalBaseCost += partialCost;
         }
         return queryRunner.manager.save(productIngredient);
       });
 
       await Promise.all(productIngredients);
+      savedProduct.baseCost = totalBaseCost;
+      savedProduct.cost = totalBaseCost;
       await queryRunner.manager.save(Product, savedProduct);
     }
 
