@@ -23,7 +23,7 @@ import { DailyCashState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
-import { DailyCashDetailDto } from 'src/DTOs/daily-cash-detail.dto';
+import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Injectable()
 export class DailyCashService {
@@ -569,7 +569,7 @@ export class DailyCashService {
     day: number,
     month: number,
     year: number,
-  ): Promise<DailyCashDetailDto> {
+  ): Promise<DailyCash | null> {
     const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
@@ -577,55 +577,45 @@ export class DailyCashService {
       where: {
         date: Between(startOfDay, endOfDay),
       },
-      relations: [
-        'orders',
-        'orders.table',
-        'orders.table.room',
-        'orders.orderDetails',
-        'orders.orderDetails.product',
-        'orders.payments',
-        'movements',
-      ],
+      relations: ['orders', 'movements', 'orders.payments'],
     });
     if (!dailyCash) throw new NotFoundException('Daily cash not found');
+    return dailyCash;
+  }
 
-    const orders =
-      dailyCash.orders?.map((order) => ({
-        id: order.id,
-        date: order.date,
-        numberCustomers: order.numberCustomers,
-        total: Number(order.total).toFixed(2),
-        table: order.table?.name || 'S/M',
-        room: order.table?.room?.name || 'S/S',
-        paymentMethods:
-          order.payments?.map((p) => ({
-            methodOfPayment: p.methodOfPayment,
-            amount: Number(p.amount).toFixed(2),
-          })) || [],
-        products:
-          order.orderDetails?.map((detail) => ({
-            name: detail.product?.name || 'Producto eliminado',
-            quantity: detail.quantity,
-            commandNumber: detail.commandNumber,
-          })) || [],
-      })) || [];
+  async detailsMovementById(
+    cashMovementId: string,
+  ): Promise<CashMovementDetailsDto> {
+    try {
+      const movement = await this.cashMovementRepo.findOne({
+        where: { id: cashMovementId },
+      });
 
-    const movements =
-      dailyCash.movements?.map((m) => ({
-        type: m.type,
-        amount: Number(m.amount),
-        createdAt: m.createdAt,
-        payments:
-          movements.payments?.map((p) => ({
-            amount: Number(p.amount),
-            paymentMethod: p.paymentMethod,
-          })) || [],
-      })) || [];
+      if (!movement) {
+        throw new NotFoundException(
+          `Movimiento con ID ${cashMovementId} no encontrado`,
+        );
+      }
 
-    return {
-      orders,
-      movements,
-    };
+      const result = {
+        type: movement.type,
+        amount: Number(movement.amount),
+        createdAt: movement.createdAt,
+        payments: Array.isArray(movement.payments)
+          ? movement.payments.map((p) => ({
+              amount: Number(p.amount),
+              paymentMethod: p.paymentMethod,
+            }))
+          : [],
+      };
+
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error al obtener el movimiento de caja',
+      );
+    }
   }
 
   // ------------------- metricas -----------------------

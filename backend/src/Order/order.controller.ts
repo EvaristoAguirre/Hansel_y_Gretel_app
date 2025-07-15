@@ -20,6 +20,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { CloseOrderDto } from 'src/DTOs/close-order.dto';
 import { transferOrderData } from 'src/DTOs/transfer-order.dto';
+import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Controller('order')
 @UseGuards(RolesGuard)
@@ -100,6 +101,12 @@ export class OrderController {
     @Query('limit') limit: number = 100,
   ): Promise<OrderDetails[]> {
     return this.orderService.getOrderDetails(page, limit);
+  }
+
+  @Get('order-by-id/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  orderDetailsById(@Param('id') id: string): Promise<OrderDetailsDto> {
+    return this.orderService.orderDetailsById(id);
   }
 
   @Get(':id')
