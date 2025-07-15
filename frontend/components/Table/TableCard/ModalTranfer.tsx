@@ -85,17 +85,19 @@ export default function TransferTableModal({
               maxHeight: 300,
             }}
           >
-            {tables.map((table) => (
-              <ListItem key={table.id} disablePadding>
-                <ListItemButton
-                  selected={selectedTableId === table.id}
-                  onClick={() => setSelectedTableId(table.id)}
-                  sx={{ borderBottom: "1px solid #ccc" }}
-                >
-                  <ListItemText primary={capitalizeFirstLetter(table.name)} />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {[...tables]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((table) => (
+                <ListItem key={table.id} disablePadding>
+                  <ListItemButton
+                    selected={selectedTableId === table.id}
+                    onClick={() => setSelectedTableId(table.id)}
+                    sx={{ borderBottom: "1px solid #ccc" }}
+                  >
+                    <ListItemText primary={capitalizeFirstLetter(table.name)} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
           </List>
         )}
 
