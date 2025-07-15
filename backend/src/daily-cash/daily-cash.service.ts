@@ -23,6 +23,7 @@ import { DailyCashState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { DailyCashDetailDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Injectable()
 export class DailyCashService {
@@ -486,36 +487,6 @@ export class DailyCashService {
     return records.reduce((acc, r) => acc + Number(r.total), 0);
   }
 
-  // private groupRecordsByPaymentMethod(
-  //   records: {
-  //     amount: number;
-  //     methodOfPayment?: PaymentMethod;
-  //     payments?: { amount: number; paymentMethod: PaymentMethod }[];
-  //   }[],
-  // ): Record<PaymentMethod, number> {
-  //   const totals: Record<PaymentMethod, number> = {
-  //     [PaymentMethod.CASH]: 0,
-  //     [PaymentMethod.CREDIT_CARD]: 0,
-  //     [PaymentMethod.DEBIT_CARD]: 0,
-  //     [PaymentMethod.TRANSFER]: 0,
-  //     [PaymentMethod.MERCADOPAGO]: 0,
-  //   };
-
-  //   for (const record of records) {
-  //     if (record.methodOfPayment && typeof record.amount === 'number') {
-  //       totals[record.methodOfPayment] += record.amount;
-  //     }
-
-  //     if (record.payments && Array.isArray(record.payments)) {
-  //       for (const p of record.payments) {
-  //         totals[p.paymentMethod] += Number(p.amount);
-  //       }
-  //     }
-  //   }
-
-  //   return totals;
-  // }
-
   private groupRecordsByPaymentMethod(
     records: {
       amount?: number;
@@ -598,7 +569,7 @@ export class DailyCashService {
     day: number,
     month: number,
     year: number,
-  ): Promise<DailyCash | null> {
+  ): Promise<DailyCashDetailDto> {
     const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
@@ -606,10 +577,55 @@ export class DailyCashService {
       where: {
         date: Between(startOfDay, endOfDay),
       },
-      relations: ['orders', 'movements', 'orders.payments'],
+      relations: [
+        'orders',
+        'orders.table',
+        'orders.table.room',
+        'orders.orderDetails',
+        'orders.orderDetails.product',
+        'orders.payments',
+        'movements',
+      ],
     });
     if (!dailyCash) throw new NotFoundException('Daily cash not found');
-    return dailyCash;
+
+    const orders =
+      dailyCash.orders?.map((order) => ({
+        id: order.id,
+        date: order.date,
+        numberCustomers: order.numberCustomers,
+        total: Number(order.total).toFixed(2),
+        table: order.table?.name || 'S/M',
+        room: order.table?.room?.name || 'S/S',
+        paymentMethods:
+          order.payments?.map((p) => ({
+            methodOfPayment: p.methodOfPayment,
+            amount: Number(p.amount).toFixed(2),
+          })) || [],
+        products:
+          order.orderDetails?.map((detail) => ({
+            name: detail.product?.name || 'Producto eliminado',
+            quantity: detail.quantity,
+            commandNumber: detail.commandNumber,
+          })) || [],
+      })) || [];
+
+    const movements =
+      dailyCash.movements?.map((m) => ({
+        type: m.type,
+        amount: Number(m.amount),
+        createdAt: m.createdAt,
+        payments:
+          movements.payments?.map((p) => ({
+            amount: Number(p.amount),
+            paymentMethod: p.paymentMethod,
+          })) || [],
+      })) || [];
+
+    return {
+      orders,
+      movements,
+    };
   }
 
   // ------------------- metricas -----------------------

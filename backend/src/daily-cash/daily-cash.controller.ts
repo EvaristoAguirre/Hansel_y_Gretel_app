@@ -21,6 +21,7 @@ import {
 } from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
+import { DailyCashDetailDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Controller('daily-cash')
 @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
@@ -104,7 +105,7 @@ export class DailyCashController {
     @Query('day', ParseIntPipe) day: number,
     @Query('month', ParseIntPipe) month: number,
     @Query('year', ParseIntPipe) year: number,
-  ): Promise<DailyCash | null> {
+  ): Promise<DailyCashDetailDto> {
     return this.dailyCashService.getDailyCashWithOrdersByDate(day, month, year);
   }
 
