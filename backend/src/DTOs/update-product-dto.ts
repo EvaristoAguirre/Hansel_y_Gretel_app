@@ -41,6 +41,11 @@ export class UpdateProductDto {
   cost?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  baseCost?: number;
+
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
   categories?: string[];

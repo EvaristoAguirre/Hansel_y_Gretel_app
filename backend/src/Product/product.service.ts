@@ -140,7 +140,7 @@ export class ProductService {
     if (
       currentProduct.type === 'simple' &&
       typeof updateData.cost === 'number' &&
-      updateData.cost !== currentProduct.cost
+      updateData.cost !== currentProduct.baseCost
     ) {
       console.log(
         `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,
@@ -148,7 +148,7 @@ export class ProductService {
       const cascadeResult =
         await this.costCascadeService.updateSimpleProductCostAndCascade(
           productUpdated.id,
-          updateData.cost,
+          updateData.baseCost,
         );
       if (cascadeResult.success) {
         console.log(`📦 Producto ${id} actualizado. Promociones afectadas:`);

@@ -504,7 +504,7 @@ export class ProductRepository {
       categories: categoryEntities,
       unitOfMeasure: unitToSimpleProduct,
       type: 'simple',
-      baseCost: productData.cost,
+      baseCost: productData.baseCost,
       toppingsCost: 0,
       cost: productData.cost,
     });
@@ -699,7 +699,7 @@ export class ProductRepository {
         !isNaN(updateData.cost) &&
         updateData.cost >= 0
       ) {
-        product.baseCost = updateData.cost;
+        product.baseCost = updateData.baseCost;
       }
 
       product.cost =
@@ -802,7 +802,6 @@ export class ProductRepository {
           const savedRelation =
             await queryRunner.manager.save(existingRelation);
 
-          // Restaurar valores originales para respuesta
           savedRelation.quantityOfIngredient = conversion.originalQuantity;
           savedRelation.unitOfMeasure = conversion.originalUnit;
 
@@ -820,7 +819,6 @@ export class ProductRepository {
 
           const savedNew = await queryRunner.manager.save(newProductIngredient);
 
-          // Restaurar valores originales para respuesta
           savedNew.quantityOfIngredient = conversion.originalQuantity;
           savedNew.unitOfMeasure = conversion.originalUnit;
 
