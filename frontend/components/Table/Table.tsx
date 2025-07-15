@@ -85,16 +85,19 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
         style={{ maxHeight: "90vh" }}
       >
         {tables.length > 0 ? (
-          tables.map((table) => (
-            <TableCard
-              key={table.id}
-              table={table}
+          [...tables]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((table) => (
 
-              handleOpenModal={handleOpenModal}
-              handleDelete={handleDelete}
+              <TableCard
+                key={table.id}
+                table={table}
 
-            />
-          ))
+                handleOpenModal={handleOpenModal}
+                handleDelete={handleDelete}
+
+              />
+            ))
         ) : (
           <p style={{ textAlign: "start", width: "100%", marginTop: "1rem", color: "red" }}>
             No hay mesas en este estado
