@@ -53,6 +53,9 @@ export class ProductResponseDto {
   cost?: number;
 
   @Expose()
+  baseCost?: number;
+
+  @Expose()
   type: 'product' | 'promotion' | 'simple';
 
   @Expose()
