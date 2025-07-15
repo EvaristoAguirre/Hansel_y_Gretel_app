@@ -28,6 +28,7 @@ import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { OrderDetailToppings } from './order_details_toppings.entity';
 import { transferOrderData } from 'src/DTOs/transfer-order.dto';
+import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Injectable()
 export class OrderService {
@@ -572,6 +573,54 @@ export class OrderService {
       throw err;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async orderDetailsById(id: string): Promise<OrderDetailsDto> {
+    try {
+      const order = await this.orderRepo.findOne({
+        where: { id: id },
+        relations: [
+          'table',
+          'table.room',
+          'orderDetails',
+          'orderDetails.product',
+          'payments',
+        ],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Orden con ID ${id} no encontrada`);
+      }
+
+      const orderSummary = {
+        id: order.id,
+        date: order.date,
+        table: order.table?.name || 'Sin mesa',
+        room: order.table?.room?.name || 'Sin salón',
+        numberCustomers: order.numberCustomers,
+        total: Number(order.total).toFixed(2),
+        paymentMethods: Array.isArray(order.payments)
+          ? order.payments.map((p) => ({
+              methodOfPayment: p.methodOfPayment,
+              amount: Number(p.amount).toFixed(2),
+            }))
+          : [],
+        products: Array.isArray(order.orderDetails)
+          ? order.orderDetails.map((d) => ({
+              name: d.product?.name || 'Producto eliminado',
+              quantity: d.quantity,
+              commandNumber: d.commandNumber,
+            }))
+          : [],
+      };
+
+      return orderSummary;
+    } catch (error) {
+      console.error(`[OrderService] Error al obtener detalle de orden`, error);
+      throw new InternalServerErrorException(
+        'Error al obtener el detalle de la orden',
+      );
     }
   }
 

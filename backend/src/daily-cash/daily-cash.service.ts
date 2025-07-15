@@ -23,6 +23,7 @@ import { DailyCashState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Injectable()
 export class DailyCashService {
@@ -486,36 +487,6 @@ export class DailyCashService {
     return records.reduce((acc, r) => acc + Number(r.total), 0);
   }
 
-  // private groupRecordsByPaymentMethod(
-  //   records: {
-  //     amount: number;
-  //     methodOfPayment?: PaymentMethod;
-  //     payments?: { amount: number; paymentMethod: PaymentMethod }[];
-  //   }[],
-  // ): Record<PaymentMethod, number> {
-  //   const totals: Record<PaymentMethod, number> = {
-  //     [PaymentMethod.CASH]: 0,
-  //     [PaymentMethod.CREDIT_CARD]: 0,
-  //     [PaymentMethod.DEBIT_CARD]: 0,
-  //     [PaymentMethod.TRANSFER]: 0,
-  //     [PaymentMethod.MERCADOPAGO]: 0,
-  //   };
-
-  //   for (const record of records) {
-  //     if (record.methodOfPayment && typeof record.amount === 'number') {
-  //       totals[record.methodOfPayment] += record.amount;
-  //     }
-
-  //     if (record.payments && Array.isArray(record.payments)) {
-  //       for (const p of record.payments) {
-  //         totals[p.paymentMethod] += Number(p.amount);
-  //       }
-  //     }
-  //   }
-
-  //   return totals;
-  // }
-
   private groupRecordsByPaymentMethod(
     records: {
       amount?: number;
@@ -610,6 +581,41 @@ export class DailyCashService {
     });
     if (!dailyCash) throw new NotFoundException('Daily cash not found');
     return dailyCash;
+  }
+
+  async detailsMovementById(
+    cashMovementId: string,
+  ): Promise<CashMovementDetailsDto> {
+    try {
+      const movement = await this.cashMovementRepo.findOne({
+        where: { id: cashMovementId },
+      });
+
+      if (!movement) {
+        throw new NotFoundException(
+          `Movimiento con ID ${cashMovementId} no encontrado`,
+        );
+      }
+
+      const result = {
+        type: movement.type,
+        amount: Number(movement.amount),
+        createdAt: movement.createdAt,
+        payments: Array.isArray(movement.payments)
+          ? movement.payments.map((p) => ({
+              amount: Number(p.amount),
+              paymentMethod: p.paymentMethod,
+            }))
+          : [],
+      };
+
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error al obtener el movimiento de caja',
+      );
+    }
   }
 
   // ------------------- metricas -----------------------
