@@ -247,7 +247,7 @@ const OrderProvider = ({
       const newProduct = {
         productId: product.id,
         quantity: 1,
-        unitaryPrice: product.price,
+        unitaryPrice: Number(product.price),
         productName: product.name,
         allowsToppings: product.allowsToppings,
         commentOfProduct: product.commentOfProduct,
@@ -316,9 +316,28 @@ const OrderProvider = ({
   };
 
 
-  const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
-    setConfirmedProducts(confirmedProducts);
+  const handleSetProductsByOrder = (confirmedProductsRaw: SelectedProductsI[]) => {
+    const expandedProducts: SelectedProductsI[] = [];
+    let internalCounter = 0;
+
+    confirmedProductsRaw.forEach((product) => {
+      const quantity = product.quantity || 1;
+
+      for (let i = 0; i < quantity; i++) {
+        expandedProducts.push({
+          ...product,
+          internalId: `${product.productId}-${internalCounter}`,
+          quantity: 1,
+        });
+        internalCounter++;
+      }
+    });
+
+    setConfirmedProducts(expandedProducts);
+    console.log("🆔 Productos confirmados y sus id:", expandedProducts);
+
   };
+
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
