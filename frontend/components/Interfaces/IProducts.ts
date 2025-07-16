@@ -134,6 +134,7 @@ export interface SelectedProductsI {
   toppingsPerUnit?: string[][]
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
+  internalId?: string;
 };
 
 export interface IConfirmedProducts {

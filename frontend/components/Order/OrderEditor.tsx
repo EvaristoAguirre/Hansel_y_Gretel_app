@@ -72,6 +72,7 @@ const OrderEditor = ({
     highlightedProducts,
     removeHighlightedProduct,
     selectedToppingsByProduct,
+    toppingsByProductGroup
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -117,25 +118,52 @@ const OrderEditor = ({
     }
   };
 
+  const calcularPrecioConToppings = (
+    product: any,
+    quantity: number,
+    toppingsByUnit: any[]
+  ) => {
+    let toppingExtra = 0;
+
+    if (toppingsByUnit && product.availableToppingGroups) {
+      product.availableToppingGroups.forEach((group: any) => {
+        const { id: groupId, settings } = group;
+
+        if (settings.chargeExtra && settings.extraCost) {
+          toppingsByUnit.forEach((unitToppings: any) => {
+            const selected = unitToppings[groupId] || [];
+            toppingExtra += selected.length * settings.extraCost;
+          });
+        }
+      });
+    }
+
+    const basePrice = (product.unitaryPrice ?? 0) * quantity;
+    return basePrice + toppingExtra;
+  };
+
+
   useEffect(() => {
     const calcularSubtotal = () => {
-      setSubtotal(
-        selectedProducts.reduce((acc, item) => {
-          return acc + (item.unitaryPrice ?? 0) * item.quantity;
-        }, 0)
-      );
+      const subtotal = selectedProducts.reduce((acc, product) => {
+        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        return acc + calcularPrecioConToppings(product, product.quantity, toppings);
+      }, 0);
+      setSubtotal(subtotal);
     };
-    calcularSubtotal();
 
     const calculateTotal = () => {
-      setTotal(
-        confirmedProducts?.reduce((acc, item) => {
-          return acc + (item.unitaryPrice ?? 0) * item.quantity;
-        }, 0)
-      );
+      const total = confirmedProducts.reduce((acc, product) => {
+        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        return acc + calcularPrecioConToppings(product, product.quantity, toppings);
+      }, 0);
+      setTotal(total);
     };
+
+    calcularSubtotal();
     calculateTotal();
-  }, [selectedProducts, confirmedProducts]);
+  }, [selectedProducts, confirmedProducts, toppingsByProductGroup]);
+
 
   const toggleCommentInput = (productId: string) => {
     setVisibleCommentInputs((prev) => ({
@@ -316,8 +344,11 @@ const OrderEditor = ({
                       </Tooltip>
 
                       <Typography style={{ color: "black" }}>
-                        ${(item.unitaryPrice ?? 0) * item.quantity}
+                        ${calcularPrecioConToppings(item, item.quantity, toppingsByProductGroup[item.productId] ?? [])}
                       </Typography>
+
+
+
 
                       {/* ICON DE AGREGADOS */}
                       <div style={{ display: "flex", alignItems: "center" }}>
