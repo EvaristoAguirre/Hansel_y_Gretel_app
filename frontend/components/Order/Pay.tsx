@@ -22,7 +22,8 @@ import {
   Divider,
   Grid,
   Box,
-  Switch
+  Switch,
+  Tooltip
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -91,11 +92,23 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const allSelected = unpaidIds.every(id => draftPayment.productIds.includes(id));
 
   const toggleAllProducts = () => {
+    const nextAll = !allSelected;
     setDraftPayment(prev => ({
       ...prev,
-      productIds: allSelected ? [] : unpaidIds
+      productIds: nextAll ? unpaidIds : []
     }));
+    // Si el usuario desactiva el switch, limpio pagos y restauro el draft
+    if (!nextAll) {
+      setConfirmedPayments([]);
+      setDraftPayment(prev => ({
+        ...prev,
+        method: '',
+        tipType: 'none',
+        customTip: 0
+      }));
+    }
   };
+
 
 
   const handleAddDraftAsConfirmed = () => {
@@ -162,6 +175,46 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   );
   const total = selectedOrderByTable?.total || 0;
 
+  // Auto-confirmar todos los productos si cumple condiciones
+  useEffect(() => {
+    const isFullPaymentReady =
+      allSelected &&
+      draftPayment.method &&
+      draftPayment.tipType &&
+      draftPayment.productIds.length === unpaidIds.length &&
+      confirmedPayments.length === 0;
+
+    if (isFullPaymentReady) {
+      const base = draftPayment.productIds.reduce((sum, id) => {
+        const p = confirmedProducts.find(x => x.internalId === id);
+        return sum + (p?.unitaryPrice || 0);
+      }, 0);
+      const finalAmount =
+        draftPayment.tipType === '10'
+          ? base * 1.1
+          : draftPayment.tipType === 'custom'
+            ? base + draftPayment.customTip
+            : base;
+
+      // Evitar duplicar el mismo pago si ya existe
+      const alreadyConfirmed = confirmedPayments.some(cp =>
+        cp.productIds.length === unpaidIds.length &&
+        cp.methodOfPayment === draftPayment.method
+      );
+      if (!alreadyConfirmed) {
+        setConfirmedPayments([
+          {
+            productIds: [...draftPayment.productIds],
+            methodOfPayment: draftPayment.method as paymentMethod,
+            amount: finalAmount
+          }
+        ]);
+      }
+    }
+  }, [allSelected, draftPayment, unpaidIds.length, confirmedPayments.length]);
+
+  // Detecta si ya se generó el pago completo
+  const isBulkPaid = allSelected && draftPayment.method !== '' && confirmedPayments.length > 0;
 
 
   return (
@@ -181,7 +234,25 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           <Box sx={{ display: "flex", direction: "row", rowGap: 3, width: "100%" }}>
             <Box display="flex" flexDirection="column" width="50%" >
               <Typography fontWeight="bold" mt={3}>1. Seleccionar productos:</Typography>
-              <FormControlLabel control={<Switch checked={allSelected} onChange={toggleAllProducts} />}
+              <FormControlLabel
+                control={
+                  <Tooltip
+                    title={
+                      confirmedPayments.length > 0
+                        ? "No puedes seleccionar todos los productos cuando hay pagos parciales"
+                        : ""
+                    }
+                  >
+                    {/* span necesario para que Tooltip funcione sobre el Switch deshabilitado */}
+                    <span>
+                      <Switch
+                        checked={allSelected}
+                        onChange={toggleAllProducts}
+                        disabled={confirmedPayments.length > 0 && !allSelected}
+                      />
+                    </span>
+                  </Tooltip>
+                }
                 label="Paga todos los productos"
                 sx={{ mt: 1 }}
               />
@@ -190,12 +261,34 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   const checked = draftPayment.productIds.includes(p.internalId!);
                   const disabled = confirmedPayments.flatMap(cp => cp.productIds).includes(p.internalId!);
                   return (
-                    <ListItem key={p.internalId} disableGutters sx={{ py: 0 }}>
+                    <ListItem
+                      key={p.internalId}
+                      disableGutters
+                      sx={{
+                        py: 0,
+                        // opcional: cambias también el color de todo el ListItem
+                        color: disabled ? "text.secondary" : "text.primary"
+                      }}
+                    >
                       <ListItemIcon sx={{ minWidth: 32, mr: 1 }}>
-                        <Checkbox checked={checked} disabled={disabled} onChange={() => toggleProductSelection(p.internalId!)} />
+                        <Checkbox
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() => toggleProductSelection(p.internalId!)}
+                        />
                       </ListItemIcon>
-                      <ListItemText primary={`${capitalizeFirstLetter(p.productName)} - $${p.unitaryPrice}`} />
+
+                      <ListItemText
+                        primary={`${capitalizeFirstLetter(p.productName)} - $${p.unitaryPrice}`}
+                        primaryTypographyProps={{
+                          sx: {
+                            // aquí cambiamos el color del texto según el estado disabled
+                            color: disabled ? "text.disabled" : "text.primary",
+                          }
+                        }}
+                      />
                     </ListItem>
+
                   );
                 })}
               </List>
@@ -276,21 +369,46 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               {Object.values(paymentMethod).map(m => <MenuItem key={m} value={m}>{capitalizeFirstLetter(m)}</MenuItem>)}
             </Select>
           </FormControl>
-          <Button variant="outlined" color="success" fullWidth sx={{ mt: 2 }} disabled={!draftPayment.method || !draftPayment.productIds.length} onClick={handleAddDraftAsConfirmed}>Confirmar pago parcial</Button>
+          {
+            !isBulkPaid && (
+              <Button
+                variant="outlined"
+                color="success"
+                fullWidth
+                sx={{ mt: 2 }}
+                disabled={
+                  !draftPayment.method ||
+                  !draftPayment.productIds.length ||
+                  (allSelected && confirmedPayments.length > 0)
+                }
+                onClick={handleAddDraftAsConfirmed}
+              >
+                Confirmar pago parcial
+              </Button>
+            )
+          }
 
           {/* Pagos confirmados */}
-          <Typography fontWeight="bold" mt={4}>Pagos parciales:</Typography>
-          <Grid container spacing={2} mt={1}>
-            {confirmedPayments.map((cp, i) => (
-              <Grid item xs={12} sm={6} key={i}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography fontWeight="bold">Pago #{i + 1}</Typography>
-                  <Typography>Total: ${cp.amount.toFixed(2)}</Typography>
-                  <Typography>Método: {capitalizeFirstLetter(cp.methodOfPayment)}</Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+
+          {
+            !isBulkPaid && (
+              <>
+                <Typography fontWeight="bold" mt={4}>Pagos parciales:</Typography>
+                <Grid container spacing={2} mt={1}>
+                  {confirmedPayments.map((cp, i) => (
+                    <Grid item xs={12} sm={6} key={i}>
+                      <Paper sx={{ p: 2 }}>
+                        <Typography fontWeight="bold">Pago #{i + 1}</Typography>
+                        <Typography>Total: ${cp.amount.toFixed(2)}</Typography>
+                        <Typography>Método: {capitalizeFirstLetter(cp.methodOfPayment)}</Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </>
+
+            )
+          }
         </Box>
 
       ) :
