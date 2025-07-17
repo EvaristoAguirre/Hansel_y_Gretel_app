@@ -506,7 +506,7 @@ export class ProductRepository {
       type: 'simple',
       baseCost: productData.baseCost,
       toppingsCost: 0,
-      cost: productData.cost,
+      cost: 0,
     });
 
     const savedProduct = await queryRunner.manager.save(Product, product);
@@ -527,6 +527,9 @@ export class ProductRepository {
       savedProduct.cost =
         Number(savedProduct.baseCost || 0) + Number(extraToppingCost);
 
+      await queryRunner.manager.save(Product, savedProduct);
+    } else {
+      savedProduct.cost = Number(savedProduct.baseCost || 0);
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -644,6 +647,7 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+    console.log('actualizando....', updateData);
 
     const { categories, ingredients, ...otherAttributes } = updateData;
 
