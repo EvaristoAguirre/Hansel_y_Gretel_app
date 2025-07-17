@@ -210,7 +210,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const validateForm = (currentErrors = errors) => {
     const hasErrors = Object.values(currentErrors).some((error) => error);
     const validationFields: { [key in TabProductKey]: string[] } = {
-      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "baseCost", "cost", "categories", "availableToppingGroups"],
+      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "baseCost", "categories", "availableToppingGroups"],
       [TabProductKey.PRODUCT_WITH_INGREDIENT]: ["code", "name", "price", "ingredients"],
       [TabProductKey.PROMO]: ["code", "name", "price", "products"],
     };
