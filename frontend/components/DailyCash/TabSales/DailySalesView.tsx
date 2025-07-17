@@ -24,24 +24,19 @@ type Order = {
   numberCustomers: number;
 };
 
-type DailyCashData = {
-  date: string;
-  totalSales: string;
-  totalPayments: string;
-  initialCash: string;
-  finalCash: string;
-  totalCash: string;
-  cashDifference: string;
-  totalCreditCard: string;
-  totalDebitCard: string;
-  totalTransfer: string;
-  totalMercadoPago: string;
-  orders: Order[];
+type Movement = {
+  id: string;
+  type: string;
+  amount: number;
+  description: string;
+  createdAt: string;
+  payments: { amount: number; paymentMethod: string }[];
 };
 
 const DailySalesView = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
-  const [data, setData] = useState<DailyCashData | null>(null);
+  const [dataOrders, setDataOrders] = useState<Order[] | null>(null);
+  const [dataMovements, setDataMovements] = useState<Movement[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { getAccessToken } = useAuth();
@@ -52,11 +47,12 @@ const DailySalesView = () => {
 
     setLoading(true);
     setError(null);
-    setData(null);
+    setDataOrders(null);
+    setDataMovements(null);
 
     try {
       const day = selectedDate.date();
-      const month = selectedDate.month() + 1; // en JS enero = 0
+      const month = selectedDate.month() + 1;
       const year = selectedDate.year();
 
       const result = token && await getMovements(token, day, month, year);
@@ -65,7 +61,8 @@ const DailySalesView = () => {
         throw new Error("No se encontraron ventas para esa fecha.");
       }
 
-      setData(result);
+      setDataOrders(result.orders);
+      setDataMovements(result.movements);
     } catch (err: any) {
       setError(err.message || "Error al obtener los datos.");
     } finally {
@@ -118,19 +115,30 @@ const DailySalesView = () => {
   ];
 
   return (
-    <Box p={1}>
-      <Typography variant="h4" color="primary" gutterBottom>
-        Ventas por Día
-      </Typography>
-
+    <>
       <Grid container spacing={2} alignItems="center" mt={2}>
-        <Grid item xs={12} sm={2}>
+        <Grid item xs={12} sm={2} m={2}>
           <DatePicker
             label="Seleccionar fecha"
             value={selectedDate}
             onChange={setSelectedDate}
             format="DD/MM/YYYY"
+            sx={{
+              animation: !selectedDate ? "pulse 1.2s infinite" : "none",
+              "@keyframes pulse": {
+                "0%": {
+                  transform: "scale(1)",
+                },
+                "50%": {
+                  transform: "scale(1.05)",
+                },
+                "100%": {
+                  transform: "scale(1)",
+                },
+              },
+            }}
           />
+
         </Grid>
         <Grid item >
           <Button variant="contained" onClick={handleSearch} disabled={!selectedDate}
@@ -146,32 +154,65 @@ const DailySalesView = () => {
           {error}
         </Typography>
       )}
+      <Box p={1}>
+        <Typography variant="h4" color="primary" gutterBottom>
+          Ventas por Día
+        </Typography>
+        <Box
+          bgcolor="#fff"
+          borderRadius={2}
+          boxShadow={1}
+          mt={3}
+        >
+          <DataGrid
+            rows={dataOrders?.map((order: any, i: number) => ({
+              ...order,
+              id: order.id || i,
+            }))}
+            columns={orderColumns}
+            autoHeight
+            pageSizeOptions={[5, 10]}
+            localeText={{
+              noRowsLabel: "No hay pedidos registrados",
+            }}
+            disableColumnMenu
+          />
+        </Box>
+      </Box>
+      <Box p={1}>
+        <Typography variant="h4" color="primary" gutterBottom>
+          Movimientos por Día
+        </Typography>
+        {error && (
+          <Typography color="error" mt={3}>
+            {error}
+          </Typography>
+        )}
 
-      {data && (
-        <>
-          <Box
-            bgcolor="#fff"
-            borderRadius={2}
-            boxShadow={1}
-            mt={3}
-          >
-            <DataGrid
-              rows={data.orders.map((order: any, i: number) => ({
-                ...order,
-                id: order.id || i,
-              }))}
-              columns={orderColumns}
-              autoHeight
-              pageSizeOptions={[5, 10]}
-              localeText={{
-                noRowsLabel: "No hay pedidos registrados",
-              }}
-              disableColumnMenu
-            />
-          </Box>
-        </>
-      )}
-    </Box>
+        <Box
+          bgcolor="#fff"
+          borderRadius={2}
+          boxShadow={1}
+          mt={3}
+        >
+          <DataGrid
+            rows={dataMovements?.map((order: any, i: number) => ({
+              ...order,
+              id: order.id || i,
+            }))}
+            columns={orderColumns}
+            autoHeight
+            pageSizeOptions={[5, 10]}
+            localeText={{
+              noRowsLabel: "No hay movimientos registrados",
+            }}
+            disableColumnMenu
+          />
+        </Box>
+
+
+      </Box>
+    </>
   );
 };
 
