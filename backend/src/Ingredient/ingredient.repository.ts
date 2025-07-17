@@ -189,14 +189,21 @@ export class IngredientRepository {
   // --------------------- Ajuste de respuesta ----------------
 
   private adaptToppingResponse(topping: any): ToppingResponseDto {
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
     return {
       id: topping.id,
       name: topping.name,
       isActive: topping.isActive,
       description: topping.description,
-      cost: topping.cost,
+      cost: formatter.format(Number(topping.cost)),
       type: topping.type,
-      extraCost: topping.extraCost ?? null,
+      extraCost:
+        topping.extraCost != null
+          ? formatter.format(Number(topping.extraCost))
+          : null,
       unitOfMeasure: topping.unitOfMeasure
         ? {
             id: topping.unitOfMeasure.id,

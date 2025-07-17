@@ -11,6 +11,15 @@ export class ProductMapper {
       excludeExtraneousValues: true,
     });
 
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
+
+    dto.price = formatter.format(Number(product.price));
+    dto.cost = formatter.format(Number(product.cost));
+    dto.baseCost = formatter.format(Number(product.baseCost ?? 0));
+
     dto.availableToppingGroups =
       product.availableToppingGroups?.map((group) => ({
         id: group.toppingGroup?.id ?? null,

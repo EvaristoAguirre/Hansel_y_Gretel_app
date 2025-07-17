@@ -458,12 +458,16 @@ export class IngredientService {
   }
 
   private adaptIngredientResponse(ingredient: any): IngredientResponseDTO {
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
     return {
       id: ingredient.id,
       name: ingredient.name,
       isActive: ingredient.isActive,
       description: ingredient.description,
-      cost: ingredient.cost,
+      cost: formatter.format(Number(ingredient.cost)),
       type: ingredient.type,
       isTopping: ingredient.isTopping,
       unitOfMeasure: ingredient.unitOfMeasure
@@ -497,14 +501,21 @@ export class IngredientService {
   }
 
   private adaptToppingResponse(topping: any): ToppingResponseDto {
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
     return {
       id: topping.id,
       name: topping.name,
       isActive: topping.isActive,
       description: topping.description,
-      cost: topping.cost,
+      cost: formatter.format(Number(topping.cost)),
       type: topping.type,
-      extraCost: topping.extraCost ?? null,
+      extraCost:
+        topping.extraCost != null
+          ? formatter.format(Number(topping.extraCost))
+          : null,
       unitOfMeasure: topping.unitOfMeasure
         ? {
             id: topping.unitOfMeasure.id,
