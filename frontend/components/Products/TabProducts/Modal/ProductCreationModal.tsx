@@ -10,6 +10,7 @@ import {
   Autocomplete,
   Chip,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 import Grid from '@mui/material/Grid';
 import {
@@ -89,6 +90,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     code: "",
     name: "",
     price: "",
+    baseCost: "",
     cost: "",
     categories: "",
     products: "",
@@ -125,12 +127,15 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     }
   }, [form.allowsToppings]);
 
+
+
   const fieldLabels: Record<keyof ProductForm, string> = {
     code: "Código",
     name: "Nombre",
     description: "Descripción",
     price: "Precio",
-    cost: "Costo",
+    baseCost: "Costo Base",
+    cost: "Costo Total",
     categories: "Categoría",
     ingredients: "Ingredientes",
     isActive: "Inactivo",
@@ -144,7 +149,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     if (field === "categories" && Array.isArray(value) && value.length === 0) {
       error = "Debe seleccionar al menos una categoría";
     }
-    if (["code", "name", "price", "cost"].includes(field)) {
+    if (["code", "name", "price", "baseCost"].includes(field)) {
       if (!value) {
         error = "Este campo es obligatorio";
       } else if (field === "code") {
@@ -166,7 +171,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         } finally {
           setIsCheckingCode(false);
         }
-      } else if ((field === "price" || field === "cost") && value <= 0) {
+      } else if ((field === "price" || field === "baseCost") && value <= 0) {
         error = "Debe ser un número positivo";
       } else if (field === "name") {
         if (token) {
@@ -205,7 +210,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const validateForm = (currentErrors = errors) => {
     const hasErrors = Object.values(currentErrors).some((error) => error);
     const validationFields: { [key in TabProductKey]: string[] } = {
-      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "cost", "categories", "availableToppingGroups"],
+      [TabProductKey.SIMPLE_PRODUCT]: ["code", "name", "price", "baseCost", "cost", "categories", "availableToppingGroups"],
       [TabProductKey.PRODUCT_WITH_INGREDIENT]: ["code", "name", "price", "ingredients"],
       [TabProductKey.PROMO]: ["code", "name", "price", "products"],
     };
@@ -290,7 +295,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const fieldsToRender = ["name", "code", "price"];
 
   if (tabValue === TabProductKey.SIMPLE_PRODUCT) {
-    fieldsToRender.push("cost");
+    fieldsToRender.push("baseCost", "cost");
   }
 
 
@@ -327,64 +332,91 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         <Grid container spacing={1} mt={1}>
           {fieldsToRender.map((field, index) => (
             <Grid item xs={12} sm={6} key={field}>
-              {(field === 'price' || field === 'cost') ? (
-                <NumericInput
-                  label={fieldLabels[field]}
-                  value={form[field]}
-                  onChange={(num) => {
-                    onChange(field as keyof ProductForm, num);
-                    validateField(field, num);
-                  }}
-                  error={!!errors[field]}
-                  helperText={errors[field]}
-                />
+              {(field === "price" || field === "baseCost") ? (
+                <Tooltip
+                  title={
+                    field === "baseCost"
+                      ? "Costo base del producto, sin incluir agregados"
+                      : ""
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <Box>
+                    <NumericInput
+                      label={fieldLabels[field]}
+                      value={form[field]}
+                      onChange={(num) => {
+                        onChange(field as keyof ProductForm, num);
+                        validateField(field, num);
+                      }}
+                      error={!!errors[field]}
+                      helperText={errors[field]}
+                    />
+                  </Box>
+                </Tooltip>
               ) : (
-                <TextField
-                  fullWidth
-                  label={fieldLabels[field]}
-                  type={field === "price" || field === "cost" ? "number" : "text"}
-                  inputProps={{
-                    onKeyDown: (e) => {
-                      if (
-                        (field === "price" || field === "cost" || field === "code") &&
-                        (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-")
-                      ) {
-                        e.preventDefault();
+                <Tooltip
+                  title={
+                    field === "cost"
+                      ? "Costo total calculado automáticamente, incluye el Costo Base + Costo Agregados (si llevaran)"
+                      : ""
+                  }
+                  arrow
+                  placement="top"
+                  disableHoverListener={field !== "cost"} // Solo activa tooltip para "cost"
+                >
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label={fieldLabels[field]}
+                      type={["price", "baseCost", "cost"].includes(field) ? "number" : "text"}
+                      inputProps={{
+                        onKeyDown: (e) => {
+                          if (
+                            ["price", "baseCost", "code", "cost"].includes(field) &&
+                            ["e", "E", "+", "-"].includes(e.key)
+                          ) {
+                            e.preventDefault();
+                          }
+                        },
+                      }}
+                      value={form[field] ?? ""}
+                      onChange={(e) => {
+                        const value = ["price", "baseCost"].includes(field)
+                          ? e.target.value === ""
+                            ? null
+                            : parseFloat(e.target.value)
+                          : field === "code"
+                            ? e.target.value === ""
+                              ? null
+                              : parseInt(e.target.value, 10)
+                            : e.target.value;
+                        onChange(field as keyof ProductForm, value);
+                        if (!["code", "name"].includes(field)) {
+                          validateField(field, value);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (["code", "name"].includes(field)) {
+                          validateField(field, e.target.value);
+                        }
+                      }}
+                      error={!!errors[field]}
+                      helperText={
+                        isCheckingCode && field === "code"
+                          ? "Verificando código..."
+                          : errors[field]
                       }
-                    },
-                  }}
-                  value={form[field] ?? ""}
-                  onChange={(e) => {
-                    const value = ["price", "cost"].includes(field)
-                      ? e.target.value === ""
-                        ? null
-                        : parseFloat(e.target.value)
-                      : ["code"].includes(field)
-                        ? e.target.value === ""
-                          ? null
-                          : parseInt(e.target.value, 10)
-                        : e.target.value;
-                    onChange(field as keyof ProductForm, value);
-                    if (!["code", "name"].includes(field)) {
-                      validateField(field, value);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (field === "code" || field === "name") {
-                      validateField(field, e.target.value);
-                    }
-                  }}
-                  error={!!errors[field as keyof ProductForm]}
-                  helperText={
-                    isCheckingCode && field === "code"
-                      ? "Verificando código..."
-                      : errors[field as keyof ProductForm]
-                  } variant="outlined"
-                  size="small"
-
-                />
+                      variant="outlined"
+                      size="small"
+                      disabled={field === "cost" && modalType === FormTypeProduct.CREATE}
+                    />
+                  </Box>
+                </Tooltip>
               )}
             </Grid>
+
           ))}
           <Grid item xs={12}>
             <TextField

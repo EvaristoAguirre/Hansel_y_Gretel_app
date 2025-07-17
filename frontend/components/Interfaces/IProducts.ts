@@ -8,6 +8,7 @@ import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 interface IProduct {
   allowsToppings: boolean;
   code: number | null;
+  baseCost: number | null;
   cost: number | null;
   description: string;
   id: string;
@@ -99,7 +100,7 @@ export interface ProductResponse {
   code: number;
   name: string;
   price: number;
-  cost: number;
+  baseCost: number;
   type: TypeProduct;
   commentOfProduct?: string;
   allowsToppings: boolean;
