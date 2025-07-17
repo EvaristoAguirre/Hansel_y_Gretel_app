@@ -47,13 +47,13 @@ export class ProductResponseDto {
   name?: string;
 
   @Expose()
-  price?: number;
+  price?: string;
 
   @Expose()
-  cost?: number;
+  cost?: string;
 
   @Expose()
-  baseCost?: number;
+  baseCost?: string;
 
   @Expose()
   type: 'product' | 'promotion' | 'simple';
