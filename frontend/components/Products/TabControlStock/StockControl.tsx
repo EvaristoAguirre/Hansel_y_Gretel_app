@@ -57,9 +57,9 @@ const StockControl = () => {
   const formattedProducts = productsSimple.map((product) => ({
     id: product.id,
     name: product.name,
-    stock: Number(product.stock?.quantityInStock) || null,
+    stock: product.stock?.quantityInStock || null,
     unit: product.stock?.unitOfMeasure?.name || null,
-    min: Number(product.stock?.minimumStock) || null,
+    min: product.stock?.minimumStock,
     cost: product.cost || null,
     idStock: product.stock?.id || null
   }));
@@ -67,9 +67,9 @@ const StockControl = () => {
   const formattedIngredients = ingredientsAndToppings.map((ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
-    stock: Number(ingredient.stock?.quantityInStock) || null,
+    stock: ingredient.stock?.quantityInStock || null,
     unit: ingredient.stock?.unitOfMeasure?.name || null,
-    min: Number(ingredient.stock?.minimumStock) || null,
+    min: ingredient.stock?.minimumStock || null,
     cost: ingredient.cost || null,
     idStock: ingredient.stock?.id || null
   }));
