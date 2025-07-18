@@ -120,7 +120,11 @@ const StockControl = () => {
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
-    { field: "cost", headerName: "Costo", flex: 1 },
+    {
+      field: "cost", headerName: "Costo", flex: 1,
+      renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
   ];
 
 
@@ -154,7 +158,11 @@ const StockControl = () => {
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
-    { field: "cost", headerName: "Costo", flex: 1 },
+    {
+      field: "cost", headerName: "Costo", flex: 1,
+      renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
   ];
 
 

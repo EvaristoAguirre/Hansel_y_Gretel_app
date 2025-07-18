@@ -360,7 +360,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 <Tooltip
                   title={
                     field === "cost"
-                      ? "Costo total calculado automáticamente, incluye el Costo Base + Costo Agregados (si llevaran)"
+                      ? "Costo total calculado automáticamente, incluye el Costo Base + Costo Agregados. No se puede editar"
                       : ""
                   }
                   arrow
@@ -383,6 +383,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                           }
                         },
                         readOnly: field === "cost",
+                        style: field === "cost" ? { cursor: "default" } : {},
                       }}
                       value={form[field] ?? ""}
                       onChange={(e) => {
@@ -413,6 +414,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                       }
                       variant="outlined"
                       size="small"
+
                     />
                   </Box>
                 </Tooltip>
