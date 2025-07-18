@@ -42,6 +42,11 @@ const Ingredients = () => {
     setFormOpen(true);
   };
 
+  function normalizeNumber(str: string): number {
+    const normalized = str.replace(/\./g, '').replace(',', '.');
+    return parseFloat(normalized);
+  }
+
   const columns = useMemo(() => [
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
@@ -49,16 +54,7 @@ const Ingredients = () => {
       field: "cost",
       headerName: "Costo",
       width: 100,
-      renderCell: (params: GridCellParams) => {
-        const value = Number(params.value);
-        if (!isNaN(value)) {
-          return value.toLocaleString("es-AR", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
-        }
-        return "-";
-      },
+
     },
 
     {
@@ -83,7 +79,7 @@ const Ingredients = () => {
                 id: row.id,
                 name: row.name,
                 description: row.description,
-                cost: row.cost,
+                cost: normalizeNumber(row.cost),
                 unitOfMeasureId: row.unitOfMeasure,
                 isTopping: row.isTopping
               })

@@ -98,10 +98,10 @@ export const useProducts = () => {
         ...form,
         code: Number(form.code),
         price: Number(form.price),
-        cost: Number(form.cost),
         id: form.id,
-
       };
+
+      delete preparedForm.cost;
 
       const updatedProduct = await editProduct(preparedForm, token);
 

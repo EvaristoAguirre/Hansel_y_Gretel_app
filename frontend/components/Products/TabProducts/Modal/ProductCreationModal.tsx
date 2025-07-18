@@ -341,6 +341,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   }
                   arrow
                   placement="top"
+                  enterDelay={150}
                 >
                   <Box>
                     <NumericInput
@@ -364,7 +365,8 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   }
                   arrow
                   placement="top"
-                  disableHoverListener={field !== "cost"} // Solo activa tooltip para "cost"
+                  disableHoverListener={field !== "cost"}
+                  enterDelay={150}
                 >
                   <Box>
                     <TextField
@@ -380,6 +382,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                             e.preventDefault();
                           }
                         },
+                        readOnly: field === "cost",
                       }}
                       value={form[field] ?? ""}
                       onChange={(e) => {
@@ -410,7 +413,6 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                       }
                       variant="outlined"
                       size="small"
-                      disabled={field === "cost" && modalType === FormTypeProduct.CREATE}
                     />
                   </Box>
                 </Tooltip>

@@ -9,7 +9,7 @@ interface IProduct {
   allowsToppings: boolean;
   code: number | null;
   baseCost: number | null;
-  cost: number | null;
+  cost?: number | null;
   description: string;
   id: string;
   isActive: boolean;
@@ -20,7 +20,7 @@ interface IProduct {
 }
 export interface ProductForm extends IProduct {
   [key: string]: string | number | boolean
-  | null | ICategory[] | IingredientForm[]
+  | null | undefined | ICategory[] | IingredientForm[]
   | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
   categories: ICategory[];
   ingredients: IingredientForm[];
