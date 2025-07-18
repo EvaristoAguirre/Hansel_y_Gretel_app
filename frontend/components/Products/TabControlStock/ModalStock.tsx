@@ -5,7 +5,7 @@ import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
-import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
 import {
   Button,
   Dialog,
