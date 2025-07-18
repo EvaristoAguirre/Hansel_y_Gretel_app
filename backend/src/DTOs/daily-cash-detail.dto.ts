@@ -21,10 +21,10 @@ export class OrderDetailsDto {
 
 export class CashMovementDetailsDto {
   type: DailyCashMovementType;
-  amount: number;
+  amount: string;
   createdAt: Date;
   payments: {
-    amount: number;
+    amount: string;
     paymentMethod: PaymentMethod;
   }[];
 }
