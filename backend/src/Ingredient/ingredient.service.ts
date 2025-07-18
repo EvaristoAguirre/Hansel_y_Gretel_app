@@ -20,6 +20,7 @@ import { DataSource, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
+import { IngredientResponseFormatter } from './ingredient-response-formatter';
 
 @Injectable()
 export class IngredientService {
@@ -33,6 +34,7 @@ export class IngredientService {
     private readonly costCascadeService: CostCascadeService,
   ) {}
 
+  // ------- rta en string sin decimales y punto de mil
   async getAllIngredientsAndToppings(
     page: number,
     limit: number,
@@ -61,6 +63,7 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getAllIngredients(
     page: number,
     limit: number,
@@ -89,6 +92,7 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getIngredientById(id: string): Promise<IngredientResponseDTO> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -118,6 +122,7 @@ export class IngredientService {
     }
   }
 
+  // ---------- CUIDADO PORQUE ESTE ES PARA OTROS SERVICIOS
   async getIngredientByIdToAnotherService(id: string): Promise<Ingredient> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -147,6 +152,7 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getIngredientByName(name: string): Promise<Ingredient> {
     if (!name || name.trim().length === 0) {
       throw new BadRequestException('Name parameter is required');
@@ -160,7 +166,7 @@ export class IngredientService {
         throw new NotFoundException(`Ingredient with name: ${name} not found`);
       }
 
-      return ingredient;
+      return IngredientResponseFormatter.format(ingredient);
     } catch (error) {
       if (error instanceof HttpException) throw error;
 
@@ -171,16 +177,20 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async createIngredient(createData: CreateIngredientDto): Promise<Ingredient> {
     const ingredientCreated =
       await this.ingredientRepository.createIngredient(createData);
 
+    const ingredientWithFormatt =
+      IngredientResponseFormatter.format(ingredientCreated);
     this.eventEmitter.emit('ingredient.created', {
-      ingredient: ingredientCreated,
+      ingredient: ingredientWithFormatt,
     });
-    return ingredientCreated;
+    return ingredientWithFormatt;
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async updateIngredient(id: string, updateData: UpdateIngredientDto) {
     if (!id) {
       throw new BadRequestException('ID must be provided');
@@ -299,11 +309,13 @@ export class IngredientService {
 
       await queryRunner.commitTransaction();
 
+      const ingredientUpdatedWithFormatt =
+        IngredientResponseFormatter.format(updatedIngredient);
       this.eventEmitter.emit('ingredient.updated', {
-        ingredient: updatedIngredient,
+        ingredient: ingredientUpdatedWithFormatt,
       });
 
-      return updatedIngredient;
+      return ingredientUpdatedWithFormatt;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof HttpException) throw error;
@@ -353,6 +365,7 @@ export class IngredientService {
 
   // -------------------- TOPPINGS --------------------
 
+  // ------- rta en string sin decimales y punto de mil
   async getAllToppings(
     page: number,
     limit: number,
@@ -379,7 +392,7 @@ export class IngredientService {
       );
     }
   }
-
+  // ------- rta en string sin decimales y punto de mil
   async getToppingById(id: string): Promise<ToppingResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -407,10 +420,12 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getToppingByName(name: string): Promise<ToppingResponseDto> {
     return await this.ingredientRepository.getToppingByName(name);
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async findToppingById(id: string): Promise<Ingredient> {
     if (!id) {
       throw new BadRequestException('ID must be provided');
@@ -428,7 +443,7 @@ export class IngredientService {
       if (!topping) {
         throw new NotFoundException(`Topping with ID: ${id} not found`);
       }
-      return topping;
+      return IngredientResponseFormatter.format(topping);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -438,6 +453,7 @@ export class IngredientService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async updateTopping(
     id: string,
     updateData: UpdateIngredientDto,
@@ -446,21 +462,29 @@ export class IngredientService {
       id,
       updateData,
     );
+    const toppingUpdatedWithFormatt =
+      IngredientResponseFormatter.format(toppingUpdated);
     this.eventEmitter.emit('topping.updated', {
-      topping: toppingUpdated,
+      topping: toppingUpdatedWithFormatt,
     });
-    return toppingUpdated;
+    return toppingUpdatedWithFormatt;
   }
 
   // --------------------- Consultas sobre Stock  -----------
+
+  // ------- rta en string sin decimales y punto de mil
   async getIngredientsWithStock(): Promise<Ingredient[]> {
-    return this.ingredientRepository.getIngredientsWithStock();
+    const ingredients =
+      await this.ingredientRepository.getIngredientsWithStock();
+    const ingredientsWithFormatt =
+      IngredientResponseFormatter.formatMany(ingredients);
+    return ingredientsWithFormatt;
   }
 
   private adaptIngredientResponse(ingredient: any): IngredientResponseDTO {
     const formatter = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 0,
     });
     return {
       id: ingredient.id,
@@ -503,7 +527,7 @@ export class IngredientService {
   private adaptToppingResponse(topping: any): ToppingResponseDto {
     const formatter = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 0,
     });
     return {
       id: topping.id,

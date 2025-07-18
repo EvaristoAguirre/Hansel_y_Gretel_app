@@ -21,6 +21,7 @@ import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { isUUID } from 'class-validator';
 import { Logger } from '@nestjs/common';
+import { StockResponseFormatter } from './stock-response-formatter';
 
 @Injectable()
 export class StockService {
@@ -34,6 +35,7 @@ export class StockService {
     private readonly productService: ProductService,
   ) {}
 
+  // ------------- formato string, con separador de miles y decimales
   async getAllStocks(
     page: number,
     limit: number,
@@ -41,18 +43,21 @@ export class StockService {
     return await this.stockRepository.getAllStocks(page, limit);
   }
 
+  // ------------- formato string, con separador de miles y decimales
   async getStockByProductId(
     productId: string,
   ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByProductId(productId);
   }
 
+  // ------------- formato string, con separador de miles y decimales
   async getStockByIngredientId(
     ingredientId: string,
   ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByIngredientId(ingredientId);
   }
 
+  // ------------- formato string, con separador de miles y decimales
   async createStock(createStockDto: CreateStockDto): Promise<Stock> {
     const {
       productId,
@@ -156,11 +161,13 @@ export class StockService {
       ingredient,
     );
 
-    this.eventEmitter.emit('stock.created', { stock: createdStock });
+    const stockWithFormatt = StockResponseFormatter.format(createdStock);
 
-    return createdStock;
+    this.eventEmitter.emit('stock.created', { stock: stockWithFormatt });
+
+    return stockWithFormatt;
   }
-
+  // ------------- formato string, con separador de miles y decimales
   async updateStock(
     id: string,
     updateStockDto: UpdateStockDto,
@@ -286,9 +293,10 @@ export class StockService {
 
     const updatedStock = await this.stockRepository.saveStock(stock);
 
-    this.eventEmitter.emit('stock.updated', { stock: updatedStock });
+    const stockWithFormatt = StockResponseFormatter.format(updatedStock);
 
-    return updatedStock;
+    this.eventEmitter.emit('stock.updated', { stock: stockWithFormatt });
+    return stockWithFormatt;
   }
 
   async deductStock(

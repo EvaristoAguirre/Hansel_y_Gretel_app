@@ -13,7 +13,7 @@ export class ProductMapper {
 
     const formatter = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 0,
     });
 
     dto.price = formatter.format(Number(product.price));

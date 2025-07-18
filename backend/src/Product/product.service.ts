@@ -29,6 +29,7 @@ export class ProductService {
     private readonly costCascadeService: CostCascadeService,
   ) {}
 
+  // ------- rta en string sin decimales y punto de mil
   async getAllProducts(
     page: number,
     limit: number,
@@ -46,6 +47,7 @@ export class ProductService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getProductById(id: string): Promise<ProductResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -57,7 +59,6 @@ export class ProductService {
     }
     try {
       const product = await this.productRepository.getProductById(id);
-      // return product;
       return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -70,6 +71,7 @@ export class ProductService {
     }
   }
 
+  // ---------- CUIDADO QUE ESTE ES PARA OTRO SERVICIO
   async getProductByIdToAnotherService(id: string): Promise<Product> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -94,14 +96,17 @@ export class ProductService {
     }
   }
 
-  async getProductByCode(code: number) {
+  // ------- rta en string sin decimales y punto de mil
+  async getProductByCode(code: number): Promise<ProductResponseDto> {
     return await this.productRepository.getProductByCode(code);
   }
 
-  async getProductByName(name: string) {
+  // ------- rta en string sin decimales y punto de mil
+  async getProductByName(name: string): Promise<ProductResponseDto> {
     return this.productRepository.getProductByName(name);
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getProductsByCategories(
     categories: string[],
   ): Promise<ProductResponseDto[]> {
@@ -115,6 +120,7 @@ export class ProductService {
     return products;
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async createProduct(
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
@@ -127,6 +133,7 @@ export class ProductService {
     return productCreated;
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async updateProduct(
     id: string,
     updateData: UpdateProductDto,
@@ -197,6 +204,7 @@ export class ProductService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async searchProducts(
     name?: string,
     code?: string,
@@ -215,6 +223,7 @@ export class ProductService {
     );
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async searchProductsToPromotion(
     isActive: boolean,
     page: number,
@@ -231,8 +240,16 @@ export class ProductService {
     );
   }
 
-  async getSimpleAndCompositeProducts(page: number, limit: number) {
-    return this.productRepository.getSimpleAndCompositeProducts(page, limit);
+  // ------- rta en string sin decimales y punto de mil
+  async getSimpleAndCompositeProducts(
+    page: number,
+    limit: number,
+  ): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository.getSimpleAndCompositeProducts(
+      page,
+      limit,
+    );
+    return ProductMapper.toResponseDtoArray(products);
   }
 
   async checkProductsStockAvailability(

@@ -94,7 +94,7 @@ export class ProductRepository {
     return product;
   }
 
-  async getProductByCode(code: number): Promise<Product> {
+  async getProductByCode(code: number): Promise<ProductResponseDto> {
     if (!code) {
       throw new BadRequestException('Either code must be provided.');
     }
@@ -108,7 +108,7 @@ export class ProductRepository {
       if (!product) {
         throw new NotFoundException(`Product not found with  code: ${code}`);
       }
-      return product;
+      return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -121,7 +121,7 @@ export class ProductRepository {
     }
   }
 
-  async getProductByName(name: string): Promise<Product> {
+  async getProductByName(name: string): Promise<ProductResponseDto> {
     if (!name) {
       throw new BadRequestException('Either name must be provided.');
     }
@@ -135,7 +135,7 @@ export class ProductRepository {
       if (!product) {
         throw new NotFoundException(`Product not found with  name: ${name}`);
       }
-      return product;
+      return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
