@@ -200,9 +200,6 @@ const OrderProvider = ({
   }, [fetchOrderBySelectedTable]);
 
 
-  useEffect(() => {
-    console.log("ORden seleccionada🤌🏽", selectedOrderByTable);
-  }, [selectedOrderByTable]);
 
   const checkStockAvailability = async (productId: string, quantity: number) => {
     const form: ICheckStock = {
@@ -247,7 +244,7 @@ const OrderProvider = ({
       const newProduct = {
         productId: product.id,
         quantity: 1,
-        unitaryPrice: Number(product.price),
+        unitaryPrice: product.price,
         productName: product.name,
         allowsToppings: product.allowsToppings,
         commentOfProduct: product.commentOfProduct,

@@ -99,7 +99,7 @@ export interface ProductResponse {
   id: string;
   code: number;
   name: string;
-  price: number;
+  price: string;
   baseCost: number;
   type: TypeProduct;
   commentOfProduct?: string;
@@ -129,7 +129,7 @@ export interface SelectedProductsI {
   productId: string;
   productName?: string;
   quantity: number;
-  unitaryPrice?: number | null;
+  unitaryPrice?: string | null;
   commentOfProduct?: string | null;
   toppingsIds?: string[];
   toppingsPerUnit?: string[][]
