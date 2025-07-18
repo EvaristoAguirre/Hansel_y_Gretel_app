@@ -172,6 +172,7 @@ export class StockService {
     id: string,
     updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
+    console.log('data de stock.....', updateStockDto);
     const {
       productId,
       ingredientId,
