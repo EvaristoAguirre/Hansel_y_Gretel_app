@@ -16,9 +16,31 @@ export class ProductMapper {
       maximumFractionDigits: 0,
     });
 
+    const formatterStock = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+
     dto.price = formatter.format(Number(product.price));
     dto.cost = formatter.format(Number(product.cost));
     dto.baseCost = formatter.format(Number(product.baseCost ?? 0));
+
+    if (product.stock) {
+      dto.stock = {
+        id: product.stock.id,
+        quantityInStock: formatterStock.format(
+          Number(product.stock.quantityInStock),
+        ),
+        minimumStock: formatterStock.format(Number(product.stock.minimumStock)),
+        unitOfMeasure: plainToInstance(
+          UnitOfMeasureResponseDto,
+          product.stock.unitOfMeasure,
+          {
+            excludeExtraneousValues: true,
+          },
+        ),
+      };
+    }
 
     dto.availableToppingGroups =
       product.availableToppingGroups?.map((group) => ({

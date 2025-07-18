@@ -486,6 +486,10 @@ export class IngredientService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+    const formatterStock = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
     return {
       id: ingredient.id,
       name: ingredient.name,
@@ -504,8 +508,12 @@ export class IngredientService {
       stock: ingredient.stock
         ? {
             id: ingredient.stock.id,
-            quantityInStock: ingredient.stock.quantityInStock,
-            minimumStock: ingredient.stock.minimumStock,
+            quantityInStock: formatterStock.format(
+              Number(ingredient.stock.quantityInStock),
+            ),
+            minimumStock: formatterStock.format(
+              Number(ingredient.stock.minimumStock),
+            ),
             unitOfMeasure: ingredient.stock.unitOfMeasure
               ? {
                   id: ingredient.stock.unitOfMeasure.id,
@@ -529,6 +537,11 @@ export class IngredientService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+
+    const formatterStock = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
     return {
       id: topping.id,
       name: topping.name,
@@ -550,8 +563,12 @@ export class IngredientService {
       stock: topping.stock
         ? {
             id: topping.stock.id,
-            quantityInStock: topping.stock.quantityInStock,
-            minimumStock: topping.stock.minimumStock,
+            quantityInStock: formatterStock.format(
+              Number(topping.stock.quantityInStock),
+            ),
+            minimumStock: formatterStock.format(
+              Number(topping.stock.minimumStock),
+            ),
             unitOfMeasure: topping.stock.unitOfMeasure
               ? {
                   id: topping.stock.unitOfMeasure.id,

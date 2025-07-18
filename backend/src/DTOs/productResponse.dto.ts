@@ -28,9 +28,9 @@ export class StockSummary {
   @Expose()
   id: string;
   @Expose()
-  quantityInStock: number;
+  quantityInStock: string;
   @Expose()
-  minimumStock: number;
+  minimumStock: string;
   @Expose()
   @Type(() => UnitOfMeasureResponseDto)
   unitOfMeasure: UnitOfMeasureResponseDto;
