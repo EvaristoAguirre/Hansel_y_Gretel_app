@@ -14,7 +14,7 @@ import {
   DialogTitle,
   Dialog,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import { getMovements, getMovementsDetailsById, getOrderDetails } from "@/api/dailyCash";
@@ -30,7 +30,9 @@ import { MovementCash, OrderCash } from "@/components/Interfaces/IDailyCash";
 
 
 const DailySalesView = () => {
-  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
+
+
   const [dataOrders, setDataOrders] = useState<OrderCash[] | null>(null);
   const [dataMovements, setDataMovements] = useState<MovementCash[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,13 @@ const DailySalesView = () => {
 
   const [openOrderModal, setOpenOrderModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<OrderCash | null>(null);
+
+
+  useEffect(() => {
+    if (token) {
+      handleSearch();
+    }
+  }, [token]);
 
   const handleOpenOrderDetail = async (orderId: string) => {
     try {
@@ -196,21 +205,17 @@ const DailySalesView = () => {
             value={selectedDate}
             onChange={setSelectedDate}
             format="DD/MM/YYYY"
+            disableFuture
             sx={{
               animation: !selectedDate ? "pulse 1.2s infinite" : "none",
               "@keyframes pulse": {
-                "0%": {
-                  transform: "scale(1)",
-                },
-                "50%": {
-                  transform: "scale(1.05)",
-                },
-                "100%": {
-                  transform: "scale(1)",
-                },
+                "0%": { transform: "scale(1)" },
+                "50%": { transform: "scale(1.05)" },
+                "100%": { transform: "scale(1)" },
               },
             }}
           />
+
 
         </Grid>
         <Grid item >
