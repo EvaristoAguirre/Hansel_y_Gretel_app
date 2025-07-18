@@ -34,6 +34,7 @@ import { paymentMethod } from "../Enums/dailyCash";
 import { TableState } from "../Enums/table";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import { OrderState } from "../Enums/order";
+import { formatNumber } from "../Utils/FormatNumber";
 
 interface DraftPayment {
   productIds: string[];
@@ -110,7 +111,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       Swal.fire("Producto ya asignado a otro pago", "", "error");
       return;
     }
-    const base = productIds.reduce((sum, id) => sum + (confirmedProducts.find(p => p.internalId === id)?.unitaryPrice || 0), 0);
+    const base = productIds.reduce(
+      (sum, id) =>
+        sum +
+        Number(confirmedProducts.find(p => p.internalId === id)?.unitaryPrice ?? 0),
+      0
+    );
     const amount = tipType === '10' ? base * 1.1 : tipType === 'custom' ? base + customTip : base;
     setConfirmedPayments(prev => [...prev, { productIds, methodOfPayment: method, amount }]);
     setDraftPayment({ productIds: [], method: '', tipType: 'none', customTip: 0 });
@@ -139,7 +145,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   };
 
   // Totales
-  const baseAmount = draftPayment.productIds.reduce((sum, id) => sum + (confirmedProducts.find(p => p.internalId === id)?.unitaryPrice || 0), 0);
+  const baseAmount = draftPayment.productIds.reduce(
+    (sum, id) =>
+      sum +
+      Number(confirmedProducts.find(p => p.internalId === id)?.unitaryPrice ?? 0),
+    0
+  );
   const total10 = (baseAmount * 1.1).toFixed(2);
   const totalCustom = (baseAmount + draftPayment.customTip).toFixed(2);
 
@@ -167,7 +178,11 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       </Typography>
 
       <Grid container spacing={2} mb={2}>
-        <Grid item xs={4}><Typography fontWeight="bold">Total:</Typography><Typography>${total.toFixed(2)}</Typography></Grid>
+        <Grid item xs={4}>
+          <Typography fontWeight="bold">Total:</Typography>
+          <Typography>${formatNumber(total)}</Typography>
+
+        </Grid>
         <Grid item xs={4}><Typography fontWeight="bold">Unidades:</Typography><Typography>{confirmedProducts.length}</Typography></Grid>
         <Grid item xs={4}><Typography fontWeight="bold">Estado:</Typography><Typography className={orderStyles[selectedOrderByTable?.state as keyof typeof orderStyles]}>{orderStates[selectedOrderByTable?.state as keyof typeof orderStates]}</Typography></Grid>
       </Grid>
@@ -219,7 +234,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                             <ListItemIcon sx={{ minWidth: 32, mr: 1 }}>
                               <Checkbox checked={checked} disabled={disabled} onChange={() => toggleProductSelection(p.internalId!)} />
                             </ListItemIcon>
-                            <ListItemText primary={`${capitalizeFirstLetter(p.productName)} - $${p.unitaryPrice}`} primaryTypographyProps={{ sx: { color: disabled ? "text.disabled" : "text.primary" } }} />
+                            <ListItemText
+                              primary={`${capitalizeFirstLetter(p.productName)} - $${formatNumber(Number(p.unitaryPrice ?? 0))}`}
+                              primaryTypographyProps={{ sx: { color: disabled ? "text.disabled" : "text.primary" } }}
+                            />
                           </ListItem>
                         );
                       })}
@@ -232,15 +250,15 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   <Box display="grid" gridTemplateColumns="30px 3fr 1fr" alignItems="center" rowGap={1} mt={1}>
                     <Radio checked={draftPayment.tipType === "none"} onChange={() => setDraftPayment({ ...draftPayment, tipType: "none" })} />
                     <Typography>Total sin propina</Typography>
-                    <Typography>${baseAmount.toFixed(2)}</Typography>
+                    <Typography>${formatNumber(baseAmount)}</Typography>
 
                     <Radio checked={draftPayment.tipType === "10"} onChange={() => setDraftPayment({ ...draftPayment, tipType: "10" })} />
                     <Typography>Total + 10% propina</Typography>
-                    <Typography>${total10}</Typography>
+                    <Typography>${formatNumber(Number(total10))}</Typography>
 
                     <Radio checked={draftPayment.tipType === "custom"} onChange={() => setDraftPayment({ ...draftPayment, tipType: "custom" })} />
                     <Typography>Total + propina personalizada</Typography>
-                    <Typography>${totalCustom}</Typography>
+                    <Typography>${formatNumber(Number(totalCustom))}</Typography>
                   </Box>
                   {draftPayment.tipType === "custom" && (
                     <TextField type="number" placeholder="Propina" value={draftPayment.customTip} onChange={e => setDraftPayment({ ...draftPayment, customTip: Number(e.target.value) })} fullWidth sx={{ mt: 1 }} />
@@ -264,7 +282,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                       <Grid item xs={12} sm={6} key={i}>
                         <Paper sx={{ p: 2 }}>
                           <Typography fontWeight="bold">Pago #{i + 1}</Typography>
-                          <Typography>Total: ${cp.amount.toFixed(2)}</Typography>
+                          <Typography>Total: ${formatNumber(cp.amount)}</Typography>
                           <Typography>Método: {capitalizeFirstLetter(cp.methodOfPayment)}</Typography>
                         </Paper>
                       </Grid>
