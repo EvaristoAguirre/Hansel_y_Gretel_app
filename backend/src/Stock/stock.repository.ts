@@ -177,10 +177,14 @@ export class StockRepository {
   }
 
   private adaptStockResponse(stock: any): StockSummaryResponseDTO {
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
     return {
       id: stock.id,
-      quantityInStock: stock.quantityInStock,
-      minimumStock: stock.minimumStock,
+      quantityInStock: formatter.format(Number(stock.quantityInStock)),
+      minimumStock: formatter.format(Number(stock.minimumStock)),
       ingredient: stock.ingredient
         ? {
             id: stock.ingredient.id,

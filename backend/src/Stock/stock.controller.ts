@@ -72,6 +72,7 @@ export class StockController {
       updateStockDto,
     );
     await this.eventEmitter.emit('stock.updated', updatedStock);
+    console.log('response patch......', updatedStock);
     return updatedStock;
   }
 

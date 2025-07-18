@@ -5,7 +5,7 @@ import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
-import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
+import { IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
 import {
   Button,
   Dialog,
@@ -20,6 +20,7 @@ import {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { NumericFormat } from "react-number-format";
 import Swal from "sweetalert2";
 
 export interface ModalStockProps {
@@ -209,16 +210,24 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         {selectedItem?.stock ? `Editar Stock de ${selectedItem?.name}` : `Agregar Stock a ${selectedItem?.name}`}
       </DialogTitle>
       <DialogContent>
-        <TextField
+        <NumericFormat
+          customInput={TextField}
           autoFocus
           margin="dense"
           label="Cantidad en Stock"
-          type="number"
           fullWidth
           variant="standard"
           name="quantityInStock"
           value={formValues.quantityInStock}
-          onChange={handleInputChange}
+          thousandSeparator="."
+          decimalSeparator=","
+          allowNegative={false}
+          onValueChange={({ value }) =>
+            setFormValues((prev) => ({
+              ...prev,
+              quantityInStock: value, // Este value es sin formato (sin puntos ni comas)
+            }))
+          }
         />
         <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
           <InputLabel id="unitOfMeasure-label">Unidad de Medida</InputLabel>
@@ -247,15 +256,23 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
         </FormControl>
 
 
-        <TextField
+        <NumericFormat
+          customInput={TextField}
           margin="dense"
           label="Stock Mínimo"
-          type="number"
           fullWidth
           variant="standard"
           name="minimumStock"
           value={formValues.minimumStock}
-          onChange={handleInputChange}
+          thousandSeparator="."
+          decimalSeparator=","
+          allowNegative={false}
+          onValueChange={({ value }) =>
+            setFormValues((prev) => ({
+              ...prev,
+              minimumStock: value,
+            }))
+          }
         />
       </DialogContent>
       <DialogActions>

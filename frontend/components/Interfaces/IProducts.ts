@@ -100,7 +100,8 @@ export interface ProductResponse {
   code: number;
   name: string;
   price: string;
-  baseCost: number;
+  cost: string;
+  baseCost: string;
   type: TypeProduct;
   commentOfProduct?: string;
   allowsToppings: boolean;

@@ -193,6 +193,10 @@ export class IngredientRepository {
       minimumFractionDigits: 0,
       maximumFractionDigits: 1,
     });
+    const formatterStock = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
     return {
       id: topping.id,
       name: topping.name,
@@ -214,8 +218,12 @@ export class IngredientRepository {
       stock: topping.stock
         ? {
             id: topping.stock.id,
-            quantityInStock: topping.stock.quantityInStock,
-            minimumStock: topping.stock.minimumStock,
+            quantityInStock: formatterStock.format(
+              Number(topping.stock.quantityInStock),
+            ),
+            minimumStock: formatterStock.format(
+              Number(topping.stock.minimumStockock),
+            ),
             unitOfMeasure: topping.stock.unitOfMeasure
               ? {
                   id: topping.stock.unitOfMeasure.id,

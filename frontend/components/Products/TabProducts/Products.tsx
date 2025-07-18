@@ -81,8 +81,14 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
-    { field: "price", headerName: "Precio", width: 100 },
-    { field: "cost", headerName: "Costo", width: 100 },
+    {
+      field: "price", headerName: "Precio", width: 100, renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
+    {
+      field: "cost", headerName: "Costo", width: 100, renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
     {
       field: "actions",
       headerName: "Acciones",

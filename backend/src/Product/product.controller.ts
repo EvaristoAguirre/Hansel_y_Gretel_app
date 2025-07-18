@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ProductService } from './product.service';
-import { Product } from './product.entity';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
@@ -50,7 +49,9 @@ export class ProductController {
 
   @Get('by-name')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductByName(@Query('name') name: string): Promise<Product> {
+  async getProductByName(
+    @Query('name') name: string,
+  ): Promise<ProductResponseDto> {
     return this.productService.getProductByName(name);
   }
 
@@ -98,7 +99,9 @@ export class ProductController {
   }
   @Get('by-code/:code')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getProductByCode(@Param('code') code: string): Promise<Product> {
+  async getProductByCode(
+    @Param('code') code: string,
+  ): Promise<ProductResponseDto> {
     return this.productService.getProductByCode(+code);
   }
 
