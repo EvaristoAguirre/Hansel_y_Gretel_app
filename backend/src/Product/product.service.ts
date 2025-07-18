@@ -146,8 +146,8 @@ export class ProductService {
 
     if (
       currentProduct.type === 'simple' &&
-      typeof updateData.cost === 'number' &&
-      updateData.cost !== currentProduct.baseCost
+      typeof updateData.baseCost === 'number' &&
+      updateData.baseCost !== currentProduct.baseCost
     ) {
       console.log(
         `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,

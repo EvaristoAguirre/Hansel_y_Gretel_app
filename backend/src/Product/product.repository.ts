@@ -353,7 +353,7 @@ export class ProductRepository {
     }
 
     const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
-    console.log(promotionCreada);
+    console.log('promocion creada.....', promotionCreada);
     return promotionCreada;
   }
 
@@ -647,7 +647,6 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
-    console.log('actualizando....', updateData);
 
     const { categories, ingredients, ...otherAttributes } = updateData;
 
@@ -682,7 +681,7 @@ export class ProductRepository {
         }
       }
 
-      const toppingsExtraCost = 0;
+      let toppingsExtraCost = 0;
 
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
@@ -691,15 +690,15 @@ export class ProductRepository {
 
         await this.updateToppingsGroups(updateData, product, queryRunner);
 
-        const toppingsExtraCost = await this.calculateToppingsCostForProduct(
+        toppingsExtraCost = await this.calculateToppingsCostForProduct(
           updateData,
           queryRunner,
         );
-        product.toppingsCost += toppingsExtraCost;
+        product.toppingsCost = toppingsExtraCost;
       }
 
       if (
-        typeof updateData.cost === 'number' &&
+        typeof updateData.baseCost === 'number' &&
         !isNaN(updateData.cost) &&
         updateData.cost >= 0
       ) {
@@ -716,7 +715,6 @@ export class ProductRepository {
           updatedProduct.id,
           updatedProduct.type,
         );
-
       return ProductMapper.toResponseDto(updatedProductWithRelations);
     }
 
@@ -872,6 +870,8 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+    console.log('data para actualizar promo....', updateData);
+    console.log('data para actualizar promo....', updateData.products);
     const { categories, products, ...otherAttributes } = updateData;
 
     const promotion = await queryRunner.manager.findOne(Product, {
