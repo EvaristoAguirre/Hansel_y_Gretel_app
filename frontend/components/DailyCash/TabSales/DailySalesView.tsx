@@ -154,10 +154,16 @@ const DailySalesView = () => {
       field: "amount",
       headerName: "Total",
       flex: 1,
-      renderCell: (params) => (
-        <span style={{ color: "green" }}>${Number(params.value).toFixed(2)}</span>
-      ),
+      renderCell: (params) => {
+        const isIngreso = params.row.type === "ingreso";
+        return (
+          <span style={{ color: isIngreso ? "green" : "red" }}>
+            ${Number(params.value).toFixed(2)}
+          </span>
+        );
+      },
     },
+
     {
       field: "verDetalle",
       headerName: "Detalle",
