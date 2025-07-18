@@ -3,6 +3,8 @@ import { useAuth } from "@/app/context/authContext";
 import { ProductForm, ProductForPromo, ProductResponse, SelectedProductsI } from "@/components/Interfaces/IProducts";
 import AutoCompleteProduct from "@/components/Utils/Autocomplete";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
+import { formatNumber } from "@/components/Utils/FormatNumber";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 import { Delete, Edit, Save, Close } from "@mui/icons-material";
 import { IconButton, List, ListItem, ListItemText, TextField, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -35,7 +37,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
         productId: item.product && item.product.id,
         productName: item.product && item.product.name,
         quantity: item.quantity,
-        unitaryPrice: item.product && Number(item.product.price),
+        unitaryPrice: item.product && item.product.price ? item.product.price.toString() as string : null,
       }));
       setSelectedProducts(formattedProducts);
 
@@ -77,7 +79,7 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
         productId: product.id,
         productName: product.name,
         quantity: 1,
-        unitaryPrice: Number(product.price),
+        unitaryPrice: product.price,
       },
     ]);
     handleSetDisableTabs([TabProductKey.PRODUCT_WITH_INGREDIENT, TabProductKey.SIMPLE_PRODUCT]);
@@ -185,11 +187,12 @@ const InputsPromo: React.FC<InputsPromoProps> = ({ onSave, form, handleSetDisabl
                 />
               </Tooltip>
 
-              {item.unitaryPrice?.toFixed(2) !== undefined && (
+              {item.unitaryPrice !== undefined && item.unitaryPrice !== null && (
                 <Typography fontSize="0.8rem">
-                  ${(item.unitaryPrice * item.quantity).toFixed(2)}
+                  ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}
                 </Typography>
               )}
+
 
               {editIndex === index ? (
                 <>
