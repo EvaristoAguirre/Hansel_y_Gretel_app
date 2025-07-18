@@ -14,6 +14,7 @@ import {
 import { GridCellParams } from "@mui/x-data-grid";
 import { FormIngredient } from "./FormIngredient";
 import ToppingsGroupList from "./Toppings/ToppingsGroupList";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 
 function TabPanel({ children, value, index }: any) {
   return value === index ? <Box mt={2}>{children}</Box> : null;
@@ -42,10 +43,7 @@ const Ingredients = () => {
     setFormOpen(true);
   };
 
-  function normalizeNumber(str: string): number {
-    const normalized = str.replace(/\./g, '').replace(',', '.');
-    return parseFloat(normalized);
-  }
+
 
   const columns = useMemo(() => [
     { field: "name", headerName: "Nombre", width: 200 },

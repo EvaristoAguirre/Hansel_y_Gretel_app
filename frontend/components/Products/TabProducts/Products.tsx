@@ -15,6 +15,7 @@ import { FormTypeProduct } from "@/components/Enums/view-products";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -74,10 +75,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
-  function normalizeNumber(str: string): number {
-    const normalized = str.replace(/\./g, '').replace(',', '.');
-    return parseFloat(normalized);
-  }
+
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },

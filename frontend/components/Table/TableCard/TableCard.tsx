@@ -78,9 +78,7 @@ const TableCard: React.FC<TableCardProps> = ({
     setIsModalOpen(false);
   };
 
-  useEffect(() => {
-    console.log("ORden seleccionada🤌🏽", selectedOrderByTable);
-  }, [table, selectedOrderByTable]);
+
 
   return (
     <div

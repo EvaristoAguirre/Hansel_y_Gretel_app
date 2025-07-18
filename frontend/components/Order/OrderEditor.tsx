@@ -28,6 +28,8 @@ import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
 import { fetchToppingsGroupById } from "@/api/topping";
 import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
+import { formatNumber } from "../Utils/FormatNumber";
+import { normalizeNumber } from "../Utils/NormalizeNumber";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 
@@ -138,8 +140,48 @@ const OrderEditor = ({
       });
     }
 
-    const basePrice = (product.unitaryPrice ?? 0) * quantity;
-    return basePrice + toppingExtra;
+    // Primero normalizar unitaryPrice a número
+    const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
+
+    const basePrice = unitaryPriceNum * quantity;
+    const totalPrice = basePrice + toppingExtra;
+    const formattedPrice = formatNumber(totalPrice);
+
+    console.group("🍄🍄🍄🍄🍄🍄");
+    console.log("unitaryPrice original:", product.unitaryPrice);
+    console.log("tipo", typeof product.unitaryPrice);
+    console.log("unitaryPrice normalizado:", unitaryPriceNum);
+    console.log("basePrice (unitaryPriceNum * quantity):", basePrice);
+    console.log("totalPrice (basePrice + toppingExtra):", totalPrice);
+    console.log("Formateado a string:", formattedPrice);
+    console.groupEnd();
+
+    return formattedPrice;
+  };
+
+  const calcularPrecioConToppingsNumero = (
+    product: any,
+    quantity: number,
+    toppingsByUnit: any[]
+  ): number => {
+    let toppingExtra = 0;
+
+    if (toppingsByUnit && product.availableToppingGroups) {
+      product.availableToppingGroups.forEach((group: any) => {
+        const { id: groupId, settings } = group;
+
+        if (settings.chargeExtra && settings.extraCost) {
+          toppingsByUnit.forEach((unitToppings: any) => {
+            const selected = unitToppings[groupId] || [];
+            toppingExtra += selected.length * settings.extraCost;
+          });
+        }
+      });
+    }
+
+    const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
+
+    return unitaryPriceNum * quantity + toppingExtra;
   };
 
 
@@ -147,7 +189,7 @@ const OrderEditor = ({
     const calcularSubtotal = () => {
       const subtotal = selectedProducts.reduce((acc, product) => {
         const toppings = toppingsByProductGroup[product.productId] ?? [];
-        return acc + calcularPrecioConToppings(product, product.quantity, toppings);
+        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
       }, 0);
       setSubtotal(subtotal);
     };
@@ -155,7 +197,7 @@ const OrderEditor = ({
     const calculateTotal = () => {
       const total = confirmedProducts.reduce((acc, product) => {
         const toppings = toppingsByProductGroup[product.productId] ?? [];
-        return acc + calcularPrecioConToppings(product, product.quantity, toppings);
+        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
       }, 0);
       setTotal(total);
     };
@@ -163,6 +205,7 @@ const OrderEditor = ({
     calcularSubtotal();
     calculateTotal();
   }, [selectedProducts, confirmedProducts, toppingsByProductGroup]);
+
 
 
   const toggleCommentInput = (productId: string) => {
@@ -453,7 +496,7 @@ const OrderEditor = ({
                   fontWeight: "bold",
                 }}
               >
-                Subtotal: ${subtotal}
+                Subtotal:  ${formatNumber(subtotal)}
               </Typography>
               <FormControlLabel
                 control={
@@ -541,8 +584,9 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${(item.unitaryPrice ?? 0) * item.quantity}
+                      ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}
                     </Typography>
+
                   </ListItem>
                 ))}
               </List>
@@ -566,7 +610,7 @@ const OrderEditor = ({
                 fontWeight: "bold",
               }}
             >
-              Total: ${total}
+              Total:  ${formatNumber(total)}
             </Typography>
           </Box>
         </div>
