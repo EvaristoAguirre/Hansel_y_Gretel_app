@@ -8,7 +8,8 @@ import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 interface IProduct {
   allowsToppings: boolean;
   code: number | null;
-  cost: number | null;
+  baseCost: number | null;
+  cost?: number | null;
   description: string;
   id: string;
   isActive: boolean;
@@ -19,7 +20,7 @@ interface IProduct {
 }
 export interface ProductForm extends IProduct {
   [key: string]: string | number | boolean
-  | null | ICategory[] | IingredientForm[]
+  | null | undefined | ICategory[] | IingredientForm[]
   | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
   categories: ICategory[];
   ingredients: IingredientForm[];
@@ -99,7 +100,7 @@ export interface ProductResponse {
   code: number;
   name: string;
   price: number;
-  cost: number;
+  baseCost: number;
   type: TypeProduct;
   commentOfProduct?: string;
   allowsToppings: boolean;

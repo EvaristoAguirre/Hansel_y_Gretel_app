@@ -74,6 +74,11 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
+  function normalizeNumber(str: string): number {
+    const normalized = str.replace(/\./g, '').replace(',', '.');
+    return parseFloat(normalized);
+  }
+
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
@@ -99,8 +104,9 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 name: params.row.name,
                 description: params.row.description,
                 type: params.row.type,
-                price: parseFloat(params.row.price),
-                cost: parseFloat(params.row.cost),
+                price: normalizeNumber(params.row.price),
+                cost: normalizeNumber(params.row.cost),
+                baseCost: normalizeNumber(params.row.baseCost),
                 categories: params.row.categories,
                 ingredients: params.row.productIngredients?.map(mapIngredientResponseToForm) || [],
                 products: params.row.promotionDetails || [],
