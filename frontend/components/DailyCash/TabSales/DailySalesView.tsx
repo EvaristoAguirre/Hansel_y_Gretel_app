@@ -117,7 +117,7 @@ const DailySalesView = () => {
       flex: 1,
       renderCell: (params) => (
         <span style={{ color: "green" }}>
-          ${Number(params.value).toFixed(2)}
+          <>$ {params.value}</>
         </span>
       ),
     },
@@ -167,7 +167,7 @@ const DailySalesView = () => {
         const isIngreso = params.row.type === "ingreso";
         return (
           <span style={{ color: isIngreso ? "green" : "red" }}>
-            ${Number(params.value).toFixed(2)}
+            <>$ {params.value}</>
           </span>
         );
       },
