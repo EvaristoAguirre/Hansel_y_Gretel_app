@@ -90,20 +90,20 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
           <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
               <AttachMoneyIcon color="info" fontSize="small" />
-              <strong>Dinero Inicial:</strong> ${Number(data.initialCash).toFixed(2)}
+              <strong>Dinero Inicial:</strong> $ {data.initialCash}
             </Typography>
           </Grid>
           <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
               <MonetizationOnIcon color="success" fontSize="small" />
-              <strong>Dinero Final:</strong> ${Number(data.finalCash).toFixed(2)}
+              <strong>Dinero Final:</strong> $ {data.finalCash}
             </Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography display="flex" alignItems="center" gap={1}>
               <DifferenceIcon color="warning" fontSize="small" />
               <strong>Diferencia:</strong>{" "}
-              {data.cashDifference ?? 0 >= 0 ? "+" : "-"}${Math.abs(data.cashDifference ?? 0).toFixed(2)}
+              $ {data?.cashDifference}
             </Typography>
           </Grid>
         </Grid>
@@ -119,7 +119,7 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
             <Grid item xs={6} key={t.label}>
               <Typography display="flex" alignItems="center" gap={1}>
                 {t.icon}
-                <strong>{t.label}:</strong> ${Number(t.value).toFixed(2)}
+                <strong>{t.label}:</strong> $ {t.value}
               </Typography>
             </Grid>
           ))}
