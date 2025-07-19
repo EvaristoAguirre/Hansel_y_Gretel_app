@@ -84,7 +84,11 @@ export class DailyCashService {
       );
     }
     try {
-      return await this.dailyCashRepository.getAllDailysCash(page, limit);
+      const allDailyCash = await this.dailyCashRepository.getAllDailysCash(
+        page,
+        limit,
+      );
+      return DailyCashMapper.toMany(allDailyCash);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
