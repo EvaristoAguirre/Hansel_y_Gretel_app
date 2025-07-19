@@ -58,3 +58,34 @@ export interface IDailyCash {
   totalOtherPayments?: number;
   ordersIds?: string[]
 }
+
+export type OrderCash = {
+  id: string;
+  date: string;
+  table: string;
+  room: string;
+  numberCustomers: number;
+  total: string;
+  paymentMethods: Payment[];
+  products: Product[];
+};
+
+type Payment = {
+  methodOfPayment: string;
+  amount: string;
+};
+
+type Product = {
+  name: string;
+  quantity: number;
+  commandNumber: string;
+};
+
+export type MovementCash = {
+  id: string;
+  type: string;
+  amount: number;
+  description: string;
+  createdAt: string;
+  payments: { amount: number; paymentMethod: string }[];
+};

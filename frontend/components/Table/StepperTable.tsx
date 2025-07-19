@@ -12,6 +12,12 @@ import TableEditor from './TableEditor';
 import OrderEditor from '../Order/OrderEditor';
 import { ITable } from '../Interfaces/ITable';
 import { TableState } from '../Enums/table';
+import { editTable } from '@/api/tables';
+import { useRoomContext } from '@/app/context/room.context';
+import { useTableStore } from './useTableStore';
+import { useOrderStore } from '../Order/useOrderStore';
+import { useAuth } from '@/app/context/authContext';
+import { TableBar } from '@mui/icons-material';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 
@@ -32,7 +38,13 @@ export const StepperTable: React.FC<Props> = ({
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>(
     {}
   );
-  const { confirmedProducts, handleResetSelectedOrder } = useOrderContext();
+  const { confirmedProducts, selectedOrderByTable, setSelectedOrderByTable, fetchOrderBySelectedTable } = useOrderContext();
+  const { setSelectedTable } = useRoomContext();
+  const { updateTable } = useTableStore();
+  const { updateOrder } = useOrderStore();
+  const { getAccessToken } = useAuth();
+  const token = getAccessToken();
+
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -68,6 +80,17 @@ export const StepperTable: React.FC<Props> = ({
   const imprimirComanda = () => {
     console.log("Imprimiendo comanda:", confirmedProducts);
     // función de impresión
+  };
+
+  const handleTableAvailable = async (table: ITable, token: string) => {
+    const tableEdited = await editTable({ ...table, state: TableState.AVAILABLE }, token);
+    if (tableEdited) {
+      setSelectedTable(tableEdited);
+      updateTable(tableEdited);
+      setSelectedOrderByTable(null);
+      fetchOrderBySelectedTable();
+    }
+    handleComplete();
   };
 
 
@@ -131,7 +154,31 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         );
       case 3:
-        return <PayOrder handleComplete={handleComplete} />;
+        return selectedOrderByTable ? <PayOrder handleComplete={handleComplete} /> :
+          (selectedTable?.state === TableState.CLOSED) && (
+            <>
+              <div className="flex justify-center text-red-500 font-bold my-16">
+                Orden PAGADA. Finalizó el ciclo de la orden.
+              </div>
+              <Button
+                fullWidth
+                variant="outlined"
+                sx={{
+                  mt: 2,
+                  borderColor: "#7e9d8a",
+                  color: "black",
+                  "&:hover": {
+                    backgroundColor: "#f9b32d",
+                    color: "black",
+                  },
+                }}
+                onClick={() => handleTableAvailable(selectedTable, token!)}
+              >
+                <TableBar sx={{ mr: 1 }} />
+                Pasar Mesa a: <Box component="span" sx={{ color: "green", ml: 1 }}>Disponible</Box>
+              </Button>
+            </>
+          )
     }
   };
 

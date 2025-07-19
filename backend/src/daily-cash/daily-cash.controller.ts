@@ -108,6 +108,12 @@ export class DailyCashController {
     return this.dailyCashService.getDailyCashWithOrdersByDate(day, month, year);
   }
 
+  @Get('movement-by-id/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  detailsMovementById(@Param('id') id: string) {
+    return this.dailyCashService.detailsMovementById(id);
+  }
+
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   updateDailyCash(

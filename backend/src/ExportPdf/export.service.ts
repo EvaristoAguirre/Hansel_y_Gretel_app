@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import PDFDocument from 'pdfkit-table';
 import * as fs from 'fs';
 import { ProductService } from 'src/Product/product.service';
@@ -8,12 +8,15 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import table from 'pdfkit-table';
+import { PrinterService } from 'src/Printer/printer.service';
 
 @Injectable()
 export class ExportService {
+  readonly logger = new Logger(ExportService.name);
   constructor(
     private productService: ProductService,
     private ingredientService: IngredientService,
+    private printerService: PrinterService,
   ) {}
 
   async generateStockPDF(): Promise<Buffer> {
@@ -85,6 +88,16 @@ export class ExportService {
 
       doc.end();
     });
+  }
+
+  async exportStockAndPrint() {
+    try {
+      const stockData = await this.getStockToExport();
+      await this.printerService.printerStock(stockData);
+    } catch (error) {
+      this.logger.warn('Fallo la impresión, no se exportó el stock.');
+      throw error;
+    }
   }
 
   async getStockToExport() {

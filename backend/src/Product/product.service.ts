@@ -29,6 +29,7 @@ export class ProductService {
     private readonly costCascadeService: CostCascadeService,
   ) {}
 
+  // ------- rta en string sin decimales y punto de mil
   async getAllProducts(
     page: number,
     limit: number,
@@ -46,6 +47,7 @@ export class ProductService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getProductById(id: string): Promise<ProductResponseDto> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -57,7 +59,6 @@ export class ProductService {
     }
     try {
       const product = await this.productRepository.getProductById(id);
-      // return product;
       return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -70,6 +71,7 @@ export class ProductService {
     }
   }
 
+  // ---------- CUIDADO QUE ESTE ES PARA OTRO SERVICIO
   async getProductByIdToAnotherService(id: string): Promise<Product> {
     if (!id) {
       throw new BadRequestException('Either ID must be provided.');
@@ -94,14 +96,17 @@ export class ProductService {
     }
   }
 
-  async getProductByCode(code: number) {
+  // ------- rta en string sin decimales y punto de mil
+  async getProductByCode(code: number): Promise<ProductResponseDto> {
     return await this.productRepository.getProductByCode(code);
   }
 
-  async getProductByName(name: string) {
+  // ------- rta en string sin decimales y punto de mil
+  async getProductByName(name: string): Promise<ProductResponseDto> {
     return this.productRepository.getProductByName(name);
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async getProductsByCategories(
     categories: string[],
   ): Promise<ProductResponseDto[]> {
@@ -115,6 +120,7 @@ export class ProductService {
     return products;
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async createProduct(
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
@@ -127,29 +133,21 @@ export class ProductService {
     return productCreated;
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async updateProduct(
     id: string,
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const currentProduct = await this.productRepository.getProductById(id);
-    console.log('costo actual...', currentProduct.cost);
-    console.log('data entrante...', updateData.ingredients);
-
     const productUpdated = await this.productRepository.updateProduct(
       id,
       updateData,
     );
 
-    console.log('costo actualizado....', productUpdated.cost);
-    console.log(
-      'datos del producto actualizado...',
-      productUpdated.productIngredients,
-    );
-
     if (
       currentProduct.type === 'simple' &&
-      typeof updateData.cost === 'number' &&
-      updateData.cost !== currentProduct.cost
+      typeof updateData.baseCost === 'number' &&
+      updateData.baseCost !== currentProduct.baseCost
     ) {
       console.log(
         `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,
@@ -157,7 +155,7 @@ export class ProductService {
       const cascadeResult =
         await this.costCascadeService.updateSimpleProductCostAndCascade(
           productUpdated.id,
-          updateData.cost,
+          updateData.baseCost,
         );
       if (cascadeResult.success) {
         console.log(`📦 Producto ${id} actualizado. Promociones afectadas:`);
@@ -206,6 +204,7 @@ export class ProductService {
     }
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async searchProducts(
     name?: string,
     code?: string,
@@ -224,6 +223,7 @@ export class ProductService {
     );
   }
 
+  // ------- rta en string sin decimales y punto de mil
   async searchProductsToPromotion(
     isActive: boolean,
     page: number,
@@ -240,8 +240,16 @@ export class ProductService {
     );
   }
 
-  async getSimpleAndCompositeProducts(page: number, limit: number) {
-    return this.productRepository.getSimpleAndCompositeProducts(page, limit);
+  // ------- rta en string sin decimales y punto de mil
+  async getSimpleAndCompositeProducts(
+    page: number,
+    limit: number,
+  ): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository.getSimpleAndCompositeProducts(
+      page,
+      limit,
+    );
+    return ProductMapper.toResponseDtoArray(products);
   }
 
   async checkProductsStockAvailability(
@@ -354,121 +362,6 @@ export class ProductService {
           details: checks.filter((r) => !r.available),
         };
   }
-
-  // private async checkPromotionStock(
-  //   promotion: Product,
-  //   quantityToSell: number,
-  // ): Promise<any> {
-  //   if (!promotion.promotionDetails?.length) {
-  //     return {
-  //       available: false,
-  //       message: 'Promotion has no associated products',
-  //     };
-  //   }
-
-  //   const checks = await Promise.all(
-  //     promotion.promotionDetails.map(async (pp) => {
-  //       const product = pp.product;
-  //       const requiredQty = pp.quantity * quantityToSell;
-
-  //       if (!product.productIngredients?.length) {
-  //         // Producto simple sin ingredientes
-  //         const stock = product.stock;
-  //         if (!stock) {
-  //           return {
-  //             available: false,
-  //             productId: product.id,
-  //             productName: product.name,
-  //             message: 'El producto no tiene información de stock',
-  //           };
-  //         }
-
-  //         const available = stock.quantityInStock;
-  //         return available >= requiredQty
-  //           ? {
-  //               available: true,
-  //               productId: product.id,
-  //               productName: product.name,
-  //             }
-  //           : {
-  //               available: false,
-  //               productId: product.id,
-  //               productName: product.name,
-  //               message: `Stock insuficiente. Disponible: ${available}, Requerido: ${requiredQty}`,
-  //               details: {
-  //                 available,
-  //                 required: requiredQty,
-  //                 deficit: requiredQty - available,
-  //               },
-  //             };
-  //       }
-
-  //       // Producto con ingredientes
-  //       const ingredientChecks = await Promise.all(
-  //         product.productIngredients.map(async (pi) => {
-  //           const stock = await this.stockService.getStockByIngredientId(
-  //             pi.ingredient.id,
-  //           );
-
-  //           if (!stock.quantityInStock) {
-  //             return {
-  //               available: false,
-  //               ingredientId: pi.ingredient.id,
-  //               ingredientName: pi.ingredient.name,
-  //               message: 'El ingrediente no tiene información de stock',
-  //             };
-  //           }
-
-  //           let required = pi.quantityOfIngredient * requiredQty;
-
-  //           if (pi.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
-  //             required = await this.unitOfMeasureService.convertUnit(
-  //               pi.unitOfMeasure.id,
-  //               stock.unitOfMeasure.id,
-  //               required,
-  //             );
-  //           }
-
-  //           const available = Number(stock.quantityInStock);
-
-  //           return {
-  //             available: available >= required,
-  //             ingredientId: pi.ingredient.id,
-  //             ingredientName: pi.ingredient.name,
-  //             requiredQuantity: required,
-  //             availableQuantity: available,
-  //             deficit: available >= required ? 0 : required - available,
-  //             unitOfMeasure: stock.unitOfMeasure.name,
-  //           };
-  //         }),
-  //       );
-
-  //       const allIngredientsOk = ingredientChecks.every((c) => c.available);
-
-  //       return {
-  //         available: allIngredientsOk,
-  //         productId: product.id,
-  //         productName: product.name,
-  //         ...(allIngredientsOk
-  //           ? {}
-  //           : {
-  //               message: 'Stock insuficiente para algunos ingredientes',
-  //               details: ingredientChecks.filter((c) => !c.available),
-  //             }),
-  //       };
-  //     }),
-  //   );
-
-  //   const allProductsAvailable = checks.every((c) => c.available);
-
-  //   return allProductsAvailable
-  //     ? { available: true }
-  //     : {
-  //         available: false,
-  //         message: 'Stock insuficiente para algunos productos de la promoción',
-  //         details: checks.filter((c) => !c.available),
-  //       };
-  // }
 
   private async checkPromotionStock(
     promotion: Product,

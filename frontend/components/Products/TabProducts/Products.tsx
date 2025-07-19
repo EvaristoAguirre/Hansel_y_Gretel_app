@@ -15,6 +15,7 @@ import { FormTypeProduct } from "@/components/Enums/view-products";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 
 
 const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
@@ -74,12 +75,20 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
+
+
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
-    { field: "price", headerName: "Precio", width: 100 },
-    { field: "cost", headerName: "Costo", width: 100 },
+    {
+      field: "price", headerName: "Precio", width: 100, renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
+    {
+      field: "cost", headerName: "Costo", width: 100, renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
     {
       field: "actions",
       headerName: "Acciones",
@@ -99,8 +108,9 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 name: params.row.name,
                 description: params.row.description,
                 type: params.row.type,
-                price: parseFloat(params.row.price),
-                cost: parseFloat(params.row.cost),
+                price: normalizeNumber(params.row.price),
+                cost: normalizeNumber(params.row.cost),
+                baseCost: normalizeNumber(params.row.baseCost),
                 categories: params.row.categories,
                 ingredients: params.row.productIngredients?.map(mapIngredientResponseToForm) || [],
                 products: params.row.promotionDetails || [],

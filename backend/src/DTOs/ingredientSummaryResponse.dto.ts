@@ -8,10 +8,10 @@ export class IngredientResponseDTO {
   name: string;
   isActive: boolean;
   description: string;
-  cost: number;
+  cost: string;
   stock?: StockResponseDTO | null;
   type: 'masa' | 'volumen' | 'unidad';
   unitOfMeasure?: UnitOfMeasureResponseDTO | null;
   isTopping: boolean;
-  extraCost?: number | null;
+  extraCost?: string | null;
 }

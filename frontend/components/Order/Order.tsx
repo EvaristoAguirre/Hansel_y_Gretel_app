@@ -19,6 +19,8 @@ import { useTableStore } from "../Table/useTableStore";
 import { useAuth } from "@/app/context/authContext";
 import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
+import { normalizeNumber } from "../Utils/NormalizeNumber";
+import { formatNumber } from "../Utils/FormatNumber";
 
 export interface OrderProps {
   imprimirComanda: any;
@@ -52,7 +54,7 @@ const Order: React.FC<OrderProps> = ({
       if (confirmedProducts?.length > 0) {
         setTotal(
           confirmedProducts?.reduce((acc: number, item: SelectedProductsI) => {
-            return acc + (item.unitaryPrice ?? 0) * item.quantity;
+            return acc + (normalizeNumber(item.unitaryPrice ?? 0)) * item.quantity;
           }, 0)
         );
       }
@@ -220,7 +222,7 @@ const Order: React.FC<OrderProps> = ({
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {`$ ${item.unitaryPrice * item.quantity}`}
+                    {`$ ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}`}
                   </Typography>
                 </ListItem>
               ))}
@@ -233,7 +235,7 @@ const Order: React.FC<OrderProps> = ({
                 fontWeight: "bold",
               }}
             >
-              Total: ${total}
+              Total: ${formatNumber(total)}
             </Typography>
             <Typography
               style={{

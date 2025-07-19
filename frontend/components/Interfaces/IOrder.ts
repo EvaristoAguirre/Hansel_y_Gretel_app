@@ -29,3 +29,9 @@ export interface IConfirmedProducts {
   quantity: number;
   comment: string;
 }
+
+export interface IOrderTranfer {
+  id: string;
+  fromTableId: string,
+  toTableId: string
+}

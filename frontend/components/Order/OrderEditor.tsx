@@ -28,6 +28,8 @@ import { CategorySelector } from "./filterCategories";
 import { useAuth } from "@/app/context/authContext";
 import { fetchToppingsGroupById } from "@/api/topping";
 import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
+import { formatNumber } from "../Utils/FormatNumber";
+import { normalizeNumber } from "../Utils/NormalizeNumber";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 
@@ -72,6 +74,7 @@ const OrderEditor = ({
     highlightedProducts,
     removeHighlightedProduct,
     selectedToppingsByProduct,
+    toppingsByProductGroup
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
@@ -117,25 +120,93 @@ const OrderEditor = ({
     }
   };
 
+  const calcularPrecioConToppings = (
+    product: any,
+    quantity: number,
+    toppingsByUnit: any[]
+  ) => {
+    let toppingExtra = 0;
+
+    if (toppingsByUnit && product.availableToppingGroups) {
+      product.availableToppingGroups.forEach((group: any) => {
+        const { id: groupId, settings } = group;
+
+        if (settings.chargeExtra && settings.extraCost) {
+          toppingsByUnit.forEach((unitToppings: any) => {
+            const selected = unitToppings[groupId] || [];
+            toppingExtra += selected.length * settings.extraCost;
+          });
+        }
+      });
+    }
+
+    // Primero normalizar unitaryPrice a número
+    const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
+
+    const basePrice = unitaryPriceNum * quantity;
+    const totalPrice = basePrice + toppingExtra;
+    const formattedPrice = formatNumber(totalPrice);
+
+    console.group("🍄🍄🍄🍄🍄🍄");
+    console.log("unitaryPrice original:", product.unitaryPrice);
+    console.log("tipo", typeof product.unitaryPrice);
+    console.log("unitaryPrice normalizado:", unitaryPriceNum);
+    console.log("basePrice (unitaryPriceNum * quantity):", basePrice);
+    console.log("totalPrice (basePrice + toppingExtra):", totalPrice);
+    console.log("Formateado a string:", formattedPrice);
+    console.groupEnd();
+
+    return formattedPrice;
+  };
+
+  const calcularPrecioConToppingsNumero = (
+    product: any,
+    quantity: number,
+    toppingsByUnit: any[]
+  ): number => {
+    let toppingExtra = 0;
+
+    if (toppingsByUnit && product.availableToppingGroups) {
+      product.availableToppingGroups.forEach((group: any) => {
+        const { id: groupId, settings } = group;
+
+        if (settings.chargeExtra && settings.extraCost) {
+          toppingsByUnit.forEach((unitToppings: any) => {
+            const selected = unitToppings[groupId] || [];
+            toppingExtra += selected.length * settings.extraCost;
+          });
+        }
+      });
+    }
+
+    const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
+
+    return unitaryPriceNum * quantity + toppingExtra;
+  };
+
+
   useEffect(() => {
     const calcularSubtotal = () => {
-      setSubtotal(
-        selectedProducts.reduce((acc, item) => {
-          return acc + (item.unitaryPrice ?? 0) * item.quantity;
-        }, 0)
-      );
+      const subtotal = selectedProducts.reduce((acc, product) => {
+        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
+      }, 0);
+      setSubtotal(subtotal);
     };
-    calcularSubtotal();
 
     const calculateTotal = () => {
-      setTotal(
-        confirmedProducts?.reduce((acc, item) => {
-          return acc + (item.unitaryPrice ?? 0) * item.quantity;
-        }, 0)
-      );
+      const total = confirmedProducts.reduce((acc, product) => {
+        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
+      }, 0);
+      setTotal(total);
     };
+
+    calcularSubtotal();
     calculateTotal();
-  }, [selectedProducts, confirmedProducts]);
+  }, [selectedProducts, confirmedProducts, toppingsByProductGroup]);
+
+
 
   const toggleCommentInput = (productId: string) => {
     setVisibleCommentInputs((prev) => ({
@@ -189,19 +260,6 @@ const OrderEditor = ({
       [productId]: !prev[productId]
     }));
   };
-
-  // const shakeKeyframes = {
-  //   "@keyframes shake": {
-  //     "0%": { transform: "translateX(0)" },
-  //     "25%": { transform: "translateX(-2px)" },
-  //     "50%": { transform: "translateX(2px)" },
-  //     "75%": { transform: "translateX(-2px)" },
-  //     "100%": { transform: "translateX(0)" },
-  //   }
-  // };
-
-
-
 
 
   return loading ? (
@@ -329,8 +387,11 @@ const OrderEditor = ({
                       </Tooltip>
 
                       <Typography style={{ color: "black" }}>
-                        ${(item.unitaryPrice ?? 0) * item.quantity}
+                        ${calcularPrecioConToppings(item, item.quantity, toppingsByProductGroup[item.productId] ?? [])}
                       </Typography>
+
+
+
 
                       {/* ICON DE AGREGADOS */}
                       <div style={{ display: "flex", alignItems: "center" }}>
@@ -435,7 +496,7 @@ const OrderEditor = ({
                   fontWeight: "bold",
                 }}
               >
-                Subtotal: ${subtotal}
+                Subtotal:  ${formatNumber(subtotal)}
               </Typography>
               <FormControlLabel
                 control={
@@ -523,8 +584,9 @@ const OrderEditor = ({
                       />
                     </Tooltip>
                     <Typography style={{ color: "black" }}>
-                      ${(item.unitaryPrice ?? 0) * item.quantity}
+                      ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}
                     </Typography>
+
                   </ListItem>
                 ))}
               </List>
@@ -548,7 +610,7 @@ const OrderEditor = ({
                 fontWeight: "bold",
               }}
             >
-              Total: ${total}
+              Total:  ${formatNumber(total)}
             </Typography>
           </Box>
         </div>

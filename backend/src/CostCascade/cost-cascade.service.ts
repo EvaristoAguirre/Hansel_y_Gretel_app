@@ -259,15 +259,7 @@ export class CostCascadeService {
     const updatedPromotions = new Set<string>();
 
     try {
-      // // 1. Actualizar costo del producto simple
-      // await queryRunner.manager.update(Product, productId, {
-      //   cost: newCost,
-      // });
-      // this.logger.log(
-      //   `✅ Producto simple ${productId} actualizado con nuevo costo: ${newCost}`,
-      // );
-
-      // 2. Buscar promociones afectadas
+      // 1. Buscar promociones afectadas
       const promoLinks = await queryRunner.manager.find(PromotionProduct, {
         where: { product: { id: productId } },
         relations: ['promotion', 'product'],

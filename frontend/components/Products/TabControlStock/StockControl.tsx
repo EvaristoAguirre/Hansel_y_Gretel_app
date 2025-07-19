@@ -11,8 +11,8 @@ import FilterStock from "./filterStock";
 import { capitalizeFirstLetterTable } from "@/components/Utils/CapitalizeFirstLetter";
 import { SelectedItem } from "@/components/Interfaces/IStock";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import { exportPDF } from "@/api/exportPDF";
-import { SimCardDownload } from "@mui/icons-material";
+import { exportPDF, printStock } from "@/api/exportPDF";
+import { Print, SimCardDownload } from "@mui/icons-material";
 import { ProductResponse } from '../../Interfaces/IProducts';
 
 
@@ -57,9 +57,9 @@ const StockControl = () => {
   const formattedProducts = productsSimple.map((product) => ({
     id: product.id,
     name: product.name,
-    stock: Number(product.stock?.quantityInStock) || null,
+    stock: product.stock?.quantityInStock || null,
     unit: product.stock?.unitOfMeasure?.name || null,
-    min: Number(product.stock?.minimumStock) || null,
+    min: product.stock?.minimumStock,
     cost: product.cost || null,
     idStock: product.stock?.id || null
   }));
@@ -67,9 +67,9 @@ const StockControl = () => {
   const formattedIngredients = ingredientsAndToppings.map((ingredient) => ({
     id: ingredient.id,
     name: ingredient.name,
-    stock: Number(ingredient.stock?.quantityInStock) || null,
+    stock: ingredient.stock?.quantityInStock || null,
     unit: ingredient.stock?.unitOfMeasure?.name || null,
-    min: Number(ingredient.stock?.minimumStock) || null,
+    min: ingredient.stock?.minimumStock || null,
     cost: ingredient.cost || null,
     idStock: ingredient.stock?.id || null
   }));
@@ -120,7 +120,11 @@ const StockControl = () => {
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
-    { field: "cost", headerName: "Costo", flex: 1 },
+    {
+      field: "cost", headerName: "Costo", flex: 1,
+      renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
   ];
 
 
@@ -154,7 +158,11 @@ const StockControl = () => {
     { field: "name", headerName: "Nombre", flex: 1 },
     { field: "unit", headerName: "Unidad de Medida", flex: 1 },
     { field: "min", headerName: "Stock Minimo", flex: 1 },
-    { field: "cost", headerName: "Costo", flex: 1 },
+    {
+      field: "cost", headerName: "Costo", flex: 1,
+      renderCell: (params: any) =>
+        <>$ {params.value}</>
+    },
   ];
 
 
@@ -203,24 +211,49 @@ const StockControl = () => {
     token && exportPDF(token);
   }
 
+  const handlePrintStock = () => {
+    token && printStock(token);
+  }
+
   return (
     <Box width="100%" sx={{ p: 2, minHeight: "100vh" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 2 }}>
         <FilterStock currentFilter={selectedStockFilter} onFilterChange={setSelectedStockFilter} />
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<SimCardDownload />}
-          onClick={handleExportPDF}
-          sx={{
-            mt: { xs: 2, sm: 0 },
-            "&:hover": {
-              color: "white",
-            }
-          }}
+        <Box
+          sx={{ gap: 2, display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}
         >
-          Exportar Stock (PDF)
-        </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<SimCardDownload />}
+            onClick={handleExportPDF}
+            sx={{
+              mt: { xs: 2, sm: 0 },
+              "&:hover": {
+                color: "white",
+                backgroundColor: "#856d5e",
+              }
+            }}
+
+          >
+            Exportar Stock (PDF)
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<Print />}
+            onClick={handlePrintStock}
+            sx={{
+              mt: { xs: 2, sm: 0 },
+              "&:hover": {
+                color: "white",
+                backgroundColor: "#856d5e",
+              }
+            }}
+          >
+            Imprimir Stock (Comandera)
+          </Button>
+        </Box>
       </Box>
       {noStock && (
         <Typography variant="h6" sx={{ mt: 2 }} color="error">

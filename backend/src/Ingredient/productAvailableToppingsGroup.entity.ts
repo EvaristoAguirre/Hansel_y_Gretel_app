@@ -21,6 +21,7 @@ export class ProductAvailableToppingGroup {
   settings?: {
     maxSelection?: number;
     chargeExtra?: boolean;
+    extraCost?: number;
   };
 
   // ------------------------  Relaciones --------------
