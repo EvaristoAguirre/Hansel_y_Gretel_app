@@ -486,7 +486,7 @@ export class DailyCashService {
       relations: ['movements', 'orders'],
     });
     if (!dailyCash) return null;
-    return DailyCashMapper.toResponse(dailyCash);
+    return dailyCash;
   }
 
   private sumTotal(records: { amount: number }[]): number {
