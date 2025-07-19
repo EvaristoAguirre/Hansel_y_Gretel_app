@@ -5,27 +5,17 @@ import { checkOpenDailyCash } from '../../../../api/dailyCash';
 import { useAuth } from "@/app/context/authContext";
 import { dailyCashModalType } from "@/components/Enums/dailyCash";
 import CashModal from "./CashModal";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 
 const OpenCashButton = () => {
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
   const [open, setOpen] = useState(false);
-  const [isCashOpenToday, setIsCashOpenToday] = useState(false);
 
-  useEffect(() => {
-    const checkOpen = async () => {
-      if (!token) return;
+  const { isCashOpenToday } = useDailyCash();
 
-      try {
-        const data = await checkOpenDailyCash(token);
-        if (data.dailyCashOpenId) setIsCashOpenToday(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    checkOpen();
-  }, [token]);
+
 
 
   return (

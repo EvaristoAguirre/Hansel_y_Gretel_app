@@ -22,6 +22,7 @@ import { OrderDetailToppings } from './order_details_toppings.entity';
 import { StockModule } from 'src/Stock/stock.module';
 import { TableModule } from 'src/Table/table.module';
 import { PrinterModule } from 'src/Printer/printer.module';
+import { OrderPayment } from './order_payment.entity';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PrinterModule } from 'src/Printer/printer.module';
       Ingredient,
       DailyCash,
       OrderDetailToppings,
+      OrderPayment,
     ]),
     UserModule,
     UnitOfMeasurenModule,

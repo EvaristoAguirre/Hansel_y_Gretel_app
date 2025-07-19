@@ -96,7 +96,7 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
           <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
               <MonetizationOnIcon color="success" fontSize="small" />
-              <strong>Dinero Final:</strong> ${Number(data.totalCash).toFixed(2)}
+              <strong>Dinero Final:</strong> ${Number(data.finalCash).toFixed(2)}
             </Typography>
           </Grid>
           <Grid item xs={12}>

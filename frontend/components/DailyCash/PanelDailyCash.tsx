@@ -4,6 +4,9 @@ import { Box } from '@mui/system';
 import { useState } from 'react';
 import DailyCashSection from './TabDailyCash/DailyCashSection';
 import MetricsContainer from './TabMetrics/ MetricsContainer';
+import DailySalesView from './TabSales/DailySalesView';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 function TabPanel({ children, value, index }: { children: React.ReactNode, value: number, index: number }) {
   return (
@@ -28,7 +31,9 @@ const DailyCash = () => {
         <DailyCashSection />
       </TabPanel>
       <TabPanel value={tabIndex} index={1}>
-        <Typography variant="h6">Contenido de Ventas</Typography>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DailySalesView />
+        </LocalizationProvider>
       </TabPanel>
       <TabPanel value={tabIndex} index={2}>
         <MetricsContainer />

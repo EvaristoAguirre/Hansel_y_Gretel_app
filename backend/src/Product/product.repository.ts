@@ -94,7 +94,7 @@ export class ProductRepository {
     return product;
   }
 
-  async getProductByCode(code: number): Promise<Product> {
+  async getProductByCode(code: number): Promise<ProductResponseDto> {
     if (!code) {
       throw new BadRequestException('Either code must be provided.');
     }
@@ -108,7 +108,7 @@ export class ProductRepository {
       if (!product) {
         throw new NotFoundException(`Product not found with  code: ${code}`);
       }
-      return product;
+      return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -121,7 +121,7 @@ export class ProductRepository {
     }
   }
 
-  async getProductByName(name: string): Promise<Product> {
+  async getProductByName(name: string): Promise<ProductResponseDto> {
     if (!name) {
       throw new BadRequestException('Either name must be provided.');
     }
@@ -135,7 +135,7 @@ export class ProductRepository {
       if (!product) {
         throw new NotFoundException(`Product not found with  name: ${name}`);
       }
-      return product;
+      return ProductMapper.toResponseDto(product);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -230,7 +230,6 @@ export class ProductRepository {
     await queryRunner.startTransaction();
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const {
         categories,
         ingredients,
@@ -354,7 +353,7 @@ export class ProductRepository {
     }
 
     const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
-    console.log(promotionCreada);
+    console.log('promocion creada.....', promotionCreada);
     return promotionCreada;
   }
 
@@ -385,11 +384,14 @@ export class ProductRepository {
 
     const product = queryRunner.manager.create(Product, {
       ...productData,
+      baseCost: 0,
+      toppingsCost: 0,
       cost: 0,
       categories: categoryEntities,
       unitOfMeasure: unitToCompositeProduct,
     });
     const savedProduct = await queryRunner.manager.save(product);
+    let totalBaseCost = 0;
 
     if (ingredients && ingredients.length > 0) {
       const productIngredients = ingredients.map(async (ingredientDto) => {
@@ -429,12 +431,15 @@ export class ProductRepository {
         );
 
         if (ingredient.cost) {
-          savedProduct.cost += ingredient.cost * convertedQuantity;
+          const partialCost = ingredient.cost * convertedQuantity;
+          totalBaseCost += partialCost;
         }
         return queryRunner.manager.save(productIngredient);
       });
 
       await Promise.all(productIngredients);
+      savedProduct.baseCost = totalBaseCost;
+      savedProduct.cost = totalBaseCost;
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -450,7 +455,9 @@ export class ProductRepository {
         queryRunner,
       );
 
-      savedProduct.cost += extraToppingCost;
+      savedProduct.toppingsCost += extraToppingCost;
+      savedProduct.cost =
+        Number(savedProduct.baseCost || 0) + Number(extraToppingCost);
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -497,6 +504,9 @@ export class ProductRepository {
       categories: categoryEntities,
       unitOfMeasure: unitToSimpleProduct,
       type: 'simple',
+      baseCost: productData.baseCost,
+      toppingsCost: 0,
+      cost: 0,
     });
 
     const savedProduct = await queryRunner.manager.save(Product, product);
@@ -513,8 +523,13 @@ export class ProductRepository {
         queryRunner,
       );
 
-      savedProduct.cost += extraToppingCost;
+      savedProduct.toppingsCost += extraToppingCost;
+      savedProduct.cost =
+        Number(savedProduct.baseCost || 0) + Number(extraToppingCost);
 
+      await queryRunner.manager.save(Product, savedProduct);
+    } else {
+      savedProduct.cost = Number(savedProduct.baseCost || 0);
       await queryRunner.manager.save(Product, savedProduct);
     }
 
@@ -666,18 +681,32 @@ export class ProductRepository {
         }
       }
 
+      let toppingsExtraCost = 0;
+
       if (updateData.availableToppingGroups) {
         await queryRunner.manager.delete(ProductAvailableToppingGroup, {
           product: { id: product.id },
         });
 
         await this.updateToppingsGroups(updateData, product, queryRunner);
-        const toppingsExtraCost = await this.calculateToppingsCostForProduct(
+
+        toppingsExtraCost = await this.calculateToppingsCostForProduct(
           updateData,
           queryRunner,
         );
-        product.cost += toppingsExtraCost;
+        product.toppingsCost = toppingsExtraCost;
       }
+
+      if (
+        typeof updateData.baseCost === 'number' &&
+        !isNaN(updateData.cost) &&
+        updateData.cost >= 0
+      ) {
+        product.baseCost = updateData.baseCost;
+      }
+
+      product.cost =
+        Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
       const updatedProduct = await queryRunner.manager.save(product);
       const updatedProductWithRelations =
@@ -686,7 +715,6 @@ export class ProductRepository {
           updatedProduct.id,
           updatedProduct.type,
         );
-
       return ProductMapper.toResponseDto(updatedProductWithRelations);
     }
 
@@ -699,7 +727,6 @@ export class ProductRepository {
 
     const product = await this.getProductWithRelations(id, updateData.type);
     Object.assign(product, otherAttributes);
-    product.cost = 0;
 
     if (categories) {
       if (categories.length > 0) {
@@ -730,6 +757,10 @@ export class ProductRepository {
     if (ingredientsToRemove.length > 0) {
       await queryRunner.manager.remove(ProductIngredient, ingredientsToRemove);
     }
+
+    product.baseCost = 0;
+
+    let totalBaseCost = 0;
 
     const updatedIngredients = await Promise.all(
       ingredients.map(async (ingredientDto) => {
@@ -763,15 +794,16 @@ export class ProductRepository {
           (pi) => pi.ingredient.id === ingredientDto.ingredientId,
         );
 
+        const ingredientCost = ingredient.cost * conversion.convertedQuantity;
+        totalBaseCost += ingredientCost;
+
         if (existingRelation) {
           existingRelation.quantityOfIngredient = conversion.convertedQuantity;
           existingRelation.unitOfMeasure = conversion.targetUnit;
-          product.cost += ingredient.cost * conversion.convertedQuantity;
 
           const savedRelation =
             await queryRunner.manager.save(existingRelation);
 
-          // 🟡 Restaurar valores originales para respuesta
           savedRelation.quantityOfIngredient = conversion.originalQuantity;
           savedRelation.unitOfMeasure = conversion.originalUnit;
 
@@ -787,11 +819,8 @@ export class ProductRepository {
             },
           );
 
-          product.cost += ingredient.cost * conversion.convertedQuantity;
-
           const savedNew = await queryRunner.manager.save(newProductIngredient);
 
-          // 🟡 Restaurar valores originales para respuesta
           savedNew.quantityOfIngredient = conversion.originalQuantity;
           savedNew.unitOfMeasure = conversion.originalUnit;
 
@@ -799,6 +828,8 @@ export class ProductRepository {
         }
       }),
     );
+
+    product.baseCost = totalBaseCost;
 
     product.productIngredients = updatedIngredients;
 
@@ -813,7 +844,10 @@ export class ProductRepository {
       updateData,
       queryRunner,
     );
-    product.cost += toppingsExtraCost;
+
+    product.toppingsCost = toppingsExtraCost;
+    product.cost =
+      Number(product.baseCost || 0) + Number(product.toppingsCost || 0);
 
     const updatedProduct = await queryRunner.manager.save(product);
     const updatedProductWithRelations =
@@ -836,6 +870,8 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+    console.log('data para actualizar promo....', updateData);
+    console.log('data para actualizar promo....', updateData.products);
     const { categories, products, ...otherAttributes } = updateData;
 
     const promotion = await queryRunner.manager.findOne(Product, {
@@ -1298,17 +1334,6 @@ export class ProductRepository {
       );
       console.log('➡️ Producto completo:', savedProduct);
 
-      // const association = queryRunner.manager.create(
-      //   ProductAvailableToppingGroup,
-      //   {
-      //     product: savedProduct,
-      //     productId: savedProduct.id,
-      //     toppingGroup: group,
-      //     quantityOfTopping: groupDto.quantityOfTopping,
-      //     unitOfMeasure: unit,
-      //     settings: groupDto.settings ?? null,
-      //   },
-      // );
       const association = new ProductAvailableToppingGroup();
       association.product = savedProduct;
       association.productId = savedProduct.id;
@@ -1318,7 +1343,7 @@ export class ProductRepository {
       association.settings = groupDto.settings ?? null;
 
       await queryRunner.manager.save(association);
-      //---------------- log para cheaquear si anda ---------------
+
       const productWithToppings = await queryRunner.manager.findOne(Product, {
         where: { id: savedProduct.id },
         relations: [
@@ -1388,7 +1413,7 @@ export class ProductRepository {
 
     for (const groupDto of productToCreate.availableToppingGroups || []) {
       const { settings, quantityOfTopping, unitOfMeasureId } = groupDto;
-      if (!settings?.chargeExtra || !unitOfMeasureId) continue;
+      if (!unitOfMeasureId) continue;
 
       const group = await queryRunner.manager.findOne(ToppingsGroup, {
         where: { id: groupDto.toppingsGroupId, isActive: true },

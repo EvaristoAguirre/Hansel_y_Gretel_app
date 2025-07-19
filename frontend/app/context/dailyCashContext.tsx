@@ -13,13 +13,14 @@ interface DailyCashContextType {
   loading: boolean;
   dailyCashSummary: IDailyResume | null;
   fetchAllCash: () => Promise<void>;
-  fetchCash: () => Promise<void>;
+  checkOpenDaily: () => Promise<boolean>;
   selectedCash: (cash: string) => void;
   openCash: (data: I_DC_Open_Close) => Promise<void>;
   closeCash: (data: I_DC_Open_Close) => Promise<void>;
   registerMovement: (data: INewMovement) => Promise<void>;
   fetchCashSummary: () => Promise<void>;
   deleteCash: (id: string) => Promise<void>;
+  isCashOpenToday: boolean;
 }
 
 const DailyCashContext = createContext<DailyCashContextType | undefined>(undefined);
@@ -29,6 +30,9 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
   const [allDailyCash, setAllDailyCash] = useState<IDailyCash[]>([]);
   const [selectedDailyCashId, setSelectedDailyCashID] = useState<string | null>(null);
   const [dailyCashSummary, setDailyCashSummary] = useState<IDailyResume | null>(null);
+
+  const [isCashOpenToday, setIsCashOpenToday] = useState<boolean>(false);
+
 
   const [loading, setLoading] = useState(true);
 
@@ -44,18 +48,23 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
       console.error("Error al obtener todas las cajas", error);
     }
   };
-  const fetchCash = async () => {
-    if (!token) return;
+  const checkOpenDaily = async () => {
+    if (!token) return false;
     setLoading(true);
     try {
       const currentCash = await checkOpenDailyCash(token);
       setDailyCash(currentCash);
+      setIsCashOpenToday(currentCash.exist);
+      return currentCash;
     } catch (error) {
       console.error("Error al obtener la caja actual", error);
+      setIsCashOpenToday(false);
+      return false;
     } finally {
       setLoading(false);
     }
   };
+
   const fetchCashSummary = async () => {
     if (!token) return;
     try {
@@ -79,6 +88,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
       Swal.fire("Error", "No se pudo abrir la caja.", "error");
     }
     await fetchAllCash();
+    await checkOpenDaily();
   };
 
   const closeCash = async (data: I_DC_Open_Close) => {
@@ -89,6 +99,7 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
     } else {
       Swal.fire("Error", "No se pudo cerrar la caja.", "error");
     }
+    await checkOpenDaily();
     await fetchAllCash();
   };
 
@@ -101,13 +112,14 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
       payments: data.payments
     }
     const response = await newMovement(token, body);
+    await checkOpenDaily();
     await fetchAllCash();
     await fetchCashSummary();
     return response;
   };
 
   useEffect(() => {
-    fetchCash();
+    checkOpenDaily();
   }, [token]);
 
   const deleteCash = async (id: string) => {
@@ -142,13 +154,14 @@ export const DailyCashProvider = ({ children }: { children: React.ReactNode }) =
         loading,
         dailyCashSummary,
         fetchAllCash,
-        fetchCash,
+        checkOpenDaily,
         selectedCash,
         openCash,
         closeCash,
         registerMovement,
         fetchCashSummary,
-        deleteCash
+        deleteCash,
+        isCashOpenToday
       }}>
       {children}
     </DailyCashContext.Provider>

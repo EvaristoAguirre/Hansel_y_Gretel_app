@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { io } from "socket.io-client";
 import { ITable } from "../Interfaces/ITable";
+import { getTableByRoom } from "@/api/tables";
 
 interface TableStateZustand {
   tables: ITable[];
@@ -9,6 +10,7 @@ interface TableStateZustand {
   removeTable: (id: string) => void;
   updateTable: (updatedTable: ITable) => void;
   connectWebSocket: () => void;
+  updateTablesByRoom: (salaId: string, token: string) => Promise<void>;
 }
 
 export const useTableStore = create<TableStateZustand>((set) => {
@@ -44,6 +46,11 @@ export const useTableStore = create<TableStateZustand>((set) => {
     console.log("❌ Desconectado del servidor WebSocket");
   });
 
+  const updateTablesByRoom = async (salaId: string, token: string) => {
+    const tables = await getTableByRoom(token, salaId);
+    set({ tables });
+  };
+
   return {
     tables: [],
     setTables: (tables) => set({ tables }),
@@ -56,6 +63,7 @@ export const useTableStore = create<TableStateZustand>((set) => {
           t.id === updatedTable.id ? updatedTable : t
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    updateTablesByRoom,
   };
 });

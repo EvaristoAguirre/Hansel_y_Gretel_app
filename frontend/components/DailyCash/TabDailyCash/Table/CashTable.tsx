@@ -56,7 +56,7 @@ const CashTable = () => {
       flex: 1,
       renderCell: (params) => (
         <span style={{ color: "green" }}>
-          ${Number(params.value).toFixed(2)}
+          $ {params.value}
         </span>
       )
     },
@@ -64,7 +64,7 @@ const CashTable = () => {
       field: "totalPayments",
       headerName: "Egresos",
       flex: 1,
-      renderCell: (params) => <span style={{ color: "red" }}> ${Number(params.value).toFixed(2)}</span>,
+      renderCell: (params) => <span style={{ color: "red" }}>  $ {params.value} </span>,
     },
     {
       field: "state",
@@ -170,7 +170,7 @@ const CashTable = () => {
         </Box>
       ) : (
         <>
-          <Typography variant="h6" gutterBottom textAlign="start">
+          <Typography variant="h4" color="primary" gutterBottom textAlign="start">
             Resumen Parcial de la Caja del Día
           </Typography>
           <Box
@@ -178,7 +178,7 @@ const CashTable = () => {
             borderRadius={2}
             boxShadow={1}
             maxWidth={500}
-
+            mt={2}
           >
 
             <DataGrid
@@ -197,9 +197,7 @@ const CashTable = () => {
                   renderCell: (params) => (
                     <span style={{ color: "green" }}>
                       $
-                      {new Intl.NumberFormat("es-AR", {
-                        minimumFractionDigits: 2,
-                      }).format(params.value)}
+                      {params.value}
                     </span>
                   ),
                 },
@@ -210,9 +208,7 @@ const CashTable = () => {
                   renderCell: (params) => (
                     <span style={{ color: "red" }}>
                       $
-                      {new Intl.NumberFormat("es-AR", {
-                        minimumFractionDigits: 2,
-                      }).format(params.value)}
+                      {params.value}
                     </span>
                   ),
                 },

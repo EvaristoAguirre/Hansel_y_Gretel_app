@@ -118,6 +118,8 @@ const OrderProvider = ({
     []
   );
 
+
+
   const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
     [productId: string]: string[][];
   }>({});
@@ -196,6 +198,8 @@ const OrderProvider = ({
   useEffect(() => {
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
+
+
 
   const checkStockAvailability = async (productId: string, quantity: number) => {
     const form: ICheckStock = {
@@ -309,9 +313,28 @@ const OrderProvider = ({
   };
 
 
-  const handleSetProductsByOrder = (confirmedProducts: SelectedProductsI[]) => {
-    setConfirmedProducts(confirmedProducts);
+  const handleSetProductsByOrder = (confirmedProductsRaw: SelectedProductsI[]) => {
+    const expandedProducts: SelectedProductsI[] = [];
+    let internalCounter = 0;
+
+    confirmedProductsRaw.forEach((product) => {
+      const quantity = product.quantity || 1;
+
+      for (let i = 0; i < quantity; i++) {
+        expandedProducts.push({
+          ...product,
+          internalId: `${product.productId}-${internalCounter}`,
+          quantity: 1,
+        });
+        internalCounter++;
+      }
+    });
+
+    setConfirmedProducts(expandedProducts);
+    console.log("🆔 Productos confirmados y sus id:", expandedProducts);
+
   };
+
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));

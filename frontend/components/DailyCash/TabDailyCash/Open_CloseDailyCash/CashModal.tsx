@@ -48,6 +48,7 @@ const CashModal = ({ open, onClose, type }: Props) => {
   const handleClose = () => {
     setForm(initialForm);
     onClose();
+
   };
 
   const handleSubmit = async () => {

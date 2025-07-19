@@ -27,6 +27,8 @@ import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { OrderDetailToppings } from './order_details_toppings.entity';
+import { transferOrderData } from 'src/DTOs/transfer-order.dto';
+import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @Injectable()
 export class OrderService {
@@ -134,7 +136,6 @@ export class OrderService {
             where: { id: pd.productId, isActive: true },
           });
           if (!product) throw new NotFoundException('Product not found');
-          console.log('datos a product type....', product.type);
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
@@ -272,6 +273,7 @@ export class OrderService {
           'orderDetails.product',
           'orderDetails.orderDetailToppings',
           'orderDetails.orderDetailToppings.topping',
+          'payments',
         ],
       });
     } catch (error) {
@@ -302,6 +304,7 @@ export class OrderService {
           'orderDetails.product',
           'orderDetails.orderDetailToppings',
           'orderDetails.orderDetailToppings.topping',
+          'payments',
         ],
       });
       if (!order) {
@@ -356,7 +359,12 @@ export class OrderService {
     try {
       const order = await this.orderRepo.findOne({
         where: { id, isActive: true },
-        relations: ['orderDetails', 'table', 'orderDetails.product'],
+        relations: [
+          'orderDetails',
+          'table',
+          'orderDetails.product',
+          'payments',
+        ],
       });
 
       if (!order) {
@@ -410,9 +418,9 @@ export class OrderService {
       throw new BadRequestException('Total amount must be greater than 0');
     }
 
-    if (!closeOrderDto.methodOfPayment) {
-      throw new BadRequestException('Payment method must be provided');
-    }
+    // if (!closeOrderDto.methodOfPayment) {
+    //   throw new BadRequestException('Payment method must be provided');
+    // }
 
     const openDailyCash = await this.dailyCashService.getTodayOpenDailyCash();
     if (!openDailyCash) {
@@ -499,6 +507,123 @@ export class OrderService {
     }
   }
 
+  async transferOrder(
+    orderId: string,
+    transferOrder: transferOrderData,
+  ): Promise<OrderSummaryResponseDto> {
+    if (!orderId || !isUUID(orderId)) {
+      throw new BadRequestException('Invalid or missing order ID.');
+    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const currentTable = await queryRunner.manager.findOne(Table, {
+        where: { id: transferOrder.fromTableId },
+      });
+      if (!currentTable || currentTable.isActive === false)
+        throw new NotFoundException(`Table with ID not found`);
+
+      const tableToTransfer = await queryRunner.manager.findOne(Table, {
+        where: { id: transferOrder.toTableId },
+      });
+
+      if (!tableToTransfer || tableToTransfer.isActive === false)
+        throw new NotFoundException(
+          `Table with ID: ${tableToTransfer.id} not found`,
+        );
+
+      if (tableToTransfer.state !== TableState.AVAILABLE)
+        throw new ConflictException(
+          `Table with ID: ${tableToTransfer.id} is not available`,
+        );
+
+      const currentOrder = await queryRunner.manager.findOne(Order, {
+        where: { id: orderId },
+      });
+      if (!currentOrder) {
+        throw new NotFoundException(`Order with ID: ${orderId} not found`);
+      }
+
+      currentOrder.table = tableToTransfer;
+
+      await queryRunner.manager.update(
+        Table,
+        { id: currentTable.id },
+        { state: TableState.CLOSED },
+      );
+      await queryRunner.manager.update(
+        Table,
+        { id: tableToTransfer.id },
+        { state: TableState.OPEN },
+      );
+
+      await queryRunner.manager.save(currentOrder);
+      await queryRunner.commitTransaction();
+
+      this.eventEmitter.emit('order.updated', { order: currentOrder });
+      this.eventEmitter.emit('table.updated', { table: currentTable });
+      this.eventEmitter.emit('table.updated', { table: tableToTransfer });
+
+      return await this.getOrderById(currentOrder.id);
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err instanceof HttpException) throw err;
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async orderDetailsById(id: string): Promise<OrderDetailsDto> {
+    try {
+      const order = await this.orderRepo.findOne({
+        where: { id: id },
+        relations: [
+          'table',
+          'table.room',
+          'orderDetails',
+          'orderDetails.product',
+          'payments',
+        ],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Orden con ID ${id} no encontrada`);
+      }
+
+      const orderSummary = {
+        id: order.id,
+        date: order.date,
+        table: order.table?.name || 'Sin mesa',
+        room: order.table?.room?.name || 'Sin salón',
+        numberCustomers: order.numberCustomers,
+        total: Number(order.total).toFixed(2),
+        paymentMethods: Array.isArray(order.payments)
+          ? order.payments.map((p) => ({
+              methodOfPayment: p.methodOfPayment,
+              amount: Number(p.amount).toFixed(2),
+            }))
+          : [],
+        products: Array.isArray(order.orderDetails)
+          ? order.orderDetails.map((d) => ({
+              name: d.product?.name || 'Producto eliminado',
+              quantity: d.quantity,
+              commandNumber: d.commandNumber,
+            }))
+          : [],
+      };
+
+      return orderSummary;
+    } catch (error) {
+      console.error(`[OrderService] Error al obtener detalle de orden`, error);
+      throw new InternalServerErrorException(
+        'Error al obtener el detalle de la orden',
+      );
+    }
+  }
+
   // ----------------- respuesta adaptada
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
     const productLines: ProductLineDto[] = [];
@@ -532,9 +657,12 @@ export class OrderService {
       name: order.table.name,
       state: order.table.state,
     };
-    response.total = Number(order.total);
-    response.methodOfPayment = order.methodOfPayment;
     response.products = productLines;
+    response.payments = (order.payments || []).map((p) => ({
+      amount: Number(p.amount),
+      methodOfPayment: p.methodOfPayment,
+    }));
+    response.total = Number(order.total);
 
     return response;
   }

@@ -38,9 +38,6 @@ export class Ingredient {
   @Column({ type: 'enum', enum: ['masa', 'volumen', 'unidad'] })
   type: 'masa' | 'volumen' | 'unidad';
 
-  @Column({ default: false })
-  isTopping: boolean;
-
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   @IsOptional()
   extraCost: number;

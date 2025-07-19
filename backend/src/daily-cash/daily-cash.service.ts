@@ -23,6 +23,9 @@ import { DailyCashState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
+import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
+import { DailyCashMapper } from './daily-cash-mapper';
+import { CashMovementMapper } from './cash-movement-mapper';
 
 @Injectable()
 export class DailyCashService {
@@ -62,7 +65,7 @@ export class DailyCashService {
         dailyCash: dailyCashOpened,
       });
 
-      return dailyCashOpened;
+      return DailyCashMapper.toResponse(dailyCashOpened);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -81,7 +84,11 @@ export class DailyCashService {
       );
     }
     try {
-      return await this.dailyCashRepository.getAllDailysCash(page, limit);
+      const allDailyCash = await this.dailyCashRepository.getAllDailysCash(
+        page,
+        limit,
+      );
+      return DailyCashMapper.toMany(allDailyCash);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -108,7 +115,7 @@ export class DailyCashService {
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
-      return dailyCash;
+      return DailyCashMapper.toResponse(dailyCash);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -118,7 +125,6 @@ export class DailyCashService {
         error.message,
       );
     }
-    return await this.dailyCashRepository.getDailyCashById(id);
   }
 
   async updateDailyCash(id: string, updateDailyCashDto: UpdateDailyCashDto) {
@@ -143,7 +149,7 @@ export class DailyCashService {
         dailyCash: updatedDailyCash,
       });
 
-      return updatedDailyCash;
+      return DailyCashMapper.toResponse(updatedDailyCash);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -170,7 +176,7 @@ export class DailyCashService {
 
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
-
+      console.log('orders con payments....', dailyCash.orders);
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -200,11 +206,17 @@ export class DailyCashService {
       dailyCash.totalExpenses = totalExpenses;
 
       // --- Agrupación por método de pago ---
+      console.log(
+        'pagos individuales de ordenes.....,',
+        dailyCash.orders.flatMap((order) => order.payments),
+      );
       const orderPayments = this.groupRecordsByPaymentMethod(
-        dailyCash.orders.map((o) => ({
-          amount: Number(o.total),
-          methodOfPayment: o.methodOfPayment,
-        })),
+        dailyCash.orders.flatMap((order) =>
+          (order.payments || []).map((p) => ({
+            amount: Number(p.amount),
+            methodOfPayment: p.methodOfPayment,
+          })),
+        ),
       );
       const incomePayments = this.groupRecordsByPaymentMethod(incomes);
       const expensePayments = this.groupRecordsByPaymentMethod(expenses);
@@ -256,7 +268,7 @@ export class DailyCashService {
         dailyCash: dailyCashClosed,
       });
 
-      return dailyCashClosed;
+      return DailyCashMapper.toResponse(dailyCashClosed);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -321,7 +333,7 @@ export class DailyCashService {
         where: { id: cashMovement.id },
         relations: ['dailyCash'],
       });
-      return movement;
+      return CashMovementMapper.toResponse(movement);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -381,7 +393,7 @@ export class DailyCashService {
         relations: ['dailyCash'],
       });
 
-      return movement;
+      return CashMovementMapper.toResponse(movement);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -419,12 +431,13 @@ export class DailyCashService {
       );
     }
     try {
-      return await this.cashMovementRepo.find({
+      const incomes = await this.cashMovementRepo.find({
         where: {
           dailyCash: { id: dailyCashId },
           type: DailyCashMovementType.INCOME,
         },
       });
+      return incomes.map(CashMovementMapper.toResponse);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -444,12 +457,13 @@ export class DailyCashService {
       );
     }
     try {
-      return await this.cashMovementRepo.find({
+      const expenses = await this.cashMovementRepo.find({
         where: {
           dailyCash: { id: dailyCashId },
           type: DailyCashMovementType.EXPENSE,
         },
       });
+      return expenses.map(CashMovementMapper.toResponse);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
@@ -464,13 +478,15 @@ export class DailyCashService {
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-    return await this.dailyCashRepo.findOne({
+    const dailyCash = await this.dailyCashRepo.findOne({
       where: {
         date: Between(startOfDay, endOfDay),
         state: DailyCashState.OPEN,
       },
       relations: ['movements', 'orders'],
     });
+    if (!dailyCash) return null;
+    return dailyCash;
   }
 
   private sumTotal(records: { amount: number }[]): number {
@@ -483,7 +499,7 @@ export class DailyCashService {
 
   private groupRecordsByPaymentMethod(
     records: {
-      amount: number;
+      amount?: number;
       methodOfPayment?: PaymentMethod;
       payments?: { amount: number; paymentMethod: PaymentMethod }[];
     }[],
@@ -496,14 +512,28 @@ export class DailyCashService {
       [PaymentMethod.MERCADOPAGO]: 0,
     };
 
+    const validMethods = Object.values(PaymentMethod);
+
     for (const record of records) {
-      if (record.methodOfPayment && typeof record.amount === 'number') {
-        totals[record.methodOfPayment] += record.amount;
+      // Caso 1: método directo
+      if (
+        record.methodOfPayment &&
+        typeof record.amount === 'number' &&
+        validMethods.includes(record.methodOfPayment)
+      ) {
+        totals[record.methodOfPayment] += Number(record.amount);
       }
 
+      // Caso 2: pagos anidados
       if (record.payments && Array.isArray(record.payments)) {
         for (const p of record.payments) {
-          totals[p.paymentMethod] += Number(p.amount);
+          if (
+            p.paymentMethod &&
+            typeof p.amount === 'number' &&
+            validMethods.includes(p.paymentMethod)
+          ) {
+            totals[p.paymentMethod] += Number(p.amount);
+          }
         }
       }
     }
@@ -513,6 +543,10 @@ export class DailyCashService {
 
   async summaryAtMoment(): Promise<object> {
     const openedDailyCash = await this.getTodayOpenDailyCash();
+    const cashFormatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
     try {
       if (openedDailyCash && openedDailyCash.state === DailyCashState.OPEN) {
         const incomes = openedDailyCash.movements.filter(
@@ -528,8 +562,8 @@ export class DailyCashService {
         const totalExpenses = Number(this.sumTotal(expenses));
 
         return {
-          incomes: totalIncomes + totalSalesFromOrders,
-          expenses: totalExpenses,
+          incomes: cashFormatter.format(totalIncomes + totalSalesFromOrders),
+          expenses: cashFormatter.format(totalExpenses),
         };
       } else {
         return { result: 'No hay resumen disponible' };
@@ -541,6 +575,63 @@ export class DailyCashService {
       throw new InternalServerErrorException(
         'An error occurred while trying to generate the daily cash summary. Please try again later.',
         error.message,
+      );
+    }
+  }
+
+  async getDailyCashWithOrdersByDate(
+    day: number,
+    month: number,
+    year: number,
+  ): Promise<DailyCash | null> {
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    const dailyCash = await this.dailyCashRepo.findOne({
+      where: {
+        date: Between(startOfDay, endOfDay),
+      },
+      relations: ['orders', 'movements', 'orders.payments'],
+    });
+    if (!dailyCash) throw new NotFoundException('Daily cash not found');
+    return DailyCashMapper.toResponse(dailyCash);
+  }
+
+  async detailsMovementById(
+    cashMovementId: string,
+  ): Promise<CashMovementDetailsDto> {
+    const cashFormatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    try {
+      const movement = await this.cashMovementRepo.findOne({
+        where: { id: cashMovementId },
+      });
+
+      if (!movement) {
+        throw new NotFoundException(
+          `Movimiento con ID ${cashMovementId} no encontrado`,
+        );
+      }
+
+      const result = {
+        type: movement.type,
+        amount: cashFormatter.format(Number(movement.amount)),
+        createdAt: movement.createdAt,
+        payments: Array.isArray(movement.payments)
+          ? movement.payments.map((p) => ({
+              amount: cashFormatter.format(Number(p.amount)),
+              paymentMethod: p.paymentMethod,
+            }))
+          : [],
+      };
+
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Error al obtener el movimiento de caja',
       );
     }
   }
