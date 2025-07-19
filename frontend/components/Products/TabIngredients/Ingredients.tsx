@@ -14,6 +14,7 @@ import {
 import { GridCellParams } from "@mui/x-data-grid";
 import { FormIngredient } from "./FormIngredient";
 import ToppingsGroupList from "./Toppings/ToppingsGroupList";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 
 function TabPanel({ children, value, index }: any) {
   return value === index ? <Box mt={2}>{children}</Box> : null;
@@ -42,30 +43,16 @@ const Ingredients = () => {
     setFormOpen(true);
   };
 
+
+
   const columns = useMemo(() => [
     { field: "name", headerName: "Nombre", width: 200 },
-    {
-      field: "isTopping",
-      headerName: "¿Es un Agregado?",
-      width: 200,
-      renderCell: (params: GridCellParams) =>
-        params.value ? "Sí" : "No",
-    },
     { field: "description", headerName: "Descripción", width: 300 },
     {
       field: "cost",
       headerName: "Costo",
       width: 100,
-      renderCell: (params: GridCellParams) => {
-        const value = Number(params.value);
-        if (!isNaN(value)) {
-          return value.toLocaleString("es-AR", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
-        }
-        return "-";
-      },
+
     },
 
     {
@@ -90,7 +77,7 @@ const Ingredients = () => {
                 id: row.id,
                 name: row.name,
                 description: row.description,
-                cost: row.cost,
+                cost: normalizeNumber(row.cost),
                 unitOfMeasureId: row.unitOfMeasure,
                 isTopping: row.isTopping
               })

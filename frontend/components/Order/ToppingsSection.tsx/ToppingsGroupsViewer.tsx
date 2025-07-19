@@ -10,6 +10,7 @@ import { ITopping } from "@/components/Interfaces/IToppings";
 import { IProductToppingsGroupResponse } from "@/components/Interfaces/IProducts";
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { useOrderContext } from "@/app/context/order.context";
+import { Box } from "@mui/system";
 
 interface ToppingsGroupsViewerProps {
   groups: IProductToppingsGroupResponse[];
@@ -172,9 +173,24 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
                                   }}
                                 />
                               }
-                              label={capitalizeFirstLetter(topping.name)}
-                              sx={{ height: "25%" }}
+                              label={
+                                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {capitalizeFirstLetter(topping.name)}
+                                  </Typography>
+                                  {group.settings.chargeExtra && group.settings.extraCost && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{ color: '#9e0404', fontStyle: 'italic', lineHeight: 1 }}
+                                    >
+                                      + ${group.settings.extraCost} adicional
+                                    </Typography>
+                                  )}
+                                </Box>
+                              }
+
                             />
+
                           );
                         })}
                       </div>

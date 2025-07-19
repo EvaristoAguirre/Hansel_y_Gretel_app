@@ -1,4 +1,13 @@
-import { Autocomplete, TextField, Grid, Checkbox, FormControlLabel, MenuItem, Tooltip, Chip } from '@mui/material';
+import {
+  Autocomplete,
+  TextField,
+  Grid,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
+  Tooltip,
+  Chip,
+} from '@mui/material';
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
@@ -38,15 +47,18 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
 
     const mapped: ProductToppingsGroupDto[] = selected.map((group) => {
       const existing = value.find((v) => v.toppingsGroupId === group.id);
-      return existing || {
-        toppingsGroupId: group.id,
-        quantityOfTopping: 1,
-        unitOfMeasureId: undefined,
-        settings: {
-          maxSelection: 1,
-          chargeExtra: false,
-        },
-      };
+      return (
+        existing || {
+          toppingsGroupId: group.id,
+          quantityOfTopping: 1,
+          unitOfMeasureId: undefined,
+          settings: {
+            maxSelection: 1,
+            chargeExtra: false,
+            extraCost: 0,
+          },
+        }
+      );
     });
 
     onChange(mapped);
@@ -54,12 +66,13 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
 
   const handleFieldChange = (
     groupId: string,
-    field: keyof ProductToppingsGroupDto | "maxSelection" | "chargeExtra",
+    field: keyof ProductToppingsGroupDto | "maxSelection" | "chargeExtra" | "extraCost",
     fieldValue: any
   ) => {
     const updated = value.map((group) => {
       if (group.toppingsGroupId !== groupId) return group;
-      if (field === "maxSelection" || field === "chargeExtra") {
+
+      if (field === "maxSelection" || field === "chargeExtra" || field === "extraCost") {
         return {
           ...group,
           settings: {
@@ -68,11 +81,13 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
           },
         };
       }
+
       return {
         ...group,
         [field]: fieldValue,
       };
     });
+
     onChange(updated);
   };
 
@@ -91,25 +106,39 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
               label={capitalizeFirstLetter(option.name)}
               {...getTagProps({ index })}
               key={option.id}
-              sx={{ backgroundColor: "#f3d49ab8", color: "black", fontWeight: "bold" }}
+              sx={{
+                backgroundColor: "#f3d49ab8",
+                color: "black",
+                fontWeight: "bold",
+              }}
             />
-
           ))
         }
         renderInput={(params) => (
-          <TextField {...params} label="Grupos de agregados" placeholder="Seleccionar grupos" size="small" />
+          <TextField
+            {...params}
+            label="Grupos de agregados"
+            placeholder="Seleccionar grupos"
+            size="small"
+          />
         )}
       />
 
-
       {value.map((group) => {
-        const groupName = availableGroups.find((g) => g.id === group.toppingsGroupId)?.name || "Grupo";
+        const groupData = availableGroups.find((g) => g.id === group.toppingsGroupId);
+        const groupName = groupData?.name || "Grupo";
 
         return (
           <Grid container spacing={1} mt={1} key={group.toppingsGroupId}>
             <Grid item xs={12}>
-              <p>Grupo: <strong style={{ color: "green" }}> {capitalizeFirstLetter(groupName)}</strong></p>
+              <p>
+                Grupo:{" "}
+                <strong style={{ color: "green" }}>
+                  {capitalizeFirstLetter(groupName)}
+                </strong>
+              </p>
             </Grid>
+
             <Grid item xs={6}>
               <Tooltip title="Cantidad que se le agrega al producto por agregado. Ej: 100gr">
                 <TextField
@@ -124,6 +153,7 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
                 />
               </Tooltip>
             </Grid>
+
             <Grid item xs={6}>
               <TextField
                 select
@@ -142,9 +172,9 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
                 ))}
               </TextField>
             </Grid>
+
             <Grid item xs={6}>
               <Tooltip title="Cantidad de agregados que se pueden seleccionar. Ej: 3">
-
                 <TextField
                   label="Máx. selección"
                   type="number"
@@ -157,9 +187,9 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
                 />
               </Tooltip>
             </Grid>
+
             <Grid item xs={6} display="flex" alignItems="center">
               <Tooltip title="Si se activa, se le cobrará un extra al cliente.">
-
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -170,10 +200,30 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
                     />
                   }
                   label="Cobrar extra"
-                  style={{ fontSize: "0.8rem", color: `${group.settings?.chargeExtra ? "green" : "gray"}`, fontWeight: "bold" }}
                 />
               </Tooltip>
             </Grid>
+
+            {/* Mostrar monto extra si es el grupo con ID "extracash" y está activado el cobro extra */}
+            {group.settings?.chargeExtra && (
+              <Grid item xs={12}>
+                <TextField
+                  label="Monto extra a cobrar"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  value={group.settings?.extraCost ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      group.toppingsGroupId,
+                      "extraCost",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                />
+              </Grid>
+            )}
+
           </Grid>
         );
       })}

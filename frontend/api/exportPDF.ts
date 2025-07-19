@@ -1,8 +1,9 @@
 import { URI_PDF } from "@/components/URI/URI";
+import Swal from "sweetalert2";
 
 export const exportPDF = async (token: string) => {
   try {
-    const response = await fetch(URI_PDF, {
+    const response = await fetch(`${URI_PDF}/pdf`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -36,5 +37,24 @@ export const exportPDF = async (token: string) => {
   } catch (error) {
     console.error(error);
     alert('Hubo un error al exportar el stock.');
+  }
+};
+
+export const printStock = async (token: string) => {
+  try {
+    const response = await fetch(`${URI_PDF}/printer`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!response.ok) throw new Error('Error al generar el PDF de stock');
+
+    return await response.json();;
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire("Error", "No se pudo imprimir el stock.", "error");
   }
 };

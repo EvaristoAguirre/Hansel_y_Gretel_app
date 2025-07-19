@@ -8,7 +8,8 @@ import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
 interface IProduct {
   allowsToppings: boolean;
   code: number | null;
-  cost: number | null;
+  baseCost: number | null;
+  cost?: number | null;
   description: string;
   id: string;
   isActive: boolean;
@@ -19,7 +20,7 @@ interface IProduct {
 }
 export interface ProductForm extends IProduct {
   [key: string]: string | number | boolean
-  | null | ICategory[] | IingredientForm[]
+  | null | undefined | ICategory[] | IingredientForm[]
   | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
   categories: ICategory[];
   ingredients: IingredientForm[];
@@ -36,6 +37,7 @@ export interface ProductToppingsGroupDto {
   settings: {
     maxSelection: number;
     chargeExtra: boolean;
+    extraCost: number;
   }
 }
 export interface IProductToppingsGroupResponse {
@@ -45,6 +47,7 @@ export interface IProductToppingsGroupResponse {
   settings: {
     chargeExtra: boolean;
     maxSelection: number;
+    extraCost: number;
   };
   unitOfMeasure: IUnitOfMeasureStandard;
   quantityOfTopping: string;
@@ -96,8 +99,9 @@ export interface ProductResponse {
   id: string;
   code: number;
   name: string;
-  price: number;
-  cost: number;
+  price: string;
+  cost: string;
+  baseCost: string;
   type: TypeProduct;
   commentOfProduct?: string;
   allowsToppings: boolean;
@@ -126,12 +130,13 @@ export interface SelectedProductsI {
   productId: string;
   productName?: string;
   quantity: number;
-  unitaryPrice?: number | null;
+  unitaryPrice?: string | null;
   commentOfProduct?: string | null;
   toppingsIds?: string[];
   toppingsPerUnit?: string[][]
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
+  internalId?: string;
 };
 
 export interface IConfirmedProducts {

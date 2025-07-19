@@ -21,6 +21,7 @@ import { OrderDetailToppings } from './order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 import { Logger } from '@nestjs/common';
+import { OrderPayment } from './order_payment.entity';
 
 @Injectable()
 export class OrderRepository {
@@ -30,6 +31,8 @@ export class OrderRepository {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
+    @InjectRepository(OrderPayment)
+    private readonly orderPaymentRepository: Repository<OrderPayment>,
   ) {}
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
@@ -60,10 +63,8 @@ export class OrderRepository {
     });
     console.log('order antes de intentar cerrar', order);
 
-
     if (!order) {
       throw new NotFoundException(`Order with ID: ${id} not found`);
-
     }
 
     if (order.state !== OrderState.PENDING_PAYMENT) {
@@ -76,8 +77,8 @@ export class OrderRepository {
       throw new BadRequestException(`Total amount must be greater than 0`);
     }
 
-    if (!closeOrderDto.methodOfPayment) {
-      throw new BadRequestException(`Method of payment must be provided`);
+    if (!closeOrderDto.payments || !closeOrderDto.payments.length) {
+      throw new BadRequestException(`At least one payment must be provided`);
     }
 
     if (!openDailyCash) {
@@ -86,15 +87,38 @@ export class OrderRepository {
       );
     }
 
-    order.methodOfPayment = closeOrderDto.methodOfPayment;
+    const totalPayments = closeOrderDto.payments.reduce(
+      (acc, payment) => acc + payment.amount,
+      0,
+    );
+
+    if (totalPayments !== closeOrderDto.total) {
+      throw new BadRequestException(
+        `Total amount of payments (${totalPayments}) does not match the order total (${closeOrderDto.total})`,
+      );
+    }
+
     order.dailyCash = openDailyCash;
     order.state = OrderState.CLOSED;
     order.table.state = TableState.AVAILABLE;
 
+    const orderPayments = closeOrderDto.payments.map((p) =>
+      this.orderPaymentRepository.create({
+        order,
+        amount: p.amount,
+        methodOfPayment: p.methodOfPayment,
+      }),
+    );
+    await this.orderPaymentRepository.save(orderPayments);
+
     await this.tableRepository.save(order.table);
     await this.orderRepository.save(order);
 
-    const responseAdapted = await this.adaptResponse(order);
+    const updatedOrder = await this.orderRepository.findOne({
+      where: { id: order.id },
+      relations: ['orderDetails', 'table', 'orderDetails.product', 'payments'],
+    });
+    const responseAdapted = await this.adaptResponse(updatedOrder);
     return responseAdapted;
   }
 
@@ -108,9 +132,98 @@ export class OrderRepository {
         'orderDetails.product',
         'orderDetails.orderDetailToppings',
         'orderDetails.orderDetailToppings.topping',
+        'payments',
       ],
     });
   }
+
+  // async buildOrderDetailWithToppings(
+  //   order: Order,
+  //   product: Product,
+  //   detailData: OrderDetailsDto,
+  //   qr: QueryRunner,
+  // ): Promise<{
+  //   detail: OrderDetails;
+  //   toppingDetails: OrderDetailToppings[];
+  //   subtotal: number;
+  // }> {
+  //   const quantity = detailData.quantity;
+  //   const unitaryPrice = product.price;
+  //   const subtotal = unitaryPrice * quantity;
+  //   const detail = qr.manager.create(OrderDetails, {
+  //     quantity,
+  //     unitaryPrice,
+  //     subtotal,
+  //     product,
+  //     order,
+  //   });
+
+  //   const toppingDetails: OrderDetailToppings[] = [];
+  //   if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
+  //     if (detailData.toppingsPerUnit.length !== quantity) {
+  //       throw new BadRequestException(
+  //         `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
+  //       );
+  //     }
+  //     for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+  //       const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+  //       for (const toppingId of toppingsForUnit) {
+  //         const topping = await qr.manager.findOne(Ingredient, {
+  //           where: { id: toppingId, isActive: true },
+  //           relations: ['toppingsGroups'],
+  //         });
+
+  //         if (!topping) {
+  //           throw new NotFoundException(
+  //             `Topping con ID ${toppingId} no encontrado`,
+  //           );
+  //         }
+
+  //         const toppingGroup = topping.toppingsGroups?.[0];
+
+  //         if (!toppingGroup) {
+  //           throw new BadRequestException(
+  //             `El topping ${topping.name} no tiene grupo de topping asignado`,
+  //           );
+  //         }
+
+  //         const config = await qr.manager.findOne(
+  //           ProductAvailableToppingGroup,
+  //           {
+  //             where: {
+  //               product: { id: product.id },
+  //               toppingGroup: { id: toppingGroup.id },
+  //             },
+  //             relations: ['unitOfMeasure'],
+  //           },
+  //         );
+
+  //         if (!config) {
+  //           throw new BadRequestException(
+  //             `El producto ${product.name} no tiene configuración para el grupo de topping del ingrediente ${topping.name}`,
+  //           );
+  //         }
+
+  //         const td = qr.manager.create(OrderDetailToppings, {
+  //           topping,
+  //           orderDetails: detail,
+  //           // quantity: config.quantityOfTopping,
+  //           unitOfMeasure: config.unitOfMeasure,
+  //           unitOfMeasureName: config.unitOfMeasure?.name,
+  //           unitIndex: unitIndex,
+  //         });
+
+  //         toppingDetails.push(td);
+  //       }
+  //     }
+  //   }
+
+  //   return {
+  //     detail,
+  //     toppingDetails,
+  //     subtotal,
+  //   };
+  // }
 
   async buildOrderDetailWithToppings(
     order: Order,
@@ -123,25 +236,21 @@ export class OrderRepository {
     subtotal: number;
   }> {
     const quantity = detailData.quantity;
-    const unitaryPrice = product.price;
-    const subtotal = unitaryPrice * quantity;
-    const detail = qr.manager.create(OrderDetails, {
-      quantity,
-      unitaryPrice,
-      subtotal,
-      product,
-      order,
-    });
 
     const toppingDetails: OrderDetailToppings[] = [];
+
+    let totalExtraCost = 0;
+
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
       if (detailData.toppingsPerUnit.length !== quantity) {
         throw new BadRequestException(
           `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
         );
       }
+
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+
         for (const toppingId of toppingsForUnit) {
           const topping = await qr.manager.findOne(Ingredient, {
             where: { id: toppingId, isActive: true },
@@ -155,7 +264,6 @@ export class OrderRepository {
           }
 
           const toppingGroup = topping.toppingsGroups?.[0];
-
           if (!toppingGroup) {
             throw new BadRequestException(
               `El topping ${topping.name} no tiene grupo de topping asignado`,
@@ -179,10 +287,20 @@ export class OrderRepository {
             );
           }
 
+          // 🟡 Acumular costo extra si corresponde
+          if (
+            config.settings?.chargeExtra &&
+            typeof config.settings.extraCost === 'number'
+          ) {
+            console.log(
+              `💸 Agregando extraCost de ${config.settings.extraCost} por topping ${topping.name}`,
+            );
+            totalExtraCost += Number(config.settings.extraCost);
+          }
+
           const td = qr.manager.create(OrderDetailToppings, {
             topping,
-            orderDetails: detail,
-            // quantity: config.quantityOfTopping,
+            orderDetails: null,
             unitOfMeasure: config.unitOfMeasure,
             unitOfMeasureName: config.unitOfMeasure?.name,
             unitIndex: unitIndex,
@@ -192,6 +310,23 @@ export class OrderRepository {
         }
       }
     }
+
+    const unitaryToppingsCost = totalExtraCost / quantity;
+    const unitaryPrice = Number(product.price) + Number(unitaryToppingsCost);
+    const subtotal = unitaryPrice * quantity;
+
+    const detail = qr.manager.create(OrderDetails, {
+      quantity,
+      unitaryPrice,
+      subtotal,
+      toppingsExtraCost: totalExtraCost, // 🟢 Guardamos el total extra aquí
+      product,
+      order,
+    });
+
+    console.log(`🧾 Precio base: ${product.price}`);
+    console.log(`🧾 Costo extra por toppings: ${totalExtraCost}`);
+    console.log(`🧾 Precio unitario final: ${unitaryPrice}`);
 
     return {
       detail,
@@ -232,9 +367,12 @@ export class OrderRepository {
       name: order.table.name,
       state: order.table.state,
     };
-    response.total = Number(order.total);
-    response.methodOfPayment = order.methodOfPayment;
     response.products = productLines;
+    response.payments = (order.payments || []).map((p) => ({
+      amount: Number(p.amount),
+      methodOfPayment: p.methodOfPayment,
+    }));
+    response.total = Number(order.total);
 
     return response;
   }

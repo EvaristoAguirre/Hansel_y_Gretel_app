@@ -52,6 +52,15 @@ export class TableController {
     return this.tableService.getAllTables(page, limit);
   }
 
+  @Get('available')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getAllTablesAvailable(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 100,
+  ): Promise<Table[]> {
+    return this.tableService.getAllTablesAvailable(page, limit);
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getTableById(@Param('id') id: string): Promise<Table> {

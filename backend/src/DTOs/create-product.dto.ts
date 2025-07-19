@@ -43,6 +43,11 @@ export class CreateProductDto {
   cost?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  baseCost?: number;
+
+  @IsOptional()
   @IsArray()
   @IsUUID('all', { each: true })
   categories?: string[];
@@ -90,5 +95,6 @@ export class ProductToppingsGroupDto {
   settings?: {
     maxSelection: number;
     chargeExtra: boolean;
+    extraCost: number;
   };
 }

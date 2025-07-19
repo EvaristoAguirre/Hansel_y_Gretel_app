@@ -115,7 +115,7 @@ export const URI_STOCK = "http://localhost:3000/stock";
 
 //PDF
 
-export const URI_PDF = "http://localhost:3000/export/stock/pdf";
+export const URI_PDF = "http://localhost:3000/export/stock";
 
 // DAILY CASH
 

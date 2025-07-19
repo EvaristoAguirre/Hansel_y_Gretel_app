@@ -61,5 +61,9 @@ export class TableService {
     return this.tableRepository.getTablesByRoom(roomId);
   }
 
+  async getAllTablesAvailable(page: number, limit: number): Promise<Table[]> {
+    return await this.tableRepository.getAllTablesAvailable(page, limit);
+  }
+
   // ------------------- creados porque los necesite en otro servicio
 }

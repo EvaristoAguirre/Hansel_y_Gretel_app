@@ -10,7 +10,7 @@ import {
 import { OrderDetails } from './order_details.entity';
 import { OrderState } from 'src/Enums/states.enum';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
-import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
+import { OrderPayment } from './order_payment.entity';
 
 @Entity({ name: 'orders' })
 export class Order {
@@ -35,9 +35,6 @@ export class Order {
   @Column({ nullable: true })
   comment: string;
 
-  @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
-  methodOfPayment: PaymentMethod;
-
   // --------- Relaciones ---------
   @ManyToOne(() => Table, (table) => table.orders, {
     onDelete: 'SET NULL',
@@ -58,4 +55,9 @@ export class Order {
   })
   @JoinColumn({ name: 'dailyCashId' })
   dailyCash: DailyCash;
+
+  @OneToMany(() => OrderPayment, (payment) => payment.order, {
+    cascade: true,
+  })
+  payments: OrderPayment[];
 }

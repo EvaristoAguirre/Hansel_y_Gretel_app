@@ -9,8 +9,8 @@ export interface IRowData {
   name?: string;
   description?: string;
   abbreviation?: string;
-  price?: number | null;
-  cost?: number | null;
+  price?: string | null;
+  cost?: string | null;
   categories?: ICategory[];
   isActive?: boolean;
   quantity?: number | null;

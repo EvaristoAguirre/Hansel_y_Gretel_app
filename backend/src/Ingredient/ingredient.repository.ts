@@ -53,11 +53,7 @@ export class IngredientRepository {
 
     try {
       const ingredient = this.ingredientRepository.create(createData);
-      if (createData.isTopping === true) {
-        ingredient.isTopping = true;
-      } else {
-        ingredient.isTopping = false;
-      }
+
       if (unitOfMeasureId) {
         const unitOfMeasure =
           await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
@@ -117,7 +113,6 @@ export class IngredientRepository {
       const topping = await this.ingredientRepository.findOne({
         where: {
           name: ILike(trimmedName),
-          isTopping: true,
         },
       });
 
@@ -142,7 +137,7 @@ export class IngredientRepository {
     }
 
     const topping = await this.ingredientRepository.findOne({
-      where: { id, isTopping: true },
+      where: { id },
       relations: ['unitOfMeasure'],
     });
 
@@ -152,7 +147,7 @@ export class IngredientRepository {
 
     if (updateToppingDto.name && updateToppingDto.name !== topping.name) {
       const existing = await this.ingredientRepository.findOne({
-        where: { name: updateToppingDto.name, isTopping: true },
+        where: { name: updateToppingDto.name },
       });
       if (existing) {
         throw new ConflictException(
@@ -194,15 +189,25 @@ export class IngredientRepository {
   // --------------------- Ajuste de respuesta ----------------
 
   private adaptToppingResponse(topping: any): ToppingResponseDto {
+    const formatter = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
+    const formatterStock = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
     return {
       id: topping.id,
       name: topping.name,
       isActive: topping.isActive,
       description: topping.description,
-      cost: topping.cost,
+      cost: formatter.format(Number(topping.cost)),
       type: topping.type,
-      isTopping: topping.isTopping,
-      extraCost: topping.extraCost ?? null,
+      extraCost:
+        topping.extraCost != null
+          ? formatter.format(Number(topping.extraCost))
+          : null,
       unitOfMeasure: topping.unitOfMeasure
         ? {
             id: topping.unitOfMeasure.id,
@@ -213,8 +218,12 @@ export class IngredientRepository {
       stock: topping.stock
         ? {
             id: topping.stock.id,
-            quantityInStock: topping.stock.quantityInStock,
-            minimumStock: topping.stock.minimumStock,
+            quantityInStock: formatterStock.format(
+              Number(topping.stock.quantityInStock),
+            ),
+            minimumStock: formatterStock.format(
+              Number(topping.stock.minimumStockock),
+            ),
             unitOfMeasure: topping.stock.unitOfMeasure
               ? {
                   id: topping.stock.unitOfMeasure.id,

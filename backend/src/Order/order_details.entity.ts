@@ -22,6 +22,9 @@ export class OrderDetails {
   @Column('decimal', { precision: 10, scale: 2 })
   unitaryPrice: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  toppingsExtraCost: number;
+
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
 

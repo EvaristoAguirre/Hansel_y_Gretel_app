@@ -1,5 +1,5 @@
 import { INewMovement, IDailyCash, I_DC_Open_Close } from "@/components/Interfaces/IDailyCash";
-import { URI_DAILY_CASH } from "@/components/URI/URI";
+import { URI_DAILY_CASH, URI_ORDER } from "@/components/URI/URI";
 
 
 export const fetchDailyCashResume = async (token: string) => {
@@ -134,3 +134,45 @@ export const newMovement = async (token: string, body: INewMovement) => {
 };
 
 
+
+export const getMovements = async (token: string, day: number, month: number, year: number) => {
+  const response = await fetch(
+    `${URI_DAILY_CASH}/movements/by-date?day=${day}&month=${month}&year=${year}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
+};
+
+export const getMovementsDetailsById = async (token: string, id: string) => {
+  const response = await fetch(
+    `${URI_DAILY_CASH}/movement-by-id/${id}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
+};
+
+export const getOrderDetails = async (token: string, id: string) => {
+  const response = await fetch(
+    `${URI_ORDER}/order-by-id/${id}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
+};

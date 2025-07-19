@@ -32,8 +32,11 @@ const Navbar = () => {
   ];
 
   const filteredSections = sections.filter(
-    (section) => !(userRole === UserRole.MOZO && section.label === "Productos")
+    (section) =>
+      !(userRole === UserRole.MOZO &&
+        (section.label === "Productos" || section.label === "Registros/Cajas"))
   );
+
 
   return (
     <nav className="bg-black shadow-md py-4 absolute top-0 left-0 right-0 z-50 w-full">

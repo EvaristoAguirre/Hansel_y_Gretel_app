@@ -98,6 +98,22 @@ export class DailyCashController {
     return this.dailyCashService.getDailyCashById(id);
   }
 
+  @Get('movements/by-date')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  getDailyCashWithOrdersByDate(
+    @Query('day', ParseIntPipe) day: number,
+    @Query('month', ParseIntPipe) month: number,
+    @Query('year', ParseIntPipe) year: number,
+  ): Promise<DailyCash | null> {
+    return this.dailyCashService.getDailyCashWithOrdersByDate(day, month, year);
+  }
+
+  @Get('movement-by-id/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  detailsMovementById(@Param('id') id: string) {
+    return this.dailyCashService.detailsMovementById(id);
+  }
+
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   updateDailyCash(

@@ -21,6 +21,7 @@ import { Product } from 'src/Product/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { isUUID } from 'class-validator';
 import { Logger } from '@nestjs/common';
+import { StockResponseFormatter } from './stock-response-formatter';
 
 @Injectable()
 export class StockService {
@@ -34,6 +35,7 @@ export class StockService {
     private readonly productService: ProductService,
   ) {}
 
+  // ------------- formato string, con separador de miles y decimales
   async getAllStocks(
     page: number,
     limit: number,
@@ -41,89 +43,21 @@ export class StockService {
     return await this.stockRepository.getAllStocks(page, limit);
   }
 
+  // ------------- formato string, con separador de miles y decimales
   async getStockByProductId(
     productId: string,
   ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByProductId(productId);
   }
 
+  // ------------- formato string, con separador de miles y decimales
   async getStockByIngredientId(
     ingredientId: string,
   ): Promise<StockSummaryResponseDTO> {
     return await this.stockRepository.getStockByIngredientId(ingredientId);
   }
 
-  // async createStock(createStockDto: CreateStockDto): Promise<Stock> {
-  //   const {
-  //     productId,
-  //     ingredientId,
-  //     quantityInStock,
-  //     minimumStock,
-  //     unitOfMeasureId,
-  //   } = createStockDto;
-
-  //   if (productId && ingredientId) {
-  //     throw new BadRequestException(
-  //       'You cannot assign a stock to a product and an ingredient at the same time.',
-  //     );
-  //   }
-  //   if (!productId && !ingredientId) {
-  //     throw new BadRequestException(
-  //       'You must provide either a productId or an ingredientId.',
-  //     );
-  //   }
-  //   if (quantityInStock < 0 || minimumStock < 0) {
-  //     throw new BadRequestException(
-  //       'Quantity in stock and minimum stock must be greater than 0.',
-  //     );
-  //   }
-  //   if (!unitOfMeasureId) {
-  //     throw new BadRequestException('You must provide a unitOfMeasureId.');
-  //   }
-
-  //   const unitOfMeasure =
-  //     await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
-  //   if (!unitOfMeasure) {
-  //     throw new NotFoundException(
-  //       `Unit of mesure with ID: ${unitOfMeasureId} not found`,
-  //     );
-  //   }
-
-  //   let product: Product | undefined;
-  //   let ingredient: Ingredient | undefined;
-
-  //   if (productId) {
-  //     product =
-  //       await this.productService.getProductByIdToAnotherService(productId);
-  //     if (!product) {
-  //       throw new NotFoundException(`Product with ID ${productId} not found`);
-  //     }
-  //   }
-
-  //   if (ingredientId) {
-  //     ingredient =
-  //       await this.ingredientService.getIngredientByIdToAnotherService(
-  //         ingredientId,
-  //       );
-  //     if (!ingredient) {
-  //       throw new NotFoundException(
-  //         `Ingredient with ID ${ingredientId} not found`,
-  //       );
-  //     }
-  //   }
-
-  //   const createdStock = await this.stockRepository.createAndSaveStock(
-  //     quantityInStock,
-  //     minimumStock,
-  //     unitOfMeasure,
-  //     product,
-  //     ingredient,
-  //   );
-
-  //   this.eventEmitter.emit('stock.created', { stock: createdStock });
-
-  //   return createdStock;
-  // }
+  // ------------- formato string, con separador de miles y decimales
   async createStock(createStockDto: CreateStockDto): Promise<Stock> {
     const {
       productId,
@@ -227,99 +161,18 @@ export class StockService {
       ingredient,
     );
 
-    this.eventEmitter.emit('stock.created', { stock: createdStock });
+    const stockWithFormatt = StockResponseFormatter.format(createdStock);
 
-    return createdStock;
+    this.eventEmitter.emit('stock.created', { stock: stockWithFormatt });
+
+    return stockWithFormatt;
   }
-
-  // async updateStock(
-  //   id: string,
-  //   updateStockDto: UpdateStockDto,
-  // ): Promise<Stock> {
-  //   const {
-  //     productId,
-  //     ingredientId,
-  //     quantityInStock,
-  //     minimumStock,
-  //     unitOfMeasureId,
-  //   } = updateStockDto;
-
-  //   if (!id || !isUUID(id)) {
-  //     throw new BadRequestException('Invalid or missing stock ID.');
-  //   }
-
-  //   if (!productId && !ingredientId) {
-  //     throw new BadRequestException(
-  //       'You must provide either a productId or an ingredientId.',
-  //     );
-  //   }
-
-  //   if (productId && ingredientId) {
-  //     throw new BadRequestException(
-  //       'You cannot assign a stock to both a product and an ingredient.',
-  //     );
-  //   }
-
-  //   const stock = await this.stockRepository.findStockById(id);
-  //   if (!stock) {
-  //     throw new NotFoundException(`Stock with ID ${id} not found.`);
-  //   }
-
-  //   if (productId) {
-  //     const product =
-  //       await this.productService.getProductByIdToAnotherService(productId);
-
-  //     if (!product) {
-  //       throw new NotFoundException(`Product with ID ${productId} not found.`);
-  //     }
-  //     stock.product = product;
-  //     stock.ingredient = null;
-  //   }
-
-  //   if (ingredientId) {
-  //     const ingredient =
-  //       await this.ingredientService.getIngredientByIdToAnotherService(
-  //         ingredientId,
-  //       );
-  //     if (!ingredient) {
-  //       throw new NotFoundException(
-  //         `Ingredient with ID ${ingredientId} not found.`,
-  //       );
-  //     }
-  //     stock.ingredient = ingredient;
-  //     stock.product = null;
-  //   }
-
-  //   if (quantityInStock !== undefined) {
-  //     stock.quantityInStock = quantityInStock;
-  //   }
-
-  //   if (minimumStock !== undefined) {
-  //     stock.minimumStock = minimumStock;
-  //   }
-
-  //   if (unitOfMeasureId) {
-  //     const unitOfMeasure =
-  //       await this.unitOfMeasureService.getUnitOfMeasureById(unitOfMeasureId);
-  //     if (!unitOfMeasure) {
-  //       throw new NotFoundException(
-  //         `Unit of measure with ID: ${unitOfMeasureId} not found.`,
-  //       );
-  //     }
-  //     stock.unitOfMeasure = unitOfMeasure;
-  //   }
-
-  //   const updatedStock = await this.stockRepository.saveStock(stock);
-
-  //   this.eventEmitter.emit('stock.updated', { stock: updatedStock });
-
-  //   return updatedStock;
-  // }
-
+  // ------------- formato string, con separador de miles y decimales
   async updateStock(
     id: string,
     updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
+    console.log('data de stock.....', updateStockDto);
     const {
       productId,
       ingredientId,
@@ -441,9 +294,10 @@ export class StockService {
 
     const updatedStock = await this.stockRepository.saveStock(stock);
 
-    this.eventEmitter.emit('stock.updated', { stock: updatedStock });
+    const stockWithFormatt = StockResponseFormatter.format(updatedStock);
 
-    return updatedStock;
+    this.eventEmitter.emit('stock.updated', { stock: stockWithFormatt });
+    return stockWithFormatt;
   }
 
   async deductStock(

@@ -29,6 +29,7 @@ export const useProducts = () => {
     type: TypeProduct.PRODUCT,
     price: null,
     cost: null,
+    baseCost: null,
     categories: [],
     ingredients: [],
     products: [],
@@ -97,10 +98,10 @@ export const useProducts = () => {
         ...form,
         code: Number(form.code),
         price: Number(form.price),
-        cost: Number(form.cost),
         id: form.id,
-
       };
+
+      delete preparedForm.cost;
 
       const updatedProduct = await editProduct(preparedForm, token);
 
@@ -185,6 +186,7 @@ export const useProducts = () => {
       type: TypeProduct.PRODUCT,
       price: null,
       cost: null,
+      baseCost: null,
       categories: [],
       ingredients: [],
       products: [],
