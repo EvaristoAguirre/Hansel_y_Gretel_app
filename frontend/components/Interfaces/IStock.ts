@@ -12,8 +12,8 @@ export interface IStock {
 
 export interface IStockOfProduct {
   id: string;
-  quantityInStock: number;
-  minimumStock: number;
+  quantityInStock: string;
+  minimumStock: string;
   unitOfMeasure: IUnitOfMeasureForm;
 
 }
@@ -23,8 +23,8 @@ export interface SelectedItem {
   type?: StockModalType;
   id?: string;
   name?: string;
-  stock?: number | null;
-  min: number | null;
+  stock?: string | null;
+  min: string | null;
   unit: string | null;
   idStock?: string | null;
 }
