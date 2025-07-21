@@ -7,6 +7,7 @@ import {
   MenuItem,
   Tooltip,
   Chip,
+  Box,
 } from '@mui/material';
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/authContext";
@@ -14,6 +15,7 @@ import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { ToppingsGroupWithoutToppings } from "@/api/topping";
 import { ProductToppingsGroupDto } from "@/components/Interfaces/IProducts";
 import { capitalizeFirstLetter } from '@/components/Utils/CapitalizeFirstLetter';
+import { NumericFormat } from 'react-number-format';
 
 interface Props {
   value: ProductToppingsGroupDto[];
@@ -141,16 +143,23 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
 
             <Grid item xs={6}>
               <Tooltip title="Cantidad que se le agrega al producto por agregado. Ej: 100gr">
-                <TextField
-                  label="Cantidad"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  value={group.quantityOfTopping}
-                  onChange={(e) =>
-                    handleFieldChange(group.toppingsGroupId, "quantityOfTopping", Number(e.target.value))
-                  }
-                />
+                <Box>
+                  <NumericFormat
+                    customInput={TextField}
+                    label="Cantidad"
+                    value={group.quantityOfTopping}
+                    thousandSeparator='.'
+                    decimalSeparator=','
+                    decimalScale={2}
+                    allowNegative={false}
+                    type='text'
+                    fullWidth
+                    size='small'
+                    onValueChange={(values) => {
+                      handleFieldChange(group.toppingsGroupId, "quantityOfTopping", values.floatValue ?? null);
+                    }}
+                  />
+                </Box>
               </Tooltip>
             </Grid>
 
@@ -175,16 +184,23 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
 
             <Grid item xs={6}>
               <Tooltip title="Cantidad de agregados que se pueden seleccionar. Ej: 3">
-                <TextField
-                  label="Máx. selección"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  value={group.settings?.maxSelection ?? 1}
-                  onChange={(e) =>
-                    handleFieldChange(group.toppingsGroupId, "maxSelection", Number(e.target.value))
-                  }
-                />
+                <Box>
+                  <NumericFormat
+                    customInput={TextField}
+                    label="Máx. selección"
+                    value={group.settings?.maxSelection ?? 1}
+                    thousandSeparator='.'
+                    decimalSeparator=','
+                    decimalScale={0}
+                    allowNegative={false}
+                    type='text'
+                    fullWidth
+                    size='small'
+                    onValueChange={(values) => {
+                      handleFieldChange(group.toppingsGroupId, "maxSelection", values.floatValue ?? null);
+                    }}
+                  />
+                </Box>
               </Tooltip>
             </Grid>
 
@@ -207,19 +223,25 @@ export const AvailableToppingsGroups = ({ value, onChange, units }: Props) => {
             {/* Mostrar monto extra si es el grupo con ID "extracash" y está activado el cobro extra */}
             {group.settings?.chargeExtra && (
               <Grid item xs={12}>
-                <TextField
+
+                <NumericFormat
+                  customInput={TextField}
                   label="Monto extra a cobrar"
-                  type="number"
-                  size="small"
+                  value={group.settings?.extraCost ?? 0}
+                  thousandSeparator='.'
+                  decimalSeparator=','
+                  decimalScale={2}
+                  allowNegative={false}
+                  type='text'
                   fullWidth
-                  value={group.settings?.extraCost ?? ""}
-                  onChange={(e) =>
+                  size='small'
+                  onValueChange={(values) => {
                     handleFieldChange(
                       group.toppingsGroupId,
                       "extraCost",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                      values.floatValue ?? 0
+                    );
+                  }}
                 />
               </Grid>
             )}
