@@ -13,6 +13,8 @@ import { CostCascadeResult } from 'src/Types/cost-cascade.type';
 import { Product } from 'src/Product/product.entity';
 import { isUUID } from 'class-validator';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
+import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 
 @Injectable()
 export class CostCascadeService {
@@ -31,7 +33,6 @@ export class CostCascadeService {
     this.logger.log(
       `🔁 Iniciando cascada de costo para ingrediente ${ingredientId} con nuevo costo ${newCost}`,
     );
-
     const queryRunner =
       externalQueryRunner ?? this.dataSource.createQueryRunner();
     const isExternal = !!externalQueryRunner;
@@ -40,6 +41,7 @@ export class CostCascadeService {
       await queryRunner.connect();
       await queryRunner.startTransaction();
     }
+
     const updatedProducts = new Set<string>();
     const updatedPromotions = new Set<string>();
 
@@ -51,9 +53,6 @@ export class CostCascadeService {
       this.logger.log(
         `✅ Ingrediente ${ingredientId} actualizado con nuevo costo: ${newCost}`,
       );
-
-      // -------------------------- llamo a productService.calculateCompoundProductsCost
-
       // 2. Productos compuestos afectados
       const productIngredients = await queryRunner.manager.find(
         ProductIngredient,
@@ -62,7 +61,6 @@ export class CostCascadeService {
           relations: ['product', 'ingredient', 'unitOfMeasure'],
         },
       );
-
       for (const pi of productIngredients) {
         const productId = pi.product.id;
         const updatedProductId = await this.calculateCompoundProductsCost(
@@ -72,33 +70,34 @@ export class CostCascadeService {
         this.logger.log(
           `🧮 Producto afectado por ingrediente ${ingredientId}: ${productId}`,
         );
-
         updatedProducts.add(updatedProductId);
       }
       // ----------------------------------------- cierro la parte de producto compuesto
+      // 3. Productos que usan el ingrediente como topping
+      await this.handleToppingCostCascade(
+        ingredientId,
+        queryRunner,
+        updatedProducts,
+        updatedPromotions,
+      );
 
       // -------------------------Actualizo Promociones que incluyen productos recien actualizados
-
       if (updatedProducts.size > 0) {
         const productIds = Array.from(updatedProducts);
         const promoLinks = await queryRunner.manager.find(PromotionProduct, {
           where: { product: { id: In(productIds) } },
           relations: ['promotion', 'product'],
         });
-
         for (const link of promoLinks) {
           const promotionId = link.promotion.id;
           updatedPromotions.add(promotionId);
         }
-
         for (const promotionId of updatedPromotions) {
           await this.calculatePromotionCost(promotionId, queryRunner);
         }
       }
-
       if (!isExternal) await queryRunner.commitTransaction();
       this.logger.log(`✅ Cascada finalizada para ingrediente ${ingredientId}`);
-
       return {
         success: true,
         updatedProducts: Array.from(updatedProducts),
@@ -106,11 +105,9 @@ export class CostCascadeService {
       };
     } catch (error) {
       if (!isExternal) await queryRunner.rollbackTransaction();
-
       this.logger.error(
         `❌ Error durante la cascada de costo del ingrediente ${ingredientId}: ${error.message}`,
       );
-
       return {
         success: false,
         updatedProducts: Array.from(updatedProducts),
@@ -142,13 +139,9 @@ export class CostCascadeService {
     }
 
     try {
-      // ----revisar las relaciones cargadas en el metodo de este repo con las del repo de producto
-
       const product = await this.getProductWithRelations(qr, productId);
 
-      // ----revisar las relaciones cargadas en el metodo de este repo con las del repo de producto
-
-      let newCost = 0;
+      let baseCost = 0;
 
       for (const productIngredient of product.productIngredients) {
         const quantity = await this.unitOfMeasureService.convertUnit(
@@ -156,13 +149,18 @@ export class CostCascadeService {
           productIngredient.ingredient.unitOfMeasure.id,
           productIngredient.quantityOfIngredient,
         );
-        newCost += productIngredient.ingredient.cost * quantity;
+        baseCost += productIngredient.ingredient.cost * quantity;
       }
 
-      product.cost = newCost;
+      // ------ Calcular costo de toppings
+      const toppingsCost = await this.calculateToppingsCost(product);
+
+      product.baseCost = baseCost;
+      product.toppingsCost = toppingsCost;
+      product.cost = baseCost + toppingsCost;
 
       this.logger.log(
-        `📦 Producto compuesto ${product.id} recalculado. Nuevo costo: ${newCost}`,
+        `📦 Producto compuesto ${product.id} recalculado. Nuevo costo: ${product.cost}`,
       );
 
       await qr.manager.save(product);
@@ -313,6 +311,11 @@ export class CostCascadeService {
         'productIngredients.ingredient',
         'productIngredients.unitOfMeasure',
         'productIngredients.ingredient.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.unitOfMeasure',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
+        'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
       ],
     });
 
@@ -322,28 +325,222 @@ export class CostCascadeService {
 
     return product;
   }
+
+  async calculateToppingsCost(product: Product): Promise<number> {
+    console.log('[TOPPING COST] Iniciando cálculo para producto:', {
+      id: product.id,
+      name: product.name,
+      allowsToppings: product.allowsToppings,
+      toppingGroupsCount: product.availableToppingGroups?.length || 0,
+    });
+    if (!product.allowsToppings || !product.availableToppingGroups?.length) {
+      return 0;
+    }
+
+    let totalExtraCost = 0;
+
+    for (const available of product.availableToppingGroups) {
+      const { settings, quantityOfTopping, unitOfMeasure, toppingGroup } =
+        available;
+
+      console.log('[TOPPING COST] Analizando grupo de toppings:', {
+        toppingGroupId: toppingGroup?.id,
+        quantityOfTopping,
+        unitOfMeasureId: unitOfMeasure?.id,
+        toppingCount: toppingGroup?.toppings?.length || 0,
+      });
+
+      if (
+        !unitOfMeasure?.id ||
+        !toppingGroup?.id ||
+        !toppingGroup.toppings?.length
+      ) {
+        console.log('[TOPPING COST] Grupo inválido, saltando.');
+        continue;
+      }
+      console.log(
+        '[TOPPING COST] Toppings recibidos:',
+        toppingGroup.toppings.map((t) => ({
+          id: t.id,
+          name: t.name,
+          isActive: t.isActive,
+          cost: t.cost,
+          unitOfMeasure: t.unitOfMeasure,
+        })),
+      );
+
+      const activeToppings = toppingGroup.toppings.filter((topping) => {
+        // Convertir cost a número (maneja strings numéricos)
+        const costValue = Number(topping.cost);
+
+        const valid =
+          topping.isActive &&
+          !isNaN(costValue) && // Verifica si es un número válido
+          topping.unitOfMeasure?.id; // Verifica unidad de medida
+
+        if (!valid) {
+          console.log(
+            '[TOPPING COST] ❌ Topping descartado por no ser válido:',
+            {
+              id: topping.id,
+              name: topping.name,
+              isActive: topping.isActive,
+              cost: topping.cost,
+              unitOfMeasureId: topping.unitOfMeasure?.id,
+            },
+          );
+        }
+
+        return valid;
+      });
+      console.log(
+        '[TOPPING COST] Toppings activos y válidos:',
+        activeToppings.map((t) => ({
+          id: t.id,
+          name: t.name,
+          cost: t.cost,
+          unit: t.unitOfMeasure?.id,
+        })),
+      );
+      if (activeToppings.length === 0) {
+        console.log('[TOPPING COST] No hay toppings activos, se continúa.');
+        continue;
+      }
+
+      const toppingsWithConvertedCost = await Promise.all(
+        activeToppings.map(async (topping) => {
+          const convertedQuantity = await this.unitOfMeasureService.convertUnit(
+            unitOfMeasure.id,
+            topping.unitOfMeasure.id,
+            quantityOfTopping || 1,
+          );
+
+          const result = {
+            topping,
+            cost: Number(topping.cost) * convertedQuantity,
+          };
+
+          console.log('[TOPPING COST] Costo convertido para topping:', {
+            id: topping.id,
+            name: topping.name,
+            originalCost: topping.cost,
+            convertedQuantity,
+          });
+
+          return result;
+        }),
+      );
+
+      const maxSelection = settings?.maxSelection || 1;
+      const topCheapest = toppingsWithConvertedCost
+        .sort((a, b) => a.cost - b.cost)
+        .slice(0, maxSelection);
+
+      console.log(
+        '[TOPPING COST] Top más baratos seleccionados:',
+        topCheapest.map((tc) => ({
+          id: tc.topping.id,
+          name: tc.topping.name,
+          cost: tc.cost,
+        })),
+      );
+
+      const totalCost = topCheapest.reduce((sum, item) => sum + item.cost, 0);
+      const averageCost =
+        topCheapest.length > 0 ? totalCost / topCheapest.length : 0;
+
+      console.log(
+        `[TOPPING COST] Costo total: ${totalCost}, promedio agregado: ${averageCost}`,
+      );
+      totalExtraCost += averageCost;
+    }
+    console.log(
+      `[TOPPING COST] Costo total extra de toppings para producto '${product.name}': ${totalExtraCost}`,
+    );
+    return totalExtraCost;
+  }
+
+  private async handleToppingCostCascade(
+    ingredientId: string,
+    queryRunner: QueryRunner,
+    updatedProducts: Set<string>,
+    updatedPromotions: Set<string>,
+  ): Promise<void> {
+    // Buscar todos los grupos de toppings donde participa este ingrediente
+
+    const toppingGroups = await queryRunner.manager.find(ToppingsGroup, {
+      where: { toppings: { id: ingredientId } },
+      relations: ['productsAvailableIn'],
+    });
+
+    const affectedProductIds = new Set<string>();
+
+    for (const group of toppingGroups) {
+      const links = await queryRunner.manager.find(
+        ProductAvailableToppingGroup,
+        {
+          where: { toppingGroup: { id: group.id } },
+          relations: ['product'],
+        },
+      );
+
+      for (const link of links) {
+        const productId = link.productId;
+
+        if (updatedProducts.has(productId)) continue;
+
+        const fullProduct = await queryRunner.manager.findOne(Product, {
+          where: { id: productId },
+          relations: [
+            'availableToppingGroups',
+            'availableToppingGroups.toppingGroup',
+            'availableToppingGroups.unitOfMeasure',
+            'availableToppingGroups.toppingGroup.toppings',
+            'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
+          ],
+        });
+
+        if (!fullProduct) continue;
+
+        const newToppingsCost = await this.calculateToppingsCost(fullProduct);
+
+        const baseCost = fullProduct.cost - fullProduct.toppingsCost;
+        const newTotalCost = baseCost + newToppingsCost;
+
+        this.logger.log(
+          `➕ Nuevo toppingsCost calculado para full producto.... ${fullProduct.name}: $${newToppingsCost.toFixed(2)}`,
+        );
+        await queryRunner.manager.update(Product, productId, {
+          cost: newTotalCost, // Actualizar costo total
+          toppingsCost: newToppingsCost, // Actualizar costo de toppings
+        });
+
+        this.logger.log(
+          `🧂 Producto afectado por topping (ingrediente ${ingredientId}): ${productId}`,
+        );
+
+        updatedProducts.add(productId);
+        affectedProductIds.add(productId);
+      }
+    }
+
+    // Promociones afectadas por productos cuyo toppingsCost cambió
+    if (affectedProductIds.size > 0) {
+      const promoLinks = await queryRunner.manager.find(PromotionProduct, {
+        where: { product: { id: In([...affectedProductIds]) } },
+        relations: ['promotion', 'product'],
+      });
+
+      for (const link of promoLinks) {
+        const promotionId = link.promotion.id;
+        if (!updatedPromotions.has(promotionId)) {
+          updatedPromotions.add(promotionId);
+          await this.calculatePromotionCost(promotionId, queryRunner);
+        }
+        this.logger.log(
+          `🎁 Promoción ${promotionId} actualizada por cambios en productos afectados`,
+        );
+      }
+    }
+  }
 }
-
-// 3. Productos simples o compuestos con toppings pagos
-//   const toppingLinks = await queryRunner.manager.find(
-//     ProductAvailableToppingGroup,
-//     {
-//       where: {
-//         ingredient: { id: ingredientId },
-//         settings: { chargeExtra: true },
-//       },
-//       relations: ['product', 'ingredient'],
-//     },
-//   );
-
-//   for (const link of toppingLinks) {
-//     const productId = link.product.id;
-//     const newToppingCost = await this.calculateToppingCost(
-//       productId,
-//       queryRunner,
-//     );
-//     await queryRunner.manager.update(Product, productId, {
-//       cost: newToppingCost,
-//     });
-//     updatedProducts.add(productId);
-//   }
