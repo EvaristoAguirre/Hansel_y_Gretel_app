@@ -226,22 +226,6 @@ export class IngredientService {
         );
       }
 
-      // if (updateData.unitOfMeasureId) {
-      //   const unitOfMeasure = await queryRunner.manager.findOne(UnitOfMeasure, {
-      //     where: { id: updateData.unitOfMeasureId },
-      //   });
-      //   if (!unitOfMeasure) {
-      //     throw new BadRequestException('Unit of measure not found');
-      //   }
-
-      //   ingredientToUpdate.unitOfMeasure = unitOfMeasure;
-      //   delete updateData.unitOfMeasureId;
-      // }
-
-      // if (shouldRecalculateCost) {
-      //   delete updateData.cost;
-      // }
-
       // 1. Guardar referencia al stock existente
       const existingStock = ingredientToUpdate.stock;
 
