@@ -169,6 +169,32 @@ export class ProductService {
       }
     }
 
+    if (
+      currentProduct.type === 'product' &&
+      Number(productUpdated.cost) !== Number(currentProduct.cost)
+    ) {
+      console.log(
+        `⚙️ Detected cost change in compound product ${id}. Triggering cascade...`,
+      );
+      const cascadeResult =
+        await this.costCascadeService.updateSimpleProductCostAndCascade(
+          productUpdated.id,
+          updateData.baseCost,
+        );
+      if (cascadeResult.success) {
+        console.log(
+          `📦 Producto: ${productUpdated.name} ${id} actualizado. Promociones afectadas:`,
+        );
+        for (const promoId of cascadeResult.updatedPromotions) {
+          console.log(`🎁 -> Promoción recalculada: ${promoId}`);
+        }
+      } else {
+        console.error(
+          `⚠️ Falló la cascada de costos para producto ${productUpdated.name}: ${cascadeResult.message}`,
+        );
+      }
+    }
+
     this.eventEmitter.emit('product.updated', {
       product: productUpdated,
     });

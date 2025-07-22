@@ -327,12 +327,6 @@ export class CostCascadeService {
   }
 
   async calculateToppingsCost(product: Product): Promise<number> {
-    console.log('[TOPPING COST] Iniciando cálculo para producto:', {
-      id: product.id,
-      name: product.name,
-      allowsToppings: product.allowsToppings,
-      toppingGroupsCount: product.availableToppingGroups?.length || 0,
-    });
     if (!product.allowsToppings || !product.availableToppingGroups?.length) {
       return 0;
     }
@@ -343,67 +337,24 @@ export class CostCascadeService {
       const { settings, quantityOfTopping, unitOfMeasure, toppingGroup } =
         available;
 
-      console.log('[TOPPING COST] Analizando grupo de toppings:', {
-        toppingGroupId: toppingGroup?.id,
-        quantityOfTopping,
-        unitOfMeasureId: unitOfMeasure?.id,
-        toppingCount: toppingGroup?.toppings?.length || 0,
-      });
-
       if (
         !unitOfMeasure?.id ||
         !toppingGroup?.id ||
         !toppingGroup.toppings?.length
       ) {
-        console.log('[TOPPING COST] Grupo inválido, saltando.');
         continue;
       }
-      console.log(
-        '[TOPPING COST] Toppings recibidos:',
-        toppingGroup.toppings.map((t) => ({
-          id: t.id,
-          name: t.name,
-          isActive: t.isActive,
-          cost: t.cost,
-          unitOfMeasure: t.unitOfMeasure,
-        })),
-      );
 
       const activeToppings = toppingGroup.toppings.filter((topping) => {
-        // Convertir cost a número (maneja strings numéricos)
         const costValue = Number(topping.cost);
 
         const valid =
-          topping.isActive &&
-          !isNaN(costValue) && // Verifica si es un número válido
-          topping.unitOfMeasure?.id; // Verifica unidad de medida
-
-        if (!valid) {
-          console.log(
-            '[TOPPING COST] ❌ Topping descartado por no ser válido:',
-            {
-              id: topping.id,
-              name: topping.name,
-              isActive: topping.isActive,
-              cost: topping.cost,
-              unitOfMeasureId: topping.unitOfMeasure?.id,
-            },
-          );
-        }
+          topping.isActive && !isNaN(costValue) && topping.unitOfMeasure?.id;
 
         return valid;
       });
-      console.log(
-        '[TOPPING COST] Toppings activos y válidos:',
-        activeToppings.map((t) => ({
-          id: t.id,
-          name: t.name,
-          cost: t.cost,
-          unit: t.unitOfMeasure?.id,
-        })),
-      );
+
       if (activeToppings.length === 0) {
-        console.log('[TOPPING COST] No hay toppings activos, se continúa.');
         continue;
       }
 
@@ -420,13 +371,6 @@ export class CostCascadeService {
             cost: Number(topping.cost) * convertedQuantity,
           };
 
-          console.log('[TOPPING COST] Costo convertido para topping:', {
-            id: topping.id,
-            name: topping.name,
-            originalCost: topping.cost,
-            convertedQuantity,
-          });
-
           return result;
         }),
       );
@@ -436,27 +380,13 @@ export class CostCascadeService {
         .sort((a, b) => a.cost - b.cost)
         .slice(0, maxSelection);
 
-      console.log(
-        '[TOPPING COST] Top más baratos seleccionados:',
-        topCheapest.map((tc) => ({
-          id: tc.topping.id,
-          name: tc.topping.name,
-          cost: tc.cost,
-        })),
-      );
-
       const totalCost = topCheapest.reduce((sum, item) => sum + item.cost, 0);
       const averageCost =
         topCheapest.length > 0 ? totalCost / topCheapest.length : 0;
 
-      console.log(
-        `[TOPPING COST] Costo total: ${totalCost}, promedio agregado: ${averageCost}`,
-      );
       totalExtraCost += averageCost;
     }
-    console.log(
-      `[TOPPING COST] Costo total extra de toppings para producto '${product.name}': ${totalExtraCost}`,
-    );
+
     return totalExtraCost;
   }
 
@@ -511,8 +441,8 @@ export class CostCascadeService {
           `➕ Nuevo toppingsCost calculado para full producto.... ${fullProduct.name}: $${newToppingsCost.toFixed(2)}`,
         );
         await queryRunner.manager.update(Product, productId, {
-          cost: newTotalCost, // Actualizar costo total
-          toppingsCost: newToppingsCost, // Actualizar costo de toppings
+          cost: newTotalCost,
+          toppingsCost: newToppingsCost,
         });
 
         this.logger.log(
