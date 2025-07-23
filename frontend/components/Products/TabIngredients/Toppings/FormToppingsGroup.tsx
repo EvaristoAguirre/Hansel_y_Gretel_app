@@ -84,9 +84,6 @@ const FormToppingsGroup = ({
     setToppingsError(updated.length === 0);
   };
 
-  useEffect(() => {
-    console.log("🌕", selectedIds);
-  }, [selectedIds]);
 
   const handleSubmit = () => {
     if (!isFormValid) return;
@@ -175,10 +172,6 @@ const FormToppingsGroup = ({
                         <Checkbox
                           checked={selectedIds.includes(topping.id)}
                           onChange={() => handleChange(topping.id)}
-                          disabled={
-                            usedToppingsIds.includes(topping.id) &&
-                            !selectedIds.includes(topping.id)
-                          }
                         />
                       }
                       label={capitalizeFirstLetter(topping.name)}
