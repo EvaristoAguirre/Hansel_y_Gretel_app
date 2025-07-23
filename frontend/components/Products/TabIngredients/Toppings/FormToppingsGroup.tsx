@@ -172,6 +172,10 @@ const FormToppingsGroup = ({
                         <Checkbox
                           checked={selectedIds.includes(topping.id)}
                           onChange={() => handleChange(topping.id)}
+                          disabled={
+                            usedToppingsIds.includes(topping.id) &&
+                            !selectedIds.includes(topping.id)
+                          }
                         />
                       }
                       label={capitalizeFirstLetter(topping.name)}
