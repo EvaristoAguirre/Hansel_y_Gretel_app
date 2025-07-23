@@ -600,10 +600,6 @@ export class DailyCashService {
   async detailsMovementById(
     cashMovementId: string,
   ): Promise<CashMovementDetailsDto> {
-    const cashFormatter = new Intl.NumberFormat('es-AR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
     try {
       const movement = await this.cashMovementRepo.findOne({
         where: { id: cashMovementId },
@@ -617,11 +613,11 @@ export class DailyCashService {
 
       const result = {
         type: movement.type,
-        amount: cashFormatter.format(Number(movement.amount)),
+        amount: this.formatMoney(movement.amount),
         createdAt: movement.createdAt,
         payments: Array.isArray(movement.payments)
           ? movement.payments.map((p) => ({
-              amount: cashFormatter.format(Number(p.amount)),
+              amount: this.formatMoney(p.amount),
               paymentMethod: p.paymentMethod,
             }))
           : [],
@@ -634,6 +630,17 @@ export class DailyCashService {
         'Error al obtener el movimiento de caja',
       );
     }
+  }
+
+  private formatMoney(value: number | string | null | undefined): string {
+    const numberValue =
+      typeof value === 'string' ? Number(value) : (value ?? 0);
+    return numberValue.toLocaleString('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
   }
 
   // ------------------- metricas -----------------------

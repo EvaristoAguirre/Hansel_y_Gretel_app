@@ -73,7 +73,7 @@ export class ExportService {
           name: item.name,
           quantity: this.formatNumber(item.quantityInStock),
           unit: item.unitOfMeasure,
-          cost: this.formatNumber(item.cost),
+          cost: this.formatMoney(item.cost),
           bought: '',
           paid: '',
         })),
@@ -116,10 +116,23 @@ export class ExportService {
     };
   }
 
-  private formatNumber(value: number | null | undefined): string {
-    return (value ?? 0).toLocaleString('es-AR', {
-      minimumFractionDigits: 1,
+  private formatNumber(value: number | string | null | undefined): string {
+    const numberValue =
+      typeof value === 'string' ? Number(value) : (value ?? 0);
+    return numberValue.toLocaleString('es-AR', {
+      minimumFractionDigits: 0,
       maximumFractionDigits: 2,
+    });
+  }
+
+  private formatMoney(value: number | string | null | undefined): string {
+    const numberValue =
+      typeof value === 'string' ? Number(value) : (value ?? 0);
+    return numberValue.toLocaleString('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
   }
 }
