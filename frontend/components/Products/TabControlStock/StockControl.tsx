@@ -81,13 +81,15 @@ const StockControl = () => {
     setSelectedItem({ ...item, type });
     setModalOpen(true);
   };
-  const getColorByStock = (stock: string, min: number) => {
+  const getColorByStock = (stock: string, min: string) => {
+
     const stockNumber = normalizeNumber(stock);
-    if (stockNumber <= (min / 2)) {
+    const minNumber = normalizeNumber(min);
+    if (stockNumber <= (minNumber / 2)) {
       return "#d94d22";
-    } else if (stockNumber <= min) {
+    } else if (stockNumber <= minNumber) {
       return "#f9b32d";
-    } else if (stockNumber > min) {
+    } else if (stockNumber > minNumber) {
       return "#21b421";
     }
     return "";
