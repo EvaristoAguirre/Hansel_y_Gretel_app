@@ -18,6 +18,7 @@ import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter"
 import { dailyCashState } from "@/components/Enums/dailyCash";
 import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 import DifferenceIcon from "@mui/icons-material/CompareArrows";
+import { GridArrowDownwardIcon, GridArrowUpwardIcon } from "@mui/x-data-grid";
 
 interface Props {
   open: boolean;
@@ -95,17 +96,35 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
           </Grid>
           <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
+              <GridArrowDownwardIcon color="warning" fontSize="small" />
+              <strong>Total de Ingresos:</strong>{" "}
+              $ {data.totalIncomes}
+            </Typography>
+          </Grid>
+
+          <Grid item xs={6}>
+            <Typography display="flex" alignItems="center" gap={1}>
               <MonetizationOnIcon color="success" fontSize="small" />
               <strong>Dinero Final:</strong> $ {data.finalCash}
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+
+
+          <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
-              <DifferenceIcon color="warning" fontSize="small" />
-              <strong>Diferencia:</strong>{" "}
-              $ {data?.cashDifference}
+              <GridArrowUpwardIcon color="warning" fontSize="small" />
+              <strong>Total de Egresos:</strong>{" "}
+              $ {data.totalExpenses}
             </Typography>
           </Grid>
+        </Grid>
+
+        <Grid item xs={6} mt={2}>
+          <Typography display="flex" alignItems="center" gap={1}>
+            <DifferenceIcon color="warning" fontSize="small" />
+            <strong>Diferencia:</strong>{" "}
+            $ {data.cashDifference}
+          </Typography>
         </Grid>
 
         <Divider sx={{ mt: 2, mb: 2, borderWidth: 2 }} />

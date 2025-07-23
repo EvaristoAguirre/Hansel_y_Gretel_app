@@ -56,7 +56,8 @@ export interface IDailyCash {
   totalTransfer?: number;
   totalMercadoPago?: number;
   totalOtherPayments?: number;
-  ordersIds?: string[]
+  ordersIds?: string[];
+  totalIncomes?: string;
 }
 
 export type OrderCash = {
