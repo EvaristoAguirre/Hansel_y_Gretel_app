@@ -46,14 +46,20 @@ export class ExportService {
           {
             label: 'Cant. actual',
             property: 'quantity',
-            width: 60,
+            width: 40,
             align: 'right',
           },
-          { label: 'Unidad', property: 'unit', width: 50, align: 'center' },
+          {
+            label: 'Stock mínimo',
+            property: 'minimunStock',
+            width: 40,
+            align: 'right',
+          },
+          { label: 'Unidad', property: 'unit', width: 40, align: 'center' },
           {
             label: 'Costo',
             property: 'cost',
-            width: 60,
+            width: 50,
             align: 'right',
           },
           {
@@ -72,6 +78,7 @@ export class ExportService {
         datas: stockData.map((item) => ({
           name: item.name,
           quantity: this.formatNumber(item.quantityInStock),
+          minimunStock: this.formatNumber(item.minimumStock),
           unit: item.unitOfMeasure,
           cost: this.formatMoney(item.cost),
           bought: '',
@@ -111,14 +118,14 @@ export class ExportService {
     return {
       name: item.name,
       quantityInStock: item.stock?.quantityInStock ?? 0,
+      minimumStock: item.stock?.minimumStock ?? 0,
       unitOfMeasure: item.stock?.unitOfMeasure?.abbreviation ?? 'N/D',
       cost: item.cost ?? 0,
     };
   }
 
   private formatNumber(value: number | string | null | undefined): string {
-    const numberValue =
-      typeof value === 'string' ? Number(value) : (value ?? 0);
+    const numberValue = this.parseNumber(value);
     return numberValue.toLocaleString('es-AR', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
@@ -126,13 +133,26 @@ export class ExportService {
   }
 
   private formatMoney(value: number | string | null | undefined): string {
-    const numberValue =
-      typeof value === 'string' ? Number(value) : (value ?? 0);
+    const numberValue = this.parseNumber(value);
     return numberValue.toLocaleString('es-AR', {
       style: 'currency',
       currency: 'ARS',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+  }
+
+  private parseNumber(value: number | string | null | undefined): number {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+
+    const hasThousandsSeparator = /\.\d{3}/.test(value) || value.includes(',');
+
+    const sanitized = hasThousandsSeparator
+      ? value.replace(/\./g, '').replace(',', '.')
+      : value;
+
+    const parsed = Number(sanitized);
+    return isNaN(parsed) ? 0 : parsed;
   }
 }
