@@ -403,19 +403,13 @@ export class DailyCashService {
     }
   }
 
-  async isTodayDailyCashOpen(): Promise<object> {
+  async isAnyDailyCashOpen(): Promise<object> {
     try {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-      return await this.dailyCashRepository.isTodayDailyCashOpen(
-        startOfDay,
-        endOfDay,
-      );
+      return await this.dailyCashRepository.isAnyDailyCashOpen();
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error checking if daily cash is open. Please try again later.',
+        'Error checking if any daily cash is open. Please try again later.',
         error.message,
       );
     }
