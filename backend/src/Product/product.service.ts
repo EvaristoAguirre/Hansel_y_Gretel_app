@@ -18,6 +18,7 @@ import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
+import { IngredientService } from 'src/Ingredient/ingredient.service';
 
 @Injectable()
 export class ProductService {
@@ -27,6 +28,7 @@ export class ProductService {
     private readonly stockService: StockService,
     private readonly unitOfMeasureService: UnitOfMeasureService,
     private readonly costCascadeService: CostCascadeService,
+    private readonly ingredientService: IngredientService,
   ) {}
 
   // ------- rta en string sin decimales y punto de mil
@@ -281,7 +283,7 @@ export class ProductService {
   async checkProductsStockAvailability(
     dataToCheck: CheckStockDto,
   ): Promise<any> {
-    const { productId, quantityToSell } = dataToCheck;
+    const { productId, quantityToSell, toppingsPerUnit } = dataToCheck;
 
     if (!isUUID(productId)) {
       throw new BadRequestException(
@@ -306,7 +308,29 @@ export class ProductService {
         productId,
         'product',
       );
-      return this.checkProductStock(product, quantityToSell);
+      const productStockCheck = await this.checkProductStock(
+        product,
+        quantityToSell,
+      );
+      if (!productStockCheck.available) return productStockCheck;
+
+      if (toppingsPerUnit?.length) {
+        const toppingCheck = await this.checkToppingsStock(
+          toppingsPerUnit,
+          quantityToSell,
+          product,
+        );
+
+        if (!toppingCheck.available) {
+          return {
+            available: false,
+            message: toppingCheck.message,
+            details: toppingCheck.toppingDetails,
+          };
+        }
+      }
+
+      return { available: true };
     }
   }
 
@@ -555,6 +579,109 @@ export class ProductService {
         error.message,
       );
     }
+  }
+
+  private async checkToppingsStock(
+    toppingsPerUnit: string[],
+    quantityToSell: number,
+    product: Product,
+  ): Promise<any> {
+    if (!product.availableToppingGroups?.length) {
+      return {
+        available: false,
+        message: 'El producto no admite toppings, pero se enviaron toppings.',
+      };
+    }
+
+    const toppingChecks = await Promise.all(
+      toppingsPerUnit.map(async (toppingId) => {
+        try {
+          const topping =
+            await this.ingredientService.getIngredientByIdToAnotherService(
+              toppingId,
+            );
+
+          if (!topping) {
+            return {
+              toppingId,
+              available: false,
+              message: 'Topping no encontrado',
+            };
+          }
+
+          // Buscar grupo
+          const toppingGroup = product.availableToppingGroups.find((group) =>
+            group.toppingGroup.toppings.some((t) => t.id === toppingId),
+          );
+
+          if (!toppingGroup) {
+            return {
+              toppingId,
+              toppingName: topping.name,
+              available: false,
+              message: 'Topping no habilitado para este producto',
+            };
+          }
+
+          let requiredQty = toppingGroup.quantityOfTopping;
+
+          const stock =
+            await this.stockService.getStockByIngredientId(toppingId);
+
+          if (
+            !stock ||
+            stock.quantityInStock == null ||
+            stock.unitOfMeasure == undefined
+          ) {
+            return {
+              toppingId,
+              toppingName: topping.name,
+              available: false,
+              message: 'No hay información de stock para el topping',
+            };
+          }
+
+          if (toppingGroup.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
+            requiredQty = await this.unitOfMeasureService.convertUnit(
+              toppingGroup.unitOfMeasure.id,
+              stock.unitOfMeasure.id,
+              requiredQty,
+            );
+          }
+
+          const totalRequired = requiredQty * quantityToSell;
+          const availableQty = Number(stock.quantityInStock);
+
+          return {
+            toppingId,
+            toppingName: topping.name,
+            requiredQuantity: totalRequired,
+            availableQuantity: availableQty,
+            unitOfMeasure: stock.unitOfMeasure.name,
+            available: availableQty >= totalRequired,
+            deficit:
+              availableQty >= totalRequired ? 0 : totalRequired - availableQty,
+          };
+        } catch (error) {
+          return {
+            toppingId,
+            available: false,
+            message:
+              error?.message ?? 'Error inesperado al verificar el topping',
+          };
+        }
+      }),
+    );
+
+    const allAvailable = toppingChecks.every((check) => check.available);
+
+    return allAvailable
+      ? { available: true }
+      : {
+          available: false,
+          message: 'Stock insuficiente para uno o más toppings',
+          toppingDetails: toppingChecks.filter((check) => !check.available),
+        };
   }
 
   async getProductsWithStock(): Promise<Product[]> {
