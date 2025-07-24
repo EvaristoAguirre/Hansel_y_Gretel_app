@@ -172,7 +172,6 @@ export class StockService {
     id: string,
     updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
-    console.log('data de stock.....', updateStockDto);
     const {
       productId,
       ingredientId,
@@ -319,10 +318,8 @@ export class StockService {
     }
 
     if (product.type === 'simple') {
-      console.log('deberia haeber entrado por aca....');
       await this.deductSimpleStock(product, quantity, unidadId);
     } else if (product.type === 'product') {
-      console.log('producto compuesto deberia haber entrado....');
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
       await this.deductPromotionStock(product, quantity);
@@ -349,7 +346,6 @@ export class StockService {
     }
 
     const stockUnitId = product.stock.unitOfMeasure.id;
-    console.log('stockUnitId.....', stockUnitId);
 
     const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
       unidadId,

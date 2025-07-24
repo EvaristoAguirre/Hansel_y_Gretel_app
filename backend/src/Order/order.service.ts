@@ -98,6 +98,7 @@ export class OrderService {
     if (!id) throw new BadRequestException('Order ID must be provided.');
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
     console.log('entrando a updateOrder', updateData.productsDetails);
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
