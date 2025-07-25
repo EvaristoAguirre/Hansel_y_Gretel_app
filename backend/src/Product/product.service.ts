@@ -19,6 +19,7 @@ import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
+import { parseLocalizedNumber } from 'src/Helpers/parseLocalizedNumber';
 
 @Injectable()
 export class ProductService {
@@ -347,7 +348,8 @@ export class ProductService {
         };
       }
 
-      const available = product.stock.quantityInStock;
+      const available = parseLocalizedNumber(product.stock.quantityInStock);
+
       return available >= quantityToSell
         ? { available: true }
         : {
@@ -377,7 +379,7 @@ export class ProductService {
           };
         }
 
-        let requiredQuantity = pi.quantityOfIngredient;
+        let requiredQuantity = parseLocalizedNumber(pi.quantityOfIngredient);
 
         if (pi.unitOfMeasure?.id !== ingredientStock.unitOfMeasure?.id) {
           requiredQuantity = await this.unitOfMeasureService.convertUnit(
@@ -388,7 +390,7 @@ export class ProductService {
         }
 
         const totalRequired = requiredQuantity * quantityToSell;
-        const available = Number(ingredientStock.quantityInStock);
+        const available = parseLocalizedNumber(ingredientStock.quantityInStock);
 
         return {
           available: available >= totalRequired,
@@ -450,6 +452,7 @@ export class ProductService {
               };
             }
             const availableQuantity = product.stock.quantityInStock;
+
             if (availableQuantity >= requiredQuantity) {
               return {
                 productId: product.id,
@@ -509,7 +512,7 @@ export class ProductService {
                 }
               }
 
-              const availableQuantity = parseFloat(
+              const availableQuantity = parseLocalizedNumber(
                 stockOfIngredient.quantityInStock,
               );
 
@@ -609,7 +612,6 @@ export class ProductService {
             };
           }
 
-          // Buscar grupo
           const toppingGroup = product.availableToppingGroups.find((group) =>
             group.toppingGroup.toppings.some((t) => t.id === toppingId),
           );
@@ -623,7 +625,9 @@ export class ProductService {
             };
           }
 
-          let requiredQty = toppingGroup.quantityOfTopping;
+          let requiredQty = parseLocalizedNumber(
+            toppingGroup.quantityOfTopping,
+          );
 
           const stock =
             await this.stockService.getStockByIngredientId(toppingId);
@@ -650,7 +654,7 @@ export class ProductService {
           }
 
           const totalRequired = requiredQty * quantityToSell;
-          const availableQty = Number(stock.quantityInStock);
+          const availableQty = parseLocalizedNumber(stock.quantityInStock);
 
           return {
             toppingId,
