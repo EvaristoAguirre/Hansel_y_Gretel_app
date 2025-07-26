@@ -29,6 +29,9 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  tip: number;
+
   @Column({ nullable: false })
   numberCustomers: number;
 

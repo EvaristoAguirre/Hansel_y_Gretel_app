@@ -26,6 +26,7 @@ import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
+import { PaymentRecord } from 'src/Types/payment-record.type';
 
 @Injectable()
 export class DailyCashService {
@@ -176,7 +177,7 @@ export class DailyCashService {
 
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
-      console.log('orders con payments....', dailyCash.orders);
+
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -196,78 +197,41 @@ export class DailyCashService {
         (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
 
-      // --- Totales individuales ---
-      const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
-      const totalIncomes = this.sumTotal(incomes);
-      const totalExpenses = this.sumTotal(expenses);
+      // --- Totales ---
+      dailyCash.totalSales = this.sumTotalOrders(dailyCash.orders);
+      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders);
+      dailyCash.totalIncomes = this.sumTotal(incomes);
+      dailyCash.totalExpenses = this.sumTotal(expenses);
 
-      // --- Guardar ingresos y egresos directos (nuevos campos) ---
-      dailyCash.totalIncomes = totalIncomes;
-      dailyCash.totalExpenses = totalExpenses;
+      // --- Aplanar TODOS los pagos ---
+      const allPayments = this.flattenAllPayments(dailyCash);
 
       // --- Agrupación por método de pago ---
-      console.log(
-        'pagos individuales de ordenes.....,',
-        dailyCash.orders.flatMap((order) => order.payments),
-      );
-      const orderPayments = this.groupRecordsByPaymentMethod(
-        dailyCash.orders.flatMap((order) =>
-          (order.payments || []).map((p) => ({
-            amount: Number(p.amount),
-            methodOfPayment: p.methodOfPayment,
-          })),
-        ),
-      );
-      const incomePayments = this.groupRecordsByPaymentMethod(incomes);
-      const expensePayments = this.groupRecordsByPaymentMethod(expenses);
+      const paymentsByMethod = this.groupPaymentsByMethod(allPayments);
 
-      // --- Totales netos por método de pago ---
-      dailyCash.totalCash =
-        (orderPayments[PaymentMethod.CASH] || 0) +
-        (incomePayments[PaymentMethod.CASH] || 0) -
-        (expensePayments[PaymentMethod.CASH] || 0);
-
+      // --- Calcular netos ---
+      dailyCash.totalCash = paymentsByMethod[PaymentMethod.CASH] || 0;
       dailyCash.totalCreditCard =
-        (orderPayments[PaymentMethod.CREDIT_CARD] || 0) +
-        (incomePayments[PaymentMethod.CREDIT_CARD] || 0) -
-        (expensePayments[PaymentMethod.CREDIT_CARD] || 0);
-
+        paymentsByMethod[PaymentMethod.CREDIT_CARD] || 0;
       dailyCash.totalDebitCard =
-        (orderPayments[PaymentMethod.DEBIT_CARD] || 0) +
-        (incomePayments[PaymentMethod.DEBIT_CARD] || 0) -
-        (expensePayments[PaymentMethod.DEBIT_CARD] || 0);
-
-      dailyCash.totalTransfer =
-        (orderPayments[PaymentMethod.TRANSFER] || 0) +
-        (incomePayments[PaymentMethod.TRANSFER] || 0) -
-        (expensePayments[PaymentMethod.TRANSFER] || 0);
-
+        paymentsByMethod[PaymentMethod.DEBIT_CARD] || 0;
+      dailyCash.totalTransfer = paymentsByMethod[PaymentMethod.TRANSFER] || 0;
       dailyCash.totalMercadoPago =
-        (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
-        (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
-        (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
+        paymentsByMethod[PaymentMethod.MERCADOPAGO] || 0;
 
-      // --- Totales globales ---
-      dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
-      dailyCash.totalPayments = totalExpenses;
-
-      // --- Cálculo de saldo final proyectado ---
-      dailyCash.finalCash =
-        Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
-
-      // --- Cálculo de diferencia en efectivo ---
-      const declaredFinalCash = Number(closeDailyCashDto.finalCash);
+      // --- Calcular diferencia de caja ---
       const expectedFinalCash =
-        Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
-      dailyCash.finalCash = Number(declaredFinalCash);
-      dailyCash.cashDifference = Number(declaredFinalCash - expectedFinalCash);
+        Number(dailyCash.initialCash) + dailyCash.totalCash;
+      dailyCash.finalCash = Number(closeDailyCashDto.finalCash);
+      dailyCash.cashDifference =
+        Number(closeDailyCashDto.finalCash) - expectedFinalCash;
 
       const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
 
       this.eventEmitter.emit('dailyCash.closed', {
         dailyCash: dailyCashClosed,
       });
-
+      console.log('dailyCashClosed.....', dailyCashClosed);
       return DailyCashMapper.toResponse(dailyCashClosed);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -279,6 +243,128 @@ export class DailyCashService {
       );
     }
   }
+  // async closeDailyCash(
+  //   id: string,
+  //   closeDailyCashDto: CloseDailyCash,
+  // ): Promise<DailyCash> {
+  //   if (!id) {
+  //     throw new BadRequestException('Daily cash report ID must be provided.');
+  //   }
+  //   if (!isUUID(id)) {
+  //     throw new BadRequestException(
+  //       'Invalid ID format. ID must be a valid UUID.',
+  //     );
+  //   }
+
+  //   try {
+  //     const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
+
+  //     if (!dailyCash) {
+  //       throw new NotFoundException('Daily cash report not found.');
+  //     }
+
+  //     if (dailyCash.state === DailyCashState.CLOSED) {
+  //       throw new ConflictException('Daily cash report is already closed.');
+  //     }
+
+  //     dailyCash.state = DailyCashState.CLOSED;
+  //     dailyCash.comment = closeDailyCashDto.comment || '';
+
+  //     // --- Separar movimientos por tipo ---
+  //     const incomes = dailyCash.movements.filter(
+  //       (mov) => mov.type === DailyCashMovementType.INCOME,
+  //     );
+  //     const expenses = dailyCash.movements.filter(
+  //       (mov) => mov.type === DailyCashMovementType.EXPENSE,
+  //     );
+
+  //     // --- Totales individuales ---
+  //     const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
+
+  //     // --- Totales propinas individuales ---
+  //     const totalTipsFromOrders = this.sumTotalTipsOrders(dailyCash.orders);
+
+  //     // --- Movimientos de caja
+  //     const totalIncomes = this.sumTotal(incomes);
+  //     const totalExpenses = this.sumTotal(expenses);
+
+  //     // --- Guardar ingresos y egresos directos (nuevos campos) ---
+  //     dailyCash.totalSales = totalSalesFromOrders;
+  //     dailyCash.totalTips = totalTipsFromOrders;
+  //     dailyCash.totalIncomes = totalIncomes;
+  //     dailyCash.totalExpenses = totalExpenses;
+
+  //     // --- Agrupación por método de pago ---
+
+  //     const orderPayments = this.groupRecordsByPaymentMethod(
+  //       dailyCash.orders.flatMap((order) =>
+  //         (order.payments || []).map((p) => ({
+  //           amount: Number(p.amount),
+  //           methodOfPayment: p.methodOfPayment,
+  //         })),
+  //       ),
+  //     );
+  //     const incomePayments = this.groupRecordsByPaymentMethod(incomes);
+  //     const expensePayments = this.groupRecordsByPaymentMethod(expenses);
+
+  //     // --- Totales netos por método de pago ---
+  //     dailyCash.totalCash =
+  //       (orderPayments[PaymentMethod.CASH] || 0) +
+  //       (incomePayments[PaymentMethod.CASH] || 0) -
+  //       (expensePayments[PaymentMethod.CASH] || 0);
+
+  //     dailyCash.totalCreditCard =
+  //       (orderPayments[PaymentMethod.CREDIT_CARD] || 0) +
+  //       (incomePayments[PaymentMethod.CREDIT_CARD] || 0) -
+  //       (expensePayments[PaymentMethod.CREDIT_CARD] || 0);
+
+  //     dailyCash.totalDebitCard =
+  //       (orderPayments[PaymentMethod.DEBIT_CARD] || 0) +
+  //       (incomePayments[PaymentMethod.DEBIT_CARD] || 0) -
+  //       (expensePayments[PaymentMethod.DEBIT_CARD] || 0);
+
+  //     dailyCash.totalTransfer =
+  //       (orderPayments[PaymentMethod.TRANSFER] || 0) +
+  //       (incomePayments[PaymentMethod.TRANSFER] || 0) -
+  //       (expensePayments[PaymentMethod.TRANSFER] || 0);
+
+  //     dailyCash.totalMercadoPago =
+  //       (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
+  //       (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
+  //       (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
+
+  //     // --- Totales globales ---
+  //     dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
+  //     dailyCash.totalPayments = totalExpenses;
+
+  //     // --- Cálculo de saldo final proyectado ---
+  //     dailyCash.finalCash =
+  //       Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
+
+  //     // --- Cálculo de diferencia en efectivo ---
+  //     const declaredFinalCash = Number(closeDailyCashDto.finalCash);
+  //     const expectedFinalCash =
+  //       Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
+  //     dailyCash.finalCash = Number(declaredFinalCash);
+  //     dailyCash.cashDifference = Number(declaredFinalCash - expectedFinalCash);
+
+  //     const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
+
+  //     this.eventEmitter.emit('dailyCash.closed', {
+  //       dailyCash: dailyCashClosed,
+  //     });
+
+  //     return DailyCashMapper.toResponse(dailyCashClosed);
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException(
+  //       'Error closing the daily cash report. Please try again later.',
+  //       error.message,
+  //     );
+  //   }
+  // }
 
   async deleteDailyCash(id: number): Promise<void> {
     await this.dailyCashRepo.delete(id);
@@ -491,6 +577,10 @@ export class DailyCashService {
     return records.reduce((acc, r) => acc + Number(r.total), 0);
   }
 
+  private sumTotalTipsOrders(records: { tip: number }[]): number {
+    return records.reduce((acc, r) => acc + Number(r.tip), 0);
+  }
+
   private groupRecordsByPaymentMethod(
     records: {
       amount?: number;
@@ -635,6 +725,71 @@ export class DailyCashService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+  }
+
+  private flattenAllPayments(dailyCash: DailyCash): PaymentRecord[] {
+    const orderPayments = dailyCash.orders.flatMap((order) =>
+      (order.payments || []).map((p) => ({
+        amount: Number(p.amount),
+        method: p.methodOfPayment,
+        type: 'sale',
+      })),
+    );
+
+    const movementPayments = dailyCash.movements.flatMap((mov) => {
+      // Convertir movimientos a estructura de pagos
+      const payments = [];
+
+      // Pagos directos (usando methodOfPayment)
+      // if (mov.payments) {
+      //   payments.push({
+      //     amount: Number(mov.amount),
+      //     paymentMethod: mov.methodOfPayment,
+      //     type: mov.type,
+      //   });
+      // }
+
+      // Pagos anidados
+      if (mov.payments && Array.isArray(mov.payments)) {
+        mov.payments.forEach((p) => {
+          payments.push({
+            amount: Number(p.amount),
+            paymentMethod: p.paymentMethod,
+            type: mov.type,
+          });
+        });
+      }
+
+      return payments;
+    });
+
+    return [...orderPayments, ...movementPayments];
+  }
+
+  private groupPaymentsByMethod(
+    payments: PaymentRecord[],
+  ): Record<PaymentMethod, number> {
+    const result: Record<PaymentMethod, number> = {
+      [PaymentMethod.CASH]: 0,
+      [PaymentMethod.CREDIT_CARD]: 0,
+      [PaymentMethod.DEBIT_CARD]: 0,
+      [PaymentMethod.TRANSFER]: 0,
+      [PaymentMethod.MERCADOPAGO]: 0,
+    };
+
+    payments.forEach((payment) => {
+      // Solo procesar métodos válidos
+      if (Object.values(PaymentMethod).includes(payment.method)) {
+        // Restar egresos, sumar ingresos/ventas
+        if (payment.type === DailyCashMovementType.EXPENSE) {
+          result[payment.method] -= payment.amount;
+        } else {
+          result[payment.method] += payment.amount;
+        }
+      }
+    });
+
+    return result;
   }
 
   // ------------------- metricas -----------------------
