@@ -11,6 +11,7 @@ export class OrderMapper {
       numberCustomers: order.numberCustomers,
       comment: order.comment,
       total: formatARNumber(order.total),
+      tip: formatARNumber(order.tip),
       payments: order.payments?.map((p) => ({
         ...p,
         amount: formatARNumber(p.amount),
