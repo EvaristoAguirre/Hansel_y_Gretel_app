@@ -45,6 +45,8 @@ export class ProductResponseDto {
 
   @Expose()
   name?: string;
+  @Expose()
+  description?: string;
 
   @Expose()
   price?: string;
