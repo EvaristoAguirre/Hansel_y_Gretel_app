@@ -432,7 +432,6 @@ export class StockService {
 
     const toppingCountMap: Record<string, number> = {};
 
-    // 1. Contar cuántas veces se usa cada topping en todas las unidades
     for (const unitToppings of toppingsPerUnit) {
       for (const toppingId of unitToppings) {
         toppingCountMap[toppingId] = (toppingCountMap[toppingId] || 0) + 1;
@@ -443,22 +442,7 @@ export class StockService {
       `📊 Toppings totales por ID: ${JSON.stringify(toppingCountMap)}`,
     );
 
-    // 2. Obtener el producto y sus grupos de toppings
-    // const product = await this.productRepository.findOne({
-    //   where: { id: productId },
-    //   relations: [
-    //     'availableToppingGroups',
-    //     'availableToppingGroups.unitOfMeasure',
-    //     'availableToppingGroups.toppings',
-    //   ],
-    // });
-
-    // if (!product) {
-    //   throw new NotFoundException(`Producto ${productId} no encontrado`);
-    // }
-
-    // 3. Recorrer cada topping único
-    for (const [toppingId, countPerUnit] of Object.entries(toppingCountMap)) {
+    for (const [toppingId, totalUses] of Object.entries(toppingCountMap)) {
       const toppingStock =
         await this.stockRepository.getStockByToppingId(toppingId);
       if (!toppingStock) {
@@ -483,11 +467,11 @@ export class StockService {
       const quantityPerUse = Number(toppingGroup.quantityOfTopping);
       const sourceUnitId = toppingGroup.unitOfMeasure.id;
       const targetUnitId = toppingStock.unitOfMeasure.id;
-      const totalToDeductInSource =
-        countPerUnit * productQuantity * quantityPerUse;
+
+      const totalToDeductInSource = totalUses * quantityPerUse;
 
       this.logger.log(
-        `🔍 Procesando topping ${topping.name} (${toppingId}) - Usos: ${countPerUnit}, Por uso: ${quantityPerUse} ${toppingGroup.unitOfMeasure.abbreviation}, Total: ${totalToDeductInSource} ${toppingGroup.unitOfMeasure.abbreviation}`,
+        `🔍 Procesando topping ${topping.name} (${toppingId}) - Usos totales: ${totalUses}, Por uso: ${quantityPerUse} ${toppingGroup.unitOfMeasure.abbreviation}, Total: ${totalToDeductInSource} ${toppingGroup.unitOfMeasure.abbreviation}`,
       );
 
       const quantityToDeduct = await this.unitOfMeasureService.convertUnit(
@@ -519,20 +503,4 @@ export class StockService {
       );
     }
   }
-
-  //   async restoreStockFromOrder(order: Order) {
-  //   for (const detail of order.orderDetails) {
-  //     const { product, quantity, toppingDetails } = detail;
-
-  //     // 1. Restituir stock del producto o sus ingredientes
-  //     await this.restockProduct(product, quantity);
-
-  //     // 2. Restituir stock de toppings
-  //     for (const td of toppingDetails) {
-  //       await this.restockTopping(td.topping, td.quantity, td.unitOfMeasure.id);
-  //     }
-  //   }
-
-  //   this.eventEmitter.emit('stock.restituted', { orderId: order.id });
-  // }
 }
