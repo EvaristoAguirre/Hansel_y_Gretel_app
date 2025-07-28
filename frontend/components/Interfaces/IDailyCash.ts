@@ -43,21 +43,22 @@ export interface IDailyCash {
   comment?: string;
   date?: Date;
   state?: string;
-  totalSales?: number;
-  totalExpenses?: number;
-  newExpense?: number;
-  totalPayments?: number;
-  initialCash?: number;
-  finalCash?: number;
-  cashDifference?: number;
-  totalCash?: number;
-  totalCreditCard?: number;
-  totalDebitCard?: number;
-  totalTransfer?: number;
-  totalMercadoPago?: number;
-  totalOtherPayments?: number;
+  totalSales?: string;
+  totalExpenses?: string;
+  newExpense?: string;
+  totalPayments?: string;
+  initialCash?: string;
+  finalCash?: string;
+  cashDifference?: string;
+  totalCash?: string;
+  totalCreditCard?: string;
+  totalDebitCard?: string;
+  totalTransfer?: string;
+  totalMercadoPago?: string;
+  totalOtherPayments?: string;
   ordersIds?: string[];
   totalIncomes?: string;
+  totalTips?: string;
 }
 
 export type OrderCash = {
