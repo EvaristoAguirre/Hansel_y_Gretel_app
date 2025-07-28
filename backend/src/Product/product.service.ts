@@ -291,7 +291,6 @@ export class ProductService {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
-
     const product = await this.productRepository.getProductById(productId);
 
     if (!product) {
@@ -330,7 +329,6 @@ export class ProductService {
           };
         }
       }
-
       return { available: true };
     }
   }
@@ -590,11 +588,18 @@ export class ProductService {
     product: Product,
   ): Promise<any> {
     if (!product.availableToppingGroups?.length) {
+      console.warn(
+        '[TOPPING CHECK] El producto no admite toppings, pero se enviaron toppings.',
+      );
       return {
         available: false,
         message: 'El producto no admite toppings, pero se enviaron toppings.',
       };
     }
+
+    console.log('[TOPPING CHECK] Iniciando chequeo de toppings...');
+    console.log('[TOPPING CHECK] Toppings por unidad:', toppingsPerUnit);
+    console.log('[TOPPING CHECK] Cantidad a vender:', quantityToSell);
 
     const toppingChecks = await Promise.all(
       toppingsPerUnit.map(async (toppingId) => {
@@ -605,6 +610,7 @@ export class ProductService {
             );
 
           if (!topping) {
+            console.warn(`[TOPPING CHECK] Topping no encontrado: ${toppingId}`);
             return {
               toppingId,
               available: false,
@@ -617,6 +623,9 @@ export class ProductService {
           );
 
           if (!toppingGroup) {
+            console.warn(
+              `[TOPPING CHECK] Topping ${topping.name} no está habilitado para este producto.`,
+            );
             return {
               toppingId,
               toppingName: topping.name,
@@ -625,8 +634,16 @@ export class ProductService {
             };
           }
 
+          console.log(
+            `[TOPPING CHECK] Topping: ${topping.name} - Cantidad por unidad (string): "${toppingGroup.quantityOfTopping}" - Unidad en receta: ${toppingGroup.unitOfMeasure?.name} (${toppingGroup.unitOfMeasure?.id})`,
+          );
+
           let requiredQty = parseLocalizedNumber(
             toppingGroup.quantityOfTopping,
+          );
+
+          console.log(
+            `[TOPPING CHECK] Topping: ${topping.name} - Cantidad por unidad (parseado): ${requiredQty}`,
           );
 
           const stock =
@@ -637,6 +654,9 @@ export class ProductService {
             stock.quantityInStock == null ||
             stock.unitOfMeasure == undefined
           ) {
+            console.warn(
+              `[TOPPING CHECK] No hay stock disponible o falta unidad para ${topping.name}`,
+            );
             return {
               toppingId,
               toppingName: topping.name,
@@ -645,16 +665,33 @@ export class ProductService {
             };
           }
 
+          console.log(
+            `[TOPPING CHECK] Stock actual de ${topping.name}: ${stock.quantityInStock} ${stock.unitOfMeasure?.name} (${stock.unitOfMeasure?.id})`,
+          );
+
+          // Conversión de unidades si es necesario
           if (toppingGroup.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
+            console.log(
+              `[TOPPING CHECK] Necesita conversión de unidades: ${requiredQty} ${toppingGroup.unitOfMeasure.name} → ${stock.unitOfMeasure.name}`,
+            );
+
             requiredQty = await this.unitOfMeasureService.convertUnit(
               toppingGroup.unitOfMeasure.id,
               stock.unitOfMeasure.id,
               requiredQty,
             );
+
+            console.log(
+              `[TOPPING CHECK] Resultado de conversión: ${requiredQty} ${stock.unitOfMeasure.name}`,
+            );
           }
 
           const totalRequired = requiredQty * quantityToSell;
           const availableQty = parseLocalizedNumber(stock.quantityInStock);
+
+          console.log(
+            `[TOPPING CHECK] ${topping.name} - Total requerido: ${totalRequired} ${stock.unitOfMeasure.name}, Disponible: ${availableQty}`,
+          );
 
           return {
             toppingId,
@@ -667,6 +704,10 @@ export class ProductService {
               availableQty >= totalRequired ? 0 : totalRequired - availableQty,
           };
         } catch (error) {
+          console.error(
+            `[TOPPING CHECK] Error al procesar topping ${toppingId}:`,
+            error?.message || error,
+          );
           return {
             toppingId,
             available: false,
@@ -678,6 +719,19 @@ export class ProductService {
     );
 
     const allAvailable = toppingChecks.every((check) => check.available);
+
+    console.log(
+      `[TOPPING CHECK] Resultado global: ${
+        allAvailable ? '✔ Disponible' : '✘ No disponible'
+      }`,
+    );
+
+    if (!allAvailable) {
+      console.warn(
+        '[TOPPING CHECK] Detalles de toppings con stock insuficiente:',
+        toppingChecks.filter((check) => !check.available),
+      );
+    }
 
     return allAvailable
       ? { available: true }
