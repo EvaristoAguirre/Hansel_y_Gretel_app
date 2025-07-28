@@ -68,11 +68,18 @@ type OrderContextType = {
   toppingsByProductGroup: {
     [productId: string]: Array<{ [groupId: string]: string[] }>
   };
+  checkStockToppingAvailability: (
+    productId: string,
+    quantity: number,
+    toppingsPerUnit?: string[][]
+  ) => Promise<{ available: boolean } | undefined>;
+
 
 };
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
+  checkStockToppingAvailability: async () => ({ available: true }),
   setSelectedProducts: () => { },
   confirmedProducts: [],
   setConfirmedProducts: () => { },
@@ -97,7 +104,8 @@ const OrderContext = createContext<OrderContextType>({
   handleAddTopping: async () => { },
   selectedToppingsByProduct: {},
   updateToppingForUnit: () => { },
-  toppingsByProductGroup: {}
+  toppingsByProductGroup: {},
+
 });
 
 export const useOrderContext = () => {
@@ -163,7 +171,7 @@ const OrderProvider = ({
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    if (selectedTable?.state === TableState.AVAILABLE) {
+    if (selectedTable?.state === TableState.AVAILABLE || selectedTable?.state === TableState.CLOSED) {
 
       return setSelectedOrderByTable(null);
 
@@ -201,10 +209,29 @@ const OrderProvider = ({
 
 
 
-  const checkStockAvailability = async (productId: string, quantity: number) => {
+  const checkStockAvailability = async (productId: string, quantity: number, toppingsPerUnit?: string[][]) => {
     const form: ICheckStock = {
       productId: productId,
-      quantityToSell: quantity
+      quantityToSell: quantity,
+      toppingsPerUnit: toppingsPerUnit?.flat()
+
+    }
+    try {
+      const stock = await checkStock(form, token!);
+
+      return stock
+
+    } catch (error) {
+      console.error("Error al obtener el stock:", error);
+    }
+  };
+
+  const checkStockToppingAvailability = async (productId: string, quantity: number, toppingsPerUnit?: string[][]) => {
+    const form: ICheckStock = {
+      productId: productId,
+      quantityToSell: quantity,
+      toppingsPerUnit: toppingsPerUnit?.flat()
+
     }
     try {
       const stock = await checkStock(form, token!);
@@ -218,12 +245,15 @@ const OrderProvider = ({
 
   const handleSelectedProducts = async (product: ProductResponse) => {
 
+
     const foundProduct = selectedProducts.find(
       (p) => p.productId === product.id
     );
 
 
     const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
+    const toppingsPerUnit = selectedToppingsByProduct[product.id] ?? [];
+
     const stockResponse = await checkStockAvailability(product.id, newQuantity);
     if (!stockResponse?.available) {
       Swal.fire({
@@ -331,7 +361,6 @@ const OrderProvider = ({
     });
 
     setConfirmedProducts(expandedProducts);
-    console.log("🆔 Productos confirmados y sus id:", expandedProducts);
 
   };
 
@@ -469,7 +498,6 @@ const OrderProvider = ({
     if (!id) {
       return;
     }
-    console.log("selectedProducts en handleEditOrder", selectedProducts);
 
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
@@ -607,7 +635,8 @@ const OrderProvider = ({
         handleAddTopping,
         selectedToppingsByProduct,
         updateToppingForUnit,
-        toppingsByProductGroup
+        toppingsByProductGroup,
+        checkStockToppingAvailability
       }}
     >
       {children}
