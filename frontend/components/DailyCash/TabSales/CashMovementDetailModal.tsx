@@ -54,7 +54,7 @@ const CashMovementDetailModal = ({
                 <strong>Tipo:</strong> {capitalizeFirstLetter(movementDetails.type)}
               </Typography>
               <Typography variant="subtitle1">
-                <strong>Monto total:</strong> ${Number(movementDetails.amount).toFixed(2)}
+                <strong>Monto total:</strong> ${movementDetails.amount}
               </Typography>
               <Typography variant="subtitle1">
                 <strong>Fecha:</strong>{" "}
@@ -72,7 +72,7 @@ const CashMovementDetailModal = ({
                   <TableRow key={index}>
                     <TableCell>{capitalizeFirstLetter(p.paymentMethod)}</TableCell>
                     <TableCell align="right">
-                      ${Number(p.amount).toFixed(2)}
+                      ${p.amount}
                     </TableCell>
                   </TableRow>
                 ))}

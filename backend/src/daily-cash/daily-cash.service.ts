@@ -26,6 +26,7 @@ import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
+import { Order } from 'src/Order/order.entity';
 
 @Injectable()
 export class DailyCashService {
@@ -176,7 +177,7 @@ export class DailyCashService {
 
     try {
       const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
-      console.log('orders con payments....', dailyCash.orders);
+
       if (!dailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
@@ -196,20 +197,14 @@ export class DailyCashService {
         (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
 
-      // --- Totales individuales ---
-      const totalSalesFromOrders = this.sumTotalOrders(dailyCash.orders);
-      const totalIncomes = this.sumTotal(incomes);
-      const totalExpenses = this.sumTotal(expenses);
-
-      // --- Guardar ingresos y egresos directos (nuevos campos) ---
-      dailyCash.totalIncomes = totalIncomes;
-      dailyCash.totalExpenses = totalExpenses;
+      // --- Guardar TOTALES de ventas, propinas, ingresos y egresos directos ---
+      dailyCash.totalSales = this.sumTotalOrders(dailyCash.orders);
+      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders);
+      dailyCash.totalIncomes = this.sumTotal(incomes);
+      dailyCash.totalExpenses = this.sumTotal(expenses);
 
       // --- Agrupación por método de pago ---
-      console.log(
-        'pagos individuales de ordenes.....,',
-        dailyCash.orders.flatMap((order) => order.payments),
-      );
+
       const orderPayments = this.groupRecordsByPaymentMethod(
         dailyCash.orders.flatMap((order) =>
           (order.payments || []).map((p) => ({
@@ -247,20 +242,12 @@ export class DailyCashService {
         (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
         (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
 
-      // --- Totales globales ---
-      dailyCash.totalSales = totalSalesFromOrders + totalIncomes;
-      dailyCash.totalPayments = totalExpenses;
+      dailyCash.cashDifference =
+        Number(closeDailyCashDto.finalCash) -
+        Number(dailyCash.initialCash) -
+        dailyCash.totalCash;
 
-      // --- Cálculo de saldo final proyectado ---
-      dailyCash.finalCash =
-        Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
-
-      // --- Cálculo de diferencia en efectivo ---
-      const declaredFinalCash = Number(closeDailyCashDto.finalCash);
-      const expectedFinalCash =
-        Number(dailyCash.initialCash) + Number(dailyCash.totalCash);
-      dailyCash.finalCash = Number(declaredFinalCash);
-      dailyCash.cashDifference = Number(declaredFinalCash - expectedFinalCash);
+      dailyCash.finalCash = Number(closeDailyCashDto.finalCash);
 
       const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
 
@@ -403,19 +390,13 @@ export class DailyCashService {
     }
   }
 
-  async isTodayDailyCashOpen(): Promise<object> {
+  async isAnyDailyCashOpen(): Promise<object> {
     try {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-      return await this.dailyCashRepository.isTodayDailyCashOpen(
-        startOfDay,
-        endOfDay,
-      );
+      return await this.dailyCashRepository.isAnyDailyCashOpen();
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error checking if daily cash is open. Please try again later.',
+        'Error checking if any daily cash is open. Please try again later.',
         error.message,
       );
     }
@@ -600,10 +581,6 @@ export class DailyCashService {
   async detailsMovementById(
     cashMovementId: string,
   ): Promise<CashMovementDetailsDto> {
-    const cashFormatter = new Intl.NumberFormat('es-AR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
     try {
       const movement = await this.cashMovementRepo.findOne({
         where: { id: cashMovementId },
@@ -617,11 +594,11 @@ export class DailyCashService {
 
       const result = {
         type: movement.type,
-        amount: cashFormatter.format(Number(movement.amount)),
+        amount: this.formatMoney(movement.amount),
         createdAt: movement.createdAt,
         payments: Array.isArray(movement.payments)
           ? movement.payments.map((p) => ({
-              amount: cashFormatter.format(Number(p.amount)),
+              amount: this.formatMoney(p.amount),
               paymentMethod: p.paymentMethod,
             }))
           : [],
@@ -634,6 +611,21 @@ export class DailyCashService {
         'Error al obtener el movimiento de caja',
       );
     }
+  }
+
+  private formatMoney(value: number | string | null | undefined): string {
+    const numberValue =
+      typeof value === 'string' ? Number(value) : (value ?? 0);
+    return numberValue.toLocaleString('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  }
+
+  private sumTotalTipsOrders(orders: Order[]): number {
+    return orders.reduce((tip, order) => tip + Number(order.tip), 0);
   }
 
   // ------------------- metricas -----------------------

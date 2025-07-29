@@ -29,9 +29,6 @@ export class ToppingsGroup {
   })
   toppings: Ingredient[];
 
-  // @ManyToMany(() => Product, (product) => product.availableToppingsGroups)
-  // products: Product[];
-
   @OneToMany(
     () => ProductAvailableToppingGroup,
     (productTopping) => productTopping.toppingGroup,

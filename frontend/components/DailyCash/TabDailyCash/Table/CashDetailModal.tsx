@@ -18,6 +18,12 @@ import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter"
 import { dailyCashState } from "@/components/Enums/dailyCash";
 import { IDailyCash } from "@/components/Interfaces/IDailyCash";
 import DifferenceIcon from "@mui/icons-material/CompareArrows";
+import { GridArrowDownwardIcon, GridArrowUpwardIcon } from "@mui/x-data-grid";
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+
+
+
 
 interface Props {
   open: boolean;
@@ -84,29 +90,52 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
 
         {/* Sección: Resumen de caja */}
         <Typography variant="subtitle1" mt={1} gutterBottom fontWeight="bold" color="primary">
-          Resumen de Caja
+          Cierre de Caja
         </Typography>
+
         <Grid container spacing={2}>
+          {/* Columna izquierda */}
           <Grid item xs={6}>
             <Typography display="flex" alignItems="center" gap={1}>
               <AttachMoneyIcon color="info" fontSize="small" />
               <strong>Dinero Inicial:</strong> $ {data.initialCash}
             </Typography>
-          </Grid>
-          <Grid item xs={6}>
+
             <Typography display="flex" alignItems="center" gap={1}>
               <MonetizationOnIcon color="success" fontSize="small" />
               <strong>Dinero Final:</strong> $ {data.finalCash}
             </Typography>
-          </Grid>
-          <Grid item xs={12}>
+
             <Typography display="flex" alignItems="center" gap={1}>
               <DifferenceIcon color="warning" fontSize="small" />
-              <strong>Diferencia:</strong>{" "}
-              $ {data?.cashDifference}
+              <strong>Diferencia:</strong> $ {data.cashDifference}
+            </Typography>
+          </Grid>
+
+          {/* Columna derecha */}
+          <Grid item xs={6}>
+            <Typography display="flex" alignItems="center" gap={1}>
+              <GridArrowDownwardIcon color="warning" fontSize="small" />
+              <strong>Total de Ingresos:</strong> $ {data.totalIncomes}
+            </Typography>
+
+            <Typography display="flex" alignItems="center" gap={1}>
+              <GridArrowUpwardIcon color="error" fontSize="small" />
+              <strong>Total de Egresos:</strong> $ {data.totalExpenses}
+            </Typography>
+
+            <Typography display="flex" alignItems="center" gap={1}>
+              <PointOfSaleIcon color="success" fontSize="small" />
+              <strong>Total de Ventas:</strong> $ {data.totalSales}
+            </Typography>
+
+            <Typography display="flex" alignItems="center" gap={1}>
+              <VolunteerActivismIcon color="info" fontSize="small" />
+              <strong>Total de Propinas:</strong> $ {data.totalTips}
             </Typography>
           </Grid>
         </Grid>
+
 
         <Divider sx={{ mt: 2, mb: 2, borderWidth: 2 }} />
 

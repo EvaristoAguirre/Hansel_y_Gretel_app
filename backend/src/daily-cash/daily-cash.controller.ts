@@ -88,8 +88,8 @@ export class DailyCashController {
 
   @Get('check-open')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  isTodayDailyCashOpen(): Promise<object> {
-    return this.dailyCashService.isTodayDailyCashOpen();
+  isAnyDailyCashOpen(): Promise<object> {
+    return this.dailyCashService.isAnyDailyCashOpen();
   }
 
   @Get(':id')

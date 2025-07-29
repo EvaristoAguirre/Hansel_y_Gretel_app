@@ -15,6 +15,7 @@ export class DailyCashMapper {
       initialCash: formatARNumber(dailyCash.initialCash),
       finalCash: formatARNumber(dailyCash.finalCash),
       totalCash: formatARNumber(dailyCash.totalCash),
+      totalTips: formatARNumber(dailyCash.totalTips),
       cashDifference: formatARNumber(dailyCash.cashDifference),
       totalCreditCard: formatARNumber(dailyCash.totalCreditCard),
       totalDebitCard: formatARNumber(dailyCash.totalDebitCard),
