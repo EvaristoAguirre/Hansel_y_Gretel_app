@@ -147,14 +147,6 @@ const OrderEditor = ({
     const totalPrice = basePrice + toppingExtra;
     const formattedPrice = formatNumber(totalPrice);
 
-    console.group("🍄🍄🍄🍄🍄🍄");
-    console.log("unitaryPrice original:", product.unitaryPrice);
-    console.log("tipo", typeof product.unitaryPrice);
-    console.log("unitaryPrice normalizado:", unitaryPriceNum);
-    console.log("basePrice (unitaryPriceNum * quantity):", basePrice);
-    console.log("totalPrice (basePrice + toppingExtra):", totalPrice);
-    console.log("Formateado a string:", formattedPrice);
-    console.groupEnd();
 
     return formattedPrice;
   };

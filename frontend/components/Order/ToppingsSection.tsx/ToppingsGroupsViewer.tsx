@@ -11,6 +11,7 @@ import { IProductToppingsGroupResponse } from "@/components/Interfaces/IProducts
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
 import { useOrderContext } from "@/app/context/order.context";
 import { Box } from "@mui/system";
+import Swal from "sweetalert2";
 
 interface ToppingsGroupsViewerProps {
   groups: IProductToppingsGroupResponse[];
@@ -31,6 +32,7 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     selectedProducts,
     updateToppingForUnit,
     toppingsByProductGroup,
+    checkStockToppingAvailability
   } = useOrderContext();
 
   const product = selectedProducts.find((p) => p.productId === productId);
@@ -42,6 +44,58 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
       updateToppingForUnit(productId, 0, emptyArray[0]);
     }
   }, [product]);
+
+  const handleToppingChange = async (
+    checked: boolean,
+    toppingId: string,
+    groupId: string,
+    unitIndex: number,
+    groupMax: number
+  ) => {
+    const unitToppings = toppingsByProductGroup[productId]?.[unitIndex] || {};
+    let newGroupToppings = [...(unitToppings[groupId] || [])];
+
+    if (checked) {
+      if (newGroupToppings.length >= groupMax) {
+        return; // no se puede agregar más
+      }
+      newGroupToppings.push(toppingId);
+    } else {
+      newGroupToppings = newGroupToppings.filter((id) => id !== toppingId);
+    }
+
+    // Simulamos cómo quedaría el producto si se aplicara el cambio
+    const newToppingsByUnit = [...(toppingsByProductGroup[productId] || [])];
+    newToppingsByUnit[unitIndex] = {
+      ...unitToppings,
+      [groupId]: newGroupToppings,
+    };
+
+    const simulatedToppingsPerUnit = newToppingsByUnit.map((unitGroup) =>
+      Object.values(unitGroup).flat()
+    );
+
+    const result = await checkStockToppingAvailability(
+      productId,
+      quantity,
+      simulatedToppingsPerUnit
+    );
+
+    if (result?.available) {
+      updateToppingForUnit(productId, unitIndex, {
+        ...unitToppings,
+        [groupId]: newGroupToppings,
+      });
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Stock insuficiente",
+        text: "No hay suficiente stock para ese agregado.",
+      });
+    }
+  };
+
+
 
   const handleToggleGroup = async (groupId: string) => {
     setVisibleGroups((prev) => ({
@@ -153,24 +207,17 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
                               control={
                                 <Checkbox
                                   checked={isChecked}
-                                  onChange={(e) => {
-                                    let newGroupToppings = [...selectedGroupToppings];
+                                  onChange={(e) =>
+                                    handleToppingChange(
+                                      e.target.checked,
+                                      topping.id,
+                                      group.id,
+                                      unitIndex,
+                                      group.settings.maxSelection
+                                    )
+                                  }
 
-                                    if (e.target.checked) {
-                                      if (newGroupToppings.length < group.settings.maxSelection) {
-                                        newGroupToppings.push(topping.id);
-                                      }
-                                    } else {
-                                      newGroupToppings = newGroupToppings.filter(
-                                        (id) => id !== topping.id
-                                      );
-                                    }
 
-                                    updateToppingForUnit(productId, unitIndex, {
-                                      ...unitToppings,
-                                      [group.id]: newGroupToppings,
-                                    });
-                                  }}
                                 />
                               }
                               label={

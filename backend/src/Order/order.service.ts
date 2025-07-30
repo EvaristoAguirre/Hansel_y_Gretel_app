@@ -97,7 +97,7 @@ export class OrderService {
   ): Promise<OrderSummaryResponseDto> {
     if (!id) throw new BadRequestException('Order ID must be provided.');
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-    console.log('entrando a updateOrder', updateData.productsDetails);
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -410,6 +410,7 @@ export class OrderService {
     id: string,
     closeOrderDto: CloseOrderDto,
   ): Promise<OrderSummaryResponseDto> {
+    console.log('total cerrando la orden', closeOrderDto.total);
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid ID format');
     }
@@ -417,10 +418,6 @@ export class OrderService {
     if (!closeOrderDto.total || closeOrderDto.total <= 0) {
       throw new BadRequestException('Total amount must be greater than 0');
     }
-
-    // if (!closeOrderDto.methodOfPayment) {
-    //   throw new BadRequestException('Payment method must be provided');
-    // }
 
     const openDailyCash = await this.dailyCashService.getTodayOpenDailyCash();
     if (!openDailyCash) {

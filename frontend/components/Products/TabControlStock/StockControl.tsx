@@ -14,6 +14,8 @@ import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { exportPDF, printStock } from "@/api/exportPDF";
 import { Print, SimCardDownload } from "@mui/icons-material";
 import { ProductResponse } from '../../Interfaces/IProducts';
+import { formatNumber } from "@/components/Utils/FormatNumber";
+import { normalizeNumber } from '../../Utils/NormalizeNumber';
 
 
 const StockControl = () => {
@@ -79,12 +81,15 @@ const StockControl = () => {
     setSelectedItem({ ...item, type });
     setModalOpen(true);
   };
-  const getColorByStock = (stock: number, min: number) => {
-    if (stock <= (min / 2)) {
+  const getColorByStock = (stock: string, min: string) => {
+
+    const stockNumber = normalizeNumber(stock);
+    const minNumber = normalizeNumber(min);
+    if (stockNumber <= (minNumber / 2)) {
       return "#d94d22";
-    } else if (stock <= min) {
+    } else if (stockNumber <= minNumber) {
       return "#f9b32d";
-    } else if (stock > min) {
+    } else if (stockNumber > minNumber) {
       return "#21b421";
     }
     return "";
@@ -175,9 +180,12 @@ const StockControl = () => {
   const [selectedStockFilter, setSelectedStockFilter] = useState<string | null>(null);
 
   const filterByStock = (items: SelectedItem[]) => {
+    console.log("Items", items);
+
     return items.filter((item: SelectedItem) => {
-      const stockQuantity = item?.stock ?? 0;
-      const minStock = item?.min ?? 0;
+      const stockQuantity = normalizeNumber(item.stock);
+      const minStock = normalizeNumber(item.min);
+
 
       if (!selectedStockFilter) return true;
       if (selectedStockFilter === 'low') return stockQuantity <= minStock / 2;
@@ -194,10 +202,10 @@ const StockControl = () => {
 
   useEffect(() => {
     const hasNullStock = filteredProducts.some((product) =>
-      product.stock === null || product.stock === undefined || product.stock === 0
+      product.stock === null || product.stock === undefined || product.stock === "0"
     );
     const hasNullStockIngredients = filteredIngredients.some((ingredient) =>
-      ingredient.stock === null || ingredient.stock === undefined || ingredient.stock === 0
+      ingredient.stock === null || ingredient.stock === undefined || ingredient.stock === "0"
     );
 
     if (hasNullStock || hasNullStockIngredients) {

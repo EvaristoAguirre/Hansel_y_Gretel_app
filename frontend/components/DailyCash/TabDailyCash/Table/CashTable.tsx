@@ -154,11 +154,13 @@ const CashTable = () => {
 
   ];
 
-  const filteredCash = allDailyCash.filter((cash) => {
-    if (!cash.date) return false;
-    const date = new Date(cash.date);
-    return date.getFullYear() === year && date.getMonth() + 1 === month;
-  });
+  const filteredCash = allDailyCash
+    .filter((cash) => {
+      if (!cash.date) return false;
+      const date = new Date(cash.date);
+      return date.getFullYear() === year && date.getMonth() + 1 === month;
+    })
+    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
 
   return (
     <>

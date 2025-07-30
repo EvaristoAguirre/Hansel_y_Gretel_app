@@ -110,6 +110,7 @@ export interface ProductResponse {
   promotionDetails: IPromotionDetails[];
   stock: IStockOfProduct;
   availableToppingGroups: IProductToppingsGroupResponse[];
+  toppingsPerUnit?: string[][];
 }
 
 export interface ProductState {
@@ -153,5 +154,6 @@ export interface IConfirmedProducts {
 export interface ICheckStock {
   productId: string;
   quantityToSell: number;
+  toppingsPerUnit?: string[]
 };
 

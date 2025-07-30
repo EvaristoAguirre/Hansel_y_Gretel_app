@@ -84,9 +84,6 @@ const FormToppingsGroup = ({
     setToppingsError(updated.length === 0);
   };
 
-  useEffect(() => {
-    console.log("🌕", selectedIds);
-  }, [selectedIds]);
 
   const handleSubmit = () => {
     if (!isFormValid) return;

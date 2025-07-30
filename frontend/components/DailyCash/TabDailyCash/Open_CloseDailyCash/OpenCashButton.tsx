@@ -23,8 +23,8 @@ const OpenCashButton = () => {
       <Tooltip
         title={
           isCashOpenToday
-            ? "Ya hay una caja abierta hoy"
-            : "Abrir una nueva caja para hoy"
+            ? "Hay una caja abierta"
+            : "Abrir una nueva caja"
         }
       >
         <span>

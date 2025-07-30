@@ -29,13 +29,9 @@ export class DailyCashRepository {
     });
   }
 
-  async isTodayDailyCashOpen(
-    startOfDay: Date,
-    endOfDay: Date,
-  ): Promise<object> {
+  async isAnyDailyCashOpen(): Promise<object> {
     const existingDailyCash = await this.dailyCashRepository.findOne({
       where: {
-        date: Between(startOfDay, endOfDay),
         state: DailyCashState.OPEN,
       },
     });

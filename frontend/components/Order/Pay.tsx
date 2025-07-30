@@ -328,7 +328,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               {confirmedPayments.length > 0 && (
                 <Paper sx={{ p: 2, mt: 2 }}>
                   <Typography fontWeight="bold">Pago total</Typography>
-                  <Typography>Total: ${confirmedPayments[0].amount.toFixed(2)}</Typography>
+                  <Typography>Total: ${confirmedPayments[0].amount}</Typography>
                   <Typography>Método: {capitalizeFirstLetter(confirmedPayments[0].methodOfPayment)}</Typography>
                 </Paper>
               )}
