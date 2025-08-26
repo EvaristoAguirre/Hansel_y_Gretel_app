@@ -1,4 +1,4 @@
-import { TypeBaseUnitIngredient } from "../Enums/ingredients"
+import { TypeBaseUnitIngredient } from "../Enums/Ingredients"
 import { IStockOfProduct } from "./IStock"
 import { IUnitOfMeasureResponse, IUnitOfMeasureStandard } from "./IUnitOfMeasure"
 
@@ -8,7 +8,7 @@ export interface Iingredient {
   isActive?: boolean,
   description: string,
   // price: number | null,
-  cost: number | null,
+  cost: number | string | null,
   stock?: IStockOfProduct | null,
   unitOfMeasureId?: (string | IUnitOfMeasureStandard) | null
   type: TypeBaseUnitIngredient | null,

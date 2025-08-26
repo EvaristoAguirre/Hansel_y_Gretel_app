@@ -12,12 +12,12 @@ import {
   MenuItem,
 } from "@mui/material";
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import { FormType } from "@/components/Enums/ingredients";
 import { Iingredient } from "@/components/Interfaces/Ingredients";
 import { IUnitOfMeasureForm } from "../../Interfaces/IUnitOfMeasure";
 import { useAuth } from "@/app/context/authContext";
 import { ingredientsByName } from "@/api/ingredients";
 import NumericInput from "@/components/Utils/NumericInput";
+import { FormType } from '../../Enums/Ingredients';
 
 interface Errors {
   [key: string]: string;
