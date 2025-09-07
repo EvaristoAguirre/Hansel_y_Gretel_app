@@ -10,10 +10,12 @@ interface CategoryState {
   updateCategory: (updatedCategory: ICategory) => void;
   connectWebSocket: () => void;
 }
+const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
 
 export const useCategoryStore = create<CategoryState>((set) => {
   // const socket = io("http://192.168.0.50:3000"); // Usa la IP del backend
-  const socket = io("http://localhost:3000"); // Usa la IP del backend
+
+  const socket = io(API_URL_DEV);
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Categorías");
@@ -61,6 +63,6 @@ export const useCategoryStore = create<CategoryState>((set) => {
           c.id === updatedCategory.id ? updatedCategory : c
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece automáticamente al cargar el store
+    connectWebSocket: () => { }, // La conexión se establece automáticamente al cargar el store
   };
 });
