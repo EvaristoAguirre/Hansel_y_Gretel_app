@@ -18,16 +18,16 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { GridDeleteIcon } from "@mui/x-data-grid";
-import { Iingredient, IingredientForm, IingredientResponse } from "@/components/Interfaces/Ingredients";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import { Box } from "@mui/system";
 import { useAuth } from "@/app/context/authContext";
 import { ProductForm } from "@/components/Interfaces/IProducts";
 import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
 import { TabProductKey } from "@/components/Enums/view-products";
 import { useIngredientsContext } from '../../../../app/context/ingredientsContext';
-import { TypeBaseUnitIngredient } from "@/components/Enums/ingredients";
 import { useUnitContext } from '../../../../app/context/unitOfMeasureContext';
 import { capitalizeFirstLetter } from "@/components/Utils/CapitalizeFirstLetter";
+import { TypeBaseUnitIngredient } from "@/components/Enums/Ingredients";
 
 interface IngredientDialogProps {
   onSave: (ingredientsForm: IingredientForm[]) => void;

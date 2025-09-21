@@ -9,13 +9,11 @@ export class TableWSListener {
 
   @OnEvent('table.created')
   handleTableCreate(event: { table: Table }) {
-    console.log('🟢 Evento recibido: table.created', event.table);
     this.broadcastService.broadcast('tableCreated', event.table);
   }
 
   @OnEvent('table.updated')
   handleTableUpdated(event: { table: Table }) {
-    console.log('🟡 Evento recibido: table.updated', event.table);
     this.broadcastService.broadcast('tableUpdated', event.table);
   }
 

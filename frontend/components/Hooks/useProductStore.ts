@@ -31,7 +31,6 @@ export const useProductStore = create<ProductState>((set) => {
   });
 
   socket.on("productCreated", (data) => {
-    console.log("🟢 Nuevo producto creado:", data);
     set((state) => {
       const exists = state.products.some((product) => product.id === data.id);
       if (!exists) {
@@ -47,7 +46,6 @@ export const useProductStore = create<ProductState>((set) => {
   });
 
   socket.on("productUpdated", (data) => {
-    console.log("🟡 Producto actualizado:", data);
     set((state) => ({
       products: state.products.map((product) =>
         product.id === data.id ? data : product
@@ -56,7 +54,6 @@ export const useProductStore = create<ProductState>((set) => {
   });
 
   socket.on("productDeleted", (data) => {
-    console.log("🔴 Producto eliminado:", data);
     set((state) => ({
       products: state.products.filter((product) => product.id !== data.id),
     }));

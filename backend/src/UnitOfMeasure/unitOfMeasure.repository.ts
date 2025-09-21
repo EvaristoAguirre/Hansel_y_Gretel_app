@@ -119,10 +119,6 @@ export class UnitOfMeasureRepository {
 
       unitOfMeasure.baseUnit = baseUnit;
       unitOfMeasure.equivalenceToBaseUnit = equivalenceToBaseUnit;
-
-      console.log(
-        `Asignada base: ${baseUnit.name} | Equivalencia: ${equivalenceToBaseUnit}`,
-      );
     }
 
     const savedUnit = await this.unitOfMeasureRepository.save(unitOfMeasure);
@@ -613,7 +609,6 @@ export class UnitOfMeasureRepository {
     }
 
     // 5. Último intento
-    console.log('No se encontró ruta de conversión directa');
     throw new BadRequestException(
       `No conversion path found between ${fromUnit.name} and ${toUnit.name}`,
     );

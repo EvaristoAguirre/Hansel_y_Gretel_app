@@ -22,12 +22,10 @@ export const useTableStore = create<TableStateZustand>((set) => {
   });
 
   socket.on("tableCreated", (data) => {
-    console.log("🟢 Nueva mesa creada:", data);
     set((state) => ({ tables: [...state.tables, data] }));
   });
 
   socket.on("tableUpdated", (data) => {
-    console.log("🟡 Mesa actualizada:", data);
     set((state) => ({
       tables: state.tables.map((table) =>
         table.id === data.id ? data : table
@@ -36,7 +34,6 @@ export const useTableStore = create<TableStateZustand>((set) => {
   });
 
   socket.on("tableDeleted", (data) => {
-    console.log("🔴 Mesa eliminada:", data);
     set((state) => ({
       tables: state.tables.filter((table) => table.id !== data.id),
     }));

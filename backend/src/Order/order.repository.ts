@@ -221,9 +221,6 @@ export class OrderRepository {
             config.settings?.chargeExtra &&
             typeof config.settings.extraCost === 'number'
           ) {
-            console.log(
-              `💸 Agregando extraCost de ${config.settings.extraCost} por topping ${topping.name}`,
-            );
             totalExtraCost += Number(config.settings.extraCost);
           }
 

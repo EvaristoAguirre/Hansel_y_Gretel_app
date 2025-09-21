@@ -134,8 +134,6 @@ export class SeederService implements OnApplicationBootstrap {
           }
         }
       }
-
-      console.log('Unidades de medida y conversiones sembradas correctamente.');
     }
   }
 }

@@ -410,7 +410,6 @@ export class OrderService {
     id: string,
     closeOrderDto: CloseOrderDto,
   ): Promise<OrderSummaryResponseDto> {
-    console.log('total cerrando la orden', closeOrderDto.total);
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid ID format');
     }

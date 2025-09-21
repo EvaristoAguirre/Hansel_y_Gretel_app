@@ -10,9 +10,9 @@ export default registerAs('typeorm', () => ({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB,
-  autoLoadEntities: true,
-  synchronize: true, // pasar a false en producción
-  dropSchema: true, // pasar a false en producción
+  autoLoadEntities: false,
+  synchronize: false, // pasar a false en producción
+  dropSchema: false, // pasar a false en producción
   logging: ['error', 'warn'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
