@@ -152,9 +152,7 @@ export class ProductService {
       typeof updateData.baseCost === 'number' &&
       updateData.baseCost !== currentProduct.baseCost
     ) {
-      console.log(
-        `⚙️ Detected cost change in simple product ${id}. Triggering cascade...`,
-      );
+
       const cascadeResult =
         await this.costCascadeService.updateSimpleProductCostAndCascade(
           productUpdated.id,
@@ -176,9 +174,6 @@ export class ProductService {
       currentProduct.type === 'product' &&
       Number(productUpdated.cost) !== Number(currentProduct.cost)
     ) {
-      console.log(
-        `⚙️ Detected cost change in compound product ${id}. Triggering cascade...`,
-      );
       const cascadeResult =
         await this.costCascadeService.updateSimpleProductCostAndCascade(
           productUpdated.id,
@@ -597,10 +592,6 @@ export class ProductService {
       };
     }
 
-    console.log('[TOPPING CHECK] Iniciando chequeo de toppings...');
-    console.log('[TOPPING CHECK] Toppings por unidad:', toppingsPerUnit);
-    console.log('[TOPPING CHECK] Cantidad a vender:', quantityToSell);
-
     const toppingChecks = await Promise.all(
       toppingsPerUnit.map(async (toppingId) => {
         try {
@@ -634,16 +625,8 @@ export class ProductService {
             };
           }
 
-          console.log(
-            `[TOPPING CHECK] Topping: ${topping.name} - Cantidad por unidad (string): "${toppingGroup.quantityOfTopping}" - Unidad en receta: ${toppingGroup.unitOfMeasure?.name} (${toppingGroup.unitOfMeasure?.id})`,
-          );
-
           let requiredQty = parseLocalizedNumber(
             toppingGroup.quantityOfTopping,
-          );
-
-          console.log(
-            `[TOPPING CHECK] Topping: ${topping.name} - Cantidad por unidad (parseado): ${requiredQty}`,
           );
 
           const stock =
@@ -680,18 +663,10 @@ export class ProductService {
               stock.unitOfMeasure.id,
               requiredQty,
             );
-
-            console.log(
-              `[TOPPING CHECK] Resultado de conversión: ${requiredQty} ${stock.unitOfMeasure.name}`,
-            );
           }
 
           const totalRequired = requiredQty * quantityToSell;
           const availableQty = parseLocalizedNumber(stock.quantityInStock);
-
-          console.log(
-            `[TOPPING CHECK] ${topping.name} - Total requerido: ${totalRequired} ${stock.unitOfMeasure.name}, Disponible: ${availableQty}`,
-          );
 
           return {
             toppingId,
@@ -719,12 +694,6 @@ export class ProductService {
     );
 
     const allAvailable = toppingChecks.every((check) => check.available);
-
-    console.log(
-      `[TOPPING CHECK] Resultado global: ${
-        allAvailable ? '✔ Disponible' : '✘ No disponible'
-      }`,
-    );
 
     if (!allAvailable) {
       console.warn(

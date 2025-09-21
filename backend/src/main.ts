@@ -26,21 +26,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  // app.enableCors({
-  //   origin: allowedOrigins,
-  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  //   credentials: true,
-  // });
-  // app.enableCors({
-  //   origin: (origin, callback) => {
-  //     if (!origin || allowedOrigins.includes(origin)) {
-  //       callback(null, true);
-  //     } else {
-  //       callback(new Error(`Not allowed by CORS: ${origin}`));
-  //     }
-  //   },
-  //   credentials: true,
-  // });
+
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
   app.use(

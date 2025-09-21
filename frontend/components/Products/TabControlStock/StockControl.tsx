@@ -180,7 +180,6 @@ const StockControl = () => {
   const [selectedStockFilter, setSelectedStockFilter] = useState<string | null>(null);
 
   const filterByStock = (items: SelectedItem[]) => {
-    console.log("Items", items);
 
     return items.filter((item: SelectedItem) => {
       const stockQuantity = normalizeNumber(item.stock);

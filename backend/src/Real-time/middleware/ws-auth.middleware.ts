@@ -12,7 +12,6 @@ export class WsAuthMiddleware implements NestMiddleware {
 
     // // Agregar información del usuario al socket
     // (socket as any).user = { id: 123, name: 'Usuario Ejemplo' };
-    console.log('pasando por el middleware');
     next();
   }
 }

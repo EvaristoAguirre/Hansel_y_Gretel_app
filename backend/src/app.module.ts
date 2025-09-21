@@ -44,9 +44,9 @@ import { PrinterModule } from './Printer/printer.module';
           username: dbConfig.username,
           password: dbConfig.password,
           database: dbConfig.database,
-          autoLoadEntities: true,
-          synchronize: isDev, // solo true en desarrollo
-          dropSchema: false, // nunca true salvo que lo necesites puntualmente
+          autoLoadEntities: false,
+          synchronize: false,
+          dropSchema: false,
           logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,

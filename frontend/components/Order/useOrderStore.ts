@@ -21,12 +21,10 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
   });
 
   socket.on("orderCreated", (data) => {
-    console.log("🟢 Nueva orden creada:", data);
     set((state) => ({ orders: [...state.orders, data] }));
   });
 
   socket.on("orderUpdated", (data) => {
-    console.log("🟡 Orden actualizada:", data);
     set((state) => ({
       orders: state.orders.map((order) =>
         order.id === data.id ? data : order
@@ -35,7 +33,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
   });
 
   socket.on("orderUpdatedPending", (data) => {
-    console.log("🟠 Orden marcada como pendiente de pago:", data);
     set((state) => ({
       orders: state.orders.map((order) =>
         order.id === data.id ? { ...order, status: "pending_payment" } : order
@@ -44,7 +41,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
   });
 
   socket.on("orderUpdatedClose", (data) => {
-    console.log("🟢 Orden marcada como cerrada:", data);
     set((state) => ({
       orders: state.orders.map((order) =>
         order.id === data.id ? { ...order, status: "closed" } : order
@@ -53,14 +49,12 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
   });
 
   socket.on("orderDeleted", (data) => {
-    console.log("🔴 Orden eliminada:", data);
     set((state) => ({
       orders: state.orders.filter((order) => order.id !== data.id),
     }));
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Order");
   });
 
   return {
