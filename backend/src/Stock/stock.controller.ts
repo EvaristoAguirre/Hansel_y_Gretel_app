@@ -41,7 +41,6 @@ export class StockController {
   async getStockByProductId(
     @Param('id') id: string,
   ): Promise<StockSummaryResponseDTO> {
-    console.log(id);
     return await this.stockService.getStockByProductId(id);
   }
 
@@ -72,7 +71,6 @@ export class StockController {
       updateStockDto,
     );
     await this.eventEmitter.emit('stock.updated', updatedStock);
-    console.log('response patch......', updatedStock);
     return updatedStock;
   }
 
