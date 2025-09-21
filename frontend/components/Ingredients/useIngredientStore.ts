@@ -15,7 +15,6 @@ export const useIngredientStore = create<IngredientState>((set) => {
   });
 
   socket.on("ingredientCreated", (data) => {
-    console.log("🟢 Ingrediente creado:", data);
     set((state) => {
       const exists = state.ingredients.some(
         (ingredient) => ingredient.id === data.id
@@ -33,7 +32,6 @@ export const useIngredientStore = create<IngredientState>((set) => {
   });
 
   socket.on("ingredientUpdated", (data) => {
-    console.log("🟡 Ingrediente actualizado:", data);
     set((state) => ({
       ingredients: state.ingredients.map((ingredient) =>
         ingredient.id === data.id ? data : ingredient
@@ -42,7 +40,6 @@ export const useIngredientStore = create<IngredientState>((set) => {
   });
 
   socket.on("ingredientDeleted", (data) => {
-    console.log("🔴 Ingrediente eliminado:", data);
     set((state) => ({
       ingredients: state.ingredients.filter(
         (ingredient) => ingredient.id !== data.id
@@ -82,7 +79,6 @@ export const useIngredientStore = create<IngredientState>((set) => {
             : ingredient
         ),
       }));
-      console.log("✅ Ingrediente actualizado:", updatedIngredient);
     },
     connectWebSocket: () => {
       /* conexión automática */

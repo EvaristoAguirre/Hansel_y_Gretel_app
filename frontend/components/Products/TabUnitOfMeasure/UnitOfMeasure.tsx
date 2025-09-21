@@ -1,5 +1,5 @@
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
-import { FormType } from "@/components/Enums/ingredients";
+import { FormType } from "@/components/Enums/Ingredients";
 import LoadingLottie from "@/components/Loader/Loading";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";

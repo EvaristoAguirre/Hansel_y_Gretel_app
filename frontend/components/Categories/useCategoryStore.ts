@@ -10,22 +10,22 @@ interface CategoryState {
   updateCategory: (updatedCategory: ICategory) => void;
   connectWebSocket: () => void;
 }
+const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
 
 export const useCategoryStore = create<CategoryState>((set) => {
   // const socket = io("http://192.168.0.50:3000"); // Usa la IP del backend
-  const socket = io("http://localhost:3000"); // Usa la IP del backend
+
+  const socket = io(API_URL_DEV);
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Categorías");
   });
 
   socket.on("categoryCreated", (data) => {
-    console.log("🟢 Nueva categoría creada:", data);
     set((state) => ({ categories: [...state.categories, data] }));
   });
 
   socket.on("categoryUpdated", (data) => {
-    console.log("🟡 Categoría actualizada:", data);
     set((state) => ({
       categories: state.categories.map((category) =>
         category.id === data.id ? data : category
@@ -34,7 +34,6 @@ export const useCategoryStore = create<CategoryState>((set) => {
   });
 
   socket.on("categoryDeleted", (data) => {
-    console.log("🔴 Categoría eliminada:", data);
     set((state) => ({
       categories: state.categories.filter(
         (category) => category.id !== data.id
@@ -61,6 +60,6 @@ export const useCategoryStore = create<CategoryState>((set) => {
           c.id === updatedCategory.id ? updatedCategory : c
         ),
       })),
-    connectWebSocket: () => {}, // La conexión se establece automáticamente al cargar el store
+    connectWebSocket: () => { },
   };
 });

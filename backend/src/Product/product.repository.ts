@@ -353,7 +353,6 @@ export class ProductRepository {
     }
 
     const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
-    console.log('promocion creada.....', promotionCreada);
     return promotionCreada;
   }
 
@@ -870,8 +869,6 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
-    console.log('data para actualizar promo....', updateData);
-    console.log('data para actualizar promo....', updateData.products);
     const { categories, products, ...otherAttributes } = updateData;
 
     const promotion = await queryRunner.manager.findOne(Product, {
@@ -1328,11 +1325,6 @@ export class ProductRepository {
           `Unit of measure ${groupDto.unitOfMeasureId} does not exist`,
         );
       }
-      console.log(
-        '➡️ Product ID dentro de createAvailableToppingsGroup:',
-        savedProduct.id,
-      );
-      console.log('➡️ Producto completo:', savedProduct);
 
       const association = new ProductAvailableToppingGroup();
       association.product = savedProduct;
@@ -1352,11 +1344,6 @@ export class ProductRepository {
           'availableToppingGroups.unitOfMeasure',
         ],
       });
-
-      console.log(
-        '✅ Verificación post-save:',
-        JSON.stringify(productWithToppings, null, 2),
-      );
     }
   }
 

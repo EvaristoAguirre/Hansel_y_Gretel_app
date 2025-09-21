@@ -12,7 +12,7 @@ import rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+  // const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
   app.useGlobalFilters(
     new JwtExceptionFilter(),
     new ValidationExceptionFilter(),
@@ -21,26 +21,12 @@ async function bootstrap() {
   );
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(LoggerMidleware);
-  // app.enableCors({
-  //   origin: '*',
-  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  //   credentials: true,
-  // });
   app.enableCors({
-    origin: allowedOrigins,
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  // app.enableCors({
-  //   origin: (origin, callback) => {
-  //     if (!origin || allowedOrigins.includes(origin)) {
-  //       callback(null, true);
-  //     } else {
-  //       callback(new Error(`Not allowed by CORS: ${origin}`));
-  //     }
-  //   },
-  //   credentials: true,
-  // });
+
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
   app.use(
