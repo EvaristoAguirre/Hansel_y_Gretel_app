@@ -7,8 +7,8 @@ import {
 } from "../Interfaces/IIngredients";
 
 export const useIngredientStore = create<IngredientState>((set) => {
-  const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
-  // const socket = io("http://localhost:3000"); // Cambiar por la IP de tu backend si es necesario
+  //const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
+  const socket = io("http://localhost:3000"); // Cambiar por la IP de tu backend si es necesario
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Ingredients");

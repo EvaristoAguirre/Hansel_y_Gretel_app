@@ -1,3 +1,4 @@
+"use client";
 import { IRoom } from '@/components/Interfaces/IRooms';
 import { ITable } from '@/components/Interfaces/ITable';
 import { URI_ROOM } from '@/components/URI/URI';
