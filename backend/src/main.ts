@@ -36,7 +36,7 @@ async function bootstrap() {
       max: 10,
     }),
   );
-  await app.listen(3000, '0.0.0.0');
+  await app.listen(3000, '127.0.0.1');
 
   const port = app.getHttpServer().address().port;
   console.log(`Server listening on http://localhost:${port}`);
