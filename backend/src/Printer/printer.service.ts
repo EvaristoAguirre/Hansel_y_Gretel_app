@@ -232,7 +232,7 @@ export class PrinterService {
 
       const tableName = order.table.name;
       //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
-      // const commandNumber = commandNumberToPrint || 'S/N';
+      const commandNumber = commandNumberToPrint || 'S/N';
 
       const products = order.orderDetails
         .filter((detail) => detail.isActive)
