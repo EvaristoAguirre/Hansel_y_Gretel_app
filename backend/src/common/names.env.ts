@@ -1,0 +1,14 @@
+export const EnvNames = {
+  DATABASE: {
+    HOST: 'DB_HOST',
+    PORT: 'DB_PORT',
+    USERNAME: 'DB_USERNAME',
+    PASSWORD: 'DB_PASSWORD',
+    NAME_DATABASE: 'DB_',
+  },
+  NODE_ENV: 'NODE_ENV',
+  PORT: 'PORT',
+  HOST: 'HOST',
+  PATH_LOG: 'PATH_LOG',
+  JWT_SECRET: 'JWT_SECRET',
+};

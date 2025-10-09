@@ -27,6 +27,7 @@ import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
 import { Order } from 'src/Order/order.entity';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class DailyCashService {
@@ -37,6 +38,7 @@ export class DailyCashService {
     private readonly cashMovementRepo: Repository<CashMovement>,
     private readonly dailyCashRepository: DailyCashRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly monitoringLogger: LoggerService,
   ) {}
 
   async openDailyCash(
@@ -61,6 +63,14 @@ export class DailyCashService {
       dailyCash.initialCash = createDailyCashDto.initialCash || 0;
 
       const dailyCashOpened = await this.dailyCashRepo.save(dailyCash);
+
+      // Log crítico: Apertura de caja diaria (operación financiera importante)
+      this.monitoringLogger.log({
+        action: 'DAILY_CASH_OPENED_SUCCESS',
+        dailyCashId: dailyCashOpened.id,
+        initialCash: dailyCashOpened.initialCash,
+        timestamp: new Date().toISOString(),
+      });
 
       this.eventEmitter.emit('dailyCash.opened', {
         dailyCash: dailyCashOpened,
