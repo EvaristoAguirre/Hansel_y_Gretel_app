@@ -20,6 +20,25 @@ export class Order {
   @Column()
   date: Date;
 
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp',
+    nullable: true,
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
+
+  @Column({ name: 'closed_at', nullable: true })
+  closedAt: Date;
+
   @Column({ type: 'enum', enum: OrderState, default: OrderState.OPEN })
   state: OrderState;
 
