@@ -1,19 +1,16 @@
 import { registerAs } from '@nestjs/config';
-import * as path from 'path';
 import { DataSource } from 'typeorm';
 import 'dotenv/config';
 
-// Detecta si estás en modo producción o desarrollo
 const isCompiled = __dirname.includes('dist');
 
-// Define las rutas de entidades y migraciones dinámicamente
 const entitiesPath = isCompiled
-  ? path.join(__dirname, '..', '**', '*.entity{.js}')
-  : path.join(__dirname, '..', 'src', '**', '*.entity{.ts,.js}');
+  ? [__dirname + '/../**/*.entity.js']
+  : [__dirname + '/../src/**/*.entity.ts'];
 
 const migrationsPath = isCompiled
-  ? path.join(__dirname, '..', 'migrations', '*{.js}')
-  : path.join(__dirname, '..', 'migrations', '*{.ts,.js}');
+  ? [__dirname + '/../migrations/*.js']
+  : [__dirname + '/../migrations/*.ts'];
 
 export default registerAs('typeorm', () => ({
   type: 'postgres',
@@ -27,8 +24,8 @@ export default registerAs('typeorm', () => ({
   synchronize: false,
   dropSchema: false,
   logging: ['error', 'warn'],
-  entities: [entitiesPath],
-  migrations: [migrationsPath],
+  entities: entitiesPath,
+  migrations: migrationsPath,
 }));
 
 export const connectionSource = new DataSource({
@@ -40,6 +37,6 @@ export const connectionSource = new DataSource({
   database: process.env.DB,
   schema: 'public',
   logging: ['error', 'warn'],
-  entities: [entitiesPath],
-  migrations: [migrationsPath],
+  entities: entitiesPath,
+  migrations: migrationsPath,
 });
