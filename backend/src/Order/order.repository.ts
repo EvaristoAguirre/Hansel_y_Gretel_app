@@ -110,8 +110,7 @@ export class OrderRepository {
     );
 
     const totalConsumed = order.orderDetails.reduce(
-      (acc, detail) =>
-        acc + Number(detail.subtotal) + Number(detail.toppingsExtraCost),
+      (acc, detail) => acc + Number(detail.subtotal),
       0,
     );
 
