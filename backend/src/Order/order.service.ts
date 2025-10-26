@@ -130,6 +130,12 @@ export class OrderService {
         let total = 0;
         const detailsToSave: OrderDetails[] = [];
         const toppingsToSave: OrderDetailToppings[] = [];
+        const printProducts: any[] = [];
+
+        console.log(
+          '🔍 [DEBUG] Productos recibidos en updateOrder:',
+          JSON.stringify(updateData.productsDetails, null, 2),
+        );
 
         for (const pd of updateData.productsDetails) {
           const product = await queryRunner.manager.findOne(Product, {
@@ -153,33 +159,60 @@ export class OrderService {
           detailsToSave.push(detail);
           toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
+
+          // 🖨️ Construir datos de impresión para este producto específico
+          console.log(
+            `🔍 [DEBUG] Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}`,
+          );
+          console.log(
+            `🔍 [DEBUG] toppingDetails disponibles:`,
+            toppingDetails.map((t) => ({
+              name: t.topping.name,
+              unitIndex: t.unitIndex,
+            })),
+          );
+
+          for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+            const toppingsForThisUnit = toppingDetails
+              .filter((t) => t.unitIndex === unitIndex)
+              .map((t) => t.topping.name);
+
+            console.log(
+              `🔍 [DEBUG] Unidad ${unitIndex} - toppings filtrados:`,
+              toppingsForThisUnit,
+            );
+
+            printProducts.push({
+              name: product.name,
+              quantity: 1,
+              commentOfProduct:
+                unitIndex === 0 ? detail.commentOfProduct : undefined,
+              toppings: toppingsForThisUnit,
+            });
+          }
         }
 
         // 🖨️ Generar número de comanda (una sola vez)
         const printData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
-          products: detailsToSave.flatMap((detail) => {
-            return Array.from({ length: detail.quantity }, (_, index) => {
-              const toppingsForThisUnit = toppingsToSave
-                .filter(
-                  (t) =>
-                    t.orderDetails?.product.id === detail.product.id &&
-                    t.unitIndex === index,
-                )
-                .map((t) => t.topping.name);
-
-              return {
-                name: detail.product.name,
-                quantity: 1,
-                commentOfProduct:
-                  index === 0 ? detail.commentOfProduct : undefined,
-                toppings: toppingsForThisUnit,
-              };
-            });
-          }),
+          products: printProducts,
           isPriority: updateData.isPriority,
         };
+
+        console.log(
+          '🔍 [DEBUG] printData completo para impresión:',
+          JSON.stringify(printData, null, 2),
+        );
+        console.log(
+          '🔍 [DEBUG] printProducts detallado:',
+          printProducts.map((p) => ({
+            name: p.name,
+            quantity: p.quantity,
+            commentOfProduct: p.commentOfProduct,
+            toppings: p.toppings,
+          })),
+        );
 
         let commandNumber: string | null = null;
 
@@ -390,6 +423,8 @@ export class OrderService {
       // } catch (error) {
       //   throw new ConflictException(error.message);
       // }
+      console.log('simulando impresion de ticket');
+      console.log('orderPending to print ticket', orderPending);
 
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
