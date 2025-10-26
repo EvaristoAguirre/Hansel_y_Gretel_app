@@ -13,40 +13,42 @@ import {
   DialogContent,
   DialogTitle,
   Dialog,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs, { Dayjs } from "dayjs";
-import { getMovements, getMovementsDetailsById, getOrderDetails } from "@/api/dailyCash";
-import { useAuth } from "@/app/context/authContext";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CashMovementDetailModal from "./CashMovementDetailModal";
-import OrderDetailModal from "./OrderDetailModal";
-import { MovementCash, OrderCash } from "@/components/Interfaces/IDailyCash";
-
-
-
-
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs, { Dayjs } from 'dayjs';
+import {
+  getMovements,
+  getMovementsDetailsById,
+  getOrderDetails,
+} from '@/api/dailyCash';
+import { useAuth } from '@/app/context/authContext';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CashMovementDetailModal from './CashMovementDetailModal';
+import OrderDetailModal from './OrderDetailModal';
+import { MovementCash, OrderCash } from '@/components/Interfaces/IDailyCash';
+import { formatNumber } from '@/components/Utils/FormatNumber';
 
 const DailySalesView = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
 
-
   const [dataOrders, setDataOrders] = useState<OrderCash[] | null>(null);
-  const [dataMovements, setDataMovements] = useState<MovementCash[] | null>(null);
+  const [dataMovements, setDataMovements] = useState<MovementCash[] | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
   const [openModal, setOpenModal] = useState(false);
-  const [selectedMovementDetails, setSelectedMovementDetails] = useState<MovementCash | null>(null);
-
+  const [selectedMovementDetails, setSelectedMovementDetails] =
+    useState<MovementCash | null>(null);
 
   const [openOrderModal, setOpenOrderModal] = useState(false);
-  const [selectedOrderDetails, setSelectedOrderDetails] = useState<OrderCash | null>(null);
-
+  const [selectedOrderDetails, setSelectedOrderDetails] =
+    useState<OrderCash | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -56,27 +58,26 @@ const DailySalesView = () => {
 
   const handleOpenOrderDetail = async (orderId: string) => {
     try {
-      const detail = token && await getOrderDetails(token, orderId);
+      const detail = token && (await getOrderDetails(token, orderId));
       setSelectedOrderDetails(detail);
       setOpenOrderModal(true);
     } catch (error) {
-      console.error("Error al obtener detalle de orden", error);
+      console.error('Error al obtener detalle de orden', error);
     }
   };
 
-
   const handleOpenDetail = async (movementId: string) => {
     try {
-      const detail = token && await getMovementsDetailsById(token, movementId);
+      const detail =
+        token && (await getMovementsDetailsById(token, movementId));
       setSelectedMovementDetails(detail);
       setOpenModal(true);
     } catch (error) {
-      console.error("Error al obtener detalle del movimiento", error);
+      console.error('Error al obtener detalle del movimiento', error);
     }
   };
 
   const handleSearch = async () => {
-
     if (!selectedDate) return;
 
     setLoading(true);
@@ -89,16 +90,16 @@ const DailySalesView = () => {
       const month = selectedDate.month() + 1;
       const year = selectedDate.year();
 
-      const result = token && await getMovements(token, day, month, year);
+      const result = token && (await getMovements(token, day, month, year));
 
       if (!result || !result.date) {
-        throw new Error("No se encontraron ventas para esa fecha.");
+        throw new Error('No se encontraron ventas para esa fecha.');
       }
 
       setDataOrders(result.orders);
       setDataMovements(result.movements);
     } catch (err: any) {
-      setError(err.message || "Error al obtener los datos.");
+      setError(err.message || 'Error al obtener los datos.');
     } finally {
       setLoading(false);
     }
@@ -106,29 +107,29 @@ const DailySalesView = () => {
 
   const orderColumns: GridColDef[] = [
     {
-      field: "date",
-      headerName: "Hora",
+      field: 'date',
+      headerName: 'Hora',
       flex: 1,
-      renderCell: (params) => dayjs(params.value).format("HH:mm"),
+      renderCell: (params) => dayjs(params.value).format('HH:mm'),
     },
     {
-      field: "total",
-      headerName: "Total",
+      field: 'total',
+      headerName: 'Total',
       flex: 1,
       renderCell: (params) => (
-        <span style={{ color: "green" }}>
-          <>$ {params.value}</>
+        <span style={{ color: 'green' }}>
+          <>$ {formatNumber(params.value)}</>
         </span>
       ),
     },
     {
-      field: "numberCustomers",
-      headerName: "Clientes",
+      field: 'numberCustomers',
+      headerName: 'Clientes',
       flex: 1,
     },
     {
-      field: "verDetalle",
-      headerName: "Detalle de la orden",
+      field: 'verDetalle',
+      headerName: 'Detalle de la orden',
       flex: 1,
       sortable: false,
       renderCell: (params) => (
@@ -146,36 +147,36 @@ const DailySalesView = () => {
 
   const movementColumns: GridColDef[] = [
     {
-      field: "createdAt",
-      headerName: "Hora",
+      field: 'createdAt',
+      headerName: 'Hora',
       flex: 1,
-      renderCell: (params) => dayjs(params.value).format("HH:mm"),
+      renderCell: (params) => dayjs(params.value).format('HH:mm'),
     },
     {
-      field: "type",
-      headerName: "Tipo",
+      field: 'type',
+      headerName: 'Tipo',
       flex: 1,
       renderCell: (params) => (
-        <span style={{ textTransform: "capitalize" }}>{params.value}</span>
+        <span style={{ textTransform: 'capitalize' }}>{params.value}</span>
       ),
     },
     {
-      field: "amount",
-      headerName: "Total",
+      field: 'amount',
+      headerName: 'Total',
       flex: 1,
       renderCell: (params) => {
-        const isIngreso = params.row.type === "ingreso";
+        const isIngreso = params.row.type === 'ingreso';
         return (
-          <span style={{ color: isIngreso ? "green" : "red" }}>
-            <>$ {params.value}</>
+          <span style={{ color: isIngreso ? 'green' : 'red' }}>
+            <>$ {formatNumber(params.value)}</>
           </span>
         );
       },
     },
 
     {
-      field: "verDetalle",
-      headerName: "Detalle",
+      field: 'verDetalle',
+      headerName: 'Detalle',
       flex: 1,
       sortable: false,
       renderCell: (params) => (
@@ -191,11 +192,6 @@ const DailySalesView = () => {
     },
   ];
 
-
-
-
-
-
   return (
     <>
       <Grid container spacing={2} alignItems="center" mt={2}>
@@ -207,20 +203,21 @@ const DailySalesView = () => {
             format="DD/MM/YYYY"
             disableFuture
             sx={{
-              animation: !selectedDate ? "pulse 1.2s infinite" : "none",
-              "@keyframes pulse": {
-                "0%": { transform: "scale(1)" },
-                "50%": { transform: "scale(1.05)" },
-                "100%": { transform: "scale(1)" },
+              animation: !selectedDate ? 'pulse 1.2s infinite' : 'none',
+              '@keyframes pulse': {
+                '0%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.05)' },
+                '100%': { transform: 'scale(1)' },
               },
             }}
           />
-
-
         </Grid>
-        <Grid item >
-          <Button variant="contained" onClick={handleSearch} disabled={!selectedDate}
-            sx={{ height: "52px", minWidth: "100px" }}
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={!selectedDate}
+            sx={{ height: '52px', minWidth: '100px' }}
           >
             Buscar
           </Button>
@@ -236,12 +233,7 @@ const DailySalesView = () => {
         <Typography variant="h4" color="primary" gutterBottom>
           Ventas por Día
         </Typography>
-        <Box
-          bgcolor="#fff"
-          borderRadius={2}
-          boxShadow={1}
-          mt={3}
-        >
+        <Box bgcolor="#fff" borderRadius={2} boxShadow={1} mt={3}>
           <DataGrid
             rows={dataOrders?.map((order: any, i: number) => ({
               ...order,
@@ -251,7 +243,7 @@ const DailySalesView = () => {
             autoHeight
             pageSizeOptions={[5, 10]}
             localeText={{
-              noRowsLabel: "No hay pedidos registrados",
+              noRowsLabel: 'No hay pedidos registrados',
             }}
             disableColumnMenu
           />
@@ -267,27 +259,18 @@ const DailySalesView = () => {
           </Typography>
         )}
 
-        <Box
-          bgcolor="#fff"
-          borderRadius={2}
-          boxShadow={1}
-          mt={3}
-        >
+        <Box bgcolor="#fff" borderRadius={2} boxShadow={1} mt={3}>
           <DataGrid
             rows={dataMovements ?? []}
             columns={movementColumns}
             autoHeight
             pageSizeOptions={[5, 10]}
             localeText={{
-              noRowsLabel: "No hay movimientos registrados",
+              noRowsLabel: 'No hay movimientos registrados',
             }}
             disableColumnMenu
           />
-
-
         </Box>
-
-
       </Box>
       <CashMovementDetailModal
         open={openModal}
