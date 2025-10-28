@@ -28,7 +28,7 @@ export class StockController {
   ) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getAllStock(
     @Param('page') page: number = 1,
     @Param('limit') limit: number = 10,
@@ -37,7 +37,7 @@ export class StockController {
   }
 
   @Get('/product/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getStockByProductId(
     @Param('id') id: string,
   ): Promise<StockSummaryResponseDTO> {
@@ -45,7 +45,7 @@ export class StockController {
   }
 
   @Get('/ingredient/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getStockByIngredientId(
     @Param('id') id: string,
   ): Promise<StockSummaryResponseDTO> {
@@ -53,7 +53,7 @@ export class StockController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async createStock(@Body() createStockDto: CreateStockDto): Promise<Stock> {
     const createStock = await this.stockService.createStock(createStockDto);
     await this.eventEmitter.emit('stock.created', createStock);
@@ -61,7 +61,7 @@ export class StockController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async updateStock(
     @Param('id') id: string,
     @Body() updateStockDto: UpdateStockDto,
@@ -75,7 +75,7 @@ export class StockController {
   }
 
   @Put('/deduct')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async deductStock(@Body() deductStockDto: DeductStockDto): Promise<string> {
     const { productId, quantity } = deductStockDto;
     return await this.stockService.deductStock(productId, quantity);

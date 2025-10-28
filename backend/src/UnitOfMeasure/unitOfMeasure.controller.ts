@@ -37,7 +37,7 @@ export class UnitOfMeasureController {
   }
 
   @Get('all')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
@@ -51,7 +51,7 @@ export class UnitOfMeasureController {
   }
 
   @Get('conventional')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getConventionalUnitOfMeasure(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
@@ -96,7 +96,7 @@ export class UnitOfMeasureController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getUnitOfMeasureById(@Param('id') id: string): Promise<UnitOfMeasure> {
     return await this.unitOfMeasureService.getUnitOfMeasureById(id);
   }

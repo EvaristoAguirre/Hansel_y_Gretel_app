@@ -30,7 +30,7 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllProducts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -39,7 +39,7 @@ export class ProductController {
   }
 
   @Get('not-promotion')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getSimpleAndCompositeProducts(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -48,7 +48,7 @@ export class ProductController {
   }
 
   @Get('by-name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductByName(
     @Query('name') name: string,
   ): Promise<ProductResponseDto> {
@@ -73,7 +73,7 @@ export class ProductController {
   }
 
   @Post('search')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async searchProducts(
     @Query('name') name?: string,
     @Query('code') code?: string,
@@ -93,12 +93,12 @@ export class ProductController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductById(@Param('id') id: UUID): Promise<ProductResponseDto> {
     return this.productService.getProductById(id);
   }
   @Get('by-code/:code')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductByCode(
     @Param('code') code: string,
   ): Promise<ProductResponseDto> {
@@ -106,7 +106,7 @@ export class ProductController {
   }
 
   @Post('by-categories')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductsByCategories(
     @Body(ValidationPipe) body: GetProductsByCategoriesDto,
   ): Promise<ProductResponseDto[]> {
@@ -143,6 +143,7 @@ export class ProductController {
   }
 
   @Post('check-stock')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
     return this.productService.checkProductsStockAvailability(dataToCheck);
   }
