@@ -25,6 +25,7 @@ import {
   Switch,
   Tooltip,
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useOrderContext } from '../../app/context/order.context';
@@ -48,6 +49,86 @@ interface ConfirmedPayment {
   methodOfPayment: paymentMethod;
   amount: number;
 }
+
+interface TipInputsProps {
+  baseAmount: number;
+  customTip: number;
+  onChangeCustomTip: (next: number) => void;
+}
+
+const TipInputs: React.FC<TipInputsProps> = ({
+  baseAmount,
+  customTip,
+  onChangeCustomTip,
+}) => {
+  const computedTotal = baseAmount + (customTip || 0);
+  const [propinaInput, setPropinaInput] = useState<string>(
+    formatNumber(customTip || 0)
+  );
+  const [totalInput, setTotalInput] = useState<string>(
+    formatNumber(computedTotal)
+  );
+
+  useEffect(() => {
+    setTotalInput(formatNumber(baseAmount + (customTip || 0)));
+    setPropinaInput(formatNumber(customTip || 0));
+  }, [baseAmount, customTip]);
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+        gap: 1,
+      }}
+    >
+      <TextField
+        type="text"
+        label="Propina"
+        placeholder="Ingresá el monto de propina"
+        value={propinaInput}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, '');
+          setPropinaInput(digits);
+          const nextTip = parseInt(digits || '0', 10);
+          const safeTip = isNaN(nextTip) ? 0 : Math.max(0, nextTip);
+          onChangeCustomTip(safeTip);
+        }}
+        onBlur={() => setPropinaInput(formatNumber(customTip || 0))}
+        fullWidth
+        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+        InputProps={{
+          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+        }}
+        helperText={`$ ${formatNumber(customTip || 0)}`}
+      />
+      <TextField
+        type="text"
+        label="Total (consumo + propina)"
+        placeholder="Ingresá el total a pagar"
+        value={totalInput}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, '');
+          setTotalInput(digits);
+          const nextTotal = parseInt(digits || '0', 10);
+          const safeTotal = isNaN(nextTotal) ? 0 : Math.max(0, nextTotal);
+          const computedTip = Math.max(0, safeTotal - baseAmount);
+          onChangeCustomTip(computedTip);
+        }}
+        onBlur={() =>
+          setTotalInput(formatNumber(baseAmount + (customTip || 0)))
+        }
+        fullWidth
+        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+        InputProps={{
+          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+        }}
+        helperText={`$ ${formatNumber(baseAmount + (customTip || 0))}`}
+      />
+    </Box>
+  );
+};
 
 export interface PayOrderProps {
   handleComplete: () => void;
@@ -441,18 +522,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     </Typography>
                   </Box>
                   {draftPayment.tipType === 'custom' && (
-                    <TextField
-                      type="number"
-                      placeholder="Propina"
-                      value={draftPayment.customTip}
-                      onChange={(e) =>
-                        setDraftPayment({
-                          ...draftPayment,
-                          customTip: Number(e.target.value),
-                        })
+                    <TipInputs
+                      baseAmount={baseAmount}
+                      customTip={draftPayment.customTip}
+                      onChangeCustomTip={(v) =>
+                        setDraftPayment({ ...draftPayment, customTip: v })
                       }
-                      fullWidth
-                      sx={{ mt: 1 }}
                     />
                   )}
                 </Box>
@@ -557,18 +632,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 <Typography>${formatNumber(Number(totalCustom))}</Typography>
               </Box>
               {draftPayment.tipType === 'custom' && (
-                <TextField
-                  type="number"
-                  placeholder="Propina"
-                  value={draftPayment.customTip}
-                  onChange={(e) =>
-                    setDraftPayment({
-                      ...draftPayment,
-                      customTip: Number(e.target.value),
-                    })
+                <TipInputs
+                  baseAmount={baseAmount}
+                  customTip={draftPayment.customTip}
+                  onChangeCustomTip={(v) =>
+                    setDraftPayment({ ...draftPayment, customTip: v })
                   }
-                  fullWidth
-                  sx={{ mt: 1 }}
                 />
               )}
 
