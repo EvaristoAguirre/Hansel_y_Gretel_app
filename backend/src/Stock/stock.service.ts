@@ -11,6 +11,7 @@ import {
 import { Stock } from './stock.entity';
 import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
+import { AddStockDto } from 'src/DTOs/add-stock.dto';
 import { StockRepository } from './stock.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
@@ -502,5 +503,39 @@ export class StockService {
         `✅ Descontado ${quantityToDeduct} ${toppingStock.unitOfMeasure.abbreviation} del topping ${topping.name} (${toppingId}). Stock restante: ${toppingStock.quantityInStock}`,
       );
     }
+  }
+
+  // Método para sumar stock existente
+  async addStock(id: string, addStockDto: AddStockDto): Promise<Stock> {
+    const { quantityToAdd, minimumStock } = addStockDto;
+
+    if (!id || !isUUID(id)) {
+      throw new BadRequestException('Invalid or missing stock ID.');
+    }
+
+    const stock = await this.stockRepository.findStockById(id);
+    if (!stock) {
+      throw new NotFoundException(`Stock with ID ${id} not found.`);
+    }
+
+    // Sumar la cantidad al stock existente
+    if (quantityToAdd !== undefined && quantityToAdd > 0) {
+      const currentStock = Number(stock.quantityInStock);
+      stock.quantityInStock = currentStock + quantityToAdd;
+    }
+
+    // Actualizar stock mínimo si se proporciona
+    if (minimumStock !== undefined) {
+      stock.minimumStock = Number(minimumStock);
+    }
+
+    const updatedStock = await this.stockRepository.saveStock(stock);
+
+    // Recargar el stock con todas las relaciones para asegurar que esté actualizado
+    const stockWithRelations = await this.stockRepository.findStockById(id);
+    const stockWithFormatt = StockResponseFormatter.format(stockWithRelations);
+
+    this.eventEmitter.emit('stock.updated', { stock: stockWithFormatt });
+    return stockWithFormatt;
   }
 }

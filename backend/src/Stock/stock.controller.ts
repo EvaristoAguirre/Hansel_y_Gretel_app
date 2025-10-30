@@ -13,6 +13,7 @@ import { Stock } from './stock.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
+import { AddStockDto } from 'src/DTOs/add-stock.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
@@ -70,6 +71,17 @@ export class StockController {
       id,
       updateStockDto,
     );
+    await this.eventEmitter.emit('stock.updated', updatedStock);
+    return updatedStock;
+  }
+
+  @Patch(':id/add')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
+  async addStock(
+    @Param('id') id: string,
+    @Body() addStockDto: AddStockDto,
+  ): Promise<Stock> {
+    const updatedStock = await this.stockService.addStock(id, addStockDto);
     await this.eventEmitter.emit('stock.updated', updatedStock);
     return updatedStock;
   }
