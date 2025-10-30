@@ -631,6 +631,9 @@ export class OrderService {
         room: order.table?.room?.name || 'Sin salón',
         numberCustomers: order.numberCustomers,
         total: Number(order.total).toFixed(2),
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        closedAt: order.closedAt,
         paymentMethods: Array.isArray(order.payments)
           ? order.payments.map((p) => ({
               methodOfPayment: p.methodOfPayment,

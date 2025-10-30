@@ -64,6 +64,9 @@ export class ArchiveService {
             archived.tableId = order.table?.id;
             archived.dailyCashId = order.dailyCash?.id;
             archived.commandNumber = (order as any).commandNumber ?? null;
+            archived.createdAt = order.createdAt;
+            archived.updatedAt = order.updatedAt;
+            archived.closedAt = order.closedAt;
 
             archived.orderDetails = order.orderDetails?.map((detail) => {
               const archivedDetail = new ArchivedOrderDetails();

@@ -16,7 +16,7 @@ export default registerAs('typeorm', () => ({
   logging: ['error', 'warn'],
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
-  migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
+  migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
 
   // migrationsRun: true, // para activar las migraciones automáticamente al iniciar la aplicación
 }));
@@ -29,7 +29,7 @@ export const connectionSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB,
   entities: ['dist/**/*.entity{.ts,.js}'],
-  migrations: [path.join(__dirname, '..', 'dist', 'migration', '*{.ts,.js}')],
+  migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
   schema: 'public',
   logging: ['error', 'warn'],
 });

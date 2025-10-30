@@ -99,6 +99,7 @@ export class OrderRepository {
 
     order.dailyCash = openDailyCash;
     order.state = OrderState.CLOSED;
+    order.closedAt = new Date();
     order.table.state = TableState.AVAILABLE;
 
     const orderPayments = closeOrderDto.payments.map((p) =>

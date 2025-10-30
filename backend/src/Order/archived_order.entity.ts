@@ -1,5 +1,5 @@
 import { OrderState } from 'src/Enums/states.enum';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { ArchivedOrderPayment } from './archived_order_payments.entity';
@@ -35,6 +35,15 @@ export class ArchivedOrder {
 
   @Column()
   dailyCashId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  closedAt: Date;
 
   @OneToMany(
     () => ArchivedOrderDetails,
