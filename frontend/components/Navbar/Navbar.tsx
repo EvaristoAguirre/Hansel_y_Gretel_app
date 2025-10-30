@@ -1,22 +1,27 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import logo from "../../public/logo.svg";
-import cafe from "../../public/icons/coffe.png";
-import products from "../../public/icons/products.png";
-import cash from "../../public/icons/dailyCash.png";
-import proveedor from "../../public/icons/providers.jpeg";
-import configuracion from "../../public/icons/settings.png";
-import user from "../../public/user.svg";
-import { useAuth } from "@/app/context/authContext";
-import { UserRole } from "../Enums/user";
+'use client';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import logo from '../../public/logo.svg';
+import cafe from '../../public/icons/coffe.png';
+import products from '../../public/icons/products.png';
+import cash from '../../public/icons/dailyCash.png';
+import proveedor from '../../public/icons/providers.jpeg';
+import configuracion from '../../public/icons/settings.png';
+import user from '../../public/user.svg';
+import { useAuth } from '@/app/context/authContext';
+import { UserRole } from '../Enums/user';
 
 const Navbar = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para el menú móvil
 
-  const { usernameFromToken, handleSignOut, userRoleFromToken, validateUserSession } = useAuth();
+  const {
+    usernameFromToken,
+    handleSignOut,
+    userRoleFromToken,
+    validateUserSession,
+  } = useAuth();
 
   // Computa los valores dinámicamente sin usar useState
   const sesion = validateUserSession();
@@ -24,19 +29,35 @@ const Navbar = () => {
   const userRole = sesion ? userRoleFromToken() : null;
 
   const sections = [
-    { label: "Cafe", path: "/views/cafe", icon: cafe },
-    { label: "Productos", path: "/views/products", icon: products },
-    { label: "Registros/Cajas", path: "/views/dailyCash", icon: cash },
-    { label: "Proveedores", path: "/views/proveedores", icon: proveedor },
-    { label: "Configuración", path: "/views/configuracion", icon: configuracion },
+    { label: 'Cafe', path: '/views/cafe', icon: cafe },
+    { label: 'Productos', path: '/views/products', icon: products },
+    { label: 'Registros/Cajas', path: '/views/dailyCash', icon: cash },
+    { label: 'Proveedores', path: '/views/proveedores', icon: proveedor },
+    {
+      label: 'Configuración',
+      path: '/views/configuracion',
+      icon: configuracion,
+    },
   ];
 
-  const filteredSections = sections.filter(
-    (section) =>
-      !(userRole === UserRole.MOZO &&
-        (section.label === "Productos" || section.label === "Registros/Cajas"))
-  );
+  const filteredSections = sections.filter((section) => {
+    // Para MOZO: solo puede ver Cafe, Proveedores y Configuración
+    if (userRole === UserRole.MOZO) {
+      return (
+        section.label === 'Cafe' ||
+        section.label === 'Proveedores' ||
+        section.label === 'Configuración'
+      );
+    }
 
+    // Para INVENTARIO: solo puede ver Cafe y Productos
+    if (userRole === UserRole.INVENTARIO) {
+      return section.label === 'Cafe' || section.label === 'Productos';
+    }
+
+    // Para ADMIN y ENCARGADO: pueden ver todas las secciones
+    return true;
+  });
 
   return (
     <nav className="bg-black shadow-md py-4 absolute top-0 left-0 right-0 z-50 w-full">
@@ -44,65 +65,77 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center">
           <Link href="/">
-            <Image src={logo} alt="Logo Hansel y Gretel" width={100} height={100} />
+            <Image
+              src={logo}
+              alt="Logo Hansel y Gretel"
+              width={100}
+              height={100}
+            />
           </Link>
         </div>
-        {
-          sesion && (
-            <>
-              {/* Menú de secciones para pantallas grandes */}
-              <div className="hidden lg:flex gap-8 items-center">
-                {filteredSections.map((section) => (
-                  <Link key={section.label} href={section.path}>
+        {sesion && (
+          <>
+            {/* Menú de secciones para pantallas grandes */}
+            <div className="hidden lg:flex gap-8 items-center">
+              {filteredSections.map((section) => (
+                <Link key={section.label} href={section.path}>
+                  <div
+                    onClick={() => setSelectedSection(section.label)}
+                    className={`relative group cursor-pointer p-3 transition-colors
+                ${
+                  selectedSection === section.label
+                    ? 'bg-[#856D5E] rounded-t-md'
+                    : 'bg-transparent'
+                }`}
+                  >
+                    <Image
+                      src={section.icon}
+                      alt={`Logo pestaña ${section.label.toLowerCase()}`}
+                      width={40}
+                      height={40}
+                      className="group-hover:scale-105 transition-transform"
+                    />
                     <div
-                      onClick={() => setSelectedSection(section.label)}
-                      className={`relative group cursor-pointer p-3 transition-colors 
-                ${selectedSection === section.label ? "bg-[#856D5E] rounded-t-md" : "bg-transparent"
-                        }`}
+                      className="absolute bottom-[-30px] left-1/2 transform
+                 -translate-x-1/2 bg-gray-800 text-white text-sm px-2 py-1
+                 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Image
-                        src={section.icon}
-                        alt={`Logo pestaña ${section.label.toLowerCase()}`}
-                        width={40}
-                        height={40}
-                        className="group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute bottom-[-30px] left-1/2 transform
-                 -translate-x-1/2 bg-gray-800 text-white text-sm px-2 py-1 
-                 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                        {section.label}
-                      </div>
+                      {section.label}
                     </div>
-                  </Link>
-                ))}
-              </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
 
-              {/* Botón de menú para pantallas pequeñas */}
-              <button
-                className="lg:hidden text-white focus:outline-none text-3xl hover:scale-105 transition-transform"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                ☰
-              </button>
-            </>
-          )
-        }
+            {/* Botón de menú para pantallas pequeñas */}
+            <button
+              className="lg:hidden text-white focus:outline-none text-3xl hover:scale-105 transition-transform"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              ☰
+            </button>
+          </>
+        )}
 
         {/* Sesión de usuario */}
         <div className="flex items-center gap-4 text-white">
-          <Link href={showUsername ? "/" : "/views/login"}>
+          <Link href={showUsername ? '/' : '/views/login'}>
             <div className="flex items-center gap-2 hover:scale-105 transition-transform">
               <button className="border border-[#856D5E] rounded-md p-2 flex items-center">
-                <h3 className="text-sm font-medium mr-2">{showUsername || "Iniciar sesión"}</h3>
+                <h3 className="text-sm font-medium mr-2">
+                  {showUsername || 'Iniciar sesión'}
+                </h3>
                 <Image src={user} alt="Icono usuario" width={20} height={20} />
               </button>
             </div>
           </Link>
-          {(userRole === "Admin" || userRole === "Encargado") && (
+          {(userRole === 'Admin' || userRole === 'Encargado') && (
             <Link href="/views/register">
-              <button className="border border-green-500 text-green-500 
-              rounded-md p-2 text-sm font-medium hover:bg-green-500 
-              hover:text-white transition-colors">
+              <button
+                className="border border-green-500 text-green-500
+              rounded-md p-2 text-sm font-medium hover:bg-green-500
+              hover:text-white transition-colors"
+              >
                 Crear Usuario
               </button>
             </Link>
@@ -110,8 +143,8 @@ const Navbar = () => {
           {showUsername && (
             <button
               onClick={handleSignOut}
-              className="border border-red-500 text-red-500 rounded-md p-2 
-              text-sm font-medium hover:bg-red-500 hover:text-white 
+              className="border border-red-500 text-red-500 rounded-md p-2
+              text-sm font-medium hover:bg-red-500 hover:text-white
               transition-colors"
             >
               Cerrar Sesión
@@ -120,8 +153,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {
-        sesion &&
+      {sesion && (
         <>
           {/* Menú desplegable para pantallas pequeñas */}
           {isMenuOpen && (
@@ -133,11 +165,19 @@ const Navbar = () => {
                       setSelectedSection(section.label);
                       setIsMenuOpen(false);
                     }}
-                    className={`p-3 transition-colors ${selectedSection === section.label ? "bg-[#856D5E]" : "bg-transparent"
-                      }`}
+                    className={`p-3 transition-colors ${
+                      selectedSection === section.label
+                        ? 'bg-[#856D5E]'
+                        : 'bg-transparent'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Image src={section.icon} alt={section.label} width={30} height={30} />
+                      <Image
+                        src={section.icon}
+                        alt={section.label}
+                        width={30}
+                        height={30}
+                      />
                       <span>{section.label}</span>
                     </div>
                   </div>
@@ -146,8 +186,7 @@ const Navbar = () => {
             </div>
           )}
         </>
-
-      }
+      )}
     </nav>
   );
 };

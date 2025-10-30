@@ -1,13 +1,15 @@
-import { Box } from "@mui/system";
-import { useEffect } from "react";
-import { Tab } from "../Enums/view-products";
-import { useProducts } from "../Hooks/useProducts";
-import { Sidebar } from "./Sidebar";
-import StockControl from "./TabControlStock/StockControl";
-import Ingredients from "./TabIngredients/Ingredients";
-import Products from "./TabProducts/Products";
-import CategoriesTable from "./TabProductsCategory/CategoriesTable";
-import UnitOfMeasure from "./TabUnitOfMeasure/UnitOfMeasure";
+import { Box } from '@mui/system';
+import { useEffect } from 'react';
+import { Tab } from '../Enums/view-products';
+import { useProducts } from '../Hooks/useProducts';
+import { Sidebar } from './Sidebar';
+import StockControl from './TabControlStock/StockControl';
+import Ingredients from './TabIngredients/Ingredients';
+import Products from './TabProducts/Products';
+import CategoriesTable from './TabProductsCategory/CategoriesTable';
+import UnitOfMeasure from './TabUnitOfMeasure/UnitOfMeasure';
+import { useAuth } from '@/app/context/authContext';
+import { UserRole } from '../Enums/user';
 
 interface ProductsContentProps {
   selectedTab: Tab;
@@ -25,13 +27,17 @@ const ProductsContent: React.FC<ProductsContentProps> = ({
   getAccessToken,
 }) => {
   const { connectWebSocket } = useProducts();
+  const { userRoleFromToken } = useAuth();
+
   useEffect(() => {
     connectWebSocket();
   }, [connectWebSocket]);
 
+  const userRole = userRoleFromToken();
+
   return (
     <>
-      {selectedTab === Tab.PRODUCTOS && (
+      {selectedTab === Tab.PRODUCTOS && userRole !== UserRole.INVENTARIO && (
         <>
           <Sidebar
             onCategorySelected={onCategorySelected}
@@ -43,16 +49,16 @@ const ProductsContent: React.FC<ProductsContentProps> = ({
           />
         </>
       )}
-      {selectedTab === Tab.CATEGORIA_PRODUCTOS && <CategoriesTable />}
+      {selectedTab === Tab.CATEGORIA_PRODUCTOS &&
+        userRole !== UserRole.INVENTARIO && <CategoriesTable />}
       {selectedTab === Tab.CONTROL_DE_STOCK && (
         <Box flex={1} overflow="auto">
           <StockControl />
         </Box>
       )}
-      {selectedTab === Tab.UNIDADES_MEDIDA && (
-        <UnitOfMeasure />
-      )}
-      {selectedTab === Tab.INGREDIENTES && (
+      {selectedTab === Tab.UNIDADES_MEDIDA &&
+        userRole !== UserRole.INVENTARIO && <UnitOfMeasure />}
+      {selectedTab === Tab.INGREDIENTES && userRole !== UserRole.INVENTARIO && (
         <Ingredients />
       )}
     </>

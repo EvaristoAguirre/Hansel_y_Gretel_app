@@ -6,10 +6,19 @@ meta {
 
 post {
   url: http://localhost:3000/user/register
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "username": "inventario",
+    "password": "inventario",
+    "rol": "INVENTARIO"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
