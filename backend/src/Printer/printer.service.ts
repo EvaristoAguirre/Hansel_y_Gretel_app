@@ -9,6 +9,7 @@ import * as path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class PrinterService {
@@ -21,8 +22,26 @@ export class PrinterService {
     timeout: 5000,
   };
 
-  constructor() {
+  constructor(private readonly loggerService: LoggerService) {
     this.initializeCounter();
+  }
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este servicio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      service: 'PrinterService',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
   }
 
   private initializeCounter(): void {
@@ -32,7 +51,11 @@ export class PrinterService {
         this.counter = JSON.parse(data).counter || 0;
       }
     } catch (error) {
-      this.logger.error('Error loading counter', error.stack);
+      this.logError(
+        'initializeCounter',
+        { counterFilePath: this.counterFilePath },
+        error,
+      );
       this.counter = 0;
     }
   }
@@ -47,7 +70,7 @@ export class PrinterService {
         }),
       );
     } catch (error) {
-      this.logger.error('Error saving counter', error.stack);
+      this.logError('saveCounter', { counter: this.counter }, error);
     }
   }
 
@@ -70,7 +93,11 @@ export class PrinterService {
         socket.write(command, 'binary', (err) => {
           socket.end();
           if (err) {
-            this.logger.error('Write error', err);
+            this.logError(
+              'sendRawCommand',
+              { event: 'write', printerConfig: this.printerConfig },
+              err,
+            );
             reject(new Error('Error al enviar comandos a la impresora'));
           } else {
             resolve(true);
@@ -79,12 +106,20 @@ export class PrinterService {
       });
 
       socket.on('error', (err) => {
-        this.logger.error('Printer connection error', err);
+        this.logError(
+          'sendRawCommand',
+          { event: 'connection_error', printerConfig: this.printerConfig },
+          err,
+        );
         reject(new Error('Error de conexión con la impresora'));
       });
 
       socket.on('timeout', () => {
-        this.logger.error('Printer connection timeout');
+        this.logError(
+          'sendRawCommand',
+          { event: 'timeout', printerConfig: this.printerConfig },
+          new Error('Connection timeout'),
+        );
         socket.destroy();
         reject(
           new Error('Tiempo de espera agotado al conectar con la impresora'),
@@ -188,11 +223,17 @@ export class PrinterService {
 
       return `Comanda impresa: ${orderCode}`;
     } catch (error) {
-      this.logger.error(
-        `Failed to print kitchen order: ${error.message}`,
-        error.stack,
+      this.logError(
+        'printKitchenOrder',
+        {
+          table: orderData.table,
+          numberCustomers: orderData.numberCustomers,
+          productsCount: orderData.products?.length,
+          isPriority: orderData.isPriority,
+        },
+        error,
       );
-      throw new Error(`Error al imprimir: ${error.message}`);
+      throw error;
     }
   }
 
@@ -337,11 +378,16 @@ export class PrinterService {
 
       return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
     } catch (error) {
-      this.logger.error(
-        `Error al imprimir ticket: ${error.message}`,
-        error.stack,
+      this.logError(
+        'printTicketOrder',
+        {
+          orderId: order.id,
+          tableName: order.table?.name,
+          orderDetailsCount: order.orderDetails?.length,
+        },
+        error,
       );
-      throw new Error(`Error al imprimir ticket: ${error.message}`);
+      throw error;
     }
   }
 
@@ -467,14 +513,16 @@ export class PrinterService {
 
       return 'Reporte de stock impreso correctamente.';
     } catch (error) {
-      this.logger.error(
-        `Error al imprimir reporte de stock: ${error.message}`,
-        error.stack,
-      );
       if (error instanceof ServiceUnavailableException) {
         throw error;
       }
-
+      this.logError(
+        'printerStock',
+        {
+          stockItemsCount: stockData?.length,
+        },
+        error,
+      );
       throw new ServiceUnavailableException(
         'No se pudo imprimir el reporte. Verificá la conexión con la impresora.',
       );

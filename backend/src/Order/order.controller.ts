@@ -28,7 +28,7 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('transfer-order/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   transferOrder(
     @Param('id') orderId: string,
     @Body() transferOrderData: transferOrderData,
@@ -36,7 +36,7 @@ export class OrderController {
     return this.orderService.transferOrder(orderId, transferOrderData);
   }
   @Post('open')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   openOrder(
     @Body() openOrder: CreateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
@@ -53,7 +53,7 @@ export class OrderController {
   }
 
   @Post('pending/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   markOrderAsPendingPayment(
     @Param('id') id: string,
   ): Promise<OrderSummaryResponseDto> {
@@ -61,7 +61,7 @@ export class OrderController {
   }
 
   @Patch('update/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async updateOrder(
     @Param('id') id: string,
     @Body() updateData: UpdateOrderDto,
@@ -70,7 +70,7 @@ export class OrderController {
     return order;
   }
   @Post('cancel/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async cancelOrder(@Param('id') id: string): Promise<Order> {
     return await this.orderService.cancelOrder(id);
   }
@@ -82,7 +82,7 @@ export class OrderController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getAllOrders(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -90,7 +90,7 @@ export class OrderController {
     return this.orderService.getAllOrders(page, limit);
   }
   @Get('active')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
     return await this.orderService.getOrdersForOpenOrPendingTables();
   }
@@ -110,7 +110,7 @@ export class OrderController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getOrderById(@Param('id') id: string): Promise<OrderSummaryResponseDto> {
     return this.orderService.getOrderById(id);
   }

@@ -15,6 +15,7 @@ import { isUUID } from 'class-validator';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class CostCascadeService {
@@ -23,7 +24,26 @@ export class CostCascadeService {
     private readonly unitOfMeasureService: UnitOfMeasureService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este servicio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      service: 'CostCascadeService',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async updateIngredientCostAndCascade(
     ingredientId: string,
@@ -105,8 +125,16 @@ export class CostCascadeService {
       };
     } catch (error) {
       if (!isExternal) await queryRunner.rollbackTransaction();
-      this.logger.error(
-        `❌ Error durante la cascada de costo del ingrediente ${ingredientId}: ${error.message}`,
+      this.logError(
+        'updateIngredientCostAndCascade',
+        {
+          ingredientId,
+          newCost,
+          updatedProductsCount: updatedProducts.size,
+          updatedPromotionsCount: updatedPromotions.size,
+          isExternal,
+        },
+        error,
       );
       return {
         success: false,
@@ -170,6 +198,14 @@ export class CostCascadeService {
       return product.id;
     } catch (error) {
       if (releaseQR) await qr.rollbackTransaction();
+      this.logError(
+        'calculateCompoundProductsCost',
+        {
+          productId,
+          hasQueryRunner: !!queryRunner,
+        },
+        error,
+      );
       throw error;
     } finally {
       if (releaseQR) await qr.release();
@@ -227,6 +263,14 @@ export class CostCascadeService {
       return totalCost;
     } catch (error) {
       if (releaseQR) await qr.rollbackTransaction();
+      this.logError(
+        'calculatePromotionCost',
+        {
+          promotionId,
+          hasQueryRunner: !!queryRunner,
+        },
+        error,
+      );
       throw error;
     } finally {
       if (releaseQR) await qr.release();
@@ -284,11 +328,16 @@ export class CostCascadeService {
       };
     } catch (error) {
       if (!isExternal) await queryRunner.rollbackTransaction();
-
-      this.logger.error(
-        `❌ Error durante la cascada de producto simple ${productId}: ${error.message}`,
+      this.logError(
+        'updateSimpleProductCostAndCascade',
+        {
+          productId,
+          newCost,
+          updatedPromotionsCount: updatedPromotions.size,
+          isExternal,
+        },
+        error,
       );
-
       return {
         success: false,
         updatedProducts: [productId],

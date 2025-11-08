@@ -6,14 +6,21 @@ import { WsAdapter } from '@nestjs/platform-ws';
 import { JwtExceptionFilter } from './Filters/token.filters';
 import { ValidationExceptionFilter } from './Filters/validation.filters';
 import { DatabaseExceptionFilter } from './Filters/database.filters';
+import { LoggingExceptionFilter } from './Filters/logging-exception.filter';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import rateLimit from 'express-rate-limit';
+import { LoggerService } from './Monitoring/monitoring-logger.service';
 // import { GlobalExceptionFilter } from './Filters/globalException.filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Obtener el LoggerService del contenedor de dependencias
+  const loggerService = app.get(LoggerService);
+
   // const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
   app.useGlobalFilters(
+    new LoggingExceptionFilter(loggerService),
     new JwtExceptionFilter(),
     new ValidationExceptionFilter(),
     new DatabaseExceptionFilter(),

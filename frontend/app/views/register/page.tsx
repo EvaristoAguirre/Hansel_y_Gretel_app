@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, TextField, Button, Box, MenuItem } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  MenuItem,
+} from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from '@/styles/theme';
 import Image from 'next/image';
@@ -14,21 +22,20 @@ import { InputAdornment, IconButton } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
-
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
     username: '',
     password: '',
     role: UserRole.MOZO,
   });
-  const [roles, setRoles] = useState<{ admin: boolean }>({
+  const [roles, setRoles] = useState<{ admin: boolean; encargado: boolean }>({
     admin: false,
+    encargado: false,
   });
 
   const { validateUserSession, userRoleFromToken, getAccessToken } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => setShowPassword((prev) => !prev);
-
 
   useEffect(() => {
     const validateSession = async () => {
@@ -63,14 +70,20 @@ export default function RegisterForm() {
           admin: true,
         }));
       }
-
+      if (role === 'Encargado') {
+        setRoles((prevRoles) => ({
+          ...prevRoles,
+          encargado: true,
+        }));
+      }
     };
 
     validateSession();
   }, [validateUserSession]);
 
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
 
     // Si el campo es 'role', convertirlo a enum
@@ -101,20 +114,47 @@ export default function RegisterForm() {
     }
   };
 
-
-
-
   return (
     <ThemeProvider theme={theme}>
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="black" p={3}>
-        <Card sx={{ display: 'flex', borderRadius: 2, boxShadow: 3, maxWidth: 600, mt: 4 }}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor="black"
+        p={3}
+      >
+        <Card
+          sx={{
+            display: 'flex',
+            borderRadius: 2,
+            boxShadow: 3,
+            maxWidth: 600,
+            mt: 4,
+          }}
+        >
           {/* Sección del logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', p: 3, borderRadius: '8px 0 0 8px' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'primary.main',
+              p: 3,
+              borderRadius: '8px 0 0 8px',
+            }}
+          >
             <Image src="/logo.svg" alt="Logo" width={150} height={150} />
           </Box>
           {/* Sección del formulario */}
           <CardContent sx={{ flex: 1, p: 4 }}>
-            <Typography variant="h5" fontWeight={700} textAlign="center" color="primary.main" gutterBottom>
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              textAlign="center"
+              color="primary.main"
+              gutterBottom
+            >
               Registro
             </Typography>
             <form onSubmit={handleSubmit}>
@@ -140,8 +180,15 @@ export default function RegisterForm() {
                 required
               >
                 <MenuItem value={UserRole.MOZO}>Mozo</MenuItem>
-                {roles.admin && <MenuItem value={UserRole.ENCARGADO}>Encargado</MenuItem>}
-                {roles.admin && <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>}
+                {(roles.admin || roles.encargado) && (
+                  <MenuItem value={UserRole.INVENTARIO}>Inventario</MenuItem>
+                )}
+                {roles.admin && (
+                  <MenuItem value={UserRole.ENCARGADO}>Encargado</MenuItem>
+                )}
+                {roles.admin && (
+                  <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>
+                )}
               </TextField>
               <TextField
                 fullWidth
@@ -173,7 +220,12 @@ export default function RegisterForm() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 2, color: 'primary.main', bgcolor: 'secondary.main', ':hover': { bgcolor: '#e6a826', color: 'black' } }}
+                sx={{
+                  mt: 2,
+                  color: 'primary.main',
+                  bgcolor: 'secondary.main',
+                  ':hover': { bgcolor: '#e6a826', color: 'black' },
+                }}
               >
                 Registrarse
               </Button>

@@ -1,9 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,15 +12,36 @@ import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Room } from 'src/Room/room.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class TableRepository {
+  private readonly logger = new Logger(TableRepository.name);
   constructor(
     @InjectRepository(Table)
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'TableRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
@@ -51,13 +71,12 @@ export class TableRepository {
       });
       return tableFinded;
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ConflictException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error creating the table', error);
+      this.logError(
+        'createTable',
+        { roomId, tableName: tableData.name },
+        error,
+      );
+      throw error;
     }
   }
 
@@ -81,16 +100,8 @@ export class TableRepository {
       });
       return tableUpdated;
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error updating the table',
-        error.message,
-      );
+      this.logError('updateTable', { id, updateData }, error);
+      throw error;
     }
   }
 
@@ -103,13 +114,8 @@ export class TableRepository {
       const tableDeleted = await this.tableRepository.delete(id);
       return id;
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error deleting the table.',
-        error,
-      );
+      this.logError('deleteTable', { id }, error);
+      throw error;
     }
   }
 
@@ -150,10 +156,8 @@ export class TableRepository {
 
       return result;
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error fetching tables', error);
+      this.logError('getAllTables', { page, limit }, error);
+      throw error;
     }
   }
 
@@ -180,13 +184,8 @@ export class TableRepository {
 
       return table;
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error fetching the table', error);
+      this.logError('getTableById', { id }, error);
+      throw error;
     }
   }
 
@@ -209,13 +208,8 @@ export class TableRepository {
       );
       return table;
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error fetching the table', error);
+      this.logError('getTableByName', { name }, error);
+      throw error;
     }
   }
 
@@ -223,8 +217,8 @@ export class TableRepository {
     try {
       await this.tableRepository.update(tableId, { state });
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Error updating the table', error);
+      this.logError('updateTableState', { tableId, state }, error);
+      throw error;
     }
   }
 
@@ -257,13 +251,8 @@ export class TableRepository {
 
       return result;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the tables',
-        error,
-      );
+      this.logError('getTablesByRoom', { roomId }, error);
+      throw error;
     }
   }
 
@@ -283,10 +272,8 @@ export class TableRepository {
         );
       return tables;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error fetching tables', error);
+      this.logError('getAllTablesAvailable', { page, limit }, error);
+      throw error;
     }
   }
 }

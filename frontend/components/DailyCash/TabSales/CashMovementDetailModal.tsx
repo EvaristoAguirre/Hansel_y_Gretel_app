@@ -11,9 +11,10 @@ import {
   Typography,
   Divider,
   Box,
-} from "@mui/material";
-import dayjs from "dayjs";
+} from '@mui/material';
+import dayjs from 'dayjs';
 import { capitalizeFirstLetter } from '../../Utils/CapitalizeFirstLetter';
+import { formatNumber } from '@/components/Utils/FormatNumber';
 
 type Payment = {
   amount: number;
@@ -33,15 +34,11 @@ type Props = {
   movementDetails: CashMovementDetailsDto | null;
 };
 
-const CashMovementDetailModal = ({
-  open,
-  onClose,
-  movementDetails,
-}: Props) => {
+const CashMovementDetailModal = ({ open, onClose, movementDetails }: Props) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle
-        sx={{ fontWeight: "bold", fontSize: "1rem", color: "primary.main" }}
+        sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'primary.main' }}
       >
         Detalle del Movimiento
       </DialogTitle>
@@ -51,14 +48,16 @@ const CashMovementDetailModal = ({
           <>
             <Box mb={2}>
               <Typography variant="subtitle1">
-                <strong>Tipo:</strong> {capitalizeFirstLetter(movementDetails.type)}
+                <strong>Tipo:</strong>{' '}
+                {capitalizeFirstLetter(movementDetails.type)}
               </Typography>
               <Typography variant="subtitle1">
-                <strong>Monto total:</strong> ${movementDetails.amount}
+                <strong>Monto total:</strong> $
+                {formatNumber(movementDetails.amount)}
               </Typography>
               <Typography variant="subtitle1">
-                <strong>Fecha:</strong>{" "}
-                {dayjs(movementDetails.createdAt).format("DD/MM/YYYY HH:mm")}
+                <strong>Fecha:</strong>{' '}
+                {dayjs(movementDetails.createdAt).format('DD/MM/YYYY HH:mm')}
               </Typography>
             </Box>
 
@@ -70,9 +69,11 @@ const CashMovementDetailModal = ({
               <TableBody>
                 {movementDetails.payments.map((p, index) => (
                   <TableRow key={index}>
-                    <TableCell>{capitalizeFirstLetter(p.paymentMethod)}</TableCell>
+                    <TableCell>
+                      {capitalizeFirstLetter(p.paymentMethod)}
+                    </TableCell>
                     <TableCell align="right">
-                      ${p.amount}
+                      ${formatNumber(p.amount)}
                     </TableCell>
                   </TableRow>
                 ))}

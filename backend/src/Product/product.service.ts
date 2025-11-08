@@ -20,6 +20,7 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { parseLocalizedNumber } from 'src/Helpers/parseLocalizedNumber';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class ProductService {
@@ -30,6 +31,7 @@ export class ProductService {
     private readonly unitOfMeasureService: UnitOfMeasureService,
     private readonly costCascadeService: CostCascadeService,
     private readonly ingredientService: IngredientService,
+    private readonly monitoringLogger: LoggerService,
   ) {}
 
   // ------- rta en string sin decimales y punto de mil
@@ -152,7 +154,6 @@ export class ProductService {
       typeof updateData.baseCost === 'number' &&
       updateData.baseCost !== currentProduct.baseCost
     ) {
-
       const cascadeResult =
         await this.costCascadeService.updateSimpleProductCostAndCascade(
           productUpdated.id,
@@ -297,7 +298,8 @@ export class ProductService {
         productId,
         'promotion',
       );
-      return this.checkPromotionStock(promotion, quantityToSell);
+      const result = await this.checkPromotionStock(promotion, quantityToSell);
+      return result;
     } else {
       const product = await this.productRepository.getProductWithRelations(
         productId,
@@ -307,7 +309,9 @@ export class ProductService {
         product,
         quantityToSell,
       );
-      if (!productStockCheck.available) return productStockCheck;
+      if (!productStockCheck.available) {
+        return productStockCheck;
+      }
 
       if (toppingsPerUnit?.length) {
         const toppingCheck = await this.checkToppingsStock(
@@ -324,6 +328,7 @@ export class ProductService {
           };
         }
       }
+
       return { available: true };
     }
   }

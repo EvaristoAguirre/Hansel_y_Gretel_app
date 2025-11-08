@@ -2,36 +2,71 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './category.entity';
 import { Repository } from 'typeorm';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class CategoryRepository {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly loggerService: LoggerService,
   ) {}
 
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'CategoryRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
+
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
-    return await this.categoryRepository.find({
-      where: { isActive: true },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    try {
+      return await this.categoryRepository.find({
+        where: { isActive: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+    } catch (error) {
+      this.logError('getAllCategorys', { page, limit }, error);
+      throw error;
+    }
   }
 
   async getCategoryById(id: string): Promise<Category> {
-    const categoryFinded = await this.categoryRepository.findOne({
-      where: { id },
-    });
+    try {
+      const categoryFinded = await this.categoryRepository.findOne({
+        where: { id },
+      });
 
-    return categoryFinded;
+      return categoryFinded;
+    } catch (error) {
+      this.logError('getCategoryById', { id }, error);
+      throw error;
+    }
   }
 
   async getCategoryByName(name: string): Promise<Category> {
-    const categoryFinded = await this.categoryRepository
-      .createQueryBuilder('category')
-      .where('LOWER(category.name) = LOWER(:name)', { name })
-      .getOne();
+    try {
+      const categoryFinded = await this.categoryRepository
+        .createQueryBuilder('category')
+        .where('LOWER(category.name) = LOWER(:name)', { name })
+        .getOne();
 
-    return categoryFinded;
+      return categoryFinded;
+    } catch (error) {
+      this.logError('getCategoryByName', { name }, error);
+      throw error;
+    }
   }
 }

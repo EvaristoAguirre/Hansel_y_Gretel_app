@@ -1,5 +1,5 @@
 import { ingredientsById } from "@/api/ingredients";
-import { addStock, editStock, getIdStockFromIngredient, getIdStockFromProduct, getStockByIngredient } from "@/api/stock"; // Se agrega editStock
+import { addStock, editStock, addStockToExisting, getIdStockFromIngredient, getIdStockFromProduct, getStockByIngredient } from "@/api/stock"; // Se agrega editStock
 import { useIngredientsContext } from "@/app/context/ingredientsContext";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { StockModalType } from "@/components/Enums/view-products";
@@ -48,7 +48,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   useEffect(() => {
     let selectedUnit = conventionalUnits.find((u: IUnitOfMeasureResponse) => u.name === selectedItem.unit);
     setFormValues({
-      quantityInStock: selectedItem?.stock?.toString() || "",
+      quantityInStock: "", // Siempre vacío para permitir agregar cantidad
       minimumStock: selectedItem?.min?.toString() || "",
       unitOfMeasure: selectedUnit?.id || "",
     });
@@ -76,84 +76,59 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
    */
   const handleSubmit = async () => {
     const { quantityInStock, minimumStock, unitOfMeasure } = formValues;
-    const payload: IStock = {
-      quantityInStock: parseFloat(quantityInStock),
-      minimumStock: parseFloat(minimumStock),
-      unitOfMeasureId: unitOfMeasure,
-    };
-
-    if (selectedItem.type === StockModalType.PRODUCT) {
-      payload.productId = selectedItem.id;
-    } else if (selectedItem.type === StockModalType.INGREDIENT) {
-      payload.ingredientId = selectedItem.id;
-    }
 
     if (token) {
       try {
-        // Si existe stock o min o unit en el selectedItem, se edita, de lo contrario se agrega.
+        // Si existe stock o min o unit en el selectedItem, se suma stock
         if ((selectedItem?.stock) || (selectedItem?.min) || (selectedItem?.unit)) {
+          // Para edición, usar la nueva función que suma stock
+          const addPayload = {
+            quantityToAdd: parseFloat(quantityInStock),
+            minimumStock: parseFloat(minimumStock),
+          };
+
           if (selectedItem.type === StockModalType.PRODUCT) {
-            try {
-              if (selectedItem.idStock) {
-                const result = await editStock(selectedItem.idStock, payload, token);
-                if (result.statusCode === 400) {
-                  handleClose();
-                  if (
-                    result.message?.includes("Unit of measure") &&
-                    result.message?.includes("not compatible")
-                  ) {
-                    Swal.fire(
-                      "Unidad incompatible",
-                      "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
-                      "warning"
-                    );
-                  } else {
-                    Swal.fire("Error", result.message || "Error al editar stock.", "error");
-                  }
-                  return;
-                }
-
-                fetchAndSetProducts(token);
-                Swal.fire("Éxito", "Stock editado correctamente.", "success");
+            if (selectedItem.idStock) {
+              const result = await addStockToExisting(selectedItem.idStock, addPayload, token);
+              if (result.statusCode === 400) {
+                handleClose();
+                Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+                return;
               }
-
               fetchAndSetProducts(token);
-              Swal.fire("Éxito", "Stock editado correctamente.", "success");
-            } catch (error) {
-              console.error("Error al obtener el id del stock:", error);
+              Swal.fire("Éxito", "Stock agregado correctamente.", "success");
             }
           }
           if (selectedItem.type === StockModalType.INGREDIENT) {
-            if (selectedItem.id) {
-              try {
-                const result = selectedItem.idStock && await editStock(selectedItem.idStock, payload, token);
-
-                if (result.statusCode === 400) {
-                  handleClose();
-                  if (
-                    result.message?.includes("Unit of measure") &&
-                    result.message?.includes("not compatible")
-                  ) {
-                    Swal.fire(
-                      "Unidad incompatible",
-                      "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
-                      "warning"
-                    );
-                  } else {
-                    Swal.fire("Error", result.message || "Error al editar stock.", "error");
-                  }
-                  return;
-                }
+            if (selectedItem.idStock) {
+              const result = await addStockToExisting(selectedItem.idStock, addPayload, token);
+              if (result.statusCode === 400) {
+                handleClose();
+                Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+                return;
+              }
+              // Pequeño delay para asegurar que la base de datos se haya actualizado
+              setTimeout(async () => {
                 const updatedIngredient = await ingredientsById(selectedItem.id, token);
                 updateIngredient(updatedIngredient);
-                Swal.fire("Éxito", "Stock editado correctamente.", "success");
-
-              } catch (error) {
-                console.error("Error al obtener el id del stock:", error);
-              }
+              }, 500);
+              Swal.fire("Éxito", "Stock agregado correctamente.", "success");
             }
           }
         } else {
+          // Para creación, usar la lógica original
+          const payload: IStock = {
+            quantityInStock: parseFloat(quantityInStock),
+            minimumStock: parseFloat(minimumStock),
+            unitOfMeasureId: unitOfMeasure,
+          };
+
+          if (selectedItem.type === StockModalType.PRODUCT) {
+            payload.productId = selectedItem.id;
+          } else if (selectedItem.type === StockModalType.INGREDIENT) {
+            payload.ingredientId = selectedItem.id;
+          }
+
           // Si no hay stock, se agrega
           const result = await addStock(payload, token);
 
@@ -182,7 +157,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           }
 
           Swal.fire("Éxito", "Stock agregado correctamente.", "success");
-
         }
         onSave();
         handleClose();
@@ -214,7 +188,8 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           customInput={TextField}
           autoFocus
           margin="dense"
-          label="Cantidad en Stock"
+          label={selectedItem?.stock ? "Cantidad a Agregar" : "Cantidad en Stock"}
+          placeholder={selectedItem?.stock ? `Stock actual: ${selectedItem.stock}` : ""}
           fullWidth
           variant="standard"
           name="quantityInStock"
@@ -238,6 +213,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
             value={formValues.unitOfMeasure}
             onChange={handleSelectChange}
             displayEmpty
+            disabled={!!selectedItem?.stock} // Deshabilitar si ya existe stock
             MenuProps={{
               PaperProps: {
                 sx: {
