@@ -1,11 +1,18 @@
-import { ingredientsById } from "@/api/ingredients";
-import { addStock, editStock, addStockToExisting, getIdStockFromIngredient, getIdStockFromProduct, getStockByIngredient } from "@/api/stock"; // Se agrega editStock
-import { useIngredientsContext } from "@/app/context/ingredientsContext";
-import { useUnitContext } from "@/app/context/unitOfMeasureContext";
-import { StockModalType } from "@/components/Enums/view-products";
-import { useProducts } from "@/components/Hooks/useProducts";
-import { IStock, SelectedItem } from "@/components/Interfaces/IStock";
-import { IUnitOfMeasureResponse } from "@/components/Interfaces/IUnitOfMeasure";
+import { ingredientsById } from '@/api/ingredients';
+import {
+  addStock,
+  editStock,
+  addStockToExisting,
+  getIdStockFromIngredient,
+  getIdStockFromProduct,
+  getStockByIngredient,
+} from '@/api/stock'; // Se agrega editStock
+import { useIngredientsContext } from '@/app/context/ingredientsContext';
+import { useUnitContext } from '@/app/context/unitOfMeasureContext';
+import { StockModalType } from '@/components/Enums/view-products';
+import { useProducts } from '@/components/Hooks/useProducts';
+import { IStock, SelectedItem } from '@/components/Interfaces/IStock';
+import { IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
 import {
   Button,
   Dialog,
@@ -18,10 +25,10 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import { NumericFormat } from "react-number-format";
-import Swal from "sweetalert2";
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
+import Swal from 'sweetalert2';
 
 export interface ModalStockProps {
   open: boolean;
@@ -32,28 +39,33 @@ export interface ModalStockProps {
 }
 
 const initialState = {
-  quantityInStock: "",
-  minimumStock: "",
-  unitOfMeasure: "",
+  quantityInStock: '',
+  minimumStock: '',
+  unitOfMeasure: '',
 };
 
-
-
-const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selectedItem, token }) => {
+const ModalStock: React.FC<ModalStockProps> = ({
+  open,
+  onClose,
+  onSave,
+  selectedItem,
+  token,
+}) => {
   const [formValues, setFormValues] = useState(initialState);
   const { fetchAndSetProducts } = useProducts();
   const { updateIngredient } = useIngredientsContext();
-  const { conventionalUnits } = useUnitContext()
+  const { conventionalUnits } = useUnitContext();
 
   useEffect(() => {
-    let selectedUnit = conventionalUnits.find((u: IUnitOfMeasureResponse) => u.name === selectedItem.unit);
+    let selectedUnit = conventionalUnits.find(
+      (u: IUnitOfMeasureResponse) => u.name === selectedItem.unit
+    );
     setFormValues({
-      quantityInStock: "", // Siempre vacío para permitir agregar cantidad
-      minimumStock: selectedItem?.min?.toString() || "",
-      unitOfMeasure: selectedUnit?.id || "",
+      quantityInStock: '', // Siempre vacío para permitir agregar cantidad
+      minimumStock: selectedItem?.min?.toString() || '',
+      unitOfMeasure: selectedUnit?.id || '',
     });
   }, [selectedItem]);
-
 
   // Manejo de cambios en los TextField
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,7 +92,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
     if (token) {
       try {
         // Si existe stock o min o unit en el selectedItem, se suma stock
-        if ((selectedItem?.stock) || (selectedItem?.min) || (selectedItem?.unit)) {
+        if (selectedItem?.stock || selectedItem?.min || selectedItem?.unit) {
           // Para edición, usar la nueva función que suma stock
           const addPayload = {
             quantityToAdd: parseFloat(quantityInStock),
@@ -89,30 +101,51 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
 
           if (selectedItem.type === StockModalType.PRODUCT) {
             if (selectedItem.idStock) {
-              const result = await addStockToExisting(selectedItem.idStock, addPayload, token);
+              const result = await addStockToExisting(
+                selectedItem.idStock,
+                addPayload,
+                token
+              );
               if (result.statusCode === 400) {
                 handleClose();
-                Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+                Swal.fire(
+                  'Error',
+                  result.message || 'Error al agregar stock.',
+                  'error'
+                );
                 return;
               }
               fetchAndSetProducts(token);
-              Swal.fire("Éxito", "Stock agregado correctamente.", "success");
+              Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
             }
           }
           if (selectedItem.type === StockModalType.INGREDIENT) {
             if (selectedItem.idStock) {
-              const result = await addStockToExisting(selectedItem.idStock, addPayload, token);
+              const result = await addStockToExisting(
+                selectedItem.idStock,
+                addPayload,
+                token
+              );
               if (result.statusCode === 400) {
                 handleClose();
-                Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+                Swal.fire(
+                  'Error',
+                  result.message || 'Error al agregar stock.',
+                  'error'
+                );
                 return;
               }
               // Pequeño delay para asegurar que la base de datos se haya actualizado
               setTimeout(async () => {
-                const updatedIngredient = await ingredientsById(selectedItem.id, token);
-                updateIngredient(updatedIngredient);
+                if (selectedItem.id && token) {
+                  const updatedIngredient = await ingredientsById(
+                    selectedItem.id,
+                    token
+                  );
+                  updateIngredient(updatedIngredient);
+                }
               }, 500);
-              Swal.fire("Éxito", "Stock agregado correctamente.", "success");
+              Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
             }
           }
         } else {
@@ -135,16 +168,20 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           if (result.statusCode === 400) {
             handleClose();
             if (
-              result.message?.includes("Unit of measure") &&
-              result.message?.includes("not compatible")
+              result.message?.includes('Unit of measure') &&
+              result.message?.includes('not compatible')
             ) {
               Swal.fire(
-                "Unidad incompatible",
-                "La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.",
-                "warning"
+                'Unidad incompatible',
+                'La unidad de medida seleccionada no es compatible con el tipo de ingrediente. Por favor, revisá y elegí una unidad válida.',
+                'warning'
               );
             } else {
-              Swal.fire("Error", result.message || "Error al agregar stock.", "error");
+              Swal.fire(
+                'Error',
+                result.message || 'Error al agregar stock.',
+                'error'
+              );
             }
             return;
           }
@@ -152,16 +189,18 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
           if (selectedItem.type === StockModalType.PRODUCT) {
             fetchAndSetProducts(token);
           } else if (selectedItem.type === StockModalType.INGREDIENT) {
-            const updatedIngredient = selectedItem.id && await ingredientsById(selectedItem.id, token);
+            const updatedIngredient =
+              selectedItem.id &&
+              (await ingredientsById(selectedItem.id, token));
             updateIngredient(updatedIngredient);
           }
 
-          Swal.fire("Éxito", "Stock agregado correctamente.", "success");
+          Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
         }
         onSave();
         handleClose();
       } catch (error) {
-        console.error("Error al guardar stock:", error);
+        console.error('Error al guardar stock:', error);
       }
     }
   };
@@ -172,24 +211,33 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
   };
 
   return (
-    <Dialog open={open} onClose={handleClose}
-      sx={{ "& .MuiDialog-paper": { minWidth: "500px" } }}>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      sx={{ '& .MuiDialog-paper': { minWidth: '500px' } }}
+    >
       <DialogTitle
         sx={{
-          color: "var(--color-primary)",
-          fontWeight: "bold",
-          fontSize: "1.2rem",
+          color: 'var(--color-primary)',
+          fontWeight: 'bold',
+          fontSize: '1.2rem',
         }}
       >
-        {selectedItem?.stock ? `Editar Stock de ${selectedItem?.name}` : `Agregar Stock a ${selectedItem?.name}`}
+        {selectedItem?.stock
+          ? `Editar Stock de ${selectedItem?.name}`
+          : `Agregar Stock a ${selectedItem?.name}`}
       </DialogTitle>
       <DialogContent>
         <NumericFormat
           customInput={TextField}
           autoFocus
           margin="dense"
-          label={selectedItem?.stock ? "Cantidad a Agregar" : "Cantidad en Stock"}
-          placeholder={selectedItem?.stock ? `Stock actual: ${selectedItem.stock}` : ""}
+          label={
+            selectedItem?.stock ? 'Cantidad a Agregar' : 'Cantidad en Stock'
+          }
+          placeholder={
+            selectedItem?.stock ? `Stock actual: ${selectedItem.stock}` : ''
+          }
           fullWidth
           variant="standard"
           name="quantityInStock"
@@ -218,7 +266,7 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
               PaperProps: {
                 sx: {
                   maxHeight: 200,
-                  overflow: "auto",
+                  overflow: 'auto',
                 },
               },
             }}
@@ -230,7 +278,6 @@ const ModalStock: React.FC<ModalStockProps> = ({ open, onClose, onSave, selected
             ))}
           </Select>
         </FormControl>
-
 
         <NumericFormat
           customInput={TextField}
