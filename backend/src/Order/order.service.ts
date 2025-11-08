@@ -29,6 +29,7 @@ import { PrinterService } from 'src/Printer/printer.service';
 import { OrderDetailToppings } from './order_details_toppings.entity';
 import { transferOrderData } from 'src/DTOs/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class OrderService {
@@ -45,6 +46,7 @@ export class OrderService {
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
+    private readonly monitoringLogger: LoggerService,
   ) {}
 
   async openOrder(
@@ -465,6 +467,15 @@ export class OrderService {
       closeOrderDto,
       openDailyCash,
     );
+
+    // Log crítico: Cierre exitoso de orden (operación financiera importante)
+    this.monitoringLogger.log({
+      action: 'ORDER_CLOSED_SUCCESS',
+      orderId: id,
+      total: closeOrderDto.total,
+      dailyCashId: openDailyCash.id,
+      timestamp: new Date().toISOString(),
+    });
 
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 

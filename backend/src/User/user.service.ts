@@ -9,6 +9,7 @@ import { User } from './user.entity';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from 'src/Enums/roles.enum';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private readonly monitoringLogger: LoggerService,
   ) {}
 
   async register(
@@ -38,7 +40,18 @@ export class AuthService {
       role,
     });
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Log crítico: Registro exitoso de usuario (operación de seguridad)
+    this.monitoringLogger.log({
+      action: 'USER_REGISTERED_SUCCESS',
+      userId: savedUser.id,
+      username: savedUser.username,
+      role: savedUser.role,
+      timestamp: new Date().toISOString(),
+    });
+
+    return savedUser;
   }
 
   async login(
@@ -57,6 +70,15 @@ export class AuthService {
 
     const payload = { username: user.username, role: user.role };
     const accessToken = this.jwtService.sign(payload);
+
+    // Log crítico: Login exitoso (operación de seguridad)
+    this.monitoringLogger.log({
+      action: 'USER_LOGIN_SUCCESS',
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      timestamp: new Date().toISOString(),
+    });
 
     return { accessToken };
   }

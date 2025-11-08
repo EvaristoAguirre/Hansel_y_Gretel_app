@@ -11,13 +11,33 @@ import { Room } from './room.entity';
 import { CreateRoomDto } from 'src/DTOs/create-room.dto';
 import { UpdateRoomDto } from 'src/DTOs/update-room.dto';
 import { isUUID } from 'class-validator';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class RoomRepository {
   constructor(
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'RoomRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async createRoom(room: CreateRoomDto): Promise<Room> {
     const existingRoomByName = await this.roomRepository.findOne({
@@ -32,7 +52,8 @@ export class RoomRepository {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error creating the room', error);
+      this.logError('createRoom', { roomName: room.name }, error);
+      throw error;
     }
   }
 
@@ -61,7 +82,8 @@ export class RoomRepository {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error updating the room', error);
+      this.logError('updateRoom', { id, updateData }, error);
+      throw error;
     }
   }
 
@@ -84,7 +106,8 @@ export class RoomRepository {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error deleting the room', error);
+      this.logError('deleteRoom', { id }, error);
+      throw error;
     }
   }
 
@@ -92,10 +115,8 @@ export class RoomRepository {
     try {
       return await this.roomRepository.find({ where: { isActive: true } });
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Error fetching rooms',
-        error.message,
-      );
+      this.logError('getAllRooms', {}, error);
+      throw error;
     }
   }
 
@@ -123,7 +144,8 @@ export class RoomRepository {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException('Error fetching the room', error);
+      this.logError('getRoomById', { id }, error);
+      throw error;
     }
   }
 }

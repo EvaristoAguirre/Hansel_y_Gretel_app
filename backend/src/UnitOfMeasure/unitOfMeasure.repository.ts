@@ -20,6 +20,7 @@ import {
   UnitOfMeasureSummaryResponseDto,
 } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 import { isUUID } from 'class-validator';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class UnitOfMeasureRepository {
@@ -29,7 +30,26 @@ export class UnitOfMeasureRepository {
     @InjectRepository(UnitConversion)
     private readonly unitConversionRepository: Repository<UnitConversion>,
     private readonly dataSource: DataSource,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'UnitOfMeasureRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   // ---------------   estandarizada con el nuevo dto
   async createUnitOfMeasure(
@@ -121,24 +141,36 @@ export class UnitOfMeasureRepository {
       unitOfMeasure.equivalenceToBaseUnit = equivalenceToBaseUnit;
     }
 
-    const savedUnit = await this.unitOfMeasureRepository.save(unitOfMeasure);
+    try {
+      const savedUnit = await this.unitOfMeasureRepository.save(unitOfMeasure);
 
-    if (conversions?.length > 0) {
-      await this.handleConversions(savedUnit, conversions);
+      if (conversions?.length > 0) {
+        await this.handleConversions(savedUnit, conversions);
+      }
+
+      const fullUnit = await this.unitOfMeasureRepository.findOne({
+        where: { id: savedUnit.id },
+        relations: [
+          'baseUnit',
+          'fromConversions',
+          'toConversions',
+          'fromConversions.toUnit',
+          'toConversions.fromUnit',
+        ],
+      });
+
+      return this.mapUnitWithConversions(fullUnit);
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      this.logError('createUnitOfMeasure', { name, abbreviation }, error);
+      throw error;
     }
-
-    const fullUnit = await this.unitOfMeasureRepository.findOne({
-      where: { id: savedUnit.id },
-      relations: [
-        'baseUnit',
-        'fromConversions',
-        'toConversions',
-        'fromConversions.toUnit',
-        'toConversions.fromUnit',
-      ],
-    });
-
-    return this.mapUnitWithConversions(fullUnit);
   }
 
   // ---------------   estandarizada con el nuevo dto
@@ -170,10 +202,8 @@ export class UnitOfMeasureRepository {
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching units',
-        error.message,
-      );
+      this.logError('getAllUnitOfMeasure', { pageNumber, limitNumber }, error);
+      throw error;
     }
   }
 
@@ -203,10 +233,12 @@ export class UnitOfMeasureRepository {
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
+      this.logError(
+        'getConventionalUnitOfMeasure',
+        { pageNumber, limitNumber },
+        error,
       );
+      throw error;
     }
   }
 
@@ -231,10 +263,12 @@ export class UnitOfMeasureRepository {
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
+      this.logError(
+        'getNotConventionalUnitOfMeasure',
+        { pageNumber, limitNumber },
+        error,
       );
+      throw error;
     }
   }
 
@@ -262,10 +296,8 @@ export class UnitOfMeasureRepository {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error fetching the unit of mesure',
-        error.message,
-      );
+      this.logError('getUnitOfMeasureById', { id }, error);
+      throw error;
     }
   }
 
@@ -298,10 +330,8 @@ export class UnitOfMeasureRepository {
       }));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching units',
-        error.message,
-      );
+      this.logError('getUnitsOfVolume', {}, error);
+      throw error;
     }
   }
 
@@ -332,10 +362,8 @@ export class UnitOfMeasureRepository {
       }));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching units',
-        error.message,
-      );
+      this.logError('getUnitsOfMass', {}, error);
+      throw error;
     }
   }
   async getUnitOfUnit(): Promise<EspecialUnitMeasureResponseDto[]> {
@@ -365,10 +393,8 @@ export class UnitOfMeasureRepository {
       }));
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching units',
-        error.message,
-      );
+      this.logError('getUnitOfUnit', {}, error);
+      throw error;
     }
   }
 
@@ -488,9 +514,8 @@ export class UnitOfMeasureRepository {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error updating the unit of measure',
-      );
+      this.logError('updateUnitOfMeasure', { id, updateData }, error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -926,10 +951,8 @@ export class UnitOfMeasureRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error fetching the products',
-        error.message,
-      );
+      this.logError('searchUnit', { name, abbreviation }, error);
+      throw error;
     }
   }
 
@@ -944,10 +967,8 @@ export class UnitOfMeasureRepository {
       return unitOfMeasure;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the unit of mesure',
-        error.message,
-      );
+      this.logError('getUnitOfMeasureUnidad', {}, error);
+      throw error;
     }
   }
 }

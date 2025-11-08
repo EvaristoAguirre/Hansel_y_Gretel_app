@@ -23,6 +23,7 @@ import { ToppingsGroupsModule } from './ToppingsGroup/toppings-group.module';
 import { ExportModule } from './ExportPdf/export.module';
 import { CostCascadeModule } from './CostCascade/cost-cascade.module';
 import { PrinterModule } from './Printer/printer.module';
+import { MonitoringModule } from './Monitoring/monitoring-logger.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { PrinterModule } from './Printer/printer.module';
     ExportModule,
     CostCascadeModule,
     PrinterModule,
+    MonitoringModule,
   ],
   controllers: [AppController],
   providers: [AppService],
