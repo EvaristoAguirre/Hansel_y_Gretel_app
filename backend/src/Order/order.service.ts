@@ -45,7 +45,7 @@ export class OrderService {
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
-  ) {}
+  ) { }
 
   async openOrder(
     orderToCreate: CreateOrderDto,
@@ -188,9 +188,9 @@ export class OrderService {
             `📤 Enviando comanda a impresión para mesa ${printData.table}`,
           );
           console.log('info enviada a imprimir.......', printData);
-          commandNumber =
-            await this.printerService.printKitchenOrder(printData);
-          // commandNumber = 'grabandoTextFijo - 1111111111';
+          //  commandNumber =
+          //  await this.printerService.printKitchenOrder(printData);
+          commandNumber = 'grabandoTextFijo - 1111111111';
           this.printerService.logger.log(
             `✅ Comanda impresa, número: ${commandNumber}`,
           );
@@ -386,7 +386,8 @@ export class OrderService {
       const orderPending = await this.orderRepo.save(order);
 
       try {
-        await this.printerService.printTicketOrder(order);
+        // await this.printerService.printTicketOrder(order);
+        console.log("imprimiendo ticket.........")
       } catch (error) {
         throw new ConflictException(error.message);
       }
@@ -598,16 +599,16 @@ export class OrderService {
         total: Number(order.total).toFixed(2),
         paymentMethods: Array.isArray(order.payments)
           ? order.payments.map((p) => ({
-              methodOfPayment: p.methodOfPayment,
-              amount: Number(p.amount).toFixed(2),
-            }))
+            methodOfPayment: p.methodOfPayment,
+            amount: Number(p.amount).toFixed(2),
+          }))
           : [],
         products: Array.isArray(order.orderDetails)
           ? order.orderDetails.map((d) => ({
-              name: d.product?.name || 'Producto eliminado',
-              quantity: d.quantity,
-              commandNumber: d.commandNumber,
-            }))
+            name: d.product?.name || 'Producto eliminado',
+            quantity: d.quantity,
+            commandNumber: d.commandNumber,
+          }))
           : [],
       };
 
