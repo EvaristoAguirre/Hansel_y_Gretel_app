@@ -70,6 +70,9 @@ export type OrderCash = {
   total: string;
   paymentMethods: Payment[];
   products: Product[];
+  createdAt: string;
+  updatedAt: string;
+  closedAt?: string;
 };
 
 type Payment = {

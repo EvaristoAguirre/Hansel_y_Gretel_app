@@ -47,6 +47,16 @@ const OrderDetailModal = ({ open, onClose, orderDetails }: Props) => {
               <Typography variant="body1">
                 <strong>Clientes:</strong> {orderDetails.numberCustomers}
               </Typography>
+              <Typography variant="body1">
+                <strong>Hora de apertura:</strong>{' '}
+                {dayjs(orderDetails.createdAt).format('HH:mm')}
+              </Typography>
+              {orderDetails.closedAt && (
+                <Typography variant="body1">
+                  <strong>Hora de cierre:</strong>{' '}
+                  {dayjs(orderDetails.closedAt).format('HH:mm')}
+                </Typography>
+              )}
               <Typography variant="h6" mt={1.5} color="primary">
                 Total: ${formatNumber(Number(orderDetails.total))}
               </Typography>
