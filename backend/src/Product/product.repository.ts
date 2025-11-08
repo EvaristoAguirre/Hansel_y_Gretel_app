@@ -4,7 +4,6 @@ import {
   ConflictException,
   HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,6 +23,7 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
 import { Product } from 'src/Product/product.entity';
 import { PromotionProduct } from 'src/Product/promotionProducts.entity';
 import { ProductMapper } from 'src/Product/productMapper';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class ProductRepository {
@@ -34,7 +34,26 @@ export class ProductRepository {
     private readonly promotionProductRepository: Repository<PromotionProduct>,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'ProductRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   //---- Estandarizado  -------- con el dto nuevo
   async getAllProducts(page: number, limit: number): Promise<Product[]> {
@@ -113,11 +132,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logError('getProductByCode', { code }, error);
+      throw error;
     }
   }
 
@@ -140,11 +156,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logError('getProductByName', { name }, error);
+      throw error;
     }
   }
 
@@ -211,10 +224,8 @@ export class ProductRepository {
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'An error occurred while fetching products. Please try again.',
-        error.message,
-      );
+      this.logError('getProductsByCategories', { categories }, error);
+      throw error;
     }
   }
 
@@ -276,10 +287,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error creating the product',
-        error.message,
-      );
+      this.logError('createProduct', { type: productToCreate.type }, error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -574,10 +583,8 @@ export class ProductRepository {
       }
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to check product uniqueness',
-        error,
-      );
+      this.logError('checkProductUniqueness', { productData }, error);
+      throw error;
     }
   }
 
@@ -627,10 +634,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error updating the product',
-        error.message,
-      );
+      this.logError('updateProduct', { id, type: updateData.type }, error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -1066,10 +1071,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error fetching products',
-        error.message,
-      );
+      this.logError('searchProducts', { name, code, categories, page, limit }, error);
+      throw error;
     }
   }
 
@@ -1121,11 +1124,8 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-
-      throw new InternalServerErrorException(
-        'Error fetching the products',
-        error.message,
-      );
+      this.logError('searchProductsToPromotion', { name, code, page, limit }, error);
+      throw error;
     }
   }
 
@@ -1149,10 +1149,8 @@ export class ProductRepository {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logError('getSimpleAndCompositeProducts', { page, limit }, error);
+      throw error;
     }
   }
 

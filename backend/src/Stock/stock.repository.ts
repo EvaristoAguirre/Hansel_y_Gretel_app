@@ -13,13 +13,33 @@ import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { isUUID } from 'class-validator';
 import { StockToExportResponseDTO } from 'src/DTOs/stockToExportResponse.dto';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class StockRepository {
   constructor(
     @InjectRepository(Stock)
     private readonly stockRepository: Repository<Stock>,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'StockRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async getAllStocks(
     page: number,
@@ -41,10 +61,8 @@ export class StockRepository {
       return this.adaptStocksResponse(stocks);
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching stocks',
-        error.message,
-      );
+      this.logError('getAllStocks', { page, limit }, error);
+      throw error;
     }
   }
 
@@ -71,11 +89,9 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching stock',
-        error.message,
-      );
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      this.logError('getStockByProductId', { productId }, error);
+      throw error;
     }
   }
 
@@ -103,11 +119,9 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching stock',
-        error.message,
-      );
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      this.logError('getStockByIngredientId', { ingredientId }, error);
+      throw error;
     }
   }
 
@@ -133,11 +147,9 @@ export class StockRepository {
 
       return stock;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching stock',
-        error.message,
-      );
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      this.logError('getStockByToppingId', { toppingId }, error);
+      throw error;
     }
   }
 

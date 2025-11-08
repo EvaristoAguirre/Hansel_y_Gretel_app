@@ -13,6 +13,7 @@ import { ILike, Repository } from 'typeorm';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
 import { UpdateToppingsGroupDto } from 'src/DTOs/update-toppings-group.dto';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class ToppingsGroupRepository {
@@ -20,7 +21,26 @@ export class ToppingsGroupRepository {
     @InjectRepository(ToppingsGroup)
     private readonly toppingsGroupRepository: Repository<ToppingsGroup>,
     private readonly ingredientService: IngredientService,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'ToppingsGroupRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async createToppingsGroup(
     createToppingsGroupDto: CreateToppingsGroupDto,
@@ -64,10 +84,8 @@ export class ToppingsGroupRepository {
       return savedGroup;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error creating toppings group',
-        error,
-      );
+      this.logError('createToppingsGroup', { name, toppingsIds }, error);
+      throw error;
     }
   }
 
@@ -134,10 +152,8 @@ export class ToppingsGroupRepository {
       return updatedGroup;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error updating toppings group',
-        error.message,
-      );
+      this.logError('updateToppingsGroup', { id, updateToppingsGroupDto }, error);
+      throw error;
     }
   }
 
@@ -156,7 +172,8 @@ export class ToppingsGroupRepository {
       return toppingsGroup;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Error fetching toppings group');
+      this.logError('getToppingsGroupById', { id }, error);
+      throw error;
     }
   }
 
@@ -176,7 +193,8 @@ export class ToppingsGroupRepository {
       });
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Error fetching toppings groups');
+      this.logError('getAllToppingsGroups', { page, limit }, error);
+      throw error;
     }
   }
   async getAllToppingsGroupsWithoutToppings(
@@ -194,7 +212,8 @@ export class ToppingsGroupRepository {
       });
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Error fetching toppings groups');
+      this.logError('getAllToppingsGroupsWithoutToppings', { page, limit }, error);
+      throw error;
     }
   }
 
@@ -217,7 +236,8 @@ export class ToppingsGroupRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Error fetching the table', error);
+      this.logError('getToppingsGroupByName', { name }, error);
+      throw error;
     }
   }
 
@@ -235,7 +255,8 @@ export class ToppingsGroupRepository {
       return `toppings group with ID ${id} has been deleted`;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Error deleting toppings group');
+      this.logError('deleteToppingsGroup', { id }, error);
+      throw error;
     }
   }
 }

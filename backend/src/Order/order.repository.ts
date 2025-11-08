@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +21,7 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 import { Logger } from '@nestjs/common';
 import { OrderPayment } from './order_payment.entity';
+import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class OrderRepository {
@@ -33,7 +33,26 @@ export class OrderRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(OrderPayment)
     private readonly orderPaymentRepository: Repository<OrderPayment>,
+    private readonly loggerService: LoggerService,
   ) {}
+
+  /**
+   * Método auxiliar para loguear errores con información estructurada
+   * Centraliza el formato de logs para este repositorio
+   */
+  private logError(
+    operation: string,
+    context: Record<string, any>,
+    error: any,
+  ) {
+    const errorInfo = {
+      operation,
+      repository: 'OrderRepository',
+      context,
+      timestamp: new Date().toISOString(),
+    };
+    this.loggerService.error(errorInfo, error);
+  }
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
     try {
@@ -45,10 +64,8 @@ export class OrderRepository {
         })
         .getMany();
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
+      this.logError('getOrdersForOpenOrPendingTables', {}, error);
+      throw error;
     }
   }
 

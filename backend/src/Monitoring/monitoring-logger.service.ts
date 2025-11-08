@@ -113,15 +113,35 @@ export class LoggerService {
     }
   }
 
-  error(message: any, trace?: any) {
+  error(message: any, error?: any) {
     try {
-      this.logger.error(
-        typeof message === 'object'
-          ? JSON.stringify(message, null, 2)
-          : message + (trace ? ` - Trace: ${trace}` : ''),
-      );
-    } catch (error) {
-      console.error('❌ Error al escribir log ERROR:', error);
+      let logMessage: string;
+
+      if (typeof message === 'object') {
+        // Si el mensaje ya es un objeto estructurado, usarlo directamente
+        logMessage = JSON.stringify(message, null, 2);
+      } else if (error) {
+        // Si hay un objeto error, crear estructura con información completa
+        const errorInfo = {
+          message: message || 'Error no especificado',
+          error: {
+            type: error.constructor?.name || 'Unknown',
+            message: error.message || String(error),
+            stack: error.stack,
+            ...(error.statusCode && { statusCode: error.statusCode }),
+            ...(error.status && { status: error.status }),
+            ...(error.code && { code: error.code }),
+          },
+        };
+        logMessage = JSON.stringify(errorInfo, null, 2);
+      } else {
+        // Mensaje simple sin error
+        logMessage = message;
+      }
+
+      this.logger.error(logMessage);
+    } catch (err) {
+      console.error('❌ Error al escribir log ERROR:', err);
     }
   }
 
