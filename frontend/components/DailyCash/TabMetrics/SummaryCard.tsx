@@ -1,4 +1,5 @@
-import { Box, Card, CardContent, Typography, Stack } from "@mui/material";
+import { Box, Card, CardContent, Typography, Stack } from '@mui/material';
+import { formatNumber } from '@/components/Utils/FormatNumber';
 
 interface SummaryCardProps {
   income: number;
@@ -8,11 +9,15 @@ interface SummaryCardProps {
   title: string;
 }
 
-const SummaryCard = ({ title, income, expenses, profit, icon }: SummaryCardProps) => {
-  const formatCurrency = (value?: number) =>
-    typeof value === "number"
-      ? `$ ${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,")}`
-      : "$ 0.00";
+const SummaryCard = ({
+  title,
+  income,
+  expenses,
+  profit,
+  icon,
+}: SummaryCardProps) => {
+  const formatCurrencyValue = (value?: number) =>
+    typeof value === 'number' ? `$ ${formatNumber(value)}` : '$ 0';
 
   return (
     <Card elevation={3} sx={{ borderRadius: 3 }}>
@@ -24,7 +29,7 @@ const SummaryCard = ({ title, income, expenses, profit, icon }: SummaryCardProps
 
         <Box
           sx={{
-            backgroundColor: "secondary.light",
+            backgroundColor: 'secondary.light',
             borderRadius: 2,
             px: 2,
             py: 1,
@@ -32,12 +37,14 @@ const SummaryCard = ({ title, income, expenses, profit, icon }: SummaryCardProps
           }}
         >
           <Typography>Ingresos</Typography>
-          <Typography fontWeight="bold">{formatCurrency(income)}</Typography>
+          <Typography fontWeight="bold">
+            {formatCurrencyValue(income)}
+          </Typography>
         </Box>
 
         <Box
           sx={{
-            backgroundColor: "primary.light",
+            backgroundColor: 'primary.light',
             backgroundOpacity: 0.1,
             borderRadius: 2,
             px: 2,
@@ -47,20 +54,22 @@ const SummaryCard = ({ title, income, expenses, profit, icon }: SummaryCardProps
         >
           <Typography>Egresos</Typography>
           <Typography fontWeight="bold">
-            {isNaN(expenses) ? "NaN" : formatCurrency(expenses)}
+            {isNaN(expenses) ? 'NaN' : formatCurrencyValue(expenses)}
           </Typography>
         </Box>
 
         <Box
           sx={{
-            backgroundColor: "secondary.dark",
+            backgroundColor: 'secondary.dark',
             borderRadius: 2,
             px: 2,
             py: 1,
           }}
         >
           <Typography>Ganancia</Typography>
-          <Typography fontWeight="bold">{formatCurrency(profit)}</Typography>
+          <Typography fontWeight="bold">
+            {formatCurrencyValue(profit)}
+          </Typography>
         </Box>
       </CardContent>
     </Card>

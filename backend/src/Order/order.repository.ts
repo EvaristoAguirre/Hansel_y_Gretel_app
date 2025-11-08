@@ -99,6 +99,7 @@ export class OrderRepository {
 
     order.dailyCash = openDailyCash;
     order.state = OrderState.CLOSED;
+    order.closedAt = new Date();
     order.table.state = TableState.AVAILABLE;
 
     const orderPayments = closeOrderDto.payments.map((p) =>
@@ -110,8 +111,7 @@ export class OrderRepository {
     );
 
     const totalConsumed = order.orderDetails.reduce(
-      (acc, detail) =>
-        acc + Number(detail.subtotal) + Number(detail.toppingsExtraCost),
+      (acc, detail) => acc + Number(detail.subtotal),
       0,
     );
 
@@ -171,6 +171,14 @@ export class OrderRepository {
 
     let totalExtraCost = 0;
 
+    console.log(
+      `🔍 [DEBUG] buildOrderDetailWithToppings - Producto: ${product.name}, Cantidad: ${quantity}`,
+    );
+    console.log(
+      `🔍 [DEBUG] toppingsPerUnit recibidos:`,
+      JSON.stringify(detailData.toppingsPerUnit, null, 2),
+    );
+
     if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
       if (detailData.toppingsPerUnit.length !== quantity) {
         throw new BadRequestException(
@@ -180,6 +188,10 @@ export class OrderRepository {
 
       for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
         const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+        console.log(
+          `🔍 [DEBUG] Procesando unidad ${unitIndex}, toppings:`,
+          JSON.stringify(toppingsForUnit, null, 2),
+        );
 
         for (const toppingId of toppingsForUnit) {
           const topping = await qr.manager.findOne(Ingredient, {
@@ -232,6 +244,9 @@ export class OrderRepository {
             unitIndex: unitIndex,
           });
 
+          console.log(
+            `🔍 [DEBUG] Topping creado - Nombre: ${topping.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
+          );
           toppingDetails.push(td);
         }
       }

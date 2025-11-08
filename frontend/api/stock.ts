@@ -42,6 +42,25 @@ export const editStock = async (idStock: string, payload: IStock, token: string)
   };
 };
 
+//para sumar stock a stock existente
+export const addStockToExisting = async (idStock: string, payload: { quantityToAdd: number; minimumStock?: number }, token: string) => {
+  const response = await fetch(`${URI_STOCK}/${idStock}/add`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  return {
+    statusCode: response.status,
+    ...data,
+  };
+};
+
 
 export const getStockByProduct = async (id: string, token: string) => {
   const response = await fetch(`${URI_STOCK}/product/${id}`, {

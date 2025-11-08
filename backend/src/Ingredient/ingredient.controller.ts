@@ -26,7 +26,7 @@ export class IngredientController {
   constructor(private readonly ingredientService: IngredientService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllIngredientsAndToppings(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -37,7 +37,7 @@ export class IngredientController {
     );
   }
   @Get('all')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllIngredients(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -46,7 +46,7 @@ export class IngredientController {
   }
 
   @Get('toppings/by-name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getToppingByName(
     @Query('name') name: string,
   ): Promise<ToppingResponseDto> {
@@ -54,13 +54,13 @@ export class IngredientController {
   }
 
   @Get('by-name')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getIngredientByName(@Query('name') name: string): Promise<Ingredient> {
     return await this.ingredientService.getIngredientByName(name);
   }
 
   @Get('toppings')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllToppings(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 100,
@@ -69,7 +69,7 @@ export class IngredientController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getIngredientById(
     @Param('id') id: string,
   ): Promise<IngredientResponseDTO> {
@@ -100,13 +100,13 @@ export class IngredientController {
   }
 
   @Get('toppings/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getToppingById(@Param('id') id: string): Promise<ToppingResponseDto> {
     return await this.ingredientService.getToppingById(id);
   }
 
   @Patch('toppings/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async updateTopping(
     @Param('id') id: string,
     @Body() updateToppingDto: UpdateToppingDto,

@@ -13,6 +13,7 @@ import { Stock } from './stock.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
+import { AddStockDto } from 'src/DTOs/add-stock.dto';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
@@ -28,7 +29,7 @@ export class StockController {
   ) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getAllStock(
     @Param('page') page: number = 1,
     @Param('limit') limit: number = 10,
@@ -37,7 +38,7 @@ export class StockController {
   }
 
   @Get('/product/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getStockByProductId(
     @Param('id') id: string,
   ): Promise<StockSummaryResponseDTO> {
@@ -45,7 +46,7 @@ export class StockController {
   }
 
   @Get('/ingredient/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getStockByIngredientId(
     @Param('id') id: string,
   ): Promise<StockSummaryResponseDTO> {
@@ -53,7 +54,7 @@ export class StockController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async createStock(@Body() createStockDto: CreateStockDto): Promise<Stock> {
     const createStock = await this.stockService.createStock(createStockDto);
     await this.eventEmitter.emit('stock.created', createStock);
@@ -61,7 +62,7 @@ export class StockController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async updateStock(
     @Param('id') id: string,
     @Body() updateStockDto: UpdateStockDto,
@@ -74,8 +75,19 @@ export class StockController {
     return updatedStock;
   }
 
+  @Patch(':id/add')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
+  async addStock(
+    @Param('id') id: string,
+    @Body() addStockDto: AddStockDto,
+  ): Promise<Stock> {
+    const updatedStock = await this.stockService.addStock(id, addStockDto);
+    await this.eventEmitter.emit('stock.updated', updatedStock);
+    return updatedStock;
+  }
+
   @Put('/deduct')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async deductStock(@Body() deductStockDto: DeductStockDto): Promise<string> {
     const { productId, quantity } = deductStockDto;
     return await this.stockService.deductStock(productId, quantity);

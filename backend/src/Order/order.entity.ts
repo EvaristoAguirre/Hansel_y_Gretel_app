@@ -6,6 +6,8 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { OrderDetails } from './order_details.entity';
 import { OrderState } from 'src/Enums/states.enum';
@@ -37,6 +39,15 @@ export class Order {
 
   @Column({ nullable: true })
   comment: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  closedAt: Date;
 
   // --------- Relaciones ---------
   @ManyToOne(() => Table, (table) => table.orders, {

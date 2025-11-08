@@ -43,13 +43,13 @@ export class RoomController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getAllRooms(): Promise<Room[]> {
     return this.roomService.getAllRooms();
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getRoomById(@Param('id') id: string): Promise<Room> {
     return this.roomService.getRoomById(id);
   }
