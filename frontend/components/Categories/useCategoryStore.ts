@@ -15,7 +15,7 @@ const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
 export const useCategoryStore = create<CategoryState>((set) => {
   // const socket = io("http://192.168.0.50:3000"); // Usa la IP del backend
 
-  const socket = io(API_URL_DEV);
+  const socket = io("http://gestion.hyg.local:3000");
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Categorías");

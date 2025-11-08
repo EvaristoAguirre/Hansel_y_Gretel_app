@@ -17,7 +17,7 @@ export class PrinterService {
   private counter: number = 0;
   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
   private readonly printerConfig = {
-    host: '192.168.0.51',
+    host: '192.168.70.3',
     port: 9100,
     timeout: 5000,
   };
