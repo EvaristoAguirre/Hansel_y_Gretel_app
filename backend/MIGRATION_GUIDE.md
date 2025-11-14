@@ -213,9 +213,3 @@ LIMIT 5;
 2. **Actualizar una orden** y verificar que `updatedAt` se actualiza
 3. **Cerrar una orden** y verificar que `closedAt` se establece
 4. **Verificar en la interfaz de caja diaria** que se muestran los horarios
-
-## 📚 Referencias
-
-- [Documentación de TypeORM Migrations](https://typeorm.io/migrations)
-- [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html)
-- [Guía de Producción del Proyecto](./Checklist_production.md)
