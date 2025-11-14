@@ -206,10 +206,3 @@ SELECT id, date, "createdAt", "updatedAt", "closedAt"
 FROM orders
 LIMIT 5;
 ```
-
-### Verificar en la Aplicación
-
-1. **Crear una nueva orden** y verificar que `createdAt` se establece automáticamente
-2. **Actualizar una orden** y verificar que `updatedAt` se actualiza
-3. **Cerrar una orden** y verificar que `closedAt` se establece
-4. **Verificar en la interfaz de caja diaria** que se muestran los horarios
