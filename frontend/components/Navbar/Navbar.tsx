@@ -50,9 +50,9 @@ const Navbar = () => {
       );
     }
 
-    // Para INVENTARIO: solo puede ver Cafe y Productos
+    // Para INVENTARIO: solo puede ver Productos
     if (userRole === UserRole.INVENTARIO) {
-      return section.label === 'Cafe' || section.label === 'Productos';
+      return section.label === 'Productos';
     }
 
     // Para ADMIN y ENCARGADO: pueden ver todas las secciones

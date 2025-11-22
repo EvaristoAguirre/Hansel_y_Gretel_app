@@ -9,7 +9,9 @@ import {
 } from '@/api/stock'; // Se agrega editStock
 import { useIngredientsContext } from '@/app/context/ingredientsContext';
 import { useUnitContext } from '@/app/context/unitOfMeasureContext';
+import { useAuth } from '@/app/context/authContext';
 import { StockModalType } from '@/components/Enums/view-products';
+import { UserRole } from '@/components/Enums/user';
 import { useProducts } from '@/components/Hooks/useProducts';
 import { IStock, SelectedItem } from '@/components/Interfaces/IStock';
 import { IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
@@ -55,6 +57,10 @@ const ModalStock: React.FC<ModalStockProps> = ({
   const { fetchAndSetProducts } = useProducts();
   const { updateIngredient } = useIngredientsContext();
   const { conventionalUnits } = useUnitContext();
+  const { userRoleFromToken } = useAuth();
+
+  // Verificar si el usuario es ADMIN
+  const isAdmin = userRoleFromToken() === UserRole.ADMIN;
 
   useEffect(() => {
     let selectedUnit = conventionalUnits.find(
@@ -91,61 +97,126 @@ const ModalStock: React.FC<ModalStockProps> = ({
 
     if (token) {
       try {
-        // Si existe stock o min o unit en el selectedItem, se suma stock
+        // Si existe stock o min o unit en el selectedItem, se actualiza stock
         if (selectedItem?.stock || selectedItem?.min || selectedItem?.unit) {
-          // Para edición, usar la nueva función que suma stock
-          const addPayload = {
-            quantityToAdd: parseFloat(quantityInStock),
-            minimumStock: parseFloat(minimumStock),
-          };
+          if (isAdmin) {
+            // Para ADMIN: reemplazar el stock (usar editStock)
+            const updatePayload: IStock = {
+              quantityInStock: parseFloat(quantityInStock),
+              minimumStock: parseFloat(minimumStock),
+              unitOfMeasureId: unitOfMeasure,
+            };
 
-          if (selectedItem.type === StockModalType.PRODUCT) {
-            if (selectedItem.idStock) {
-              const result = await addStockToExisting(
-                selectedItem.idStock,
-                addPayload,
-                token
-              );
-              if (result.statusCode === 400) {
-                handleClose();
-                Swal.fire(
-                  'Error',
-                  result.message || 'Error al agregar stock.',
-                  'error'
+            if (selectedItem.type === StockModalType.PRODUCT) {
+              if (selectedItem.idStock) {
+                updatePayload.productId = selectedItem.id;
+                const result = await editStock(
+                  selectedItem.idStock,
+                  updatePayload,
+                  token
                 );
-                return;
+                if (result.statusCode === 400) {
+                  handleClose();
+                  Swal.fire(
+                    'Error',
+                    result.message || 'Error al actualizar stock.',
+                    'error'
+                  );
+                  return;
+                }
+                fetchAndSetProducts(token);
+                Swal.fire(
+                  'Éxito',
+                  'Stock actualizado correctamente.',
+                  'success'
+                );
               }
-              fetchAndSetProducts(token);
-              Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
             }
-          }
-          if (selectedItem.type === StockModalType.INGREDIENT) {
-            if (selectedItem.idStock) {
-              const result = await addStockToExisting(
-                selectedItem.idStock,
-                addPayload,
-                token
-              );
-              if (result.statusCode === 400) {
-                handleClose();
-                Swal.fire(
-                  'Error',
-                  result.message || 'Error al agregar stock.',
-                  'error'
+            if (selectedItem.type === StockModalType.INGREDIENT) {
+              if (selectedItem.idStock && selectedItem.id) {
+                updatePayload.ingredientId = selectedItem.id;
+                const result = await editStock(
+                  selectedItem.idStock,
+                  updatePayload,
+                  token
                 );
-                return;
-              }
-              // Pequeño delay para asegurar que la base de datos se haya actualizado
-              setTimeout(async () => {
-                if (selectedItem.id && token) {
+                if (result.statusCode === 400) {
+                  handleClose();
+                  Swal.fire(
+                    'Error',
+                    result.message || 'Error al actualizar stock.',
+                    'error'
+                  );
+                  return;
+                }
+                // Pequeño delay para asegurar que la base de datos se haya actualizado
+                setTimeout(async () => {
                   const updatedIngredient = await ingredientsById(
-                    selectedItem.id,
+                    selectedItem.id!,
                     token
                   );
                   updateIngredient(updatedIngredient);
+                }, 500);
+                Swal.fire(
+                  'Éxito',
+                  'Stock actualizado correctamente.',
+                  'success'
+                );
+              }
+            }
+          } else {
+            // Para otros roles: sumar al stock existente (comportamiento original)
+            const addPayload = {
+              quantityToAdd: parseFloat(quantityInStock),
+              minimumStock: parseFloat(minimumStock),
+            };
+
+            if (selectedItem.type === StockModalType.PRODUCT) {
+              if (selectedItem.idStock) {
+                const result = await addStockToExisting(
+                  selectedItem.idStock,
+                  addPayload,
+                  token
+                );
+                if (result.statusCode === 400) {
+                  handleClose();
+                  Swal.fire(
+                    'Error',
+                    result.message || 'Error al agregar stock.',
+                    'error'
+                  );
+                  return;
                 }
-              }, 500);
-              Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
+                fetchAndSetProducts(token);
+                Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
+              }
+            }
+            if (selectedItem.type === StockModalType.INGREDIENT) {
+              if (selectedItem.idStock && selectedItem.id) {
+                const result = await addStockToExisting(
+                  selectedItem.idStock,
+                  addPayload,
+                  token
+                );
+                if (result.statusCode === 400) {
+                  handleClose();
+                  Swal.fire(
+                    'Error',
+                    result.message || 'Error al agregar stock.',
+                    'error'
+                  );
+                  return;
+                }
+                // Pequeño delay para asegurar que la base de datos se haya actualizado
+                setTimeout(async () => {
+                  const updatedIngredient = await ingredientsById(
+                    selectedItem.id!,
+                    token
+                  );
+                  updateIngredient(updatedIngredient);
+                }, 500);
+                Swal.fire('Éxito', 'Stock agregado correctamente.', 'success');
+              }
             }
           }
         } else {
@@ -233,10 +304,18 @@ const ModalStock: React.FC<ModalStockProps> = ({
           autoFocus
           margin="dense"
           label={
-            selectedItem?.stock ? 'Cantidad a Agregar' : 'Cantidad en Stock'
+            selectedItem?.stock
+              ? isAdmin
+                ? 'Cantidad en Stock'
+                : 'Cantidad a Agregar'
+              : 'Cantidad en Stock'
           }
           placeholder={
-            selectedItem?.stock ? `Stock actual: ${selectedItem.stock}` : ''
+            selectedItem?.stock
+              ? isAdmin
+                ? `Stock actual: ${selectedItem.stock} (se reemplazará)`
+                : `Stock actual: ${selectedItem.stock}`
+              : ''
           }
           fullWidth
           variant="standard"
