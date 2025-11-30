@@ -205,60 +205,6 @@ const OrderProvider = ({
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
 
-  // Listener para evento de ticket impreso
-  useEffect(() => {
-    const handleTicketPrinted = async (data: any) => {
-      // El data que viene del WebSocket es la entidad Order del backend
-      // Necesitamos hacer fetch de la orden adaptada para obtener los productos
-      const orderId = data.id;
-      const orderTableId = data.table?.id;
-
-      // Verificar si la orden pertenece a la mesa seleccionada o es la orden seleccionada
-      const belongsToSelectedTable =
-        selectedTable?.orders?.includes(orderId) ||
-        selectedTable?.id === orderTableId ||
-        selectedOrderByTable?.id === orderId;
-
-      if (belongsToSelectedTable && token) {
-        try {
-          // Hacer fetch de la orden completa adaptada desde el backend
-          const response = await fetch(`${URI_ORDER}/${orderId}`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (response.ok) {
-            const orderData: IOrderDetails = await response.json();
-
-            // Actualizar selectedOrderByTable si es la orden seleccionada o pertenece a la mesa seleccionada
-            if (selectedOrderByTable?.id === orderId || selectedTable?.id === orderTableId) {
-              setSelectedOrderByTable({
-                ...orderData,
-                state: orderData.state || 'pending_payment',
-              });
-            }
-
-            // Actualizar confirmedProducts con los productos de la orden actualizada
-            // Solo si la orden pertenece a la mesa seleccionada
-            if (orderData.products && orderData.products.length > 0 && selectedTable?.id === orderTableId) {
-              handleSetProductsByOrder(orderData.products);
-            }
-          }
-        } catch (error) {
-          console.error('Error al obtener la orden actualizada:', error);
-        }
-      }
-    };
-
-    webSocketService.on('orderTicketPrinted', handleTicketPrinted);
-
-    return () => {
-      webSocketService.off('orderTicketPrinted', handleTicketPrinted);
-    };
-  }, [selectedTable, selectedOrderByTable, token, handleSetProductsByOrder]);
-
   const checkStockAvailability = async (
     productId: string,
     quantity: number,
@@ -408,6 +354,73 @@ const OrderProvider = ({
 
     setConfirmedProducts(expandedProducts);
   }, []);
+
+  // Listener para evento de ticket impreso
+  useEffect(() => {
+    const handleTicketPrinted = async (data: any) => {
+      // El data que viene del WebSocket es la entidad Order del backend
+      // Necesitamos hacer fetch de la orden adaptada para obtener los productos
+      const orderId = data.id;
+      const orderTableId = data.table?.id;
+
+      // Verificar si la orden pertenece a la mesa seleccionada o es la orden seleccionada
+      const belongsToSelectedTable =
+        selectedTable?.orders?.includes(orderId) ||
+        selectedTable?.id === orderTableId ||
+        selectedOrderByTable?.id === orderId;
+
+      if (belongsToSelectedTable && token) {
+        try {
+          // Hacer fetch de la orden completa adaptada desde el backend
+          const response = await fetch(`${URI_ORDER}/${orderId}`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const orderData: IOrderDetails = await response.json();
+
+            // Actualizar selectedOrderByTable si es la orden seleccionada o pertenece a la mesa seleccionada
+            if (selectedOrderByTable?.id === orderId || selectedTable?.id === orderTableId) {
+              setSelectedOrderByTable({
+                ...orderData,
+                state: orderData.state || 'pending_payment',
+              });
+            }
+
+            // Actualizar confirmedProducts con los productos de la orden actualizada
+            // Solo si la orden pertenece a la mesa seleccionada
+            if (orderData.products && orderData.products.length > 0 && selectedTable?.id === orderTableId) {
+              // Adaptar ProductLineDto[] a SelectedProductsI[]
+              // El backend devuelve ProductLineDto con unitaryPrice: number
+              // pero SelectedProductsI espera unitaryPrice?: string | null
+              const adaptedProducts: SelectedProductsI[] = orderData.products.map((product: any) => ({
+                productId: product.productId,
+                productName: product.productName,
+                quantity: product.quantity,
+                unitaryPrice: product.unitaryPrice != null ? String(product.unitaryPrice) : null,
+                commentOfProduct: product.commentOfProduct || null,
+                allowsToppings: product.allowsToppings,
+                // Los toppings vienen como ToppingSummaryDto[] pero SelectedProductsI espera toppingsPerUnit?: string[][]
+                // Por ahora no mapeamos los toppings ya que no se usan en confirmedProducts
+              }));
+              handleSetProductsByOrder(adaptedProducts);
+            }
+          }
+        } catch (error) {
+          console.error('Error al obtener la orden actualizada:', error);
+        }
+      }
+    };
+
+    webSocketService.on('orderTicketPrinted', handleTicketPrinted);
+
+    return () => {
+      webSocketService.off('orderTicketPrinted', handleTicketPrinted);
+    };
+  }, [selectedTable, selectedOrderByTable, token, handleSetProductsByOrder]);
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
