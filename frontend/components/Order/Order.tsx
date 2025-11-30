@@ -42,6 +42,7 @@ const Order: React.FC<OrderProps> = ({
     confirmedProducts,
     setConfirmedProducts,
     handleCancelOrder,
+    fetchOrderBySelectedTable,
   } = useOrderContext();
   const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
@@ -75,7 +76,27 @@ const Order: React.FC<OrderProps> = ({
       setSelectedOrderByTable(ordenPendingPay);
       setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
-      // updateOrder(ordenPendingPay);
+
+      // Actualizar confirmedProducts con los productos de la orden actualizada
+      if (ordenPendingPay.products) {
+        const expandedProducts: SelectedProductsI[] = [];
+        let internalCounter = 0;
+
+        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
+          const quantity = product.quantity || 1;
+
+          for (let i = 0; i < quantity; i++) {
+            expandedProducts.push({
+              ...product,
+              internalId: `${product.productId}-${internalCounter}`,
+              quantity: 1,
+            });
+            internalCounter++;
+          }
+        });
+
+        setConfirmedProducts(expandedProducts);
+      }
     }
 
     const tableEdited = await editTable(
@@ -103,6 +124,27 @@ const Order: React.FC<OrderProps> = ({
       setSelectedOrderByTable(ordenPendingPay);
       setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
+
+      // Actualizar confirmedProducts con los productos de la orden actualizada
+      if (ordenPendingPay.products) {
+        const expandedProducts: SelectedProductsI[] = [];
+        let internalCounter = 0;
+
+        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
+          const quantity = product.quantity || 1;
+
+          for (let i = 0; i < quantity; i++) {
+            expandedProducts.push({
+              ...product,
+              internalId: `${product.productId}-${internalCounter}`,
+              quantity: 1,
+            });
+            internalCounter++;
+          }
+        });
+
+        setConfirmedProducts(expandedProducts);
+      }
     }
 
     const tableEdited = await editTable(
