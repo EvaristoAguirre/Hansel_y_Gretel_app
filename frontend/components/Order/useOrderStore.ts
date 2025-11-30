@@ -55,6 +55,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
   });
 
   webSocketService.on('orderTicketPrinted', (data) => {
+    console.log('🔔 [useOrderStore] orderTicketPrinted recibido:', data);
     set((state) => ({
       orders: state.orders.map((order) =>
         order.id === data.id

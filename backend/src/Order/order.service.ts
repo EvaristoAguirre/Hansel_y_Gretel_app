@@ -491,7 +491,10 @@ export class OrderService {
   }
 
   async cancelOrder(id: string): Promise<Order> {
+    this.logger.log(`🔄 [cancelOrder] Iniciando cancelación de orden ${id}`);
+
     if (!id || !isUUID(id)) {
+      this.logger.error(`❌ [cancelOrder] ID inválido: ${id}`);
       throw new BadRequestException('Invalid or missing order ID.');
     }
 
@@ -500,6 +503,7 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     try {
+      this.logger.log(`🔍 [cancelOrder] Buscando orden ${id}...`);
       const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
@@ -519,15 +523,22 @@ export class OrderService {
       }
 
       const previousTableId = order.table?.id;
+
+      // Guardar información de la mesa antes de establecerla en null
+      const tableInfo = order.table ? { id: order.table.id } : null;
+
       if (order.table) {
         order.table = null;
       }
 
       order.state = OrderState.CANCELLED;
+      order.isActive = false; // Marcar como inactiva para que no aparezca en búsquedas
 
       const updatedOrder = await queryRunner.manager.save(order);
+      this.logger.log(`💾 [cancelOrder] Orden ${id} guardada con estado CANCELLED`);
 
       await queryRunner.commitTransaction();
+      this.logger.log(`✅ [cancelOrder] Transacción completada para orden ${id}`);
 
       // Cambiar estado de mesa (fuera de la transacción)
       if (previousTableId) {
@@ -542,6 +553,16 @@ export class OrderService {
           );
         }
       }
+
+      // Emitir evento de orden cancelada para sincronización en tiempo real
+      // Incluir información de la mesa antes de que se estableciera en null
+      const orderWithTableInfo = {
+        ...updatedOrder,
+        table: tableInfo, // Incluir el tableId en el evento
+      };
+      this.logger.log(`📢 Emitiendo evento order.deleted para orden ${id}, mesa ${previousTableId}`);
+      this.eventEmitter.emit('order.deleted', { order: orderWithTableInfo });
+      this.logger.log(`✅ Evento order.deleted emitido correctamente`);
 
       return updatedOrder;
     } catch (error) {

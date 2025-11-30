@@ -72,7 +72,10 @@ export class OrderController {
   @Post('cancel/:id')
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async cancelOrder(@Param('id') id: string): Promise<Order> {
-    return await this.orderService.cancelOrder(id);
+    console.log(`📞 [OrderController] cancelOrder llamado con ID: ${id}`);
+    const result = await this.orderService.cancelOrder(id);
+    console.log(`✅ [OrderController] cancelOrder completado para ID: ${id}`);
+    return result;
   }
 
   @Delete(':id')
