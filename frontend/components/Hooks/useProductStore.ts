@@ -3,9 +3,9 @@ import {
   IingredientResponse,
 } from "../Interfaces/Ingredients";
 import { create } from "zustand";
-import { io } from "socket.io-client";
 import { ICategory } from "../Interfaces/ICategories";
 import { ProductState } from "../Interfaces/IProducts";
+import { webSocketService } from "@/services/websocket.service";
 
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
@@ -23,14 +23,14 @@ export const mapIngredientResponseToForm = (
 });
 
 export const useProductStore = create<ProductState>((set) => {
-  //const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
-  const socket = io("http://gestion.hyg.local:3000"); // Usa la IP de tu backend
+  // Conectar al servicio centralizado de WebSocket
+  const socket = webSocketService.connect();
 
   socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket - Products");
+    console.log("✅ Conectado a WebSocket - Productos");
   });
 
-  socket.on("productCreated", (data) => {
+  webSocketService.on("productCreated", (data) => {
     set((state) => {
       const exists = state.products.some((product) => product.id === data.id);
       if (!exists) {
@@ -45,7 +45,7 @@ export const useProductStore = create<ProductState>((set) => {
     });
   });
 
-  socket.on("productUpdated", (data) => {
+  webSocketService.on("productUpdated", (data) => {
     set((state) => ({
       products: state.products.map((product) =>
         product.id === data.id ? data : product
@@ -53,14 +53,14 @@ export const useProductStore = create<ProductState>((set) => {
     }));
   });
 
-  socket.on("productDeleted", (data) => {
+  webSocketService.on("productDeleted", (data) => {
     set((state) => ({
       products: state.products.filter((product) => product.id !== data.id),
     }));
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Products");
+    console.log("❌ Desconectado del servidor WebSocket - Productos");
   });
 
   return {
@@ -81,6 +81,9 @@ export const useProductStore = create<ProductState>((set) => {
         ),
       }));
     },
-    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    connectWebSocket: () => {
+      // La conexión se establece automáticamente al cargar el store
+      webSocketService.connect();
+    },
   };
 });

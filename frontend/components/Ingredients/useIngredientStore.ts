@@ -1,20 +1,20 @@
-import { create } from "zustand";
-import { io } from "socket.io-client";
+import { create } from 'zustand';
 import {
   IngredientCreated,
   IngredientState,
   IngredientResponseDTO,
-} from "../Interfaces/IIngredients";
+} from '../Interfaces/IIngredients';
+import { webSocketService } from '@/services/websocket.service';
 
 export const useIngredientStore = create<IngredientState>((set) => {
-  //const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
-  const socket = io("http://localhost:3000"); // Cambiar por la IP de tu backend si es necesario
+  // Conectar al servicio centralizado de WebSocket
+  const socket = webSocketService.connect();
 
-  socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket - Ingredients");
+  socket.on('connect', () => {
+    console.log('✅ Conectado a WebSocket - Ingredientes');
   });
 
-  socket.on("ingredientCreated", (data) => {
+  webSocketService.on('ingredientCreated', (data) => {
     set((state) => {
       const exists = state.ingredients.some(
         (ingredient) => ingredient.id === data.id
@@ -31,7 +31,7 @@ export const useIngredientStore = create<IngredientState>((set) => {
     });
   });
 
-  socket.on("ingredientUpdated", (data) => {
+  webSocketService.on('ingredientUpdated', (data) => {
     set((state) => ({
       ingredients: state.ingredients.map((ingredient) =>
         ingredient.id === data.id ? data : ingredient
@@ -39,7 +39,7 @@ export const useIngredientStore = create<IngredientState>((set) => {
     }));
   });
 
-  socket.on("ingredientDeleted", (data) => {
+  webSocketService.on('ingredientDeleted', (data) => {
     set((state) => ({
       ingredients: state.ingredients.filter(
         (ingredient) => ingredient.id !== data.id
@@ -47,8 +47,8 @@ export const useIngredientStore = create<IngredientState>((set) => {
     }));
   });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Ingredients");
+  socket.on('disconnect', () => {
+    console.log('❌ Desconectado del servidor WebSocket - Ingredientes');
   });
 
   return {
@@ -81,7 +81,8 @@ export const useIngredientStore = create<IngredientState>((set) => {
       }));
     },
     connectWebSocket: () => {
-      /* conexión automática */
+      // La conexión se establece automáticamente al cargar el store
+      webSocketService.connect();
     },
   };
 });

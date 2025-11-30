@@ -19,6 +19,6 @@ export class ProductWSListener {
 
   @OnEvent('product.deleted')
   handleProductDeleted(event: { product: string }) {
-    this.broadcastService.broadcast('productDeleted', event.product);
+    this.broadcastService.broadcast('productDeleted', { id: event.product });
   }
 }

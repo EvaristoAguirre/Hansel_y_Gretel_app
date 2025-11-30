@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ICategory } from "../Interfaces/ICategories";
-import { io } from "socket.io-client";
+import { webSocketService } from "@/services/websocket.service";
 
 interface CategoryState {
   categories: ICategory[];
@@ -10,22 +10,20 @@ interface CategoryState {
   updateCategory: (updatedCategory: ICategory) => void;
   connectWebSocket: () => void;
 }
-const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
 
 export const useCategoryStore = create<CategoryState>((set) => {
-  // const socket = io("http://192.168.0.50:3000"); // Usa la IP del backend
-
-  const socket = io("http://gestion.hyg.local:3000");
+  // Conectar al servicio centralizado de WebSocket
+  const socket = webSocketService.connect();
 
   socket.on("connect", () => {
     console.log("✅ Conectado a WebSocket - Categorías");
   });
 
-  socket.on("categoryCreated", (data) => {
+  webSocketService.on("categoryCreated", (data) => {
     set((state) => ({ categories: [...state.categories, data] }));
   });
 
-  socket.on("categoryUpdated", (data) => {
+  webSocketService.on("categoryUpdated", (data) => {
     set((state) => ({
       categories: state.categories.map((category) =>
         category.id === data.id ? data : category
@@ -33,10 +31,10 @@ export const useCategoryStore = create<CategoryState>((set) => {
     }));
   });
 
-  socket.on("categoryDeleted", (data) => {
+  webSocketService.on("categoryDeleted", (data) => {
     set((state) => ({
       categories: state.categories.filter(
-        (category) => category.id !== data.id
+        (category) => category.id === data.id
       ),
     }));
   });
@@ -60,6 +58,9 @@ export const useCategoryStore = create<CategoryState>((set) => {
           c.id === updatedCategory.id ? updatedCategory : c
         ),
       })),
-    connectWebSocket: () => { },
+    connectWebSocket: () => {
+      // La conexión se establece automáticamente al cargar el store
+      webSocketService.connect();
+    },
   };
 });
