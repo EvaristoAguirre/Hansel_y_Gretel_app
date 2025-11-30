@@ -49,7 +49,6 @@ export class OrderService {
     private readonly monitoringLogger: LoggerService,
   ) {}
 
-
   async openOrder(
     orderToCreate: CreateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
@@ -431,7 +430,12 @@ export class OrderService {
       console.log('simulando impresion de ticket');
       console.log('orderPending to print ticket', orderPending);
 
+      // Emitir evento de ticket impreso (paso 3 completado)
+      this.eventEmitter.emit('order.ticketPrinted', {
+        order: orderPending,
+      });
 
+      // Emitir evento de orden actualizada a pendiente de pago
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
       });
@@ -651,16 +655,16 @@ export class OrderService {
         closedAt: order.closedAt,
         paymentMethods: Array.isArray(order.payments)
           ? order.payments.map((p) => ({
-            methodOfPayment: p.methodOfPayment,
-            amount: Number(p.amount).toFixed(2),
-          }))
+              methodOfPayment: p.methodOfPayment,
+              amount: Number(p.amount).toFixed(2),
+            }))
           : [],
         products: Array.isArray(order.orderDetails)
           ? order.orderDetails.map((d) => ({
-            name: d.product?.name || 'Producto eliminado',
-            quantity: d.quantity,
-            commandNumber: d.commandNumber,
-          }))
+              name: d.product?.name || 'Producto eliminado',
+              quantity: d.quantity,
+              commandNumber: d.commandNumber,
+            }))
           : [],
       };
 

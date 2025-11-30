@@ -54,6 +54,16 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
     }));
   });
 
+  webSocketService.on('orderTicketPrinted', (data) => {
+    set((state) => ({
+      orders: state.orders.map((order) =>
+        order.id === data.id
+          ? { ...order, ticketPrinted: true, status: 'pending_payment' }
+          : order
+      ),
+    }));
+  });
+
   socket.on('disconnect', () => {
     console.log('❌ Desconectado del servidor WebSocket - Pedidos');
   });

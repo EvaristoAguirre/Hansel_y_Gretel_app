@@ -1,5 +1,5 @@
-"use client";
-import { URI_ORDER, URI_ORDER_OPEN } from "@/components/URI/URI";
+'use client';
+import { URI_ORDER, URI_ORDER_OPEN } from '@/components/URI/URI';
 import {
   createContext,
   useContext,
@@ -7,23 +7,24 @@ import {
   useCallback,
   useEffect,
   use,
-} from "react";
-import Swal from "sweetalert2";
+} from 'react';
+import Swal from 'sweetalert2';
 import {
   ICheckStock,
   ProductResponse,
   SelectedProductsI,
-} from "../../components/Interfaces/IProducts";
-import { useOrderStore } from "../../components/Order/useOrderStore";
-import { useRoomContext } from "./room.context";
-import { IOrderDetails } from "@/components/Interfaces/IOrder";
-import { useAuth } from "./authContext";
-import { checkStock } from "@/api/products";
-import { cancelOrder } from "@/api/order";
-import { useTableStore } from "@/components/Table/useTableStore";
-import { ITable } from "@/components/Interfaces/ITable";
-import { TableState } from "@/components/Enums/table";
-import { editTable } from "@/api/tables";
+} from '../../components/Interfaces/IProducts';
+import { useOrderStore } from '../../components/Order/useOrderStore';
+import { useRoomContext } from './room.context';
+import { IOrderDetails } from '@/components/Interfaces/IOrder';
+import { useAuth } from './authContext';
+import { checkStock } from '@/api/products';
+import { cancelOrder } from '@/api/order';
+import { useTableStore } from '@/components/Table/useTableStore';
+import { ITable } from '@/components/Interfaces/ITable';
+import { TableState } from '@/components/Enums/table';
+import { editTable } from '@/api/tables';
+import { webSocketService } from '@/services/websocket.service';
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -66,46 +67,43 @@ type OrderContextType = {
     updatedGroup: { [groupId: string]: string[] }
   ) => void;
   toppingsByProductGroup: {
-    [productId: string]: Array<{ [groupId: string]: string[] }>
+    [productId: string]: Array<{ [groupId: string]: string[] }>;
   };
   checkStockToppingAvailability: (
     productId: string,
     quantity: number,
     toppingsPerUnit?: string[][]
   ) => Promise<{ available: boolean } | undefined>;
-
-
 };
 
 const OrderContext = createContext<OrderContextType>({
   selectedProducts: [],
   checkStockToppingAvailability: async () => ({ available: true }),
-  setSelectedProducts: () => { },
+  setSelectedProducts: () => {},
   confirmedProducts: [],
-  setConfirmedProducts: () => { },
+  setConfirmedProducts: () => {},
   selectedOrderByTable: null,
-  setSelectedOrderByTable: () => { },
-  handleSelectedProducts: () => { },
+  setSelectedOrderByTable: () => {},
+  handleSelectedProducts: () => {},
   highlightedProducts: new Set(),
-  addHighlightedProduct: () => { },
-  removeHighlightedProduct: () => { },
-  handleDeleteSelectedProduct: () => { },
-  increaseProductNumber: () => { },
-  decreaseProductNumber: () => { },
-  productComment: () => { },
-  clearSelectedProducts: () => { },
-  deleteConfirmProduct: () => { },
-  handleCreateOrder: async () => { },
-  handleEditOrder: async () => { },
-  handleDeleteOrder: async () => { },
-  handleResetSelectedOrder: () => { },
-  fetchOrderBySelectedTable: () => { },
-  handleCancelOrder: async () => { },
-  handleAddTopping: async () => { },
+  addHighlightedProduct: () => {},
+  removeHighlightedProduct: () => {},
+  handleDeleteSelectedProduct: () => {},
+  increaseProductNumber: () => {},
+  decreaseProductNumber: () => {},
+  productComment: () => {},
+  clearSelectedProducts: () => {},
+  deleteConfirmProduct: () => {},
+  handleCreateOrder: async () => {},
+  handleEditOrder: async () => {},
+  handleDeleteOrder: async () => {},
+  handleResetSelectedOrder: () => {},
+  fetchOrderBySelectedTable: () => {},
+  handleCancelOrder: async () => {},
+  handleAddTopping: async () => {},
   selectedToppingsByProduct: {},
-  updateToppingForUnit: () => { },
+  updateToppingForUnit: () => {},
   toppingsByProductGroup: {},
-
 });
 
 export const useOrderContext = () => {
@@ -121,12 +119,11 @@ const OrderProvider = ({
   const [token, setToken] = useState<string | null>(null);
   const { tables } = useTableStore();
   const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
-  const { selectedTable, setSelectedTable, handleSelectTable } = useRoomContext();
+  const { selectedTable, setSelectedTable, handleSelectTable } =
+    useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
     []
   );
-
-
 
   const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
     [productId: string]: string[][];
@@ -139,12 +136,13 @@ const OrderProvider = ({
   const [selectedOrderByTable, setSelectedOrderByTable] =
     useState<IOrderDetails | null>(null);
 
-  const [highlightedProducts, setHighlightedProducts] = useState<Set<string>>(new Set());
+  const [highlightedProducts, setHighlightedProducts] = useState<Set<string>>(
+    new Set()
+  );
 
   const [toppingsByProductGroup, setToppingsByProductGroup] = useState<{
-    [productId: string]: Array<{ [groupId: string]: string[] }>
+    [productId: string]: Array<{ [groupId: string]: string[] }>;
   }>({});
-
 
   useEffect(() => {
     const token = getAccessToken();
@@ -171,10 +169,11 @@ const OrderProvider = ({
   };
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    if (selectedTable?.state === TableState.AVAILABLE || selectedTable?.state === TableState.CLOSED) {
-
+    if (
+      selectedTable?.state === TableState.AVAILABLE ||
+      selectedTable?.state === TableState.CLOSED
+    ) {
       return setSelectedOrderByTable(null);
-
     }
     if (selectedTable && selectedTable.orders) {
       try {
@@ -182,7 +181,7 @@ const OrderProvider = ({
           const response = await fetch(
             `${URI_ORDER}/${selectedTable.orders[0]}`,
             {
-              method: "GET",
+              method: 'GET',
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -192,13 +191,12 @@ const OrderProvider = ({
 
           setSelectedOrderByTable(data);
 
-
           const productsByOrder = data.products;
 
           handleSetProductsByOrder(productsByOrder);
         }
       } catch (error) {
-        console.error("Error al obtener el pedido:", error);
+        console.error('Error al obtener el pedido:', error);
       }
     }
   }, [selectedTable]);
@@ -207,49 +205,67 @@ const OrderProvider = ({
     fetchOrderBySelectedTable();
   }, [fetchOrderBySelectedTable]);
 
+  // Listener para evento de ticket impreso
+  useEffect(() => {
+    const handleTicketPrinted = (data: IOrderDetails) => {
+      // Si la orden impresa es la que está seleccionada, actualizar su estado
+      if (selectedOrderByTable?.id === data.id) {
+        setSelectedOrderByTable({
+          ...data,
+          state: data.state || 'pending_payment',
+        });
+      }
+    };
 
+    webSocketService.on('orderTicketPrinted', handleTicketPrinted);
 
-  const checkStockAvailability = async (productId: string, quantity: number, toppingsPerUnit?: string[][]) => {
+    return () => {
+      webSocketService.off('orderTicketPrinted', handleTicketPrinted);
+    };
+  }, [selectedOrderByTable]);
+
+  const checkStockAvailability = async (
+    productId: string,
+    quantity: number,
+    toppingsPerUnit?: string[][]
+  ) => {
     const form: ICheckStock = {
       productId: productId,
       quantityToSell: quantity,
-      toppingsPerUnit: toppingsPerUnit?.flat()
-
-    }
+      toppingsPerUnit: toppingsPerUnit?.flat(),
+    };
     try {
       const stock = await checkStock(form, token!);
 
-      return stock
-
+      return stock;
     } catch (error) {
-      console.error("Error al obtener el stock:", error);
+      console.error('Error al obtener el stock:', error);
     }
   };
 
-  const checkStockToppingAvailability = async (productId: string, quantity: number, toppingsPerUnit?: string[][]) => {
+  const checkStockToppingAvailability = async (
+    productId: string,
+    quantity: number,
+    toppingsPerUnit?: string[][]
+  ) => {
     const form: ICheckStock = {
       productId: productId,
       quantityToSell: quantity,
-      toppingsPerUnit: toppingsPerUnit?.flat()
-
-    }
+      toppingsPerUnit: toppingsPerUnit?.flat(),
+    };
     try {
       const stock = await checkStock(form, token!);
 
-      return stock
-
+      return stock;
     } catch (error) {
-      console.error("Error al obtener el stock:", error);
+      console.error('Error al obtener el stock:', error);
     }
   };
 
   const handleSelectedProducts = async (product: ProductResponse) => {
-
-
     const foundProduct = selectedProducts.find(
       (p) => p.productId === product.id
     );
-
 
     const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
     const toppingsPerUnit = selectedToppingsByProduct[product.id] ?? [];
@@ -257,13 +273,12 @@ const OrderProvider = ({
     const stockResponse = await checkStockAvailability(product.id, newQuantity);
     if (!stockResponse?.available) {
       Swal.fire({
-        icon: "error",
-        title: "Stock insuficiente",
+        icon: 'error',
+        title: 'Stock insuficiente',
         text: stockResponse.message,
       });
       return;
     }
-
 
     if (foundProduct) {
       const updatedDetails = selectedProducts.map((p) =>
@@ -278,23 +293,19 @@ const OrderProvider = ({
         productName: product.name,
         allowsToppings: product.allowsToppings,
         commentOfProduct: product.commentOfProduct,
-        availableToppingGroups: product.availableToppingGroups
+        availableToppingGroups: product.availableToppingGroups,
       };
       setSelectedProducts([...selectedProducts, newProduct]);
-
     }
     if (product.allowsToppings) {
-      setHighlightedProducts(prev => new Set(prev).add(product.id));
+      setHighlightedProducts((prev) => new Set(prev).add(product.id));
     }
-
   };
 
   const handleAddTopping = async (productId: string, toppingIds: string[]) => {
     setSelectedProducts((prevProducts) =>
       prevProducts.map((p) =>
-        p.productId === productId
-          ? { ...p, toppingsIds: toppingIds }
-          : p
+        p.productId === productId ? { ...p, toppingsIds: toppingIds } : p
       )
     );
   };
@@ -329,21 +340,21 @@ const OrderProvider = ({
     });
   };
 
-
   const addHighlightedProduct = (id: string) => {
     setHighlightedProducts((prev) => new Set(prev).add(id));
   };
 
   const removeHighlightedProduct = (id: string) => {
-    setHighlightedProducts(prev => {
+    setHighlightedProducts((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
   };
 
-
-  const handleSetProductsByOrder = (confirmedProductsRaw: SelectedProductsI[]) => {
+  const handleSetProductsByOrder = (
+    confirmedProductsRaw: SelectedProductsI[]
+  ) => {
     const expandedProducts: SelectedProductsI[] = [];
     let internalCounter = 0;
 
@@ -361,9 +372,7 @@ const OrderProvider = ({
     });
 
     setConfirmedProducts(expandedProducts);
-
   };
-
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
@@ -371,26 +380,32 @@ const OrderProvider = ({
   };
 
   const increaseProductNumber = async (product: SelectedProductsI) => {
-    const productToUpdate = selectedProducts.find((p) => p.productId === product.productId);
+    const productToUpdate = selectedProducts.find(
+      (p) => p.productId === product.productId
+    );
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity + 1;
       // Verifica el stock antes de actualizar
-      const stockResponse = await checkStockAvailability(product.productId, newQuantity);
+      const stockResponse = await checkStockAvailability(
+        product.productId,
+        newQuantity
+      );
       if (!stockResponse?.available) {
         Swal.fire({
-          icon: "error",
-          title: "Stock insuficiente",
+          icon: 'error',
+          title: 'Stock insuficiente',
           text: stockResponse.message,
         });
         return;
       }
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === product.productId ? { ...p, quantity: newQuantity } : p
+          p.productId === product.productId
+            ? { ...p, quantity: newQuantity }
+            : p
         )
       );
     }
-
   };
 
   const decreaseProductNumber = async (id: string) => {
@@ -401,8 +416,8 @@ const OrderProvider = ({
       const stockResponse = await checkStockAvailability(id, newQuantity);
       if (!stockResponse?.available) {
         Swal.fire({
-          icon: "error",
-          title: "Stock insuficiente",
+          icon: 'error',
+          title: 'Stock insuficiente',
           text: stockResponse.message,
         });
         return;
@@ -422,12 +437,8 @@ const OrderProvider = ({
         selectedProducts.map((p) =>
           p.productId === id ? { ...p, commentOfProduct: comment } : p
         )
-
       );
-
-
     }
-
   };
 
   const clearSelectedProducts = () => {
@@ -454,9 +465,9 @@ const OrderProvider = ({
       };
 
       const response = await fetch(URI_ORDER_OPEN, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(pedido),
@@ -464,7 +475,7 @@ const OrderProvider = ({
 
       if (response.status !== 201) {
         const errorData = await response.json();
-        console.error("Error:", errorData);
+        console.error('Error:', errorData);
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -473,10 +484,9 @@ const OrderProvider = ({
       addOrder(newOrder);
 
       setSelectedOrderByTable(newOrder);
-      const tableEdited = token && await editTable(
-        { ...selectedTable, state: TableState.OPEN },
-        token
-      );
+      const tableEdited =
+        token &&
+        (await editTable({ ...selectedTable, state: TableState.OPEN }, token));
 
       const updatedTable = {
         ...tableEdited,
@@ -484,7 +494,7 @@ const OrderProvider = ({
       };
       handleSelectTable(updatedTable);
     } catch (error) {
-      Swal.fire("Error", "No se pudo abrir la mesa.", "error");
+      Swal.fire('Error', 'No se pudo abrir la mesa.', 'error');
     }
   };
 
@@ -501,16 +511,16 @@ const OrderProvider = ({
 
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           productsDetails: [...selectedProducts],
           numberCustomers: numberCustomers,
           comment: comment,
-          isPriority: isPriority
+          isPriority: isPriority,
         }),
       });
 
@@ -518,14 +528,14 @@ const OrderProvider = ({
         if (response.status === 400) {
           const errorData = await response.json();
           Swal.fire({
-            icon: "error",
-            title: "Error",
+            icon: 'error',
+            title: 'Error',
             text: errorData.message,
-          })
-          return
+          });
+          return;
         } else {
           const errorData = await response.json();
-          console.error("Error:", errorData);
+          console.error('Error:', errorData);
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
       }
@@ -542,18 +552,18 @@ const OrderProvider = ({
       return updatedOrder;
     } catch (error) {
       console.error(error);
-      return
+      return;
     }
   };
 
   const handleCancelOrder = async (id: string) => {
     const confirm = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "Esta acción no se puede deshacer.",
-      icon: "warning",
+      title: '¿Estás seguro?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: "Sí, anular",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Cancelar',
     });
 
     if (confirm.isConfirmed) {
@@ -567,19 +577,19 @@ const OrderProvider = ({
           setSelectedTable({
             ...selectedTable,
             orders: [],
-            state: TableState.AVAILABLE
+            state: TableState.AVAILABLE,
           } as ITable);
           Swal.fire({
-            icon: "success",
-            title: "Pedido cancelado",
-            text: "El pedido ha sido cancelado con éxito.",
+            icon: 'success',
+            title: 'Pedido cancelado',
+            text: 'El pedido ha sido cancelado con éxito.',
           });
         }
       } catch (error) {
         console.error(error);
       }
     }
-  }
+  };
 
   const handleDeleteOrder = async (id: string | null) => {
     if (!id) {
@@ -587,21 +597,21 @@ const OrderProvider = ({
     }
 
     const confirm = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "Esta acción no se puede deshacer.",
-      icon: "warning",
+      title: '¿Estás seguro?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
     });
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_ORDER}/${id}`, { method: "DELETE" });
+        await fetch(`${URI_ORDER}/${id}`, { method: 'DELETE' });
         removeOrder(id);
-        Swal.fire("Eliminado", "Pedido eliminado correctamente.", "success");
+        Swal.fire('Eliminado', 'Pedido eliminado correctamente.', 'success');
       } catch (error) {
-        Swal.fire("Error", "No se pudo eliminar el pedido.", "error");
+        Swal.fire('Error', 'No se pudo eliminar el pedido.', 'error');
         console.error(error);
       }
     }
@@ -636,7 +646,7 @@ const OrderProvider = ({
         selectedToppingsByProduct,
         updateToppingForUnit,
         toppingsByProductGroup,
-        checkStockToppingAvailability
+        checkStockToppingAvailability,
       }}
     >
       {children}
