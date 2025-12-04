@@ -23,6 +23,7 @@ import { cancelOrder } from '@/api/order';
 import { useTableStore } from '@/components/Table/useTableStore';
 import { ITable } from '@/components/Interfaces/ITable';
 import { TableState } from '@/components/Enums/table';
+import { OrderState } from '@/components/Enums/order';
 import { editTable } from '@/api/tables';
 import { webSocketService } from '@/services/websocket.service';
 
@@ -583,7 +584,7 @@ const OrderProvider = ({
             // Esto es crítico para que el estado se actualice correctamente cuando se imprime desde otra tablet
             if (shouldUpdateSelectedOrder) {
               // Asegurar que el estado sea 'pending_payment' cuando se imprime el ticket
-              const newState = orderData.state === 'pending_payment' ? 'pending_payment' : (orderData.state || 'pending_payment');
+              const newState = orderData.state === OrderState.PENDING_PAYMENT ? OrderState.PENDING_PAYMENT : (orderData.state || OrderState.PENDING_PAYMENT);
               console.log('🔔 [orderTicketPrinted] Actualizando selectedOrderByTable');
               console.log('🔔 [orderTicketPrinted] Estado anterior:', selectedOrderByTable?.state);
               console.log('🔔 [orderTicketPrinted] Estado nuevo de la orden:', orderData.state);
