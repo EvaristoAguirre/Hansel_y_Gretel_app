@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { io } from "socket.io-client";
-import { IOrderDetails } from "../Interfaces/IOrder";
+import { create } from 'zustand';
+import { IOrderDetails } from '../Interfaces/IOrder';
+import { webSocketService } from '@/services/websocket.service';
 
 interface OrderStateZustand {
   orders: IOrderDetails[];
@@ -13,18 +13,18 @@ interface OrderStateZustand {
 }
 
 export const useOrderStore = create<OrderStateZustand>((set, get) => {
-  //const socket = io("http://192.168.0.50:3000");
-  const socket = io("http://gestion.hyg.local:3000");
+  // Conectar al servicio centralizado de WebSocket
+  const socket = webSocketService.connect();
 
-  socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket - Order");
+  socket.on('connect', () => {
+    console.log('✅ Conectado a WebSocket - Pedidos');
   });
 
-  socket.on("orderCreated", (data) => {
+  webSocketService.on('orderCreated', (data) => {
     set((state) => ({ orders: [...state.orders, data] }));
   });
 
-  socket.on("orderUpdated", (data) => {
+  webSocketService.on('orderUpdated', (data) => {
     set((state) => ({
       orders: state.orders.map((order) =>
         order.id === data.id ? data : order
@@ -32,29 +32,41 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
     }));
   });
 
-  socket.on("orderUpdatedPending", (data) => {
+  webSocketService.on('orderUpdatedPending', (data) => {
     set((state) => ({
       orders: state.orders.map((order) =>
-        order.id === data.id ? { ...order, status: "pending_payment" } : order
+        order.id === data.id ? { ...order, status: 'pending_payment' } : order
       ),
     }));
   });
 
-  socket.on("orderUpdatedClose", (data) => {
+  webSocketService.on('orderUpdatedClose', (data) => {
     set((state) => ({
       orders: state.orders.map((order) =>
-        order.id === data.id ? { ...order, status: "closed" } : order
+        order.id === data.id ? { ...order, status: 'closed' } : order
       ),
     }));
   });
 
-  socket.on("orderDeleted", (data) => {
+  webSocketService.on('orderDeleted', (data) => {
     set((state) => ({
       orders: state.orders.filter((order) => order.id !== data.id),
     }));
   });
 
-  socket.on("disconnect", () => {
+  webSocketService.on('orderTicketPrinted', (data) => {
+    console.log('🔔 [useOrderStore] orderTicketPrinted recibido:', data);
+    set((state) => ({
+      orders: state.orders.map((order) =>
+        order.id === data.id
+          ? { ...order, ticketPrinted: true, status: 'pending_payment' }
+          : order
+      ),
+    }));
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Desconectado del servidor WebSocket - Pedidos');
   });
 
   return {
@@ -74,6 +86,9 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
           order.id === updatedOrder.id ? updatedOrder : order
         ),
       })),
-    connectWebSocket: () => { },
+    connectWebSocket: () => {
+      // La conexión se establece automáticamente al cargar el store
+      webSocketService.connect();
+    },
   };
 });

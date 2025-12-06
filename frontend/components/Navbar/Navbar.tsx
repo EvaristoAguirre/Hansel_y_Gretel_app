@@ -6,8 +6,8 @@ import logo from '../../public/logo.svg';
 import cafe from '../../public/icons/coffe.png';
 import products from '../../public/icons/products.png';
 import cash from '../../public/icons/dailyCash.png';
-import proveedor from '../../public/icons/providers.jpeg';
-import configuracion from '../../public/icons/settings.png';
+// import proveedor from '../../public/icons/providers.jpeg';
+// import configuracion from '../../public/icons/settings.png';
 import user from '../../public/user.svg';
 import { useAuth } from '@/app/context/authContext';
 import { UserRole } from '../Enums/user';
@@ -32,12 +32,12 @@ const Navbar = () => {
     { label: 'Cafe', path: '/views/cafe', icon: cafe },
     { label: 'Productos', path: '/views/products', icon: products },
     { label: 'Registros/Cajas', path: '/views/dailyCash', icon: cash },
-    { label: 'Proveedores', path: '/views/proveedores', icon: proveedor },
-    {
-      label: 'Configuración',
-      path: '/views/configuracion',
-      icon: configuracion,
-    },
+    // { label: 'Proveedores', path: '/views/proveedores', icon: proveedor },
+    // {
+    //   label: 'Configuración',
+    //   path: '/views/configuracion',
+    //   icon: configuracion,
+    // },
   ];
 
   const filteredSections = sections.filter((section) => {

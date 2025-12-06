@@ -1,14 +1,14 @@
-
-// EN PRODUCCION/CAFETERIA 
+// EN PRODUCCION/CAFETERIA
 // REEMPLAZAR:
-// 'API_URL_DEV' 
+// 'API_URL_DEV'
 // POR 'API_URL'
 // y NEXT_PUBLIC_API_URL_DEV por NEXT_PUBLIC_API_URL
 
-const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
+const API_URL_DEV =
+  process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_URL_DEV) {
-  throw new Error("Falta la variable de entorno NEXT_PUBLIC_API_URL");
+  throw new Error('Falta la variable de entorno NEXT_PUBLIC_API_URL');
 }
 
 // CATEGORIES

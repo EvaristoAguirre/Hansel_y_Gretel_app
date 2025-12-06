@@ -681,7 +681,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             </>
           )}
 
-          {selectedOrderByTable?.state === 'pending_payment' &&
+          {selectedOrderByTable?.state === OrderState.PENDING_PAYMENT &&
             confirmedPayments.flatMap((cp) => cp.productIds).length ===
               confirmedProducts.length && (
               <Button

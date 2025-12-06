@@ -22,6 +22,7 @@ import { GridArrowDownwardIcon, GridArrowUpwardIcon } from '@mui/x-data-grid';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import { formatNumber } from '@/components/Utils/FormatNumber';
+import { normalizeNumber } from '@/components/Utils/NormalizeNumber';
 
 interface Props {
   open: boolean;
@@ -103,19 +104,19 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
             <Typography display="flex" alignItems="center" gap={1}>
               <AttachMoneyIcon color="info" fontSize="small" />
               <strong>Dinero Inicial:</strong> ${' '}
-              {formatNumber(Number(data.initialCash) || 0)}
+              {formatNumber(normalizeNumber(data.initialCash))}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
               <MonetizationOnIcon color="success" fontSize="small" />
               <strong>Dinero Final:</strong> ${' '}
-              {formatNumber(Number(data.finalCash) || 0)}
+              {formatNumber(normalizeNumber(data.finalCash))}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
               <DifferenceIcon color="warning" fontSize="small" />
               <strong>Diferencia:</strong> ${' '}
-              {formatNumber(Number(data.cashDifference) || 0)}
+              {formatNumber(normalizeNumber(data.cashDifference))}
             </Typography>
           </Grid>
 
@@ -124,25 +125,25 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
             <Typography display="flex" alignItems="center" gap={1}>
               <GridArrowDownwardIcon color="warning" fontSize="small" />
               <strong>Total de Ingresos:</strong> ${' '}
-              {formatNumber(Number(data.totalIncomes) || 0)}
+              {formatNumber(normalizeNumber(data.totalIncomes))}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
               <GridArrowUpwardIcon color="error" fontSize="small" />
               <strong>Total de Egresos:</strong> ${' '}
-              {formatNumber(Number(data.totalExpenses) || 0)}
+              {formatNumber(normalizeNumber(data.totalExpenses))}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
               <PointOfSaleIcon color="success" fontSize="small" />
               <strong>Total de Ventas:</strong> ${' '}
-              {formatNumber(Number(data.totalSales) || 0)}
+              {formatNumber(normalizeNumber(data.totalSales))}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
               <VolunteerActivismIcon color="info" fontSize="small" />
               <strong>Total de Propinas:</strong> ${' '}
-              {formatNumber(Number(data.totalTips) || 0)}
+              {formatNumber(normalizeNumber(data.totalTips))}
             </Typography>
           </Grid>
         </Grid>
@@ -165,7 +166,7 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
               <Typography display="flex" alignItems="center" gap={1}>
                 {t.icon}
                 <strong>{t.label}:</strong> ${' '}
-                {formatNumber(Number(t.value) || 0)}
+                {formatNumber(normalizeNumber(t.value))}
               </Typography>
             </Grid>
           ))}

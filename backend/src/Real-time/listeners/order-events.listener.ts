@@ -31,4 +31,9 @@ export class OrderWSListener {
   handleOrderUpdateClose(event: { order: Order }) {
     this.broadcastService.broadcast('orderUpdatedClose', event.order);
   }
+
+  @OnEvent('order.ticketPrinted')
+  handleOrderTicketPrinted(event: { order: Order }) {
+    this.broadcastService.broadcast('orderTicketPrinted', event.order);
+  }
 }

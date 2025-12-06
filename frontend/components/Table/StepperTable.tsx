@@ -18,6 +18,7 @@ import { useTableStore } from './useTableStore';
 import { useOrderStore } from '../Order/useOrderStore';
 import { useAuth } from '@/app/context/authContext';
 import { TableBar } from '@mui/icons-material';
+import { UserRole } from '../Enums/user';
 
 const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
 
@@ -42,8 +43,9 @@ export const StepperTable: React.FC<Props> = ({
   const { setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, userRoleFromToken } = useAuth();
   const token = getAccessToken();
+  const userRole = userRoleFromToken();
 
 
   const totalSteps = () => steps.length;
@@ -52,7 +54,13 @@ export const StepperTable: React.FC<Props> = ({
   const allStepsCompleted = () => completedSteps() === totalSteps();
 
   const handleNextStep = () => {
-    setActiveStep(isLastStep() ? activeStep : activeStep + 1);
+    // Si el usuario es MOZO y está intentando avanzar al paso 4 (pago), no permitirlo
+    const nextStep = isLastStep() ? activeStep : activeStep + 1;
+    if (userRole === UserRole.MOZO && nextStep === 3) {
+      // El mozo no puede acceder al paso 4 (pago), se queda en el paso 3
+      return;
+    }
+    setActiveStep(nextStep);
   };
 
   const handleBack = () => {
@@ -60,6 +68,10 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const handleStep = (step: number) => () => {
+    // Si el usuario es MOZO, no permitir acceso al paso 4 (pago)
+    if (userRole === UserRole.MOZO && step === 3) {
+      return; // No permitir acceso al paso 4
+    }
     setActiveStep(step);
   };
 
@@ -154,6 +166,14 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         );
       case 3:
+        // El paso 4 (pago) solo es accesible para ENCARGADO y ADMIN, no para MOZO
+        if (userRole === UserRole.MOZO) {
+          return (
+            <div className="flex justify-center text-red-500 font-bold my-16">
+              El pago debe ser realizado por el encargado. La orden está pendiente de pago.
+            </div>
+          );
+        }
         return selectedOrderByTable ? <PayOrder handleComplete={handleComplete} /> :
           (selectedTable?.state === TableState.CLOSED) && (
             <>
