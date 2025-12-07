@@ -11,7 +11,15 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
@@ -24,12 +32,40 @@ import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 
 @ApiTags('Producto')
+@ApiBearerAuth('JWT-auth')
 @Controller('product')
 @UseGuards(RolesGuard)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Obtener todos los productos',
+    description:
+      'Devuelve una lista paginada de todos los productos (simples, compuestos y promociones)',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad por página',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos obtenida exitosamente',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'No autorizado - Token JWT inválido o faltante',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllProducts(
     @Query('page') page: number = 1,
@@ -39,6 +75,27 @@ export class ProductController {
   }
 
   @Get('not-promotion')
+  @ApiOperation({
+    summary: 'Obtener productos sin promociones',
+    description:
+      'Devuelve productos simples y compuestos, excluyendo promociones. Útil para crear promociones.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad por página',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos obtenida exitosamente',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getSimpleAndCompositeProducts(
     @Query('page') page: number = 1,
@@ -48,6 +105,19 @@ export class ProductController {
   }
 
   @Get('by-name')
+  @ApiOperation({
+    summary: 'Buscar producto por nombre',
+    description: 'Busca un producto específico por su nombre exacto',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: true,
+    type: String,
+    description: 'Nombre del producto',
+    example: 'café con leche',
+  })
+  @ApiResponse({ status: 200, description: 'Producto encontrado' })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductByName(
     @Query('name') name: string,
@@ -56,6 +126,45 @@ export class ProductController {
   }
 
   @Post('prod-to-prom')
+  @ApiOperation({
+    summary: 'Buscar productos para promoción',
+    description: 'Busca productos que pueden ser agregados a una promoción',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filtrar por activos',
+    example: true,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad por página',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filtrar por nombre',
+  })
+  @ApiQuery({
+    name: 'code',
+    required: false,
+    type: Number,
+    description: 'Filtrar por código',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos para promoción',
+  })
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
     @Query('page') page: number = 1,
@@ -73,6 +182,56 @@ export class ProductController {
   }
 
   @Post('search')
+  @ApiOperation({
+    summary: 'Búsqueda avanzada de productos',
+    description:
+      'Permite buscar productos con múltiples filtros: nombre, código, categorías y estado activo',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Buscar por nombre (parcial)',
+  })
+  @ApiQuery({
+    name: 'code',
+    required: false,
+    type: String,
+    description: 'Buscar por código',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filtrar por estado activo',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad por página',
+  })
+  @ApiBody({
+    description: 'IDs de categorías para filtrar (opcional)',
+    required: false,
+    schema: {
+      type: 'object',
+      properties: {
+        categories: {
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          example: ['uuid-categoria-1', 'uuid-categoria-2'],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Resultados de búsqueda' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async searchProducts(
     @Query('name') name?: string,
@@ -93,11 +252,36 @@ export class ProductController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Obtener producto por ID',
+    description: 'Devuelve un producto específico con todos sus detalles',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID del producto',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiResponse({ status: 200, description: 'Producto encontrado' })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductById(@Param('id') id: UUID): Promise<ProductResponseDto> {
     return this.productService.getProductById(id);
   }
+
   @Get('by-code/:code')
+  @ApiOperation({
+    summary: 'Obtener producto por código',
+    description: 'Busca un producto por su código numérico único',
+  })
+  @ApiParam({
+    name: 'code',
+    type: String,
+    description: 'Código del producto',
+    example: '101',
+  })
+  @ApiResponse({ status: 200, description: 'Producto encontrado' })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductByCode(
     @Param('code') code: string,
@@ -106,6 +290,30 @@ export class ProductController {
   }
 
   @Post('by-categories')
+  @ApiOperation({
+    summary: 'Obtener productos por categorías',
+    description:
+      'Devuelve todos los productos que pertenecen a las categorías especificadas',
+  })
+  @ApiBody({
+    type: GetProductsByCategoriesDto,
+    description: 'Lista de IDs de categorías',
+    examples: {
+      ejemplo: {
+        value: {
+          categories: ['uuid-categoria-1', 'uuid-categoria-2'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos filtrada por categorías',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Debe proporcionar al menos una categoría',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getProductsByCategories(
     @Body(ValidationPipe) body: GetProductsByCategoriesDto,
@@ -120,6 +328,49 @@ export class ProductController {
   }
 
   @Post()
+  @ApiOperation({
+    summary: 'Crear nuevo producto',
+    description:
+      'Crea un nuevo producto (simple, compuesto o promoción). Requiere rol ADMIN o ENCARGADO.',
+  })
+  @ApiBody({
+    type: CreateProductDto,
+    description: 'Datos del producto a crear',
+    examples: {
+      productoSimple: {
+        summary: 'Producto simple',
+        value: {
+          name: 'Café Americano',
+          code: 101,
+          description: 'Café negro tradicional',
+          price: 1500,
+          cost: 300,
+          categories: ['uuid-categoria-bebidas'],
+          type: 'product',
+        },
+      },
+      productoConToppings: {
+        summary: 'Producto con toppings',
+        value: {
+          name: 'Café Personalizable',
+          price: 1800,
+          allowsToppings: true,
+          availableToppingGroups: [
+            {
+              toppingsGroupId: 'uuid-grupo-leches',
+              quantityOfTopping: 1,
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Producto creado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos de producto inválidos' })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permisos para crear productos',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async createProduct(
     @Body() productToCreate: CreateProductDto,
@@ -128,6 +379,26 @@ export class ProductController {
   }
 
   @Put(':id')
+  @ApiOperation({
+    summary: 'Actualizar producto',
+    description:
+      'Actualiza los datos de un producto existente. Requiere rol ADMIN o ENCARGADO.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID del producto a actualizar',
+  })
+  @ApiBody({ type: UpdateProductDto, description: 'Datos a actualizar' })
+  @ApiResponse({
+    status: 200,
+    description: 'Producto actualizado exitosamente',
+  })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permisos para actualizar productos',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async updateProduct(
     @Body() updateData: UpdateProductDto,
@@ -137,12 +408,41 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @ApiOperation({
+    summary: 'Eliminar producto',
+    description:
+      'Elimina (desactiva) un producto del sistema. Requiere rol ADMIN o ENCARGADO.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID del producto a eliminar',
+  })
+  @ApiResponse({ status: 200, description: 'Producto eliminado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permisos para eliminar productos',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async deleteProduct(@Param('id') id: UUID) {
     return await this.productService.deleteProduct(id);
   }
 
   @Post('check-stock')
+  @ApiOperation({
+    summary: 'Verificar disponibilidad de stock',
+    description:
+      'Verifica si hay stock suficiente para los productos especificados',
+  })
+  @ApiBody({
+    type: CheckStockDto,
+    description: 'Productos y cantidades a verificar',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado de verificación de stock',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async checkProductsStockAvailability(@Body() dataToCheck: CheckStockDto) {
     return this.productService.checkProductsStockAvailability(dataToCheck);
