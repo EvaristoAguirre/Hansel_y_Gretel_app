@@ -1,5 +1,5 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import {
   Column,

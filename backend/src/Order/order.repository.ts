@@ -9,7 +9,7 @@ import { Order } from './order.entity';
 import { QueryRunner, Repository } from 'typeorm';
 import { OrderDetails } from './order_details.entity';
 import { Table } from 'src/Table/table.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';

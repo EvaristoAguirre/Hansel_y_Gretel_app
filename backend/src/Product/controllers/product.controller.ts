@@ -12,7 +12,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ProductService } from './product.service';
+import { ProductService } from '../services/product.service';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { CreateProductDto } from 'src/DTOs/create-product.dto';
