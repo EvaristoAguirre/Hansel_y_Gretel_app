@@ -22,7 +22,7 @@ import { TableService } from 'src/Table/table.service';
 import { isUUID } from 'class-validator';
 import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
@@ -535,10 +535,14 @@ export class OrderService {
       order.isActive = false; // Marcar como inactiva para que no aparezca en búsquedas
 
       const updatedOrder = await queryRunner.manager.save(order);
-      this.logger.log(`💾 [cancelOrder] Orden ${id} guardada con estado CANCELLED`);
+      this.logger.log(
+        `💾 [cancelOrder] Orden ${id} guardada con estado CANCELLED`,
+      );
 
       await queryRunner.commitTransaction();
-      this.logger.log(`✅ [cancelOrder] Transacción completada para orden ${id}`);
+      this.logger.log(
+        `✅ [cancelOrder] Transacción completada para orden ${id}`,
+      );
 
       // Cambiar estado de mesa (fuera de la transacción)
       if (previousTableId) {
@@ -560,7 +564,9 @@ export class OrderService {
         ...updatedOrder,
         table: tableInfo, // Incluir el tableId en el evento
       };
-      this.logger.log(`📢 Emitiendo evento order.deleted para orden ${id}, mesa ${previousTableId}`);
+      this.logger.log(
+        `📢 Emitiendo evento order.deleted para orden ${id}, mesa ${previousTableId}`,
+      );
       this.eventEmitter.emit('order.deleted', { order: orderWithTableInfo });
       this.logger.log(`✅ Evento order.deleted emitido correctamente`);
 

@@ -3,7 +3,7 @@ import { ToppingsGroupsController } from './toppings-group.controller';
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { ToppingsGroup } from './toppings-group.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ToppingsGroupsService } from './toppings-group.service';

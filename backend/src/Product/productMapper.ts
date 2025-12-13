@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { Product } from './product.entity';
+import { Product } from './entities/product.entity';
 import {
   ProductResponseDto,
   UnitOfMeasureResponseDto,
