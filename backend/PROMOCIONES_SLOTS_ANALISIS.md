@@ -686,24 +686,24 @@ El frontend necesitará:
 
 ### Fase 1: Entidades Base (4-6 horas)
 
-- [ ] Crear `PromotionSlot` entity
-- [ ] Crear `PromotionSlotOption` entity
-- [ ] Crear `OrderPromotionSelection` entity
-- [ ] Modificar `Product` entity (agregar relación)
-- [ ] Modificar `OrderDetails` entity (agregar relación)
+- [x] Crear `PromotionSlot` entity
+- [x] Crear `PromotionSlotOption` entity
+- [x] Crear `OrderPromotionSelection` entity
+- [x] Modificar `Product` entity (agregar relación)
+- [x] Modificar `OrderDetails` entity (agregar relación)
 - [ ] Crear migraciones de base de datos
 
 ### Fase 2: DTOs y Validaciones (2-3 horas)
 
-- [ ] Crear `PromotionSelectionDto`
-- [ ] Crear `CreatePromotionSlotDto`
-- [ ] Crear `UpdatePromotionSlotDto`
+- [x] Crear `PromotionSelectionDto`
+- [x] Crear `CreatePromotionSlotDto`
+- [x] Crear `UpdatePromotionSlotDto`
 - [ ] Actualizar `CreateOrderDetailDto`
 
 ### Fase 3: Repository y Service de Slots (4-5 horas)
 
-- [ ] Crear `PromotionSlotRepository`
-- [ ] Métodos CRUD para slots y opciones
+- [x] Crear `PromotionSlotRepository`
+- [x] Métodos CRUD para slots y opciones
 - [ ] Integrar en `ProductRepository`/`ProductService`
 
 ### Fase 4: Modificación de Stock (3-4 horas)

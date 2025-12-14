@@ -1,0 +1,27 @@
+meta {
+  name: Create Prom-Slot
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/promotion-slot
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "promotionId": "asdasd",
+    "name": "adsadd",
+    "description": "asdad",
+    "quantity": 2,
+    "displayOrder": 1,
+    "isOptional": true
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

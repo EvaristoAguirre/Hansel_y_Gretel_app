@@ -19,6 +19,9 @@ import { ProductRepository } from './repositories/product.repository';
 import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
 import { PromotionSlotOption } from './entities/promotion-slot-option.entity';
 import { PromotionSlot } from './entities/promotion-slot.entity';
+import { PromotionSlotRepository } from './repositories/promotion-slot.repository';
+import { PromotionSlotService } from './services/promotion-slot-service';
+import { PromotionSlotController } from './controllers/promotion-slot.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -40,8 +43,13 @@ import { PromotionSlot } from './entities/promotion-slot.entity';
     StockModule,
     CostCascadeModule,
   ],
-  controllers: [ProductController],
-  providers: [ProductService, ProductRepository],
-  exports: [ProductService],
+  controllers: [ProductController, PromotionSlotController],
+  providers: [
+    ProductService,
+    ProductRepository,
+    PromotionSlotRepository,
+    PromotionSlotService,
+  ],
+  exports: [ProductService, PromotionSlotService],
 })
 export class ProductModule {}
