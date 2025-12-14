@@ -1457,4 +1457,24 @@ export class ProductRepository {
 
     return totalExtraCost;
   }
+
+  /**
+   * Verifica si existe un producto por su ID
+   * Método optimizado que solo verifica la existencia sin cargar relaciones
+   * @param id - ID del producto a verificar
+   * @param type - Tipo de producto opcional para filtrar (ej: 'promotion')
+   * @returns true si existe, false si no existe
+   */
+  async existsById(id: string, type?: string): Promise<boolean> {
+    const whereCondition: Record<string, any> = { id };
+    if (type) {
+      whereCondition.type = type;
+    }
+
+    const count = await this.productRepository.count({
+      where: whereCondition,
+    });
+
+    return count > 0;
+  }
 }

@@ -6,6 +6,9 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
   // JoinColumn,
 } from 'typeorm';
 import { Product } from './product.entity';
@@ -33,6 +36,15 @@ export class PromotionSlot {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
 
   // -------- Relaciones --------
 

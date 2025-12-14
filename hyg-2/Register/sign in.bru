@@ -1,0 +1,24 @@
+meta {
+  name: sign in
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/user/register
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "admin",
+    "role": "Admin"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
