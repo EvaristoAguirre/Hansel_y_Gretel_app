@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { Order } from './order.entity';
+import { Order } from '../entities/order.entity';
 import { Between, DataSource, In } from 'typeorm';
-import { ArchivedOrder } from './archived_order.entity';
+import { ArchivedOrder } from '../entities/archived_order.entity';
 import { Cron } from '@nestjs/schedule';
 import { OrderState } from 'src/Enums/states.enum';
-import { ArchivedOrderDetails } from './archived_order_details.entity';
+import { ArchivedOrderDetails } from '../entities/archived_order_details.entity';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ArchivedOrderPayment } from './archived_order_payments.entity';
+import { ArchivedOrderPayment } from '../entities/archived_order_payments.entity';
 
 @Injectable()
 export class ArchiveService {

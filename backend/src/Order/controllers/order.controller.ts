@@ -9,11 +9,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { OrderService } from './order.service';
+import { OrderService } from '../services/order.service';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
-import { Order } from './order.entity';
+import { Order } from '../entities/order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
-import { OrderDetails } from './order_details.entity';
+import { OrderDetails } from '../entities/order_details.entity';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
