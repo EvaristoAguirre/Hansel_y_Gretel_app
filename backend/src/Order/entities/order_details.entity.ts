@@ -10,6 +10,7 @@ import {
 import { Order } from './order.entity';
 import { Exclude } from 'class-transformer';
 import { OrderDetailToppings } from './order_details_toppings.entity';
+import { OrderPromotionSelection } from './order-promotion-selection.entity';
 
 @Entity({ name: 'order_details' })
 export class OrderDetails {
@@ -55,4 +56,13 @@ export class OrderDetails {
     cascade: true,
   })
   orderDetailToppings: OrderDetailToppings[];
+
+  @OneToMany(
+    () => OrderPromotionSelection,
+    (selection) => selection.orderDetail,
+    {
+      cascade: true,
+    },
+  )
+  promotionSelections: OrderPromotionSelection[];
 }

@@ -1,7 +1,7 @@
 import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { OrderDetails } from 'src/Order/order_details.entity';
+import { OrderDetails } from 'src/Order/entities/order_details.entity';
 import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,

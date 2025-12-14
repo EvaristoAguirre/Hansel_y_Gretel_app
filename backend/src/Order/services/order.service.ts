@@ -6,12 +6,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { OrderRepository } from './order.repository';
+import { OrderRepository } from '../repositories/order.repository';
 import { CreateOrderDto } from 'src/DTOs/create-order.dto';
-import { Order } from './order.entity';
+import { Order } from '../entities/order.entity';
 import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderDetails } from './order_details.entity';
+import { OrderDetails } from '../entities/order_details.entity';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { CloseOrderDto } from 'src/DTOs/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,10 +26,12 @@ import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
-import { OrderDetailToppings } from './order_details_toppings.entity';
+import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
 import { transferOrderData } from 'src/DTOs/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
+import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
 
 @Injectable()
 export class OrderService {
@@ -144,6 +146,64 @@ export class OrderService {
             where: { id: pd.productId, isActive: true },
           });
           if (!product) throw new NotFoundException('Product not found');
+
+          let finalPrice = product.price;
+          let extraCost = 0;
+
+          if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            //calcular constos para las selecciones premium
+            for (const selection of pd.promotionSelections) {
+              const slot = await queryRunner.manager.findOne(PromotionSlot, {
+                where: { id: selection.slotId, isActive: true },
+                relations: ['options'],
+              });
+
+              const option = slot.options.find(
+                (o) => o.productId === selection.selectedProductId,
+              );
+
+              if (option?.extraCost > 0) {
+                extraCost += option.extraCost;
+              }
+            }
+            finalPrice += extraCost;
+          }
+
+          //crear OrderDetail
+          const orderDetail = queryRunner.manager.create(OrderDetails, {
+            product,
+            quantity: pd.quantity,
+            unitaryPrice: finalPrice,
+            subtotal: finalPrice * pd.quantity,
+            // ... otros campos
+          });
+          const savedOrderDetail = await queryRunner.manager.save(orderDetail);
+
+          //guardar selecciones de promoción
+          if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            for (const selection of pd.promotionSelections) {
+              const slot = await queryRunner.manager.findOne(PromotionSlot, {
+                where: { id: selection.slotId, isActive: true },
+              });
+
+              const option = slot.options.find(
+                (o) => o.productId === selection.selectedProductId,
+              );
+
+              const promotionSelection = queryRunner.manager.create(
+                OrderPromotionSelection,
+                {
+                  orderDetail: savedOrderDetail,
+                  slotId: selection.slotId,
+                  selectedProductId: selection.selectedProductId,
+                  extraCostApplied: option?.extraCost || 0,
+                },
+              );
+              await queryRunner.manager.save(promotionSelection);
+            }
+          }
+
+          //------------------- hay que corregir la deducción de stock
           await this.stockService.deductStock(
             product.id,
             pd.quantity,

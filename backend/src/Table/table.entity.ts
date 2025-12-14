@@ -1,5 +1,5 @@
 import { TableState } from 'src/Enums/states.enum';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { Room } from 'src/Room/room.entity';
 import {
   Column,
