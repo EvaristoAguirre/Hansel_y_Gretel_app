@@ -42,7 +42,7 @@ export class PromotionSlotController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllPromotionSlots(
-    options: FindAllOptions,
+    @Query() options: FindAllOptions,
   ): Promise<PromotionSlot[]> {
     return await this.promotionSlotService.findAll(options);
   }

@@ -1,0 +1,28 @@
+meta {
+  name: Log in
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/user/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "admin"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  bru.setVar("authToken", response.accessToken);
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
