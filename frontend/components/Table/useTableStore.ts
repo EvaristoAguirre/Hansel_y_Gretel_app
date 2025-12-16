@@ -35,7 +35,7 @@ export const useTableStore = create<TableStateZustand>((set) => {
 
   webSocketService.on("tableDeleted", (data) => {
     set((state) => ({
-      tables: state.tables.filter((table) => table.id === data.id),
+      tables: state.tables.filter((table) => table.id !== data.id),
     }));
   });
 
