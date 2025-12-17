@@ -7,7 +7,7 @@ import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 

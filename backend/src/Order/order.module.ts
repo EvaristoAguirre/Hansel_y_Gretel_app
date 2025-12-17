@@ -1,28 +1,31 @@
 import { Module } from '@nestjs/common';
-import { OrderController } from './order.controller';
-import { OrderService } from './order.service';
+import { OrderController } from './controllers/order.controller';
+import { OrderService } from './services/order.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Order } from './order.entity';
-import { OrderRepository } from './order.repository';
-import { OrderDetails } from './order_details.entity';
-import { ArchiveService } from './archive.service';
-import { ArchivedOrder } from './archived_order.entity';
-import { ArchivedOrderDetails } from './archived_order_details.entity';
+import { Order } from './entities/order.entity';
+import { OrderRepository } from './repositories/order.repository';
+import { OrderDetails } from './entities/order_details.entity';
+import { ArchiveService } from './services/archive.service';
+import { ArchivedOrder } from './entities/archived_order.entity';
+import { ArchivedOrderDetails } from './entities/archived_order_details.entity';
 import { Table } from 'src/Table/table.entity';
-import { Product } from 'src/Product/product.entity';
-import { NotificationService } from './notification.service';
+import { Product } from 'src/Product/entities/product.entity';
+import { NotificationService } from './services/notification.service';
 import { UserModule } from 'src/User/user.module';
-import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { PromotionProduct } from 'src/Product/entities/promotionProducts.entity';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { DailyCashModule } from 'src/daily-cash/daily-cash.module';
-import { OrderDetailToppings } from './order_details_toppings.entity';
+import { OrderDetailToppings } from './entities/order_details_toppings.entity';
 
 import { StockModule } from 'src/Stock/stock.module';
 import { TableModule } from 'src/Table/table.module';
 import { PrinterModule } from 'src/Printer/printer.module';
-import { OrderPayment } from './order_payment.entity';
+import { OrderPayment } from './entities/order_payment.entity';
+import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
+import { OrderPromotionSelection } from './entities/order-promotion-selection.entity';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { OrderPayment } from './order_payment.entity';
       DailyCash,
       OrderDetailToppings,
       OrderPayment,
+      PromotionSlot,
+      PromotionSlotOption,
+      OrderPromotionSelection,
     ]),
     UserModule,
     UnitOfMeasurenModule,

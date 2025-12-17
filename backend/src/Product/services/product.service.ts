@@ -6,14 +6,14 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateProductDto } from '../DTOs/create-product.dto';
+import { CreateProductDto } from '../../DTOs/create-product.dto';
 import { UpdateProductDto } from 'src/DTOs/update-product-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
-import { Product } from './product.entity';
-import { ProductRepository } from 'src/Product/product.repository';
-import { ProductMapper } from './productMapper';
+import { Product } from '../entities/product.entity';
+import { ProductRepository } from 'src/Product/repositories/product.repository';
+import { ProductMapper } from '../productMapper';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';

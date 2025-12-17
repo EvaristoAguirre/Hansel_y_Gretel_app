@@ -20,8 +20,8 @@ import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { isUUID } from 'class-validator';
 import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
-import { Product } from 'src/Product/product.entity';
-import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { Product } from 'src/Product/entities/product.entity';
+import { PromotionProduct } from 'src/Product/entities/promotionProducts.entity';
 import { ProductMapper } from 'src/Product/productMapper';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
@@ -1071,7 +1071,11 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      this.logError('searchProducts', { name, code, categories, page, limit }, error);
+      this.logError(
+        'searchProducts',
+        { name, code, categories, page, limit },
+        error,
+      );
       throw error;
     }
   }
@@ -1124,7 +1128,11 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      this.logError('searchProductsToPromotion', { name, code, page, limit }, error);
+      this.logError(
+        'searchProductsToPromotion',
+        { name, code, page, limit },
+        error,
+      );
       throw error;
     }
   }
@@ -1448,5 +1456,25 @@ export class ProductRepository {
     }
 
     return totalExtraCost;
+  }
+
+  /**
+   * Verifica si existe un producto por su ID
+   * Método optimizado que solo verifica la existencia sin cargar relaciones
+   * @param id - ID del producto a verificar
+   * @param type - Tipo de producto opcional para filtrar (ej: 'promotion')
+   * @returns true si existe, false si no existe
+   */
+  async existsById(id: string, type?: string): Promise<boolean> {
+    const whereCondition: Record<string, any> = { id };
+    if (type) {
+      whereCondition.type = type;
+    }
+
+    const count = await this.productRepository.count({
+      where: whereCondition,
+    });
+
+    return count > 0;
   }
 }

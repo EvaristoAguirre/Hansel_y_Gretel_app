@@ -5,22 +5,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from './order.entity';
+import { Order } from '../entities/order.entity';
 import { QueryRunner, Repository } from 'typeorm';
-import { OrderDetails } from './order_details.entity';
+import { OrderDetails } from '../entities/order_details.entity';
 import { Table } from 'src/Table/table.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
 import { CloseOrderDto } from 'src/DTOs/close-order.dto';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
-import { OrderDetailToppings } from './order_details_toppings.entity';
+import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
 import { Logger } from '@nestjs/common';
-import { OrderPayment } from './order_payment.entity';
+import { OrderPayment } from '../entities/order_payment.entity';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { Category } from 'src/Category/category.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { OrderDetails } from 'src/Order/order_details.entity';
+import { OrderDetails } from 'src/Order/entities/order_details.entity';
 import { Stock } from 'src/Stock/stock.entity';
 import {
   Entity,
@@ -14,9 +14,10 @@ import {
   OneToOne,
   Index,
 } from 'typeorm';
-import { PromotionProduct } from './promotionProducts.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
+import { PromotionProduct } from './promotionProducts.entity';
+import { PromotionSlot } from './promotion-slot.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -118,4 +119,7 @@ export class Product {
     (availableTopping) => availableTopping.product,
   )
   availableToppingGroups: ProductAvailableToppingGroup[];
+
+  @OneToMany(() => PromotionSlot, (promotionSlot) => promotionSlot.promotion)
+  promotionSlots: PromotionSlot[];
 }

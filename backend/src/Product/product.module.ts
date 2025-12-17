@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ProductController } from './product.controller';
-import { ProductService } from './product.service';
+import { ProductController } from './controllers/product.controller';
+import { ProductService } from './services/product.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Product } from './product.entity';
+import { Product } from './entities/product.entity';
 import { CategoryModule } from 'src/Category/category.module';
 import { Category } from 'src/Category/category.entity';
 import { UserModule } from 'src/User/user.module';
-import { PromotionProduct } from './promotionProducts.entity';
+import { PromotionProduct } from './entities/promotionProducts.entity';
 import { UnitConversion } from 'src/UnitOfMeasure/unitConversion.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
@@ -15,8 +15,13 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
 import { StockModule } from 'src/Stock/stock.module';
-import { ProductRepository } from './product.repository';
+import { ProductRepository } from './repositories/product.repository';
 import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
+import { PromotionSlotOption } from './entities/promotion-slot-option.entity';
+import { PromotionSlot } from './entities/promotion-slot.entity';
+import { PromotionSlotRepository } from './repositories/promotion-slot.repository';
+import { PromotionSlotService } from './services/promotion-slot-service';
+import { PromotionSlotController } from './controllers/promotion-slot.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -28,6 +33,8 @@ import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
       Stock,
       Ingredient,
       ProductAvailableToppingGroup,
+      PromotionSlot,
+      PromotionSlotOption,
     ]),
     CategoryModule,
     IngredientModule,
@@ -36,8 +43,13 @@ import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
     StockModule,
     CostCascadeModule,
   ],
-  controllers: [ProductController],
-  providers: [ProductService, ProductRepository],
-  exports: [ProductService],
+  controllers: [ProductController, PromotionSlotController],
+  providers: [
+    ProductService,
+    ProductRepository,
+    PromotionSlotRepository,
+    PromotionSlotService,
+  ],
+  exports: [ProductService, PromotionSlotService],
 })
 export class ProductModule {}

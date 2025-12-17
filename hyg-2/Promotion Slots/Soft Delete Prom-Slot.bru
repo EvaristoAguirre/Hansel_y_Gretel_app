@@ -1,0 +1,29 @@
+meta {
+  name: Soft Delete Prom-Slot
+  type: http
+  seq: 6
+}
+
+delete {
+  url: http://localhost:3000/promotion-slot/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 09654b64-19c7-44b8-b5e1-8c9ad2c191c3
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -26,7 +26,7 @@ import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()

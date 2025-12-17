@@ -1,7 +1,7 @@
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { OrderDetails } from './order_details.entity';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
+import { OrderDetails } from './order_details.entity';
 
 @Entity({ name: 'order_detail_toppings' })
 export class OrderDetailToppings {
