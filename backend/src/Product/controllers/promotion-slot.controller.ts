@@ -17,6 +17,8 @@ import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UpdatePromotionSlotDto } from '../dtos/update-promotion-slot.dto';
+import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
+import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
 
 interface FindAllOptions {
   page?: number;
@@ -86,5 +88,52 @@ export class PromotionSlotController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async restorePromotionSlot(@Param('id') id: string): Promise<PromotionSlot> {
     return await this.promotionSlotService.restore(id);
+  }
+
+  // Crear opción en un slot
+  @Post('option')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async createSlotOption(@Body() createData: CreateSlotOptionDto) {
+    return await this.promotionSlotService.createOption(createData);
+  }
+
+  // Actualizar opción
+  @Patch('option/:optionId')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async updateSlotOption(
+    @Param('optionId') optionId: string,
+    @Body() updateData: UpdateSlotOptionDto,
+  ) {
+    return await this.promotionSlotService.updateOption(optionId, updateData);
+  }
+
+  // Eliminar opción
+  @Delete('option/:optionId')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async deleteSlotOption(@Param('optionId') optionId: string) {
+    return await this.promotionSlotService.deleteOption(optionId);
+  }
+
+  // Reordenar opciones de un slot
+  @Patch(':slotId/options/reorder')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async reorderSlotOptions(
+    @Param('slotId') slotId: string,
+    @Body() body: { orderArray: string[] },
+  ) {
+    return await this.promotionSlotService.reorderOptions(
+      slotId,
+      body.orderArray,
+    );
+  }
+
+  // Marcar opción como default
+  @Patch(':slotId/options/:optionId/set-default')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  async setDefaultOption(
+    @Param('slotId') slotId: string,
+    @Param('optionId') optionId: string,
+  ) {
+    return await this.promotionSlotService.setDefaultOption(slotId, optionId);
   }
 }
