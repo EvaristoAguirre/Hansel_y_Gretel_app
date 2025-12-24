@@ -19,7 +19,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RolesGuard } from 'src/Guards/roles.guard';
-import { PromotionSlotService } from '../services/promotion-slot-service';
+import { PromotionSlotService } from '../services/promotion-slot.service';
 import { UserRole } from 'src/Enums/roles.enum';
 import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';

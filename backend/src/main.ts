@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { LoggerMidleware } from './Middleware/logger.middleware';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { JwtExceptionFilter } from './Filters/token.filters';
@@ -91,13 +91,41 @@ Obtener el token mediante POST /user/login
 
   // const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
   app.useGlobalFilters(
-    new LoggingExceptionFilter(loggerService),
-    new JwtExceptionFilter(),
     new ValidationExceptionFilter(),
+    new JwtExceptionFilter(),
     new DatabaseExceptionFilter(),
+    new LoggingExceptionFilter(loggerService),
     // new GlobalExceptionFilter(),
   );
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) => {
+          const constraints = error.constraints
+            ? Object.values(error.constraints).join(', ')
+            : 'Validation error';
+          return `${error.property}: ${constraints}`;
+        });
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Error de validación',
+          errors: errors.map((error) => ({
+            property: error.property,
+            value: error.value,
+            constraints: error.constraints || {},
+            children: error.children || [],
+          })),
+          details: messages,
+        });
+      },
+    }),
+  );
   app.use(LoggerMidleware);
   app.enableCors({
     origin: '*',

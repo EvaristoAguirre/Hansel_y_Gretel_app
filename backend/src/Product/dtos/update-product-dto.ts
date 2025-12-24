@@ -13,7 +13,8 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PromotionProductDto } from './create-promotion.dto';
+import { PromotionProductDto } from '../../DTOs/create-promotion.dto';
+import { UpdatePromotionSlotWithOptionsDto } from './update-slot-option-for-update.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -83,6 +84,12 @@ export class UpdateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductToppingsGroupDto)
   availableToppingGroups?: ProductToppingsGroupDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdatePromotionSlotWithOptionsDto)
+  slots?: UpdatePromotionSlotWithOptionsDto[];
 }
 
 export class ProductIngredientDto {

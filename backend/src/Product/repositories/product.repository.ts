@@ -8,8 +8,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, ILike, In, QueryRunner, Raw, Repository } from 'typeorm';
-import { CreateProductDto } from 'src/DTOs/create-product.dto';
-import { UpdateProductDto } from 'src/DTOs/update-product-dto';
+import { CreateProductDto } from 'src/Product/dtos/create-product.dto';
+import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
+import { UpdatePromotionSlotWithOptionsDto } from 'src/Product/dtos/update-slot-option-for-update.dto';
 import { Category } from 'src/Category/category.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
@@ -22,6 +23,8 @@ import { ToppingsGroup } from 'src/ToppingsGroup/toppings-group.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { PromotionProduct } from 'src/Product/entities/promotionProducts.entity';
+import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { ProductMapper } from 'src/Product/productMapper';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
@@ -874,7 +877,7 @@ export class ProductRepository {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
-    const { categories, products, ...otherAttributes } = updateData;
+    const { categories, products, slots, ...otherAttributes } = updateData;
 
     const promotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true, type: 'promotion' },
@@ -886,6 +889,9 @@ export class ProductRepository {
         'stock.unitOfMeasure',
         'availableToppingGroups',
         'availableToppingGroups.toppingGroup',
+        'promotionSlots',
+        'promotionSlots.options',
+        'promotionSlots.options.product',
       ],
     });
     if (!promotion) {
@@ -975,6 +981,11 @@ export class ProductRepository {
       }
     }
 
+    // Actualizar slots si están presentes
+    if (slots !== undefined) {
+      await this.updatePromotionSlots(queryRunner, promotion, slots);
+    }
+
     await queryRunner.manager.save(promotion);
     const updatedPromotion = await queryRunner.manager.findOne(Product, {
       where: { id: id, isActive: true },
@@ -987,6 +998,9 @@ export class ProductRepository {
         'availableToppingGroups',
         'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
+        'promotionSlots',
+        'promotionSlots.options',
+        'promotionSlots.options.product',
       ],
     });
     return ProductMapper.toResponseDto(updatedPromotion);
@@ -1191,6 +1205,9 @@ export class ProductRepository {
             'promotionDetails.product.productIngredients.unitOfMeasure',
             'promotionDetails.product.stock',
             'promotionDetails.product.stock.unitOfMeasure',
+            'promotionSlots',
+            'promotionSlots.options',
+            'promotionSlots.options.product',
           ];
 
     const product = await this.productRepository.findOne({
@@ -1236,6 +1253,9 @@ export class ProductRepository {
             'promotionDetails.product.productIngredients.unitOfMeasure',
             'promotionDetails.product.stock',
             'promotionDetails.product.stock.unitOfMeasure',
+            'promotionSlots',
+            'promotionSlots.options',
+            'promotionSlots.options.product',
           ];
 
     const product = await queryRunner.manager.findOne(Product, {
@@ -1476,5 +1496,342 @@ export class ProductRepository {
     });
 
     return count > 0;
+  }
+
+  /**
+   * Crea un producto dentro de una transacción existente
+   * No hace commit, solo crea el producto usando el queryRunner proporcionado
+   * @param productData - Datos del producto a crear
+   * @param queryRunner - QueryRunner de la transacción activa
+   * @returns Producto creado
+   */
+  async createProductInTransaction(
+    productData: CreateProductDto,
+    queryRunner: QueryRunner,
+  ): Promise<Product> {
+    const { categories, ...productDataWithoutCategories } = productData;
+
+    let categoryEntities: Category[] = [];
+    if (categories && categories.length > 0) {
+      categoryEntities = await queryRunner.manager.find(Category, {
+        where: { id: In(categories), isActive: true },
+      });
+      if (categoryEntities.length !== categories.length) {
+        throw new BadRequestException('Some categories do not exist');
+      }
+    }
+
+    const unitPromotion = await queryRunner.manager.findOne(UnitOfMeasure, {
+      where: { name: 'Unidad' },
+    });
+
+    if (!unitPromotion) {
+      throw new NotFoundException('Unit of measure "Unidad" not found');
+    }
+
+    const product = queryRunner.manager.create(Product, {
+      ...productDataWithoutCategories,
+      cost: productData.cost || 0,
+      baseCost: productData.baseCost || 0,
+      toppingsCost: 0,
+      type: productData.type || 'product',
+      categories: categoryEntities,
+      unitOfMeasure: unitPromotion,
+    });
+
+    const savedProduct = await queryRunner.manager.save(Product, product);
+    return savedProduct;
+  }
+
+  /**
+   * Actualiza los slots de una promoción
+   * @private
+   */
+  private async updatePromotionSlots(
+    queryRunner: QueryRunner,
+    promotion: Product,
+    slotsData: UpdatePromotionSlotWithOptionsDto[],
+  ): Promise<void> {
+    const existingSlots = promotion.promotionSlots || [];
+    const slotsToUpdate = slotsData || [];
+
+    // IDs de slots que vienen en la actualización
+    const incomingSlotIds = slotsToUpdate
+      .map((s) => s.id)
+      .filter((id) => id !== undefined);
+
+    // Slots a eliminar (existen en BD pero no en la actualización)
+    const slotsToRemove = existingSlots.filter(
+      (slot) => !incomingSlotIds.includes(slot.id),
+    );
+
+    // Soft delete de slots removidos
+    for (const slotToRemove of slotsToRemove) {
+      await queryRunner.manager.softDelete(PromotionSlot, slotToRemove.id);
+    }
+
+    // Procesar cada slot de la actualización
+    for (const slotData of slotsToUpdate) {
+      // Validar que tenga al menos 1 opción
+      if (!slotData.options || slotData.options.length === 0) {
+        throw new BadRequestException(
+          `Slot "${slotData.name}" debe tener al menos una opción`,
+        );
+      }
+
+      // Validar límite de opciones
+      if (slotData.options.length > 10) {
+        throw new BadRequestException(
+          `Slot "${slotData.name}" no puede tener más de 10 opciones`,
+        );
+      }
+
+      // Validar que haya exactamente una opción default
+      const defaultCount = slotData.options.filter((o) => o.isDefault).length;
+      if (defaultCount !== 1) {
+        throw new BadRequestException(
+          `Slot "${slotData.name}" debe tener exactamente una opción marcada como default`,
+        );
+      }
+
+      if (slotData.id) {
+        // Actualizar slot existente
+        await this.updateExistingSlot(queryRunner, slotData);
+      } else {
+        // Crear nuevo slot
+        await this.createNewSlot(queryRunner, promotion.id, slotData);
+      }
+    }
+  }
+
+  /**
+   * Actualiza un slot existente con sus opciones
+   * @private
+   */
+  private async updateExistingSlot(
+    queryRunner: QueryRunner,
+    slotData: UpdatePromotionSlotWithOptionsDto,
+  ): Promise<void> {
+    // Buscar el slot existente
+    const existingSlot = await queryRunner.manager.findOne(PromotionSlot, {
+      where: { id: slotData.id },
+      relations: ['options'],
+    });
+
+    if (!existingSlot) {
+      throw new NotFoundException(`Slot with ID ${slotData.id} not found`);
+    }
+
+    // Actualizar campos del slot
+    existingSlot.name = slotData.name;
+    existingSlot.description = slotData.description;
+    existingSlot.quantity = slotData.quantity;
+    existingSlot.displayOrder = slotData.displayOrder;
+    existingSlot.isOptional = slotData.isOptional;
+
+    await queryRunner.manager.save(PromotionSlot, existingSlot);
+
+    // Actualizar opciones del slot usando el slot guardado y sus opciones existentes
+    await this.updateSlotOptions(
+      queryRunner,
+      existingSlot.id,
+      existingSlot.options || [],
+      slotData.options,
+    );
+  }
+
+  /**
+   * Crea un nuevo slot con sus opciones
+   * @private
+   */
+  private async createNewSlot(
+    queryRunner: QueryRunner,
+    promotionId: string,
+    slotData: UpdatePromotionSlotWithOptionsDto,
+  ): Promise<void> {
+    // Crear el slot
+    const newSlot = queryRunner.manager.create(PromotionSlot, {
+      promotionId,
+      name: slotData.name,
+      description: slotData.description,
+      quantity: slotData.quantity,
+      displayOrder: slotData.displayOrder,
+      isOptional: slotData.isOptional,
+      isActive: true,
+    });
+    const savedSlot = await queryRunner.manager.save(PromotionSlot, newSlot);
+
+    // Crear opciones del slot
+    for (const optionData of slotData.options) {
+      await this.validateAndCreateOption(queryRunner, savedSlot.id, optionData);
+    }
+  }
+
+  /**
+   * Actualiza las opciones de un slot
+   * @private
+   */
+  private async updateSlotOptions(
+    queryRunner: QueryRunner,
+    slotId: string,
+    existingOptions: PromotionSlotOption[],
+    optionsData: Array<{
+      id?: string;
+      productId: string;
+      isDefault: boolean;
+      extraCost: number;
+      displayOrder: number;
+    }>,
+  ): Promise<void> {
+    const optionsToUpdate = optionsData || [];
+
+    // IDs de opciones que vienen en la actualización
+    const incomingOptionIds = optionsToUpdate
+      .map((o) => o.id)
+      .filter((id) => id !== undefined);
+
+    // Opciones a eliminar (existen en BD pero no en la actualización)
+    const optionsToRemove = existingOptions.filter(
+      (option) => !incomingOptionIds.includes(option.id),
+    );
+
+    // Soft delete de opciones removidas
+    for (const optionToRemove of optionsToRemove) {
+      await queryRunner.manager.softDelete(
+        PromotionSlotOption,
+        optionToRemove.id,
+      );
+    }
+
+    // Procesar cada opción de la actualización
+    for (const optionData of optionsToUpdate) {
+      if (optionData.id) {
+        // Actualizar opción existente
+        await this.updateExistingOption(queryRunner, {
+          id: optionData.id,
+          productId: optionData.productId,
+          isDefault: optionData.isDefault,
+          extraCost: optionData.extraCost,
+          displayOrder: optionData.displayOrder,
+        });
+      } else {
+        // Crear nueva opción
+        await this.validateAndCreateOption(queryRunner, slotId, optionData);
+      }
+    }
+  }
+
+  /**
+   * Actualiza una opción existente
+   * @private
+   */
+  private async updateExistingOption(
+    queryRunner: QueryRunner,
+    optionData: {
+      id: string;
+      productId: string;
+      isDefault: boolean;
+      extraCost: number;
+      displayOrder: number;
+    },
+  ): Promise<void> {
+    const existingOption = await queryRunner.manager.findOne(
+      PromotionSlotOption,
+      {
+        where: { id: optionData.id },
+      },
+    );
+
+    if (!existingOption) {
+      throw new NotFoundException(`Option with ID ${optionData.id} not found`);
+    }
+
+    // Validar que el producto exista y no sea promoción
+    const optionProduct = await queryRunner.manager.findOne(Product, {
+      where: { id: optionData.productId, isActive: true },
+    });
+
+    if (!optionProduct) {
+      throw new NotFoundException(
+        `Product ${optionData.productId} not found for slot option`,
+      );
+    }
+
+    if (optionProduct.type === 'promotion') {
+      throw new BadRequestException(
+        `Cannot add promotion "${optionProduct.name}" as slot option`,
+      );
+    }
+
+    // Si cambia isDefault a true, desmarcar otras opciones del mismo slot
+    if (optionData.isDefault === true && !existingOption.isDefault) {
+      await queryRunner.manager.update(
+        PromotionSlotOption,
+        { slotId: existingOption.slotId, isDefault: true },
+        { isDefault: false },
+      );
+    }
+
+    // Actualizar campos de la opción
+    existingOption.productId = optionData.productId;
+    existingOption.isDefault = optionData.isDefault;
+    existingOption.extraCost = optionData.extraCost;
+    existingOption.displayOrder = optionData.displayOrder;
+
+    await queryRunner.manager.save(PromotionSlotOption, existingOption);
+  }
+
+  /**
+   * Valida y crea una nueva opción
+   * @private
+   */
+  private async validateAndCreateOption(
+    queryRunner: QueryRunner,
+    slotId: string,
+    optionData: {
+      productId: string;
+      isDefault: boolean;
+      extraCost: number;
+      displayOrder: number;
+    },
+  ): Promise<void> {
+    // Validar que el producto exista
+    const optionProduct = await queryRunner.manager.findOne(Product, {
+      where: { id: optionData.productId, isActive: true },
+    });
+
+    if (!optionProduct) {
+      throw new NotFoundException(
+        `Product ${optionData.productId} not found for slot option`,
+      );
+    }
+
+    // Validar que el producto NO sea promoción (evitar recursión)
+    if (optionProduct.type === 'promotion') {
+      throw new BadRequestException(
+        `Cannot add promotion "${optionProduct.name}" as slot option`,
+      );
+    }
+
+    // Si la nueva opción es default, desmarcar otras opciones del mismo slot
+    if (optionData.isDefault === true) {
+      await queryRunner.manager.update(
+        PromotionSlotOption,
+        { slotId, isDefault: true },
+        { isDefault: false },
+      );
+    }
+
+    // Crear la opción
+    const option = queryRunner.manager.create(PromotionSlotOption, {
+      slotId,
+      productId: optionData.productId,
+      isDefault: optionData.isDefault,
+      extraCost: optionData.extraCost,
+      displayOrder: optionData.displayOrder,
+      isActive: true,
+    });
+
+    await queryRunner.manager.save(PromotionSlotOption, option);
   }
 }

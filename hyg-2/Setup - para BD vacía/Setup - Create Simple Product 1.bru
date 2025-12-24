@@ -1,0 +1,42 @@
+meta {
+  name: Setup - Create Simple Product 1 (Café con Leche)
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/product
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Café con Leche",
+    "code": 101,
+    "description": "Café con leche tradicional",
+    "price": 1200,
+    "baseCost": 300,
+    "type": "product"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("productId1", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

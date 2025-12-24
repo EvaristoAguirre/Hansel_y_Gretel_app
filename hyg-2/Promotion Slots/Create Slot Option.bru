@@ -1,11 +1,11 @@
 meta {
-  name: Create Prom-Slot
+  name: Create Slot Option
   type: http
-  seq: 1
+  seq: 10
 }
 
 post {
-  url: http://localhost:3000/promotion-slot
+  url: http://localhost:3000/promotion-slot/option
   body: json
   auth: bearer
 }
@@ -21,19 +21,11 @@ auth:bearer {
 
 body:json {
   {
-    "promotionId": "{{promotionId}}",
-    "name": "Slot Bebida",
-    "description": "Selecciona tu bebida caliente",
-    "quantity": 1,
-    "displayOrder": 1,
-    "isOptional": false
-  }
-}
-
-script:post-response {
-  const response = res.getBody();
-  if (response && response.id) {
-    bru.setVar("slotId", response.id);
+    "slotId": "{{slotId}}",
+    "productId": "{{productId1}}",
+    "isDefault": true,
+    "extraCost": 0,
+    "displayOrder": 1
   }
 }
 
