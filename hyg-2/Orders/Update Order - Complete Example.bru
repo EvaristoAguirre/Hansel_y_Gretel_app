@@ -1,0 +1,87 @@
+meta {
+  name: Update Order - Complete Example
+  type: http
+  seq: 4
+}
+
+patch {
+  url: http://localhost:3000/order/update/{{orderId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "productsDetails": [
+      {
+        "productId": "{{simpleProductId}}",
+        "quantity": 2,
+        "commentOfProduct": "Producto simple sin slots",
+        "toppingsPerUnit": [
+          ["{{toppingId1}}"],
+          ["{{toppingId2}}", "{{toppingId3}}"]
+        ]
+      },
+      {
+        "productId": "{{promotionId}}",
+        "quantity": 1,
+        "commentOfProduct": "Promoción con slots seleccionados",
+        "promotionSelections": [
+          {
+            "slotId": "{{slotId1}}",
+            "selectedProductId": "{{selectedProductId1}}",
+            "toppingsPerUnit": []
+          },
+          {
+            "slotId": "{{slotId2}}",
+            "selectedProductId": "{{selectedProductId2}}",
+            "toppingsPerUnit": [
+              ["{{toppingId1}}"]
+            ]
+          }
+        ]
+      }
+    ],
+    "isPriority": true
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response) {
+    console.log("✅ Orden actualizada:");
+    console.log("Total:", response.total);
+    console.log("Productos:", response.orderDetails?.length || 0);
+
+    // Mostrar detalles de cada producto
+    if (response.orderDetails) {
+      response.orderDetails.forEach((detail, index) => {
+        console.log(`\nProducto ${index + 1}:`);
+        console.log(`  Nombre: ${detail.product.name}`);
+        console.log(`  Cantidad: ${detail.quantity}`);
+        console.log(`  Subtotal: $${detail.subtotal}`);
+
+        if (detail.product.type === "promotion" && detail.promotionSelections) {
+          console.log(`  Selecciones de slots: ${detail.promotionSelections.length}`);
+          detail.promotionSelections.forEach((selection, selIndex) => {
+            console.log(`    Slot ${selIndex + 1}: Producto ID ${selection.selectedProductId}`);
+          });
+        }
+      });
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

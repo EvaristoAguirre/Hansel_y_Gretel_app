@@ -1,0 +1,50 @@
+meta {
+  name: Update Order - Simple Promotion
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://localhost:3000/order/update/{{orderId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "productsDetails": [
+      {
+        "productId": "{{promotionId}}",
+        "quantity": 1,
+        "promotionSelections": [
+          {
+            "slotId": "{{slotId1}}",
+            "selectedProductId": "{{selectedProductId1}}"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response) {
+    console.log("✅ Promoción agregada a la orden");
+    console.log("Total actualizado:", response.total);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

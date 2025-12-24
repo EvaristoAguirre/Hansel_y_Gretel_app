@@ -184,9 +184,16 @@ export class OrderService {
             for (const selection of pd.promotionSelections) {
               const slot = await queryRunner.manager.findOne(PromotionSlot, {
                 where: { id: selection.slotId, isActive: true },
+                relations: ['options'], // Cargar opciones para obtener extraCost
               });
 
-              const option = slot.options.find(
+              if (!slot) {
+                throw new NotFoundException(
+                  `Slot with ID ${selection.slotId} not found`,
+                );
+              }
+
+              const option = slot.options?.find(
                 (o) => o.productId === selection.selectedProductId,
               );
 
@@ -203,11 +210,12 @@ export class OrderService {
             }
           }
 
-          //------------------- hay que corregir la deducción de stock
+          //------------------- Deducción de stock con soporte para promociones con slots
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
             pd.toppingsPerUnit,
+            pd.promotionSelections, // Pasar selecciones de promoción si aplica
           );
 
           const { detail, toppingDetails, subtotal } =

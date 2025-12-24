@@ -16,6 +16,8 @@ import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ProductModule } from 'src/Product/product.module';
 import { IngredientModule } from 'src/Ingredient/ingredient.module';
 import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
+import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { UnitOfMeasurenModule } from 'src/UnitOfMeasure/unitOfMeasure.module';
       ProductIngredient,
       UnitConversion,
       UnitOfMeasure,
+      PromotionSlot,
+      PromotionSlotOption,
     ]),
     forwardRef(() => CategoryModule),
     forwardRef(() => ProductModule),
