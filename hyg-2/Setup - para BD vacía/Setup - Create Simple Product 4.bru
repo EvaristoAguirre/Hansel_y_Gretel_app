@@ -1,0 +1,42 @@
+meta {
+  name: Setup - Create Simple Product 4 (Torta Premium)
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:3000/product
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Torta Premium",
+    "code": 202,
+    "description": "Torta premium con ingredientes selectos",
+    "price": 4000,
+    "baseCost": 1800,
+    "type": "product"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("productId4", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

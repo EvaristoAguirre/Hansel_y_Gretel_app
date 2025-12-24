@@ -1,0 +1,86 @@
+meta {
+  name: Create Promotion with Slots
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:3000/product
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Promo Café + Torta",
+    "description": "Café con leche y torta a elección",
+    "price": 2500,
+    "type": "promotion",
+    "categories": ["{{categoryId}}"],
+    "slots": [
+      {
+        "name": "Bebida",
+        "description": "Elige tu bebida caliente",
+        "quantity": 1,
+        "displayOrder": 1,
+        "isOptional": false,
+        "options": [
+          {
+            "productId": "{{productId1}}",
+            "isDefault": true,
+            "extraCost": 0,
+            "displayOrder": 1
+          },
+          {
+            "productId": "{{productId2}}",
+            "isDefault": false,
+            "extraCost": 200,
+            "displayOrder": 2
+          }
+        ]
+      },
+      {
+        "name": "Torta",
+        "description": "Selecciona tu torta favorita",
+        "quantity": 1,
+        "displayOrder": 2,
+        "isOptional": false,
+        "options": [
+          {
+            "productId": "{{productId3}}",
+            "isDefault": true,
+            "extraCost": 0,
+            "displayOrder": 1
+          },
+          {
+            "productId": "{{productId4}}",
+            "isDefault": false,
+            "extraCost": 500,
+            "displayOrder": 2
+          }
+        ]
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("promotionId", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

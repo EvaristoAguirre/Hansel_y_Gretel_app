@@ -6,14 +6,17 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateProductDto } from '../../DTOs/create-product.dto';
-import { UpdateProductDto } from 'src/DTOs/update-product-dto';
+import { CreateProductDto } from '../dtos/create-product.dto';
+import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { Product } from '../entities/product.entity';
+import { PromotionSlot } from '../entities/promotion-slot.entity';
+import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
 import { ProductRepository } from 'src/Product/repositories/product.repository';
 import { ProductMapper } from '../productMapper';
+import { DataSource } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
@@ -32,6 +35,7 @@ export class ProductService {
     private readonly costCascadeService: CostCascadeService,
     private readonly ingredientService: IngredientService,
     private readonly monitoringLogger: LoggerService,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ------- rta en string sin decimales y punto de mil
@@ -129,6 +133,16 @@ export class ProductService {
   async createProduct(
     productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
+    // Si es promoción Y tiene slots, crear todo en una transacción
+    if (
+      productToCreate.type === 'promotion' &&
+      productToCreate.slots &&
+      productToCreate.slots.length > 0
+    ) {
+      return await this.createPromotionWithSlots(productToCreate);
+    }
+
+    // Si no, usar método actual
     const productCreated =
       await this.productRepository.createProduct(productToCreate);
 
@@ -136,6 +150,119 @@ export class ProductService {
       product: productCreated,
     });
     return productCreated;
+  }
+
+  /**
+   * Crea una promoción con slots y opciones en una única transacción
+   * @private
+   */
+  private async createPromotionWithSlots(
+    productData: CreateProductDto,
+  ): Promise<ProductResponseDto> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Crear el producto (promoción)
+      const product = await this.productRepository.createProductInTransaction(
+        productData,
+        queryRunner,
+      );
+
+      // 2. Por cada slot
+      for (const slotData of productData.slots || []) {
+        // Validar que tenga al menos 1 opción
+        if (!slotData.options || slotData.options.length === 0) {
+          throw new BadRequestException(
+            `Slot "${slotData.name}" debe tener al menos una opción`,
+          );
+        }
+
+        // Validar límite de opciones
+        if (slotData.options.length > 10) {
+          throw new BadRequestException(
+            `Slot "${slotData.name}" no puede tener más de 10 opciones`,
+          );
+        }
+
+        // Validar que haya exactamente una opción default
+        const defaultCount = slotData.options.filter((o) => o.isDefault).length;
+        if (defaultCount !== 1) {
+          throw new BadRequestException(
+            `Slot "${slotData.name}" debe tener exactamente una opción marcada como default`,
+          );
+        }
+
+        // Crear el slot
+        const slot = queryRunner.manager.create(PromotionSlot, {
+          promotionId: product.id,
+          name: slotData.name,
+          description: slotData.description,
+          quantity: slotData.quantity,
+          displayOrder: slotData.displayOrder,
+          isOptional: slotData.isOptional,
+          isActive: true,
+        });
+        await queryRunner.manager.save(PromotionSlot, slot);
+
+        // 3. Por cada opción del slot
+        for (const optionData of slotData.options) {
+          // Validar que el producto exista
+          const optionProduct = await queryRunner.manager.findOne(Product, {
+            where: { id: optionData.productId, isActive: true },
+          });
+
+          if (!optionProduct) {
+            throw new NotFoundException(
+              `Product ${optionData.productId} not found for slot option`,
+            );
+          }
+
+          // Validar que el producto NO sea promoción (evitar recursión)
+          if (optionProduct.type === 'promotion') {
+            throw new BadRequestException(
+              `Cannot add promotion "${optionProduct.name}" as slot option`,
+            );
+          }
+
+          // Crear la opción
+          const option = queryRunner.manager.create(PromotionSlotOption, {
+            slotId: slot.id,
+            productId: optionData.productId,
+            isDefault: optionData.isDefault,
+            extraCost: optionData.extraCost,
+            displayOrder: optionData.displayOrder,
+            isActive: true,
+          });
+          await queryRunner.manager.save(PromotionSlotOption, option);
+        }
+      }
+
+      await queryRunner.commitTransaction();
+
+      // Recargar producto con todas las relaciones
+      const productWithSlots = await this.productRepository.getProductById(
+        product.id,
+      );
+
+      this.eventEmitter.emit('product.created', {
+        product: productWithSlots,
+      });
+
+      return ProductMapper.toResponseDto(productWithSlots);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Error creating promotion with slots',
+        error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // ------- rta en string sin decimales y punto de mil

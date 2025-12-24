@@ -23,8 +23,8 @@ import {
 } from '@nestjs/swagger';
 import { ProductService } from '../services/product.service';
 import { UUID } from 'crypto';
-import { UpdateProductDto } from 'src/DTOs/update-product-dto';
-import { CreateProductDto } from 'src/DTOs/create-product.dto';
+import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
+import { CreateProductDto } from 'src/Product/dtos/create-product.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';

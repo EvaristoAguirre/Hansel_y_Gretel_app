@@ -1,0 +1,38 @@
+meta {
+  name: Setup - Create Category
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/category
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Promociones"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("categoryId", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
