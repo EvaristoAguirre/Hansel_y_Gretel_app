@@ -1,7 +1,7 @@
 meta {
   name: Update Order - Add Promotion with Slots
   type: http
-  seq: 3
+  seq: 2
 }
 
 patch {
@@ -50,7 +50,7 @@ script:post-response {
   if (response && response.id) {
     console.log("✅ Orden actualizada exitosamente");
     console.log("Total de la orden:", response.total);
-
+  
     // Guardar información útil de la respuesta
     if (response.orderDetails && response.orderDetails.length > 0) {
       const promotionDetail = response.orderDetails.find(
@@ -67,4 +67,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-

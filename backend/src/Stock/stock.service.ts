@@ -26,6 +26,7 @@ import { StockResponseFormatter } from './stock-response-formatter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { PromotionSelectionDto } from 'src/Product/dtos/promotion-selection.dto';
 
 @Injectable()
@@ -313,7 +314,25 @@ export class StockService {
     promotionSelections?: PromotionSelectionDto[],
   ) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:309',message:'deductStock ENTRY',data:{productId,quantity,hasToppings:!!toppingsPerUnit?.length,hasSelections:!!promotionSelections?.length,selectionsCount:promotionSelections?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:309',
+        message: 'deductStock ENTRY',
+        data: {
+          productId,
+          quantity,
+          hasToppings: !!toppingsPerUnit?.length,
+          hasSelections: !!promotionSelections?.length,
+          selectionsCount: promotionSelections?.length,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'A',
+      }),
+    }).catch(() => {});
     // #endregion
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
@@ -322,7 +341,23 @@ export class StockService {
     }
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:318',message:'Product loaded',data:{productId:product.id,productName:product.name,productType:product.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:318',
+        message: 'Product loaded',
+        data: {
+          productId: product.id,
+          productName: product.name,
+          productType: product.type,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'A',
+      }),
+    }).catch(() => {});
     // #endregion
 
     const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
@@ -338,7 +373,26 @@ export class StockService {
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:333',message:'Processing promotion',data:{productId:product.id,hasSelections:!!promotionSelections?.length,selectionsCount:promotionSelections?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      fetch(
+        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            location: 'stock.service.ts:333',
+            message: 'Processing promotion',
+            data: {
+              productId: product.id,
+              hasSelections: !!promotionSelections?.length,
+              selectionsCount: promotionSelections?.length,
+            },
+            timestamp: Date.now(),
+            sessionId: 'debug-session',
+            runId: 'run1',
+            hypothesisId: 'A',
+          }),
+        },
+      ).catch(() => {});
       // #endregion
       // Si hay selecciones, usar el nuevo método con slots
       if (promotionSelections && promotionSelections.length > 0) {
@@ -403,7 +457,10 @@ export class StockService {
   }
 
   // Renombrar método antiguo para claridad
-  private async deductPromotionStockLegacy(promotion: Product, quantity: number) {
+  private async deductPromotionStockLegacy(
+    promotion: Product,
+    quantity: number,
+  ) {
     const promotionProducts =
       await this.productService.getPromotionProductsToAnotherService(
         promotion.id,
@@ -429,35 +486,100 @@ export class StockService {
     selections: PromotionSelectionDto[],
   ) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:416',message:'deductPromotionStockWithSelections ENTRY',data:{promotionId:promotion.id,promotionName:promotion.name,quantity,selectionsCount:selections.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:416',
+        message: 'deductPromotionStockWithSelections ENTRY',
+        data: {
+          promotionId: promotion.id,
+          promotionName: promotion.name,
+          quantity,
+          selectionsCount: selections.length,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'B',
+      }),
+    }).catch(() => {});
     // #endregion
-    // Cargar slots de la promoción con opciones
-    const slots = await this.promotionSlotRepository.find({
-      where: { promotionId: promotion.id, isActive: true },
-      relations: ['options', 'options.product'],
-    });
+
+    // Cargar asignaciones de slots de la promoción
+    const assignments = await this.promotionSlotRepository.manager.find(
+      PromotionSlotAssignment,
+      {
+        where: { promotionId: promotion.id },
+        relations: ['slot', 'slot.options', 'slot.options.product'],
+      },
+    );
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:424',message:'Slots loaded',data:{slotsCount:slots?.length,slots:slots?.map(s=>({id:s.id,name:s.name,optionsCount:s.options?.length,hasOptions:!!s.options}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:424',
+        message: 'Assignments loaded',
+        data: {
+          assignmentsCount: assignments?.length,
+          assignments: assignments?.map((a) => ({
+            id: a.id,
+            slotId: a.slotId,
+            quantity: a.quantity,
+            isOptional: a.isOptional,
+          })),
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'B',
+      }),
+    }).catch(() => {});
     // #endregion
 
-    // Validar que existan slots
-    if (!slots || slots.length === 0) {
+    // Validar que existan asignaciones
+    if (!assignments || assignments.length === 0) {
       throw new BadRequestException(
-        `Promotion "${promotion.name}" has no active slots configured`,
+        `Promotion "${promotion.name}" has no slot assignments configured`,
       );
     }
 
-    // Por cada slot
-    for (const slot of slots) {
+    // Por cada asignación de slot
+    for (const assignment of assignments) {
+      const slot = assignment.slot;
+
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:435',message:'Processing slot',data:{slotId:slot.id,slotName:slot.name,isOptional:slot.isOptional,optionsCount:slot.options?.length,optionsDefined:!!slot.options},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      fetch(
+        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            location: 'stock.service.ts:435',
+            message: 'Processing slot assignment',
+            data: {
+              slotId: slot.id,
+              slotName: slot.name,
+              isOptional: assignment.isOptional,
+              quantity: assignment.quantity,
+              optionsCount: slot.options?.length,
+            },
+            timestamp: Date.now(),
+            sessionId: 'debug-session',
+            runId: 'run1',
+            hypothesisId: 'B',
+          }),
+        },
+      ).catch(() => {});
       // #endregion
+
       // Buscar la selección del cliente para este slot
       const selection = selections?.find((s) => s.slotId === slot.id);
 
       // Si el slot es obligatorio y no tiene selección, error
-      if (!selection && !slot.isOptional) {
+      if (!selection && !assignment.isOptional) {
         throw new BadRequestException(
           `Slot "${slot.name}" is required and has no selection`,
         );
@@ -465,34 +587,91 @@ export class StockService {
 
       // Si hay selección
       if (selection) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:447',message:'Selection found',data:{slotId:slot.id,selectedProductId:selection.selectedProductId,hasToppings:!!selection.toppingsPerUnit?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        // Validar que el producto seleccionado sea una opción válida del slot
-        const validOption = slot.options?.find(
-          (opt) =>
-            opt.productId === selection.selectedProductId && opt.isActive,
-        );
-
-        if (!validOption) {
+        // Validar que la cantidad de productos seleccionados coincida con quantity
+        if (
+          !selection.selectedProductIds ||
+          selection.selectedProductIds.length !== assignment.quantity
+        ) {
           throw new BadRequestException(
-            `Product selected is not a valid option for slot "${slot.name}"`,
+            `Slot "${slot.name}" requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
           );
         }
 
-        // Deducir stock del producto seleccionado
-        // Multiplicar por la cantidad del slot y por la cantidad de promociones
-        const quantityToDeduct = slot.quantity * quantity;
-
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:464',message:'Deducting stock for selected product',data:{selectedProductId:selection.selectedProductId,quantityToDeduct,slotQuantity:slot.quantity,promotionQuantity:quantity},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        fetch(
+          'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              location: 'stock.service.ts:447',
+              message: 'Selection found',
+              data: {
+                slotId: slot.id,
+                selectedProductIds: selection.selectedProductIds,
+                selectedProductsCount: selection.selectedProductIds?.length,
+                hasToppings: !!selection.toppingsPerUnit?.length,
+              },
+              timestamp: Date.now(),
+              sessionId: 'debug-session',
+              runId: 'run1',
+              hypothesisId: 'B',
+            }),
+          },
+        ).catch(() => {});
         // #endregion
 
-        await this.deductStock(
-          selection.selectedProductId,
-          quantityToDeduct,
-          selection.toppingsPerUnit, // Si el producto tiene toppings
-        );
+        // Deducir stock por cada producto seleccionado
+        for (let i = 0; i < selection.selectedProductIds.length; i++) {
+          const selectedProductId = selection.selectedProductIds[i];
+
+          // Validar que el producto seleccionado sea una opción válida del slot
+          const validOption = slot.options?.find(
+            (opt) => opt.productId === selectedProductId && opt.isActive,
+          );
+
+          if (!validOption) {
+            throw new BadRequestException(
+              `Product ${selectedProductId} is not a valid option for slot "${slot.name}"`,
+            );
+          }
+
+          // Obtener toppings para este producto específico (si hay)
+          const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
+
+          // #region agent log
+          fetch(
+            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                location: 'stock.service.ts:464',
+                message: 'Deducting stock for selected product',
+                data: {
+                  selectedProductId,
+                  quantityToDeduct: quantity,
+                  slotQuantity: assignment.quantity,
+                  promotionQuantity: quantity,
+                  hasToppings: toppingsForThisProduct.length > 0,
+                },
+                timestamp: Date.now(),
+                sessionId: 'debug-session',
+                runId: 'run1',
+                hypothesisId: 'A',
+              }),
+            },
+          ).catch(() => {});
+          // #endregion
+
+          // Deducir stock del producto seleccionado
+          // Multiplicar por la cantidad de promociones (quantity ya es por producto individual)
+          await this.deductStock(
+            selectedProductId,
+            quantity, // Cantidad de promociones (cada producto se descuenta 1 vez por promoción)
+            [toppingsForThisProduct], // Toppings para este producto específico
+          );
+        }
       }
     }
   }
@@ -627,140 +806,261 @@ export class StockService {
     selections: PromotionSelectionDto[],
   ): Promise<{ available: boolean; insufficientItems: string[] }> {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:597',message:'checkPromotionStockAvailability ENTRY',data:{promotionId,quantity,selectionsCount:selections.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:597',
+        message: 'checkPromotionStockAvailability ENTRY',
+        data: { promotionId, quantity, selectionsCount: selections.length },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
     // #endregion
     const insufficientItems: string[] = [];
 
-    // Cargar slots de la promoción
-    const slots = await this.promotionSlotRepository.find({
-      where: { promotionId, isActive: true },
-      relations: ['options', 'options.product'],
-    });
+    // Cargar asignaciones de slots de la promoción
+    const assignments = await this.promotionSlotRepository.manager.find(
+      PromotionSlotAssignment,
+      {
+        where: { promotionId },
+        relations: ['slot', 'slot.options', 'slot.options.product'],
+      },
+    );
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:608',message:'Slots loaded for check',data:{slotsCount:slots?.length,hasSlots:!!slots?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:608',
+        message: 'Assignments loaded for check',
+        data: {
+          assignmentsCount: assignments?.length,
+          hasAssignments: !!assignments?.length,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
     // #endregion
 
-    // Por cada slot
-    for (const slot of slots) {
+    // Por cada asignación de slot
+    for (const assignment of assignments) {
+      const slot = assignment.slot;
+
+      // Validar que el slot esté activo
+      if (!slot.isActive) {
+        continue;
+      }
+
       const selection = selections.find((s) => s.slotId === slot.id);
 
       // Si es obligatorio y no tiene selección, agregar a lista
-      if (!selection && !slot.isOptional) {
+      if (!selection && !assignment.isOptional) {
         insufficientItems.push(`Slot "${slot.name}" is required`);
         continue;
       }
 
       if (selection) {
-        // Validar que la opción sea válida
-        const validOption = slot.options?.find(
-          (o) => o.productId === selection.selectedProductId && o.isActive,
-        );
-
-        if (!validOption) {
-          insufficientItems.push(`Invalid option for slot "${slot.name}"`);
-          continue;
-        }
-
-        // Obtener producto seleccionado
-        const product =
-          await this.productService.getProductByIdToAnotherService(
-            selection.selectedProductId,
-          );
-
-        if (!product) {
+        // Validar que la cantidad de productos seleccionados coincida con quantity
+        if (
+          !selection.selectedProductIds ||
+          selection.selectedProductIds.length !== assignment.quantity
+        ) {
           insufficientItems.push(
-            `Product not found for slot "${slot.name}"`,
+            `Slot "${slot.name}" requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
           );
           continue;
         }
 
-        // Calcular cantidad requerida
-        const requiredQuantity = slot.quantity * quantity;
+        // Verificar cada producto seleccionado
+        for (let i = 0; i < selection.selectedProductIds.length; i++) {
+          const selectedProductId = selection.selectedProductIds[i];
 
-        // Verificar stock según tipo de producto
-        const hasStock = await this.checkProductStock(
-          product,
-          requiredQuantity,
-        );
-
-        if (!hasStock) {
-          insufficientItems.push(
-            `Insufficient stock for ${product.name} in slot "${slot.name}"`,
+          // Validar que la opción sea válida
+          const validOption = slot.options?.find(
+            (o) => o.productId === selectedProductId && o.isActive,
           );
-        }
 
-        // Si tiene toppings, verificar su stock también
-        if (selection.toppingsPerUnit?.length > 0) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:694',message:'Checking toppings stock',data:{toppingsPerUnitCount:selection.toppingsPerUnit.length,requiredQuantity},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          // Contar cuántas veces aparece cada topping (similar a deductToppingsStock)
-          const toppingCountMap: Record<string, number> = {};
-          for (const unitToppings of selection.toppingsPerUnit) {
-            for (const toppingId of unitToppings) {
-              toppingCountMap[toppingId] = (toppingCountMap[toppingId] || 0) + 1;
-            }
+          if (!validOption) {
+            insufficientItems.push(
+              `Invalid option for slot "${slot.name}": product ${selectedProductId}`,
+            );
+            continue;
           }
 
-          // Verificar stock de toppings sin modificar el stock
-          for (const [toppingId, totalUses] of Object.entries(toppingCountMap)) {
-            const toppingStock =
-              await this.stockRepository.getStockByToppingId(toppingId);
-            if (!toppingStock) {
-              insufficientItems.push(
-                `No stock found for topping ${toppingId}`,
-              );
-              continue;
-            }
-
-            const topping =
-              await this.ingredientService.getIngredientByIdToAnotherService(
-                toppingId,
-              );
-
-            if (!topping) {
-              insufficientItems.push(`Topping ${toppingId} not found`);
-              continue;
-            }
-
-            const toppingGroup = product.availableToppingGroups.find(
-              (group) =>
-                group.toppingGroup?.toppings?.some((t) => t.id === toppingId),
+          // Obtener producto seleccionado
+          const product =
+            await this.productService.getProductByIdToAnotherService(
+              selectedProductId,
             );
 
-            if (!toppingGroup) {
-              insufficientItems.push(
-                `Topping group for topping ${topping.name} not found`,
-              );
-              continue;
+          if (!product) {
+            insufficientItems.push(
+              `Product not found for slot "${slot.name}": ${selectedProductId}`,
+            );
+            continue;
+          }
+
+          // Calcular cantidad requerida: 1 producto por promoción (quantity ya es la cantidad de promociones)
+          const requiredQuantity = quantity;
+
+          // Verificar stock según tipo de producto
+          const hasStock = await this.checkProductStock(
+            product,
+            requiredQuantity,
+          );
+
+          if (!hasStock) {
+            insufficientItems.push(
+              `Insufficient stock for ${product.name} in slot "${slot.name}"`,
+            );
+          }
+
+          // Si tiene toppings, verificar su stock también
+          // Obtener toppings para este producto específico (índice i)
+          const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
+
+          if (toppingsForThisProduct.length > 0) {
+            // #region agent log
+            fetch(
+              'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  location: 'stock.service.ts:694',
+                  message: 'Checking toppings stock',
+                  data: {
+                    toppingsPerUnitCount: toppingsForThisProduct.length,
+                    requiredQuantity,
+                    productId: selectedProductId,
+                  },
+                  timestamp: Date.now(),
+                  sessionId: 'debug-session',
+                  runId: 'run1',
+                  hypothesisId: 'C',
+                }),
+              },
+            ).catch(() => {});
+            // #endregion
+
+            // Contar cuántas veces aparece cada topping para este producto
+            const toppingCountMap: Record<string, number> = {};
+            for (const toppingId of toppingsForThisProduct) {
+              toppingCountMap[toppingId] =
+                (toppingCountMap[toppingId] || 0) + quantity; // Multiplicar por cantidad de promociones
             }
 
-            const quantityPerUse = Number(toppingGroup.quantityOfTopping);
-            const sourceUnitId = toppingGroup.unitOfMeasure.id;
-            const targetUnitId = toppingStock.unitOfMeasure.id;
+            // Verificar stock de toppings sin modificar el stock
+            for (const [toppingId, totalUses] of Object.entries(
+              toppingCountMap,
+            )) {
+              const toppingStock =
+                await this.stockRepository.getStockByToppingId(toppingId);
+              if (!toppingStock) {
+                insufficientItems.push(
+                  `No stock found for topping ${toppingId}`,
+                );
+                continue;
+              }
 
-            // Calcular cantidad total requerida: cantidad por uso * número de usos
-            const totalToCheckInSource = totalUses * quantityPerUse;
+              const topping =
+                await this.ingredientService.getIngredientByIdToAnotherService(
+                  toppingId,
+                );
 
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:737',message:'Topping stock calculation',data:{toppingId,quantityPerUse,totalUses,totalToCheckInSource},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
+              if (!topping) {
+                insufficientItems.push(`Topping ${toppingId} not found`);
+                continue;
+              }
 
-            const quantityToCheck = await this.unitOfMeasureService.convertUnit(
-              sourceUnitId,
-              targetUnitId,
-              totalToCheckInSource,
-            );
-
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:748',message:'Topping stock comparison',data:{toppingId,quantityToCheck,availableStock:toppingStock.quantityInStock,hasEnough:Number(toppingStock.quantityInStock)>=quantityToCheck},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
-
-            if (Number(toppingStock.quantityInStock) < quantityToCheck) {
-              insufficientItems.push(
-                `Insufficient stock for topping ${topping.name}`,
+              const toppingGroup = product.availableToppingGroups.find(
+                (group) =>
+                  group.toppingGroup?.toppings?.some((t) => t.id === toppingId),
               );
+
+              if (!toppingGroup) {
+                insufficientItems.push(
+                  `Topping group for topping ${topping.name} not found`,
+                );
+                continue;
+              }
+
+              const quantityPerUse = Number(toppingGroup.quantityOfTopping);
+              const sourceUnitId = toppingGroup.unitOfMeasure.id;
+              const targetUnitId = toppingStock.unitOfMeasure.id;
+
+              // Calcular cantidad total requerida: cantidad por uso * número de usos
+              const totalToCheckInSource = totalUses * quantityPerUse;
+
+              // #region agent log
+              fetch(
+                'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    location: 'stock.service.ts:737',
+                    message: 'Topping stock calculation',
+                    data: {
+                      toppingId,
+                      quantityPerUse,
+                      totalUses,
+                      totalToCheckInSource,
+                    },
+                    timestamp: Date.now(),
+                    sessionId: 'debug-session',
+                    runId: 'run1',
+                    hypothesisId: 'C',
+                  }),
+                },
+              ).catch(() => {});
+              // #endregion
+
+              const quantityToCheck =
+                await this.unitOfMeasureService.convertUnit(
+                  sourceUnitId,
+                  targetUnitId,
+                  totalToCheckInSource,
+                );
+
+              // #region agent log
+              fetch(
+                'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    location: 'stock.service.ts:748',
+                    message: 'Topping stock comparison',
+                    data: {
+                      toppingId,
+                      quantityToCheck,
+                      availableStock: toppingStock.quantityInStock,
+                      hasEnough:
+                        Number(toppingStock.quantityInStock) >= quantityToCheck,
+                    },
+                    timestamp: Date.now(),
+                    sessionId: 'debug-session',
+                    runId: 'run1',
+                    hypothesisId: 'C',
+                  }),
+                },
+              ).catch(() => {});
+              // #endregion
+
+              if (Number(toppingStock.quantityInStock) < quantityToCheck) {
+                insufficientItems.push(
+                  `Insufficient stock for topping ${topping.name}`,
+                );
+              }
             }
           }
         }
@@ -768,7 +1068,23 @@ export class StockService {
     }
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:716',message:'checkPromotionStockAvailability EXIT',data:{available:insufficientItems.length===0,insufficientItemsCount:insufficientItems.length,insufficientItems},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:716',
+        message: 'checkPromotionStockAvailability EXIT',
+        data: {
+          available: insufficientItems.length === 0,
+          insufficientItemsCount: insufficientItems.length,
+          insufficientItems,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'E',
+      }),
+    }).catch(() => {});
     // #endregion
     return {
       available: insufficientItems.length === 0,
@@ -787,7 +1103,24 @@ export class StockService {
     requiredQuantity: number,
   ): Promise<boolean> {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:728',message:'checkProductStock ENTRY',data:{productId:product.id,productName:product.name,productType:product.type,requiredQuantity},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'stock.service.ts:728',
+        message: 'checkProductStock ENTRY',
+        data: {
+          productId: product.id,
+          productName: product.name,
+          productType: product.type,
+          requiredQuantity,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'A',
+      }),
+    }).catch(() => {});
     // #endregion
     if (product.type === 'simple') {
       if (!product.stock) {
@@ -810,7 +1143,27 @@ export class StockService {
 
       const result = product.stock.quantityInStock >= quantityToCheck;
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:751',message:'checkProductStock simple result',data:{productId:product.id,hasStock:result,available:product.stock.quantityInStock,required:quantityToCheck},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      fetch(
+        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            location: 'stock.service.ts:751',
+            message: 'checkProductStock simple result',
+            data: {
+              productId: product.id,
+              hasStock: result,
+              available: product.stock.quantityInStock,
+              required: quantityToCheck,
+            },
+            timestamp: Date.now(),
+            sessionId: 'debug-session',
+            runId: 'run1',
+            hypothesisId: 'A',
+          }),
+        },
+      ).catch(() => {});
       // #endregion
       return result;
     } else if (product.type === 'product') {
@@ -824,7 +1177,26 @@ export class StockService {
 
         if (!ingredient || !ingredient.stock) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:761',message:'Ingredient without stock',data:{ingredientId:pi.ingredient.id,hasIngredient:!!ingredient,hasStock:!!ingredient?.stock},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          fetch(
+            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                location: 'stock.service.ts:761',
+                message: 'Ingredient without stock',
+                data: {
+                  ingredientId: pi.ingredient.id,
+                  hasIngredient: !!ingredient,
+                  hasStock: !!ingredient?.stock,
+                },
+                timestamp: Date.now(),
+                sessionId: 'debug-session',
+                runId: 'run1',
+                hypothesisId: 'A',
+              }),
+            },
+          ).catch(() => {});
           // #endregion
           return false;
         }
@@ -841,7 +1213,26 @@ export class StockService {
 
         if (ingredient.stock.quantityInStock < quantityToCheck) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stock.service.ts:775',message:'Insufficient ingredient stock',data:{ingredientId:ingredient.id,available:ingredient.stock.quantityInStock,required:quantityToCheck},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          fetch(
+            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                location: 'stock.service.ts:775',
+                message: 'Insufficient ingredient stock',
+                data: {
+                  ingredientId: ingredient.id,
+                  available: ingredient.stock.quantityInStock,
+                  required: quantityToCheck,
+                },
+                timestamp: Date.now(),
+                sessionId: 'debug-session',
+                runId: 'run1',
+                hypothesisId: 'A',
+              }),
+            },
+          ).catch(() => {});
           // #endregion
           return false;
         }

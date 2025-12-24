@@ -17,6 +17,7 @@ import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
 import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
+import { PromotionSlotAssignmentService } from './promotion-slot-assignment.service';
 
 interface FindAllOptions {
   page?: number;
@@ -31,6 +32,7 @@ export class PromotionSlotService {
     private readonly promotionSlotRepository: PromotionSlotRepository,
     private readonly productRepository: ProductRepository,
     private readonly loggerService: LoggerService,
+    private readonly assignmentService: PromotionSlotAssignmentService,
     @InjectRepository(PromotionSlotOption)
     private readonly promotionSlotOptionRepository: Repository<PromotionSlotOption>,
   ) {}
@@ -86,20 +88,14 @@ export class PromotionSlotService {
    * @param createDto - Datos para crear el slot
    */
   async create(createDto: CreatePromotionSlotDto): Promise<PromotionSlot> {
-    // Validar formato del promotionId
-    this.validateUUID(createDto.promotionId, 'promotionId');
-
     // Validar campos requeridos
     if (!createDto.name || createDto.name.trim() === '') {
       throw new BadRequestException('Name is required and cannot be empty.');
     }
 
-    if (createDto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1.');
-    }
-
-    if (createDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
+    // Validar formato del promotionId solo si se proporciona
+    if (createDto.promotionId) {
+      this.validateUUID(createDto.promotionId, 'promotionId');
     }
 
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
@@ -107,12 +103,19 @@ export class PromotionSlotService {
     await queryRunner.startTransaction();
 
     try {
-      // Validar que la promoción exista
-      await this.validatePromotionExists(createDto.promotionId);
+      // Validar que la promoción exista solo si se proporciona
+      if (createDto.promotionId) {
+        await this.validatePromotionExists(createDto.promotionId);
+      }
 
-      // Crear el slot
+      // Crear el slot (sin promotionId, quantity, displayOrder, isOptional)
+      const slotData = {
+        name: createDto.name,
+        description: createDto.description,
+      };
+
       const promotionSlot = await this.promotionSlotRepository.create(
-        createDto,
+        slotData,
         queryRunner,
       );
 
@@ -208,7 +211,7 @@ export class PromotionSlotService {
   }
 
   /**
-   * Obtiene todos los slots de una promoción específica
+   * Obtiene todos los slots de una promoción específica a través de las asignaciones
    * @param promotionId - ID de la promoción
    * @param includeInactive - Si debe incluir slots inactivos
    */
@@ -222,10 +225,20 @@ export class PromotionSlotService {
       // Validar que la promoción exista
       await this.validatePromotionExists(promotionId);
 
-      return await this.promotionSlotRepository.findByPromotionId(
+      // Obtener asignaciones de la promoción
+      const assignments = await this.assignmentService.findByPromotionId(
         promotionId,
-        includeInactive,
       );
+
+      // Extraer los slots de las asignaciones
+      const slots = assignments.map((assignment) => assignment.slot);
+
+      // Filtrar por isActive si es necesario
+      if (!includeInactive) {
+        return slots.filter((slot) => slot.isActive);
+      }
+
+      return slots;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -262,14 +275,6 @@ export class PromotionSlotService {
     // Validar campos si se proporcionan
     if (updateDto.name !== undefined && updateDto.name.trim() === '') {
       throw new BadRequestException('Name cannot be empty.');
-    }
-
-    if (updateDto.quantity !== undefined && updateDto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1.');
-    }
-
-    if (updateDto.displayOrder !== undefined && updateDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
     }
 
     const queryRunner = this.promotionSlotRepository.createQueryRunner();

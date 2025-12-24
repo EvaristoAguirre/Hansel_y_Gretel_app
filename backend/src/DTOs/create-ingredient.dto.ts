@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -30,4 +31,23 @@ export class CreateIngredientDto {
   @IsString()
   @IsOptional()
   unitOfMeasureId?: string;
+
+  // Campo requerido por la entidad
+  @IsEnum(['masa', 'volumen', 'unidad'])
+  @IsNotEmpty()
+  type: 'masa' | 'volumen' | 'unidad';
+
+  // Campos opcionales que el frontend puede enviar
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  isTopping?: boolean;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === null || value === undefined ? undefined : Number(value),
+  )
+  extraCost?: number;
 }

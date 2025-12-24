@@ -1,7 +1,7 @@
 meta {
   name: Update Order - Complete Example
   type: http
-  seq: 4
+  seq: 3
 }
 
 patch {
@@ -60,7 +60,7 @@ script:post-response {
     console.log("✅ Orden actualizada:");
     console.log("Total:", response.total);
     console.log("Productos:", response.orderDetails?.length || 0);
-
+  
     // Mostrar detalles de cada producto
     if (response.orderDetails) {
       response.orderDetails.forEach((detail, index) => {
@@ -68,7 +68,7 @@ script:post-response {
         console.log(`  Nombre: ${detail.product.name}`);
         console.log(`  Cantidad: ${detail.quantity}`);
         console.log(`  Subtotal: $${detail.subtotal}`);
-
+  
         if (detail.product.type === "promotion" && detail.promotionSelections) {
           console.log(`  Selecciones de slots: ${detail.promotionSelections.length}`);
           detail.promotionSelections.forEach((selection, selIndex) => {
@@ -84,4 +84,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-

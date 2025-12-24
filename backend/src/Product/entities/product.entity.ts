@@ -17,7 +17,7 @@ import {
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
 import { PromotionProduct } from './promotionProducts.entity';
-import { PromotionSlot } from './promotion-slot.entity';
+import { PromotionSlotAssignment } from './promotion-slot-assignment.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -120,6 +120,10 @@ export class Product {
   )
   availableToppingGroups: ProductAvailableToppingGroup[];
 
-  @OneToMany(() => PromotionSlot, (promotionSlot) => promotionSlot.promotion)
-  promotionSlots: PromotionSlot[];
+  // Relación Many-to-Many con PromotionSlot a través de PromotionSlotAssignment
+  @OneToMany(
+    () => PromotionSlotAssignment,
+    (assignment) => assignment.promotion,
+  )
+  promotionSlotAssignments: PromotionSlotAssignment[];
 }

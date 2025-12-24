@@ -889,9 +889,10 @@ export class ProductRepository {
         'stock.unitOfMeasure',
         'availableToppingGroups',
         'availableToppingGroups.toppingGroup',
-        'promotionSlots',
-        'promotionSlots.options',
-        'promotionSlots.options.product',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
+        'promotionSlotAssignments.slot.options',
+        'promotionSlotAssignments.slot.options.product',
       ],
     });
     if (!promotion) {
@@ -998,9 +999,10 @@ export class ProductRepository {
         'availableToppingGroups',
         'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
-        'promotionSlots',
-        'promotionSlots.options',
-        'promotionSlots.options.product',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
+        'promotionSlotAssignments.slot.options',
+        'promotionSlotAssignments.slot.options.product',
       ],
     });
     return ProductMapper.toResponseDto(updatedPromotion);
@@ -1552,7 +1554,9 @@ export class ProductRepository {
     promotion: Product,
     slotsData: UpdatePromotionSlotWithOptionsDto[],
   ): Promise<void> {
-    const existingSlots = promotion.promotionSlots || [];
+    // Obtener slots a través de las asignaciones
+    const existingAssignments = promotion.promotionSlotAssignments || [];
+    const existingSlots = existingAssignments.map((a) => a.slot);
     const slotsToUpdate = slotsData || [];
 
     // IDs de slots que vienen en la actualización
@@ -1625,9 +1629,6 @@ export class ProductRepository {
     // Actualizar campos del slot
     existingSlot.name = slotData.name;
     existingSlot.description = slotData.description;
-    existingSlot.quantity = slotData.quantity;
-    existingSlot.displayOrder = slotData.displayOrder;
-    existingSlot.isOptional = slotData.isOptional;
 
     await queryRunner.manager.save(PromotionSlot, existingSlot);
 

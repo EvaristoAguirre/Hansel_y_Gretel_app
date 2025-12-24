@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdatePromotionSlotDto {
@@ -21,35 +21,6 @@ export class UpdatePromotionSlotDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @ApiProperty({
-    description: 'Cantidad de productos de este slot incluidos en la promoción',
-    example: 2,
-    required: false,
-    minimum: 1,
-  })
-  @IsNumber()
-  @IsOptional()
-  quantity?: number;
-
-  @ApiProperty({
-    description: 'Orden de visualización del slot en la UI',
-    example: 3,
-    required: false,
-    minimum: 0,
-  })
-  @IsNumber()
-  @IsOptional()
-  displayOrder?: number;
-
-  @ApiProperty({
-    description: 'Indica si el cliente puede omitir este slot al ordenar',
-    example: true,
-    required: false,
-  })
-  @IsBoolean()
-  @IsOptional()
-  isOptional?: boolean;
 
   @ApiProperty({
     description: 'Indica si el slot está activo',
