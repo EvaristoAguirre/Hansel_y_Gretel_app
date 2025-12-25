@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -62,8 +64,9 @@ export class IngredientController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllIngredientsAndToppings(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<IngredientResponseDTO[]> {
     return await this.ingredientService.getAllIngredientsAndToppings(
       page,
@@ -94,8 +97,9 @@ export class IngredientController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllIngredients(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<IngredientResponseDTO[]> {
     return await this.ingredientService.getAllIngredients(page, limit);
   }
@@ -164,8 +168,9 @@ export class IngredientController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllToppings(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<ToppingResponseDto[]> {
     return await this.ingredientService.getAllToppings(page, limit);
   }

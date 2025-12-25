@@ -8,6 +8,8 @@ import {
   Query,
   Put,
   UseGuards,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -88,8 +90,9 @@ export class CategoryController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getAllCategorys(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 1000000,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(1000000), ParseIntPipe)
+    limit: number = 1000000,
   ): Promise<Category[]> {
     return this.categoryService.getAllCategorys(page, limit);
   }

@@ -266,11 +266,7 @@ export class OrderService {
               }
 
               // Crear un registro de OrderPromotionSelection por cada producto seleccionado
-              for (
-                let i = 0;
-                i < selection.selectedProductIds.length;
-                i++
-              ) {
+              for (let i = 0; i < selection.selectedProductIds.length; i++) {
                 const selectedProductId = selection.selectedProductIds[i];
                 const option = slot.options?.find(
                   (o) => o.productId === selectedProductId && o.isActive,
@@ -529,7 +525,7 @@ export class OrderService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching orders',
+        'Error fetching order details',
         error.message,
       );
     }

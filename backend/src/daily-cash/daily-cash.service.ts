@@ -99,14 +99,21 @@ export class DailyCashService {
         page,
         limit,
       );
-      return DailyCashMapper.toMany(allDailyCash);
+      return DailyCashMapper.toMany(allDailyCash || []);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
+      // ✅ Loggear el error real para diagnóstico
+      console.error('Error en getAllDailyCash:', error);
+      console.error(
+        'Stack trace:',
+        error instanceof Error ? error.stack : 'No stack available',
+      );
+
       throw new InternalServerErrorException(
-        'Error updating the order. Please try again later.',
+        'Error fetching daily cash reports. Please try again later.',
         error.message,
       );
     }

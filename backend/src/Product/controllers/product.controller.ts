@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -69,8 +71,8 @@ export class ProductController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllProducts(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<ProductResponseDto[]> {
     return this.productService.getAllProducts(page, limit);
   }
@@ -99,8 +101,8 @@ export class ProductController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getSimpleAndCompositeProducts(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ) {
     return this.productService.getSimpleAndCompositeProducts(page, limit);
   }
@@ -168,8 +170,8 @@ export class ProductController {
   })
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('name') name?: string,
     @Query('code') code?: number,
   ): Promise<ProductResponseDto[]> {
@@ -238,8 +240,8 @@ export class ProductController {
     @Query('name') name?: string,
     @Query('code') code?: string,
     @Query('isActive') isActive: boolean = true,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Body('categories') categories?: string[],
   ): Promise<ProductResponseDto[]> {
     return this.productService.searchProducts(

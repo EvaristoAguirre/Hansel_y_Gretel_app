@@ -23,8 +23,8 @@ export class DailyCashMapper {
       totalMercadoPago: formatARNumber(dailyCash.totalMercadoPago),
       totalIncomes: formatARNumber(dailyCash.totalIncomes),
       totalExpenses: formatARNumber(dailyCash.totalExpenses),
-      movements: CashMovementMapper.toMany(dailyCash.movements),
-      orders: OrderMapper.toMany(dailyCash.orders),
+      movements: CashMovementMapper.toMany(dailyCash.movements || []),
+      orders: OrderMapper.toMany(dailyCash.orders || []),
     };
   }
 
