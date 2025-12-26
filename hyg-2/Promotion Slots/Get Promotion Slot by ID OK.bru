@@ -1,13 +1,17 @@
 meta {
-  name: Create Prom-Slot
+  name: Get Promotion Slot by ID OK
   type: http
-  seq: 1
+  seq: 3
 }
 
-post {
-  url: http://localhost:3000/promotion-slot
+get {
+  url: http://localhost:3000/promotion-slot/:id
   body: json
   auth: bearer
+}
+
+params:path {
+  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
 }
 
 headers {
@@ -17,21 +21,6 @@ headers {
 
 auth:bearer {
   token: {{authToken}}
-}
-
-body:json {
-  {
-  //   "promotionId": "{{promotionId}}",
-    "name": "Panificado",
-    "description": "Selecciona tu panificado"
-  }
-}
-
-script:post-response {
-  const response = res.getBody();
-  if (response && response.id) {
-    bru.setVar("slotId", response.id);
-  }
 }
 
 settings {

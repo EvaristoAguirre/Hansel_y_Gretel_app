@@ -1,7 +1,7 @@
 meta {
   name: Create Promotion with Slots
   type: http
-  seq: 6
+  seq: 1
 }
 
 post {
@@ -11,8 +11,8 @@ post {
 }
 
 headers {
-  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
-  ~Authorization: Bearer {{authToken}}
+  Content-Type: application/json
+  Authorization: Bearer {{authToken}}
 }
 
 auth:bearer {
@@ -21,30 +21,31 @@ auth:bearer {
 
 body:json {
   {
-    "name": "Promo Café + Torta",
-    "description": "Café con leche y torta a elección",
-    "price": 2500,
+    "name": "combo café + torta",
     "type": "promotion",
+    "price": 2500,
+    "description": "Combo especial: elige tu café y tu torta favorita",
+    "code": 1001,
     "categories": ["{{categoryId}}"],
     "slots": [
       {
         "name": "Bebida",
-        "description": "Elige tu bebida caliente",
+        "description": "Selecciona tu bebida caliente",
         "quantity": 1,
-        "displayOrder": 1,
+        "displayOrder": 0,
         "isOptional": false,
         "options": [
           {
-            "productId": "{{productId1}}",
+            "productId": "{{cafeAmericanoId}}",
             "isDefault": true,
             "extraCost": 0,
-            "displayOrder": 1
+            "displayOrder": 0
           },
           {
-            "productId": "{{productId2}}",
+            "productId": "{{cafeConLecheId}}",
             "isDefault": false,
-            "extraCost": 200,
-            "displayOrder": 2
+            "extraCost": 0,
+            "displayOrder": 1
           }
         ]
       },
@@ -52,20 +53,20 @@ body:json {
         "name": "Torta",
         "description": "Selecciona tu torta favorita",
         "quantity": 1,
-        "displayOrder": 2,
+        "displayOrder": 1,
         "isOptional": false,
         "options": [
           {
-            "productId": "{{productId3}}",
+            "productId": "{{tortaChocolateId}}",
             "isDefault": true,
             "extraCost": 0,
-            "displayOrder": 1
+            "displayOrder": 0
           },
           {
-            "productId": "{{productId4}}",
+            "productId": "{{tortaFrutillaId}}",
             "isDefault": false,
-            "extraCost": 500,
-            "displayOrder": 2
+            "extraCost": 0,
+            "displayOrder": 1
           }
         ]
       }
@@ -74,17 +75,18 @@ body:json {
 }
 
 vars:pre-request {
+  cafeAmericanoId: cc6c3661-34ab-4ddd-be14-d4bd1fd844fe
+  cafeConLecheId: 7f5f3c83-60f2-450b-b8ff-3d4f80d17a71
+  tortaChocolateId: 75e0adb5-4bf4-497a-a6ea-d3af481dd68d
+  tortaFrutillaId: f1773ffd-208f-47e6-9503-d5f6e0275843
   categoryId: 75c3a17a-a9bf-4b2a-a973-ef0a13dbdb0f
-  productId1: cc6c3661-34ab-4ddd-be14-d4bd1fd844fe
-  productId2: 7f5f3c83-60f2-450b-b8ff-3d4f80d17a71
-  productId3: 75e0adb5-4bf4-497a-a6ea-d3af481dd68d
-  productId4: f1773ffd-208f-47e6-9503-d5f6e0275843
 }
 
 script:post-response {
   const response = res.getBody();
   if (response && response.id) {
     bru.setVar("promotionId", response.id);
+    console.log("Promotion created with ID:", response.id);
   }
 }
 

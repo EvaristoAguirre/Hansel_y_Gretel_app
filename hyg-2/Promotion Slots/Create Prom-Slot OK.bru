@@ -1,17 +1,13 @@
 meta {
-  name: Update Prom-Slot
+  name: Create Prom-Slot OK
   type: http
-  seq: 5
+  seq: 1
 }
 
-patch {
-  url: http://localhost:3000/promotion-slot/:id
+post {
+  url: http://localhost:3000/promotion-slot
   body: json
   auth: bearer
-}
-
-params:path {
-  id: 688b0c66-5e5b-4460-b1f9-0384b7ab6fec
 }
 
 headers {
@@ -25,8 +21,16 @@ auth:bearer {
 
 body:json {
   {
-  //   "name": "Slot 1",
-    "description": "podrían ir las bebidas, probando el cambio"
+  //   "promotionId": "{{promotionId}}",
+    "name": "Bebida caliente",
+    "description": "Selecciona tu bebida"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("slotId", response.id);
   }
 }
 

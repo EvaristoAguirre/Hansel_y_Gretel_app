@@ -110,7 +110,12 @@ export class PromotionSlotRepository {
     try {
       return await this.promotionSlotRepository.findOne({
         where: { id },
-        relations: ['options', 'options.product', 'assignments', 'assignments.promotion'],
+        relations: [
+          'options',
+          'options.product',
+          'assignments',
+          'assignments.promotion',
+        ],
         withDeleted: includeDeleted,
       });
     } catch (error) {
@@ -197,7 +202,6 @@ export class PromotionSlotRepository {
       throw error;
     }
   }
-
 
   /**
    * Crea un QueryRunner para manejar transacciones desde el servicio

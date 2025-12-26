@@ -1,17 +1,17 @@
 meta {
-  name: Get Promotion Slot by ID
+  name: Update Prom-Slot OK
   type: http
-  seq: 3
+  seq: 5
 }
 
-get {
+patch {
   url: http://localhost:3000/promotion-slot/:id
   body: json
   auth: bearer
 }
 
 params:path {
-  id: 688b0c66-5e5b-4460-b1f9-0384b7ab6fec
+  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
 }
 
 headers {
@@ -21,6 +21,13 @@ headers {
 
 auth:bearer {
   token: {{authToken}}
+}
+
+body:json {
+  {
+  //   "name": "Slot 1",
+    "description": "podrían ir las bebidas, probando el cambio"
+  }
 }
 
 settings {

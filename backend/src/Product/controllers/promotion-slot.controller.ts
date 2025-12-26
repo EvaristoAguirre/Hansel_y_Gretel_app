@@ -587,139 +587,6 @@ export class PromotionSlotController {
     return await this.promotionSlotService.deleteOption(optionId);
   }
 
-  // Reordenar opciones de un slot
-  @Patch(':slotId/options/reorder')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Reordenar opciones de un slot',
-    description:
-      'Cambia el orden de visualización de las opciones en un slot. El array debe contener todos los IDs de opciones en el nuevo orden.',
-  })
-  @ApiParam({
-    name: 'slotId',
-    type: String,
-    description: 'ID del slot',
-    example: '123e4567-e89b-12d3-a456-426614174001',
-  })
-  @ApiBody({
-    description: 'Array con los IDs de las opciones en el nuevo orden',
-    schema: {
-      type: 'object',
-      properties: {
-        orderArray: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Array de IDs de opciones en el orden deseado',
-        },
-      },
-      required: ['orderArray'],
-    },
-    examples: {
-      example1: {
-        summary: 'Reordenar 3 opciones',
-        value: {
-          orderArray: [
-            '123e4567-e89b-12d3-a456-426614174012',
-            '123e4567-e89b-12d3-a456-426614174010',
-            '123e4567-e89b-12d3-a456-426614174011',
-          ],
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Opciones reordenadas exitosamente',
-    schema: {
-      example: {
-        message: 'Opciones reordenadas exitosamente',
-        slot: {
-          id: '123e4567-e89b-12d3-a456-426614174001',
-          name: 'Torta',
-          options: [
-            {
-              id: '123e4567-e89b-12d3-a456-426614174012',
-              displayOrder: 1,
-            },
-            {
-              id: '123e4567-e89b-12d3-a456-426614174010',
-              displayOrder: 2,
-            },
-            {
-              id: '123e4567-e89b-12d3-a456-426614174011',
-              displayOrder: 3,
-            },
-          ],
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Slot no encontrado' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async reorderSlotOptions(
-    @Param('slotId') slotId: string,
-    @Body() body: { orderArray: string[] },
-  ) {
-    return await this.promotionSlotService.reorderOptions(
-      slotId,
-      body.orderArray,
-    );
-  }
-
-  // Marcar opción como default
-  @Patch(':slotId/options/:optionId/set-default')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Establecer opción por defecto',
-    description:
-      'Marca una opción como la selección por defecto en un slot. Automáticamente desmarca cualquier otra opción que estuviera como default.',
-  })
-  @ApiParam({
-    name: 'slotId',
-    type: String,
-    description: 'ID del slot',
-    example: '123e4567-e89b-12d3-a456-426614174001',
-  })
-  @ApiParam({
-    name: 'optionId',
-    type: String,
-    description: 'ID de la opción a marcar como default',
-    example: '123e4567-e89b-12d3-a456-426614174010',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Opción marcada como default exitosamente',
-    schema: {
-      example: {
-        message: 'Opción marcada como default exitosamente',
-        option: {
-          id: '123e4567-e89b-12d3-a456-426614174010',
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          productId: '123e4567-e89b-12d3-a456-426614174100',
-          isDefault: true,
-          extraCost: 0,
-          displayOrder: 1,
-          isActive: true,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'La opción no pertenece al slot especificado',
-  })
-  @ApiResponse({ status: 404, description: 'Slot u opción no encontrada' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async setDefaultOption(
-    @Param('slotId') slotId: string,
-    @Param('optionId') optionId: string,
-  ) {
-    return await this.promotionSlotService.setDefaultOption(slotId, optionId);
-  }
-
   // ==================== ENDPOINTS PARA ASIGNACIONES ====================
 
   @Post('assignment/:promotionId')
@@ -912,7 +779,8 @@ export class PromotionSlotController {
     description: 'Asignación eliminada exitosamente',
     schema: {
       example: {
-        message: 'Slot assignment with ID 123e4567-e89b-12d3-a456-426614174010 deleted successfully.',
+        message:
+          'Slot assignment with ID 123e4567-e89b-12d3-a456-426614174010 deleted successfully.',
       },
     },
   })
