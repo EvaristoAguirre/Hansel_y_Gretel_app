@@ -34,7 +34,7 @@ export class CreateIngredientDto {
 
   // Campo requerido por la entidad
   @IsEnum(['masa', 'volumen', 'unidad'])
-  @IsNotEmpty()
+  @IsOptional()
   type: 'masa' | 'volumen' | 'unidad';
 
   // Campos opcionales que el frontend puede enviar

@@ -71,7 +71,7 @@ export class PromotionSlotService {
   /**
    * Valida que una promoción exista
    */
-  private async validatePromotionExists(promotionId: string): Promise<void> {
+  private async validatePromotionExists(promotionId: string) {
     const exists = await this.productRepository.existsById(
       promotionId,
       'promotion',
@@ -81,6 +81,8 @@ export class PromotionSlotService {
         `Promotion with ID ${promotionId} not found.`,
       );
     }
+    console.log('exists', exists);
+    return exists;
   }
 
   /**
@@ -166,8 +168,9 @@ export class PromotionSlotService {
       // Validar promotionId si se proporciona
       if (options.promotionId) {
         this.validateUUID(options.promotionId, 'promotionId');
+        await this.validatePromotionExists(options.promotionId);
       }
-
+      console.log('options', options);
       return await this.promotionSlotRepository.findAll(options);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -226,9 +229,8 @@ export class PromotionSlotService {
       await this.validatePromotionExists(promotionId);
 
       // Obtener asignaciones de la promoción
-      const assignments = await this.assignmentService.findByPromotionId(
-        promotionId,
-      );
+      const assignments =
+        await this.assignmentService.findByPromotionId(promotionId);
 
       // Extraer los slots de las asignaciones
       const slots = assignments.map((assignment) => assignment.slot);

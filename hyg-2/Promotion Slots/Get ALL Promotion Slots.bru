@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: http://localhost:3000/promotion-slot?page=1&limit=10&promotionId=1655ccc5-7399-4b61-93d0-ccdfac75b64f&includeInactive=true
+  url: http://localhost:3000/promotion-slot?page=1&limit=10&includeInactive=true
   body: json
   auth: bearer
 }
@@ -13,8 +13,8 @@ get {
 params:query {
   page: 1
   limit: 10
-  promotionId: 1655ccc5-7399-4b61-93d0-ccdfac75b64f
   includeInactive: true
+  ~promotionId: 1655ccc5-7399-4b61-93d0-ccdfac75b64f
 }
 
 headers {
