@@ -27,6 +27,8 @@ import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { ProductMapper } from 'src/Product/productMapper';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
+import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
+import { CreatePromotionSlotWithOptionsDto } from '../dtos/create-slot-option-for-creation.dto';
 
 @Injectable()
 export class ProductRepository {
@@ -297,11 +299,130 @@ export class ProductRepository {
     }
   }
 
+  // private async createPromotion(
+  //   queryRunner: QueryRunner,
+  //   createPromotionDto: CreatePromotionDto,
+  // ): Promise<ProductResponseDto> {
+  //   const { categories, products, ...promotionData } = createPromotionDto;
+
+  //   let categoryEntities: Category[] = [];
+  //   if (categories && categories.length > 0) {
+  //     categoryEntities = await queryRunner.manager.find(Category, {
+  //       where: { id: In(categories), isActive: true },
+  //     });
+  //     if (categoryEntities.length !== categories.length) {
+  //       throw new BadRequestException('Some categories do not exist');
+  //     }
+  //   }
+
+  //   const unitPromotion = await queryRunner.manager.findOne(UnitOfMeasure, {
+  //     where: { name: 'Unidad' },
+  //   });
+
+  //   const promotion = queryRunner.manager.create(Product, {
+  //     ...promotionData,
+  //     cost: 0,
+  //     type: 'promotion',
+  //     categories: categoryEntities,
+  //     unitOfMeasure: unitPromotion,
+  //   });
+  //   const savedPromotion = await queryRunner.manager.save(promotion);
+
+  //   if (products && products.length > 0) {
+  //     for (const productDto of products) {
+  //       const product = await queryRunner.manager.findOne(Product, {
+  //         where: { id: productDto.productId },
+  //       });
+
+  //       if (product) {
+  //         const promotionProduct = queryRunner.manager.create(
+  //           PromotionProduct,
+  //           {
+  //             promotion: savedPromotion,
+  //             product,
+  //             quantity: productDto.quantity,
+  //           },
+  //         );
+
+  //         if (product.cost) {
+  //           savedPromotion.cost += product.cost * productDto.quantity;
+  //         }
+
+  //         await queryRunner.manager.save(promotionProduct);
+  //       }
+  //     }
+
+  //     await queryRunner.manager.save(Product, savedPromotion);
+  //   }
+
+  //   const promotionWithDetails =
+  //     await this.getProductWithRelationsByQueryRunner(
+  //       queryRunner,
+  //       savedPromotion.id,
+  //       'promotion',
+  //     );
+
+  //   if (!promotionWithDetails) {
+  //     throw new NotFoundException('Promotion not found after creation');
+  //   }
+
+  //   const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
+  //   return promotionCreada;
+  // }
+
+  // ----- NUEVO MÉTODO: CREAR PROMOCIÓN CON SLOTS Y PRODUCTOS -----
   private async createPromotion(
     queryRunner: QueryRunner,
-    createPromotionDto: CreatePromotionDto,
+    createPromotionDto: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const { categories, products, ...promotionData } = createPromotionDto;
+    const { products, slots } = createPromotionDto;
+
+    // Validar que no se envíen ambos tipos simultáneamente
+    if (products && products.length > 0 && slots && slots.length > 0) {
+      throw new BadRequestException(
+        'Cannot create promotion with both products and slots. Use either products (simple promotion) or slots (promotion with options).',
+      );
+    }
+
+    // Crear la promoción base
+    const savedPromotion = await this.createPromotionBase(
+      queryRunner,
+      createPromotionDto,
+    );
+
+    // Crear según el tipo de promoción
+    if (slots && slots.length > 0) {
+      await this.createPromotionSlots(queryRunner, savedPromotion, slots);
+      const promotionWithDetails = await this.getPromotionWithSlotsRelations(
+        queryRunner,
+        savedPromotion.id,
+      );
+      return ProductMapper.toResponseDto(promotionWithDetails);
+    } else if (products && products.length > 0) {
+      await this.createPromotionProducts(queryRunner, savedPromotion, products);
+      const promotionWithDetails = await this.getPromotionWithProductsRelations(
+        queryRunner,
+        savedPromotion.id,
+      );
+      return ProductMapper.toResponseDto(promotionWithDetails);
+    } else {
+      // Promoción sin productos ni slots (válida para crear estructura base)
+      const promotionWithDetails = await this.getPromotionBasicRelations(
+        queryRunner,
+        savedPromotion.id,
+      );
+      return ProductMapper.toResponseDto(promotionWithDetails);
+    }
+  }
+
+  /**
+   * NUEVO MÉTODO: Crea la estructura base de una promoción (Product entity)
+   */
+  private async createPromotionBase(
+    queryRunner: QueryRunner,
+    createPromotionDto: CreateProductDto,
+  ): Promise<Product> {
+    const { categories, ...promotionData } = createPromotionDto;
 
     let categoryEntities: Category[] = [];
     if (categories && categories.length > 0) {
@@ -324,48 +445,124 @@ export class ProductRepository {
       categories: categoryEntities,
       unitOfMeasure: unitPromotion,
     });
-    const savedPromotion = await queryRunner.manager.save(promotion);
 
-    if (products && products.length > 0) {
-      for (const productDto of products) {
-        const product = await queryRunner.manager.findOne(Product, {
-          where: { id: productDto.productId },
+    return await queryRunner.manager.save(promotion);
+  }
+
+  /**
+   * NUEVO MÉTODO: Crea los productos asociados a una promoción simple (sin slots)
+   */
+  private async createPromotionProducts(
+    queryRunner: QueryRunner,
+    promotion: Product,
+    products: Array<{ productId: string; quantity: number }>,
+  ): Promise<void> {
+    let totalCost = 0;
+
+    for (const productDto of products) {
+      const product = await queryRunner.manager.findOne(Product, {
+        where: { id: productDto.productId },
+      });
+
+      if (!product) {
+        throw new BadRequestException(
+          `Product with ID ${productDto.productId} not found`,
+        );
+      }
+
+      const promotionProduct = queryRunner.manager.create(PromotionProduct, {
+        promotion,
+        product,
+        quantity: productDto.quantity,
+      });
+
+      await queryRunner.manager.save(promotionProduct);
+
+      if (product.cost) {
+        totalCost += product.cost * productDto.quantity;
+      }
+    }
+
+    promotion.cost = totalCost;
+    await queryRunner.manager.save(Product, promotion);
+  }
+
+  /**
+   * NUEVO MÉTODO:Crea los slots y sus opciones para una promoción con slots
+   */
+  private async createPromotionSlots(
+    queryRunner: QueryRunner,
+    promotion: Product,
+    slots: CreatePromotionSlotWithOptionsDto[],
+  ): Promise<void> {
+    let totalCost = 0;
+
+    for (const slotDto of slots) {
+      // Crear el PromotionSlot
+      const promotionSlot = queryRunner.manager.create(PromotionSlot, {
+        name: slotDto.name,
+        description: slotDto.description,
+        isActive: true,
+      });
+      const savedSlot = await queryRunner.manager.save(
+        PromotionSlot,
+        promotionSlot,
+      );
+
+      // Crear las opciones del slot
+      if (!slotDto.options || slotDto.options.length === 0) {
+        throw new BadRequestException(
+          `Slot "${slotDto.name}" must have at least one option`,
+        );
+      }
+
+      for (const optionDto of slotDto.options) {
+        // Verificar que el producto existe
+        const optionProduct = await queryRunner.manager.findOne(Product, {
+          where: { id: optionDto.productId },
         });
 
-        if (product) {
-          const promotionProduct = queryRunner.manager.create(
-            PromotionProduct,
-            {
-              promotion: savedPromotion,
-              product,
-              quantity: productDto.quantity,
-            },
+        if (!optionProduct) {
+          throw new BadRequestException(
+            `Product with ID ${optionDto.productId} not found for slot option`,
           );
+        }
 
-          if (product.cost) {
-            savedPromotion.cost += product.cost * productDto.quantity;
-          }
+        const slotOption = queryRunner.manager.create(PromotionSlotOption, {
+          slot: savedSlot,
+          product: optionProduct,
+          isDefault: optionDto.isDefault,
+          extraCost: optionDto.extraCost,
+          displayOrder: optionDto.displayOrder,
+          isActive: true,
+        });
 
-          await queryRunner.manager.save(promotionProduct);
+        await queryRunner.manager.save(PromotionSlotOption, slotOption);
+
+        // Sumar el costo solo si es la opción por defecto
+        // Esto evita duplicar costos cuando hay múltiples opciones
+        if (optionDto.isDefault && optionProduct.cost) {
+          totalCost += optionProduct.cost * slotDto.quantity;
         }
       }
 
-      await queryRunner.manager.save(Product, savedPromotion);
-    }
-
-    const promotionWithDetails =
-      await this.getProductWithRelationsByQueryRunner(
-        queryRunner,
-        savedPromotion.id,
-        'promotion',
+      // Crear la asignación del slot a la promoción
+      const slotAssignment = queryRunner.manager.create(
+        PromotionSlotAssignment,
+        {
+          promotion,
+          slot: savedSlot,
+          quantity: slotDto.quantity,
+          isOptional: slotDto.isOptional,
+        },
       );
 
-    if (!promotionWithDetails) {
-      throw new NotFoundException('Promotion not found after creation');
+      await queryRunner.manager.save(PromotionSlotAssignment, slotAssignment);
     }
 
-    const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
-    return promotionCreada;
+    // Actualizar el costo total de la promoción
+    promotion.cost = totalCost;
+    await queryRunner.manager.save(Product, promotion);
   }
 
   private async createCompositeProduct(
@@ -1223,53 +1420,53 @@ export class ProductRepository {
     return product;
   }
 
-  private async getProductWithRelationsByQueryRunner(
-    queryRunner: QueryRunner,
-    id: string,
-    type: 'product' | 'promotion' | 'simple',
-  ): Promise<Product> {
-    const relations =
-      type === 'product' || type === 'simple'
-        ? [
-            'categories',
-            'productIngredients',
-            'productIngredients.ingredient',
-            'productIngredients.unitOfMeasure',
-            'promotionDetails',
-            'promotionDetails.product',
-            'stock',
-            'stock.unitOfMeasure',
-            'availableToppingGroups',
-            'availableToppingGroups.unitOfMeasure',
-            'availableToppingGroups.toppingGroup',
-            'availableToppingGroups.toppingGroup.toppings',
-          ]
-        : [
-            'categories',
-            'unitOfMeasure',
-            'promotionDetails',
-            'promotionDetails.product',
-            'promotionDetails.product.unitOfMeasure',
-            'promotionDetails.product.productIngredients',
-            'promotionDetails.product.productIngredients.ingredient',
-            'promotionDetails.product.productIngredients.unitOfMeasure',
-            'promotionDetails.product.stock',
-            'promotionDetails.product.stock.unitOfMeasure',
-            'promotionSlots',
-            'promotionSlots.options',
-            'promotionSlots.options.product',
-          ];
+  // private async getProductWithRelationsByQueryRunner(
+  //   queryRunner: QueryRunner,
+  //   id: string,
+  //   type: 'product' | 'promotion' | 'simple',
+  // ): Promise<Product> {
+  //   const relations =
+  //     type === 'product' || type === 'simple'
+  //       ? [
+  //           'categories',
+  //           'productIngredients',
+  //           'productIngredients.ingredient',
+  //           'productIngredients.unitOfMeasure',
+  //           'promotionDetails',
+  //           'promotionDetails.product',
+  //           'stock',
+  //           'stock.unitOfMeasure',
+  //           'availableToppingGroups',
+  //           'availableToppingGroups.unitOfMeasure',
+  //           'availableToppingGroups.toppingGroup',
+  //           'availableToppingGroups.toppingGroup.toppings',
+  //         ]
+  //       : [
+  //           'categories',
+  //           'unitOfMeasure',
+  //           'promotionDetails',
+  //           'promotionDetails.product',
+  //           'promotionDetails.product.unitOfMeasure',
+  //           'promotionDetails.product.productIngredients',
+  //           'promotionDetails.product.productIngredients.ingredient',
+  //           'promotionDetails.product.productIngredients.unitOfMeasure',
+  //           'promotionDetails.product.stock',
+  //           'promotionDetails.product.stock.unitOfMeasure',
+  //           'promotionSlots',
+  //           'promotionSlots.options',
+  //           'promotionSlots.options.product',
+  //         ];
 
-    const product = await queryRunner.manager.findOne(Product, {
-      where: { id, isActive: true },
-      relations,
-    });
+  //   const product = await queryRunner.manager.findOne(Product, {
+  //     where: { id, isActive: true },
+  //     relations,
+  //   });
 
-    if (!product) {
-      throw new NotFoundException(`Product with ID: ${id} not found`);
-    }
-    return product;
-  }
+  //   if (!product) {
+  //     throw new NotFoundException(`Product with ID: ${id} not found`);
+  //   }
+  //   return product;
+  // }
 
   private async updateToppingsGroups(
     updateData: UpdateProductDto,
@@ -1834,5 +2031,160 @@ export class ProductRepository {
     });
 
     await queryRunner.manager.save(PromotionSlotOption, option);
+  }
+
+  //NUEVOS MÉTODOS: PROBANDO LO DE SLOTS
+  /**
+   * Obtiene las relaciones específicas para promociones con productos simples
+   */
+  private async getPromotionWithProductsRelations(
+    queryRunner: QueryRunner,
+    promotionId: string,
+  ): Promise<Product> {
+    const relations = [
+      'categories',
+      'unitOfMeasure',
+      'promotionDetails',
+      'promotionDetails.product',
+      'promotionDetails.product.unitOfMeasure',
+      'promotionDetails.product.productIngredients',
+      'promotionDetails.product.productIngredients.ingredient',
+      'promotionDetails.product.productIngredients.unitOfMeasure',
+      'promotionDetails.product.stock',
+      'promotionDetails.product.stock.unitOfMeasure',
+    ];
+
+    const promotion = await queryRunner.manager.findOne(Product, {
+      where: { id: promotionId, isActive: true },
+      relations,
+    });
+
+    if (!promotion) {
+      throw new NotFoundException(
+        `Promotion with ID: ${promotionId} not found`,
+      );
+    }
+
+    return promotion;
+  }
+
+  /**
+   * Obtiene las relaciones específicas para promociones con slots
+   */
+  private async getPromotionWithSlotsRelations(
+    queryRunner: QueryRunner,
+    promotionId: string,
+  ): Promise<Product> {
+    const relations = [
+      'categories',
+      'unitOfMeasure',
+      'promotionSlotAssignments',
+      'promotionSlotAssignments.slot',
+      'promotionSlotAssignments.slot.options',
+      'promotionSlotAssignments.slot.options.product',
+      'promotionSlotAssignments.slot.options.product.unitOfMeasure',
+    ];
+
+    const promotion = await queryRunner.manager.findOne(Product, {
+      where: { id: promotionId, isActive: true },
+      relations,
+    });
+
+    if (!promotion) {
+      throw new NotFoundException(
+        `Promotion with ID: ${promotionId} not found`,
+      );
+    }
+
+    return promotion;
+  }
+
+  /**
+   * Obtiene relaciones básicas para promociones sin productos ni slots
+   */
+  private async getPromotionBasicRelations(
+    queryRunner: QueryRunner,
+    promotionId: string,
+  ): Promise<Product> {
+    const relations = ['categories', 'unitOfMeasure'];
+
+    const promotion = await queryRunner.manager.findOne(Product, {
+      where: { id: promotionId, isActive: true },
+      relations,
+    });
+
+    if (!promotion) {
+      throw new NotFoundException(
+        `Promotion with ID: ${promotionId} not found`,
+      );
+    }
+
+    return promotion;
+  }
+
+  /**
+   * Método mejorado que carga solo las relaciones necesarias según el tipo
+   */
+  private async getProductWithRelationsByQueryRunner(
+    queryRunner: QueryRunner,
+    id: string,
+    type: 'product' | 'promotion' | 'simple',
+  ): Promise<Product> {
+    const relations = this.getRelationsForProductType(type);
+
+    const product = await queryRunner.manager.findOne(Product, {
+      where: { id, isActive: true },
+      relations,
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID: ${id} not found`);
+    }
+
+    return product;
+  }
+
+  /**
+   * Retorna las relaciones específicas según el tipo de producto
+   */
+  private getRelationsForProductType(
+    type: 'product' | 'promotion' | 'simple',
+  ): string[] {
+    if (type === 'product' || type === 'simple') {
+      return [
+        'categories',
+        'productIngredients',
+        'productIngredients.ingredient',
+        'productIngredients.unitOfMeasure',
+        'promotionDetails',
+        'promotionDetails.product',
+        'stock',
+        'stock.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.unitOfMeasure',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
+      ];
+    }
+
+    // Para promociones, cargar ambas estructuras posibles
+    // (el mapper o servicio deberá determinar cuál usar)
+    return [
+      'categories',
+      'unitOfMeasure',
+      'promotionDetails',
+      'promotionDetails.product',
+      'promotionDetails.product.unitOfMeasure',
+      'promotionDetails.product.productIngredients',
+      'promotionDetails.product.productIngredients.ingredient',
+      'promotionDetails.product.productIngredients.unitOfMeasure',
+      'promotionDetails.product.stock',
+      'promotionDetails.product.stock.unitOfMeasure',
+      'promotionSlotAssignments',
+      'promotionSlotAssignments.slot',
+      'promotionSlotAssignments.slot.options',
+      'promotionSlotAssignments.slot.options.product',
+      'promotionSlotAssignments.slot.options.product.unitOfMeasure',
+    ];
   }
 }
