@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://localhost:3000/product
+  url: http://localhost:3000/product/promo-with-slots
   body: json
   auth: bearer
 }
@@ -21,55 +21,14 @@ auth:bearer {
 
 body:json {
   {
-    "name": "combo café + torta",
+    "name": "combo café + torta nuevo método",
     "type": "promotion",
-    "price": 2500,
+    "price": 25000,
     "description": "Combo especial: elige tu café y tu torta favorita",
-    "code": 1001,
+    "code": 2025,
     "categories": ["{{categoryId}}"],
-    "slots": [
-      {
-        "name": "Bebida",
-        "description": "Selecciona tu bebida caliente",
-        "quantity": 1,
-        "displayOrder": 0,
-        "isOptional": false,
-        "options": [
-          {
-            "productId": "{{cafeAmericanoId}}",
-            "isDefault": true,
-            "extraCost": 0,
-            "displayOrder": 0
-          },
-          {
-            "productId": "{{cafeConLecheId}}",
-            "isDefault": false,
-            "extraCost": 0,
-            "displayOrder": 1
-          }
-        ]
-      },
-      {
-        "name": "Torta",
-        "description": "Selecciona tu torta favorita",
-        "quantity": 1,
-        "displayOrder": 1,
-        "isOptional": false,
-        "options": [
-          {
-            "productId": "{{tortaChocolateId}}",
-            "isDefault": true,
-            "extraCost": 0,
-            "displayOrder": 0
-          },
-          {
-            "productId": "{{tortaFrutillaId}}",
-            "isDefault": false,
-            "extraCost": 0,
-            "displayOrder": 1
-          }
-        ]
-      }
+    "slots": ["d116d69f-ac5c-4b0a-a7b5-01b43d76787d", "284b087a-b9f4-4ee9-9d8d-ffe492490887"
+     
     ]
   }
 }
