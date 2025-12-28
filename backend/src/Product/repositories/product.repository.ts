@@ -299,90 +299,13 @@ export class ProductRepository {
     }
   }
 
-  // private async createPromotion(
-  //   queryRunner: QueryRunner,
-  //   createPromotionDto: CreatePromotionDto,
-  // ): Promise<ProductResponseDto> {
-  //   const { categories, products, ...promotionData } = createPromotionDto;
-
-  //   let categoryEntities: Category[] = [];
-  //   if (categories && categories.length > 0) {
-  //     categoryEntities = await queryRunner.manager.find(Category, {
-  //       where: { id: In(categories), isActive: true },
-  //     });
-  //     if (categoryEntities.length !== categories.length) {
-  //       throw new BadRequestException('Some categories do not exist');
-  //     }
-  //   }
-
-  //   const unitPromotion = await queryRunner.manager.findOne(UnitOfMeasure, {
-  //     where: { name: 'Unidad' },
-  //   });
-
-  //   const promotion = queryRunner.manager.create(Product, {
-  //     ...promotionData,
-  //     cost: 0,
-  //     type: 'promotion',
-  //     categories: categoryEntities,
-  //     unitOfMeasure: unitPromotion,
-  //   });
-  //   const savedPromotion = await queryRunner.manager.save(promotion);
-
-  //   if (products && products.length > 0) {
-  //     for (const productDto of products) {
-  //       const product = await queryRunner.manager.findOne(Product, {
-  //         where: { id: productDto.productId },
-  //       });
-
-  //       if (product) {
-  //         const promotionProduct = queryRunner.manager.create(
-  //           PromotionProduct,
-  //           {
-  //             promotion: savedPromotion,
-  //             product,
-  //             quantity: productDto.quantity,
-  //           },
-  //         );
-
-  //         if (product.cost) {
-  //           savedPromotion.cost += product.cost * productDto.quantity;
-  //         }
-
-  //         await queryRunner.manager.save(promotionProduct);
-  //       }
-  //     }
-
-  //     await queryRunner.manager.save(Product, savedPromotion);
-  //   }
-
-  //   const promotionWithDetails =
-  //     await this.getProductWithRelationsByQueryRunner(
-  //       queryRunner,
-  //       savedPromotion.id,
-  //       'promotion',
-  //     );
-
-  //   if (!promotionWithDetails) {
-  //     throw new NotFoundException('Promotion not found after creation');
-  //   }
-
-  //   const promotionCreada = ProductMapper.toResponseDto(promotionWithDetails);
-  //   return promotionCreada;
-  // }
-
   // ----- NUEVO MÉTODO: CREAR PROMOCIÓN CON SLOTS Y PRODUCTOS -----
+
   private async createPromotion(
     queryRunner: QueryRunner,
     createPromotionDto: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const { products, slots } = createPromotionDto;
-
-    // Validar que no se envíen ambos tipos simultáneamente
-    if (products && products.length > 0 && slots && slots.length > 0) {
-      throw new BadRequestException(
-        'Cannot create promotion with both products and slots. Use either products (simple promotion) or slots (promotion with options).',
-      );
-    }
+    const { products } = createPromotionDto;
 
     // Crear la promoción base
     const savedPromotion = await this.createPromotionBase(
@@ -390,15 +313,7 @@ export class ProductRepository {
       createPromotionDto,
     );
 
-    // Crear según el tipo de promoción
-    if (slots && slots.length > 0) {
-      await this.createPromotionSlots(queryRunner, savedPromotion, slots);
-      const promotionWithDetails = await this.getPromotionWithSlotsRelations(
-        queryRunner,
-        savedPromotion.id,
-      );
-      return ProductMapper.toResponseDto(promotionWithDetails);
-    } else if (products && products.length > 0) {
+    if (products && products.length > 0) {
       await this.createPromotionProducts(queryRunner, savedPromotion, products);
       const promotionWithDetails = await this.getPromotionWithProductsRelations(
         queryRunner,
@@ -483,84 +398,6 @@ export class ProductRepository {
       }
     }
 
-    promotion.cost = totalCost;
-    await queryRunner.manager.save(Product, promotion);
-  }
-
-  /**
-   * NUEVO MÉTODO:Crea los slots y sus opciones para una promoción con slots
-   */
-  private async createPromotionSlots(
-    queryRunner: QueryRunner,
-    promotion: Product,
-    slots: CreatePromotionSlotWithOptionsDto[],
-  ): Promise<void> {
-    let totalCost = 0;
-
-    for (const slotDto of slots) {
-      // Crear el PromotionSlot
-      const promotionSlot = queryRunner.manager.create(PromotionSlot, {
-        name: slotDto.name,
-        description: slotDto.description,
-        isActive: true,
-      });
-      const savedSlot = await queryRunner.manager.save(
-        PromotionSlot,
-        promotionSlot,
-      );
-
-      // Crear las opciones del slot
-      if (!slotDto.options || slotDto.options.length === 0) {
-        throw new BadRequestException(
-          `Slot "${slotDto.name}" must have at least one option`,
-        );
-      }
-
-      for (const optionDto of slotDto.options) {
-        // Verificar que el producto existe
-        const optionProduct = await queryRunner.manager.findOne(Product, {
-          where: { id: optionDto.productId },
-        });
-
-        if (!optionProduct) {
-          throw new BadRequestException(
-            `Product with ID ${optionDto.productId} not found for slot option`,
-          );
-        }
-
-        const slotOption = queryRunner.manager.create(PromotionSlotOption, {
-          slot: savedSlot,
-          product: optionProduct,
-          isDefault: optionDto.isDefault,
-          extraCost: optionDto.extraCost,
-          displayOrder: optionDto.displayOrder,
-          isActive: true,
-        });
-
-        await queryRunner.manager.save(PromotionSlotOption, slotOption);
-
-        // Sumar el costo solo si es la opción por defecto
-        // Esto evita duplicar costos cuando hay múltiples opciones
-        if (optionDto.isDefault && optionProduct.cost) {
-          totalCost += optionProduct.cost * slotDto.quantity;
-        }
-      }
-
-      // Crear la asignación del slot a la promoción
-      const slotAssignment = queryRunner.manager.create(
-        PromotionSlotAssignment,
-        {
-          promotion,
-          slot: savedSlot,
-          quantity: slotDto.quantity,
-          isOptional: slotDto.isOptional,
-        },
-      );
-
-      await queryRunner.manager.save(PromotionSlotAssignment, slotAssignment);
-    }
-
-    // Actualizar el costo total de la promoción
     promotion.cost = totalCost;
     await queryRunner.manager.save(Product, promotion);
   }
@@ -1420,54 +1257,6 @@ export class ProductRepository {
     return product;
   }
 
-  // private async getProductWithRelationsByQueryRunner(
-  //   queryRunner: QueryRunner,
-  //   id: string,
-  //   type: 'product' | 'promotion' | 'simple',
-  // ): Promise<Product> {
-  //   const relations =
-  //     type === 'product' || type === 'simple'
-  //       ? [
-  //           'categories',
-  //           'productIngredients',
-  //           'productIngredients.ingredient',
-  //           'productIngredients.unitOfMeasure',
-  //           'promotionDetails',
-  //           'promotionDetails.product',
-  //           'stock',
-  //           'stock.unitOfMeasure',
-  //           'availableToppingGroups',
-  //           'availableToppingGroups.unitOfMeasure',
-  //           'availableToppingGroups.toppingGroup',
-  //           'availableToppingGroups.toppingGroup.toppings',
-  //         ]
-  //       : [
-  //           'categories',
-  //           'unitOfMeasure',
-  //           'promotionDetails',
-  //           'promotionDetails.product',
-  //           'promotionDetails.product.unitOfMeasure',
-  //           'promotionDetails.product.productIngredients',
-  //           'promotionDetails.product.productIngredients.ingredient',
-  //           'promotionDetails.product.productIngredients.unitOfMeasure',
-  //           'promotionDetails.product.stock',
-  //           'promotionDetails.product.stock.unitOfMeasure',
-  //           'promotionSlots',
-  //           'promotionSlots.options',
-  //           'promotionSlots.options.product',
-  //         ];
-
-  //   const product = await queryRunner.manager.findOne(Product, {
-  //     where: { id, isActive: true },
-  //     relations,
-  //   });
-
-  //   if (!product) {
-  //     throw new NotFoundException(`Product with ID: ${id} not found`);
-  //   }
-  //   return product;
-  // }
-
   private async updateToppingsGroups(
     updateData: UpdateProductDto,
     product: Product,
@@ -1746,6 +1535,8 @@ export class ProductRepository {
    * Actualiza los slots de una promoción
    * @private
    */
+
+  // ---- NO ANALIZAR LOS MÉTODOS RELACIONADOS AL UPDATE DE PROMOCIONES CON SLOTS ----
   private async updatePromotionSlots(
     queryRunner: QueryRunner,
     promotion: Product,
@@ -1795,242 +1586,15 @@ export class ProductRepository {
         );
       }
 
-      if (slotData.id) {
-        // Actualizar slot existente
-        await this.updateExistingSlot(queryRunner, slotData);
-      } else {
-        // Crear nuevo slot
-        await this.createNewSlot(queryRunner, promotion.id, slotData);
-      }
+      // --------------------- analizar cómo resolver esta situación: --------------
+      // if (slotData.id) {
+      //   // Actualizar slot existente
+      //   await this.updateExistingSlot(queryRunner, slotData);
+      // } else {
+      //   // Crear nuevo slot
+      //   await this.createNewSlot(queryRunner, promotion.id, slotData);
+      // }
     }
-  }
-
-  /**
-   * Actualiza un slot existente con sus opciones
-   * @private
-   */
-  private async updateExistingSlot(
-    queryRunner: QueryRunner,
-    slotData: UpdatePromotionSlotWithOptionsDto,
-  ): Promise<void> {
-    // Buscar el slot existente
-    const existingSlot = await queryRunner.manager.findOne(PromotionSlot, {
-      where: { id: slotData.id },
-      relations: ['options'],
-    });
-
-    if (!existingSlot) {
-      throw new NotFoundException(`Slot with ID ${slotData.id} not found`);
-    }
-
-    // Actualizar campos del slot
-    existingSlot.name = slotData.name;
-    existingSlot.description = slotData.description;
-
-    await queryRunner.manager.save(PromotionSlot, existingSlot);
-
-    // Actualizar opciones del slot usando el slot guardado y sus opciones existentes
-    await this.updateSlotOptions(
-      queryRunner,
-      existingSlot.id,
-      existingSlot.options || [],
-      slotData.options,
-    );
-  }
-
-  /**
-   * Crea un nuevo slot con sus opciones
-   * @private
-   */
-  private async createNewSlot(
-    queryRunner: QueryRunner,
-    promotionId: string,
-    slotData: UpdatePromotionSlotWithOptionsDto,
-  ): Promise<void> {
-    // Crear el slot
-    const newSlot = queryRunner.manager.create(PromotionSlot, {
-      promotionId,
-      name: slotData.name,
-      description: slotData.description,
-      quantity: slotData.quantity,
-      displayOrder: slotData.displayOrder,
-      isOptional: slotData.isOptional,
-      isActive: true,
-    });
-    const savedSlot = await queryRunner.manager.save(PromotionSlot, newSlot);
-
-    // Crear opciones del slot
-    for (const optionData of slotData.options) {
-      await this.validateAndCreateOption(queryRunner, savedSlot.id, optionData);
-    }
-  }
-
-  /**
-   * Actualiza las opciones de un slot
-   * @private
-   */
-  private async updateSlotOptions(
-    queryRunner: QueryRunner,
-    slotId: string,
-    existingOptions: PromotionSlotOption[],
-    optionsData: Array<{
-      id?: string;
-      productId: string;
-      isDefault: boolean;
-      extraCost: number;
-      displayOrder: number;
-    }>,
-  ): Promise<void> {
-    const optionsToUpdate = optionsData || [];
-
-    // IDs de opciones que vienen en la actualización
-    const incomingOptionIds = optionsToUpdate
-      .map((o) => o.id)
-      .filter((id) => id !== undefined);
-
-    // Opciones a eliminar (existen en BD pero no en la actualización)
-    const optionsToRemove = existingOptions.filter(
-      (option) => !incomingOptionIds.includes(option.id),
-    );
-
-    // Soft delete de opciones removidas
-    for (const optionToRemove of optionsToRemove) {
-      await queryRunner.manager.softDelete(
-        PromotionSlotOption,
-        optionToRemove.id,
-      );
-    }
-
-    // Procesar cada opción de la actualización
-    for (const optionData of optionsToUpdate) {
-      if (optionData.id) {
-        // Actualizar opción existente
-        await this.updateExistingOption(queryRunner, {
-          id: optionData.id,
-          productId: optionData.productId,
-          isDefault: optionData.isDefault,
-          extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
-        });
-      } else {
-        // Crear nueva opción
-        await this.validateAndCreateOption(queryRunner, slotId, optionData);
-      }
-    }
-  }
-
-  /**
-   * Actualiza una opción existente
-   * @private
-   */
-  private async updateExistingOption(
-    queryRunner: QueryRunner,
-    optionData: {
-      id: string;
-      productId: string;
-      isDefault: boolean;
-      extraCost: number;
-      displayOrder: number;
-    },
-  ): Promise<void> {
-    const existingOption = await queryRunner.manager.findOne(
-      PromotionSlotOption,
-      {
-        where: { id: optionData.id },
-      },
-    );
-
-    if (!existingOption) {
-      throw new NotFoundException(`Option with ID ${optionData.id} not found`);
-    }
-
-    // Validar que el producto exista y no sea promoción
-    const optionProduct = await queryRunner.manager.findOne(Product, {
-      where: { id: optionData.productId, isActive: true },
-    });
-
-    if (!optionProduct) {
-      throw new NotFoundException(
-        `Product ${optionData.productId} not found for slot option`,
-      );
-    }
-
-    if (optionProduct.type === 'promotion') {
-      throw new BadRequestException(
-        `Cannot add promotion "${optionProduct.name}" as slot option`,
-      );
-    }
-
-    // Si cambia isDefault a true, desmarcar otras opciones del mismo slot
-    if (optionData.isDefault === true && !existingOption.isDefault) {
-      await queryRunner.manager.update(
-        PromotionSlotOption,
-        { slotId: existingOption.slotId, isDefault: true },
-        { isDefault: false },
-      );
-    }
-
-    // Actualizar campos de la opción
-    existingOption.productId = optionData.productId;
-    existingOption.isDefault = optionData.isDefault;
-    existingOption.extraCost = optionData.extraCost;
-    existingOption.displayOrder = optionData.displayOrder;
-
-    await queryRunner.manager.save(PromotionSlotOption, existingOption);
-  }
-
-  /**
-   * Valida y crea una nueva opción
-   * @private
-   */
-  private async validateAndCreateOption(
-    queryRunner: QueryRunner,
-    slotId: string,
-    optionData: {
-      productId: string;
-      isDefault: boolean;
-      extraCost: number;
-      displayOrder: number;
-    },
-  ): Promise<void> {
-    // Validar que el producto exista
-    const optionProduct = await queryRunner.manager.findOne(Product, {
-      where: { id: optionData.productId, isActive: true },
-    });
-
-    if (!optionProduct) {
-      throw new NotFoundException(
-        `Product ${optionData.productId} not found for slot option`,
-      );
-    }
-
-    // Validar que el producto NO sea promoción (evitar recursión)
-    if (optionProduct.type === 'promotion') {
-      throw new BadRequestException(
-        `Cannot add promotion "${optionProduct.name}" as slot option`,
-      );
-    }
-
-    // Si la nueva opción es default, desmarcar otras opciones del mismo slot
-    if (optionData.isDefault === true) {
-      await queryRunner.manager.update(
-        PromotionSlotOption,
-        { slotId, isDefault: true },
-        { isDefault: false },
-      );
-    }
-
-    // Crear la opción
-    const option = queryRunner.manager.create(PromotionSlotOption, {
-      slotId,
-      productId: optionData.productId,
-      isDefault: optionData.isDefault,
-      extraCost: optionData.extraCost,
-      displayOrder: optionData.displayOrder,
-      isActive: true,
-    });
-
-    await queryRunner.manager.save(PromotionSlotOption, option);
   }
 
   //NUEVOS MÉTODOS: PROBANDO LO DE SLOTS

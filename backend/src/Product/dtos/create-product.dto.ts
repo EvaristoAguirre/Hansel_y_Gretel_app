@@ -16,7 +16,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductIngredientDto } from '../../DTOs/productIngredient.dto';
 import { Transform, Type } from 'class-transformer';
 import { PromotionProductDto } from '../../DTOs/create-promotion.dto';
-import { CreatePromotionSlotWithOptionsDto } from './create-slot-option-for-creation.dto';
 
 export class ProductToppingsGroupDto {
   @ApiProperty({
@@ -189,10 +188,4 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreatePromotionSlotWithOptionsDto)
-  slots?: CreatePromotionSlotWithOptionsDto[];
 }

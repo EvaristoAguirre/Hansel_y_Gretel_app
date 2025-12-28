@@ -33,6 +33,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
+import { CreatePromotionWithSlotsDto } from '../dtos/create-promotion-with-slots.dto';
 
 @ApiTags('Producto')
 @ApiBearerAuth('JWT-auth')
@@ -379,6 +380,23 @@ export class ProductController {
     @Body() productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     return await this.productService.createProduct(productToCreate);
+  }
+
+  // --------------------- ENDPOINT PARA PROMOS CON SLOTS ----------
+  /*
+   * sumary: 'Crear promotion con slots'
+   * description: 'Crea una nueva promotion con slots. Los slots ya existen en la base de datos, hay que asignarlos'
+   * body: CreatePromotionWithSlotsDto
+   * response: ProductResponseDto
+   * roles: ADMIN, ENCARGADO
+   */
+  @Post('promo-with-slots')
+  createPromotionWithSlots(
+    @Body() createPromotionWithSlots: CreatePromotionWithSlotsDto,
+  ) {
+    return this.productService.createPromotionWithSlots(
+      createPromotionWithSlots,
+    );
   }
 
   @Put(':id')
