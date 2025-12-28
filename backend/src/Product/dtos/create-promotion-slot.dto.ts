@@ -1,19 +1,14 @@
-import { IsOptional, IsString, IsUUID, IsNotEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsNotEmpty,
+  IsArray,
+  ArrayMinSize,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePromotionSlotDto {
-  @ApiProperty({
-    description:
-      'ID de la promoción a la que pertenece este slot (opcional - puede asignarse después)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    type: String,
-    format: 'uuid',
-    required: false,
-  })
-  @IsUUID()
-  @IsOptional()
-  promotionId?: string;
-
   @ApiProperty({
     description: 'Nombre descriptivo del slot',
     example: 'Torta',
@@ -33,4 +28,15 @@ export class CreatePromotionSlotDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiProperty({
+    description: 'IDs de los productos que serán parte del slot',
+    example: ['uuid-producto-1', 'uuid-producto-2'],
+    required: false,
+  })
+  @IsArray()
+  @IsUUID('all', { each: true })
+  @ArrayMinSize(1)
+  @IsOptional()
+  productIds?: string[];
 }
