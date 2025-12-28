@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsNotEmpty,
@@ -7,7 +8,6 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -58,6 +58,6 @@ export class CreatePromotionSlotWithOptionsDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSlotOptionForCreationDto)
-  @Max(10, { each: true, message: 'Un slot no puede tener más de 10 opciones' })
+  @ArrayMaxSize(10, { message: 'Un slot no puede tener más de 10 opciones' })
   options: CreateSlotOptionForCreationDto[];
 }

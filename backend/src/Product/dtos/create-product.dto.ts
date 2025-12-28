@@ -16,7 +16,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductIngredientDto } from '../../DTOs/productIngredient.dto';
 import { Transform, Type } from 'class-transformer';
 import { PromotionProductDto } from '../../DTOs/create-promotion.dto';
-import { CreatePromotionSlotWithOptionsDto } from './create-slot-option-for-creation.dto';
 
 export class ProductToppingsGroupDto {
   @ApiProperty({
@@ -171,9 +170,22 @@ export class CreateProductDto {
   @Type(() => ProductToppingsGroupDto)
   availableToppingGroups?: ProductToppingsGroupDto[];
 
+  // @ApiPropertyOptional({
+  //   description: 'Configuración del grupo de toppings para este producto',
+  //   example: { maxSelection: 3, chargeExtra: true, extraCost: 200 },
+  // })
+  // @IsOptional()
+  // toppingsSettings?: {
+  //   maxSelection: number;
+  //   chargeExtra: boolean;
+  //   extraCost: number;
+  // };
+
+  @ApiPropertyOptional({
+    description: 'Indica si el producto está activo',
+    example: true,
+  })
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreatePromotionSlotWithOptionsDto)
-  slots?: CreatePromotionSlotWithOptionsDto[];
+  @IsBoolean()
+  isActive?: boolean;
 }

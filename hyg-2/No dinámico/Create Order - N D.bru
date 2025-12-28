@@ -1,0 +1,42 @@
+meta {
+  name: Create Order - N D
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:3000/order/open
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "tableId": "108d6783-9a4c-488e-bcdd-2d017fb90e9a",
+    "numberCustomers": 2,
+    "comment": "Pedido con promoción y slots"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("orderId", response.id);
+    console.log("✅ Orden creada con ID:", response.id);
+    console.log("Mesa:", response.table?.name || "N/A");
+    console.log("Estado:", response.state);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -77,7 +77,6 @@ export const useProducts = () => {
     };
     if (form.ingredients.length === 0) {
       delete (preparedForm as any).ingredients;
-      delete (preparedForm as any).isActive;
     }
     try {
       if (!token) throw new Error('Token no disponible');

@@ -19,8 +19,11 @@ import { ProductRepository } from './repositories/product.repository';
 import { CostCascadeModule } from 'src/CostCascade/cost-cascade.module';
 import { PromotionSlotOption } from './entities/promotion-slot-option.entity';
 import { PromotionSlot } from './entities/promotion-slot.entity';
+import { PromotionSlotAssignment } from './entities/promotion-slot-assignment.entity';
 import { PromotionSlotRepository } from './repositories/promotion-slot.repository';
+import { PromotionSlotAssignmentRepository } from './repositories/promotion-slot-assignment.repository';
 import { PromotionSlotService } from './services/promotion-slot.service';
+import { PromotionSlotAssignmentService } from './services/promotion-slot-assignment.service';
 import { PromotionSlotController } from './controllers/promotion-slot.controller';
 @Module({
   imports: [
@@ -35,6 +38,7 @@ import { PromotionSlotController } from './controllers/promotion-slot.controller
       ProductAvailableToppingGroup,
       PromotionSlot,
       PromotionSlotOption,
+      PromotionSlotAssignment,
     ]),
     CategoryModule,
     IngredientModule,
@@ -48,8 +52,14 @@ import { PromotionSlotController } from './controllers/promotion-slot.controller
     ProductService,
     ProductRepository,
     PromotionSlotRepository,
+    PromotionSlotAssignmentRepository,
     PromotionSlotService,
+    PromotionSlotAssignmentService,
   ],
-  exports: [ProductService, PromotionSlotService],
+  exports: [
+    ProductService,
+    PromotionSlotService,
+    PromotionSlotAssignmentService,
+  ],
 })
 export class ProductModule {}

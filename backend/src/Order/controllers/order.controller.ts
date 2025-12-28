@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -231,8 +233,9 @@ export class OrderController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   getAllOrders(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<Order[]> {
     return this.orderService.getAllOrders(page, limit);
   }
@@ -269,8 +272,9 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Lista de detalles de pedidos' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getOrderDetails(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<OrderDetails[]> {
     return this.orderService.getOrderDetails(page, limit);
   }

@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -31,6 +33,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
+import { CreatePromotionWithSlotsDto } from '../dtos/create-promotion-with-slots.dto';
 
 @ApiTags('Producto')
 @ApiBearerAuth('JWT-auth')
@@ -69,8 +72,8 @@ export class ProductController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllProducts(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<ProductResponseDto[]> {
     return this.productService.getAllProducts(page, limit);
   }
@@ -99,8 +102,8 @@ export class ProductController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getSimpleAndCompositeProducts(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ) {
     return this.productService.getSimpleAndCompositeProducts(page, limit);
   }
@@ -168,8 +171,8 @@ export class ProductController {
   })
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('name') name?: string,
     @Query('code') code?: number,
   ): Promise<ProductResponseDto[]> {
@@ -238,8 +241,8 @@ export class ProductController {
     @Query('name') name?: string,
     @Query('code') code?: string,
     @Query('isActive') isActive: boolean = true,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Body('categories') categories?: string[],
   ): Promise<ProductResponseDto[]> {
     return this.productService.searchProducts(
@@ -377,6 +380,23 @@ export class ProductController {
     @Body() productToCreate: CreateProductDto,
   ): Promise<ProductResponseDto> {
     return await this.productService.createProduct(productToCreate);
+  }
+
+  // --------------------- ENDPOINT PARA PROMOS CON SLOTS ----------
+  /*
+   * sumary: 'Crear promotion con slots'
+   * description: 'Crea una nueva promotion con slots. Los slots ya existen en la base de datos, hay que asignarlos'
+   * body: CreatePromotionWithSlotsDto
+   * response: ProductResponseDto
+   * roles: ADMIN, ENCARGADO
+   */
+  @Post('promo-with-slots')
+  createPromotionWithSlots(
+    @Body() createPromotionWithSlots: CreatePromotionWithSlotsDto,
+  ) {
+    return this.productService.createPromotionWithSlots(
+      createPromotionWithSlots,
+    );
   }
 
   @Put(':id')

@@ -2,17 +2,13 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  // ManyToOne,
   OneToMany,
-  ManyToOne,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  // JoinColumn,
 } from 'typeorm';
-import { Product } from './product.entity';
 import { PromotionSlotOption } from './promotion-slot-option.entity';
+import { PromotionSlotAssignment } from './promotion-slot-assignment.entity';
 
 @Entity({ name: 'promotion_slots' })
 export class PromotionSlot {
@@ -24,15 +20,6 @@ export class PromotionSlot {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   description: string; // Descripción opcional del slot
-
-  @Column({ type: 'int', default: 1 })
-  quantity: number; // Cantidad de este slot en la promoción
-
-  @Column({ type: 'int', default: 0 })
-  displayOrder: number; // Orden de presentación en UI
-
-  @Column({ default: false })
-  isOptional: boolean; // Si el cliente puede omitir este slot
 
   @Column({ default: true })
   isActive: boolean;
@@ -48,14 +35,9 @@ export class PromotionSlot {
 
   // -------- Relaciones --------
 
-  @ManyToOne(() => Product, (product) => product.promotionSlots, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'promotionId' })
-  promotion: Product;
-
-  @Column({ name: 'promotionId' })
-  promotionId: string;
+  // Relación Many-to-Many con Product (Promotion) a través de PromotionSlotAssignment
+  @OneToMany(() => PromotionSlotAssignment, (assignment) => assignment.slot)
+  assignments: PromotionSlotAssignment[];
 
   @OneToMany(() => PromotionSlotOption, (option) => option.slot, {
     cascade: true,

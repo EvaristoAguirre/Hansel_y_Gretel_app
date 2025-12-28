@@ -73,6 +73,14 @@ body:json {
   }
 }
 
+vars:pre-request {
+  categoryId: 75c3a17a-a9bf-4b2a-a973-ef0a13dbdb0f
+  productId1: cc6c3661-34ab-4ddd-be14-d4bd1fd844fe
+  productId2: 7f5f3c83-60f2-450b-b8ff-3d4f80d17a71
+  productId3: 75e0adb5-4bf4-497a-a6ea-d3af481dd68d
+  productId4: f1773ffd-208f-47e6-9503-d5f6e0275843
+}
+
 script:post-response {
   const response = res.getBody();
   if (response && response.id) {

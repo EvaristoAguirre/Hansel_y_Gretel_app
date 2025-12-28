@@ -34,10 +34,11 @@ export class PromotionSelectionDto {
   @IsUUID()
   slotId: string;
 
-  @IsUUID()
-  selectedProductId: string;
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  selectedProductIds: string[]; // Array de productos seleccionados (puede incluir duplicados)
 
   @IsOptional()
   @IsArray()
-  toppingsPerUnit?: string[][]; // Si el producto seleccionado tiene toppings
+  toppingsPerUnit?: string[][]; // Array de toppings, uno por cada producto seleccionado
 }

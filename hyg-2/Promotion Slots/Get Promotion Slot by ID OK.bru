@@ -1,20 +1,17 @@
 meta {
-  name: Get ALL Promotion Slots
+  name: Get Promotion Slot by ID OK
   type: http
-  seq: 2
+  seq: 3
 }
 
 get {
-  url: http://localhost:3000/promotion-slot?page=1&limit=10&promotionId=1655ccc5-7399-4b61-93d0-ccdfac75b64f&includeInactive=true
+  url: http://localhost:3000/promotion-slot/:id
   body: json
   auth: bearer
 }
 
-params:query {
-  page: 1
-  limit: 10
-  promotionId: 1655ccc5-7399-4b61-93d0-ccdfac75b64f
-  includeInactive: true
+params:path {
+  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
 }
 
 headers {

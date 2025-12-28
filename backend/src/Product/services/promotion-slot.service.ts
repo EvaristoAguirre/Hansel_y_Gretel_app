@@ -17,6 +17,7 @@ import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
 import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
+import { PromotionSlotAssignmentService } from './promotion-slot-assignment.service';
 
 interface FindAllOptions {
   page?: number;
@@ -31,6 +32,7 @@ export class PromotionSlotService {
     private readonly promotionSlotRepository: PromotionSlotRepository,
     private readonly productRepository: ProductRepository,
     private readonly loggerService: LoggerService,
+    private readonly assignmentService: PromotionSlotAssignmentService,
     @InjectRepository(PromotionSlotOption)
     private readonly promotionSlotOptionRepository: Repository<PromotionSlotOption>,
   ) {}
@@ -69,7 +71,7 @@ export class PromotionSlotService {
   /**
    * Valida que una promoción exista
    */
-  private async validatePromotionExists(promotionId: string): Promise<void> {
+  private async validatePromotionExists(promotionId: string) {
     const exists = await this.productRepository.existsById(
       promotionId,
       'promotion',
@@ -79,6 +81,8 @@ export class PromotionSlotService {
         `Promotion with ID ${promotionId} not found.`,
       );
     }
+    console.log('exists', exists);
+    return exists;
   }
 
   /**
@@ -86,20 +90,14 @@ export class PromotionSlotService {
    * @param createDto - Datos para crear el slot
    */
   async create(createDto: CreatePromotionSlotDto): Promise<PromotionSlot> {
-    // Validar formato del promotionId
-    this.validateUUID(createDto.promotionId, 'promotionId');
-
     // Validar campos requeridos
     if (!createDto.name || createDto.name.trim() === '') {
       throw new BadRequestException('Name is required and cannot be empty.');
     }
 
-    if (createDto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1.');
-    }
-
-    if (createDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
+    // Validar formato del promotionId solo si se proporciona
+    if (createDto.promotionId) {
+      this.validateUUID(createDto.promotionId, 'promotionId');
     }
 
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
@@ -107,12 +105,19 @@ export class PromotionSlotService {
     await queryRunner.startTransaction();
 
     try {
-      // Validar que la promoción exista
-      await this.validatePromotionExists(createDto.promotionId);
+      // Validar que la promoción exista solo si se proporciona
+      if (createDto.promotionId) {
+        await this.validatePromotionExists(createDto.promotionId);
+      }
 
-      // Crear el slot
+      // Crear el slot (sin promotionId, quantity, displayOrder, isOptional)
+      const slotData = {
+        name: createDto.name,
+        description: createDto.description,
+      };
+
       const promotionSlot = await this.promotionSlotRepository.create(
-        createDto,
+        slotData,
         queryRunner,
       );
 
@@ -163,8 +168,9 @@ export class PromotionSlotService {
       // Validar promotionId si se proporciona
       if (options.promotionId) {
         this.validateUUID(options.promotionId, 'promotionId');
+        await this.validatePromotionExists(options.promotionId);
       }
-
+      console.log('options', options);
       return await this.promotionSlotRepository.findAll(options);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -208,7 +214,7 @@ export class PromotionSlotService {
   }
 
   /**
-   * Obtiene todos los slots de una promoción específica
+   * Obtiene todos los slots de una promoción específica a través de las asignaciones
    * @param promotionId - ID de la promoción
    * @param includeInactive - Si debe incluir slots inactivos
    */
@@ -222,10 +228,19 @@ export class PromotionSlotService {
       // Validar que la promoción exista
       await this.validatePromotionExists(promotionId);
 
-      return await this.promotionSlotRepository.findByPromotionId(
-        promotionId,
-        includeInactive,
-      );
+      // Obtener asignaciones de la promoción
+      const assignments =
+        await this.assignmentService.findByPromotionId(promotionId);
+
+      // Extraer los slots de las asignaciones
+      const slots = assignments.map((assignment) => assignment.slot);
+
+      // Filtrar por isActive si es necesario
+      if (!includeInactive) {
+        return slots.filter((slot) => slot.isActive);
+      }
+
+      return slots;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -262,14 +277,6 @@ export class PromotionSlotService {
     // Validar campos si se proporcionan
     if (updateDto.name !== undefined && updateDto.name.trim() === '') {
       throw new BadRequestException('Name cannot be empty.');
-    }
-
-    if (updateDto.quantity !== undefined && updateDto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1.');
-    }
-
-    if (updateDto.displayOrder !== undefined && updateDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
     }
 
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
@@ -694,161 +701,6 @@ export class PromotionSlotService {
       this.logError('deleteOption', { optionId }, error);
       throw new InternalServerErrorException(
         'Error deleting slot option.',
-        error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  /**
-   * Reordena las opciones de un slot
-   * @param slotId - ID del slot
-   * @param orderArray - Array de IDs de opciones en el orden deseado
-   */
-  async reorderOptions(slotId: string, orderArray: string[]): Promise<void> {
-    this.validateUUID(slotId, 'slotId');
-
-    if (!orderArray || orderArray.length === 0) {
-      throw new BadRequestException('Order array must not be empty.');
-    }
-
-    // Validar que todos los IDs sean UUID válidos
-    for (const id of orderArray) {
-      this.validateUUID(id, 'Option ID in order array');
-    }
-
-    const queryRunner = this.promotionSlotRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Verificar que el slot existe
-      const slot = await queryRunner.manager.findOne(PromotionSlot, {
-        where: { id: slotId, isActive: true },
-      });
-
-      if (!slot) {
-        throw new NotFoundException(
-          `Promotion slot with ID ${slotId} not found.`,
-        );
-      }
-
-      // Obtener todas las opciones activas del slot
-      const slotOptions = await queryRunner.manager.find(PromotionSlotOption, {
-        where: { slotId, isActive: true },
-      });
-
-      // Validar que todos los IDs en el array pertenecen al slot
-      const slotOptionIds = slotOptions.map((opt) => opt.id);
-      for (const optionId of orderArray) {
-        if (!slotOptionIds.includes(optionId)) {
-          throw new BadRequestException(
-            `Option with ID ${optionId} does not belong to slot ${slotId} or is not active.`,
-          );
-        }
-      }
-
-      // Validar que todos los IDs del slot están en el array
-      if (orderArray.length !== slotOptions.length) {
-        throw new BadRequestException(
-          `Order array must include all active options of the slot. Expected ${slotOptions.length}, got ${orderArray.length}.`,
-        );
-      }
-
-      // Actualizar displayOrder de cada opción según el índice en el array
-      for (let i = 0; i < orderArray.length; i++) {
-        await queryRunner.manager.update(PromotionSlotOption, orderArray[i], {
-          displayOrder: i,
-        });
-      }
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('reorderOptions', { slotId, orderArray }, error);
-      throw new InternalServerErrorException(
-        'Error reordering slot options.',
-        error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  /**
-   * Marca una opción específica como default en un slot
-   * @param slotId - ID del slot
-   * @param optionId - ID de la opción a marcar como default
-   */
-  async setDefaultOption(
-    slotId: string,
-    optionId: string,
-  ): Promise<PromotionSlotOption> {
-    this.validateUUID(slotId, 'slotId');
-    this.validateUUID(optionId, 'optionId');
-
-    const queryRunner = this.promotionSlotRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Verificar que el slot existe
-      const slot = await queryRunner.manager.findOne(PromotionSlot, {
-        where: { id: slotId, isActive: true },
-      });
-
-      if (!slot) {
-        throw new NotFoundException(
-          `Promotion slot with ID ${slotId} not found.`,
-        );
-      }
-
-      // Verificar que la opción existe y pertenece al slot
-      const option = await queryRunner.manager.findOne(PromotionSlotOption, {
-        where: { id: optionId, slotId, isActive: true },
-      });
-
-      if (!option) {
-        throw new NotFoundException(
-          `Slot option with ID ${optionId} not found in slot ${slotId} or is not active.`,
-        );
-      }
-
-      // Desmarcar todas las opciones del slot como default
-      await queryRunner.manager.update(
-        PromotionSlotOption,
-        { slotId, isDefault: true },
-        { isDefault: false },
-      );
-
-      // Marcar la opción especificada como default
-      await queryRunner.manager.update(PromotionSlotOption, optionId, {
-        isDefault: true,
-      });
-
-      await queryRunner.commitTransaction();
-
-      // Retornar la opción actualizada con relaciones
-      return await this.promotionSlotOptionRepository.findOne({
-        where: { id: optionId },
-        relations: ['product', 'slot'],
-      });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('setDefaultOption', { slotId, optionId }, error);
-      throw new InternalServerErrorException(
-        'Error setting default option.',
         error.message,
       );
     } finally {

@@ -102,7 +102,7 @@ export class CategoryService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching orders',
+        'Error fetching categories',
         error.message,
       );
     }

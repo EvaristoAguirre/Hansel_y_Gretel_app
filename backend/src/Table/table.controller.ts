@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -132,8 +134,8 @@ export class TableController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getAllTables(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<Table[]> {
     return this.tableService.getAllTables(page, limit);
   }
@@ -159,8 +161,9 @@ export class TableController {
   @ApiResponse({ status: 200, description: 'Lista de mesas disponibles' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
   getAllTablesAvailable(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 100,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<Table[]> {
     return this.tableService.getAllTablesAvailable(page, limit);
   }

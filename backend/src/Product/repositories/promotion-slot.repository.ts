@@ -82,8 +82,8 @@ export class PromotionSlotRepository {
 
       const queryOptions: Record<string, any> = {
         where: whereCondition,
-        relations: ['options', 'options.product'],
-        order: { displayOrder: 'ASC' },
+        relations: ['options', 'options.product', 'assignments'],
+        order: { createdAt: 'ASC' },
       };
 
       if (page && limit) {
@@ -110,7 +110,12 @@ export class PromotionSlotRepository {
     try {
       return await this.promotionSlotRepository.findOne({
         where: { id },
-        relations: ['options', 'options.product', 'promotion'],
+        relations: [
+          'options',
+          'options.product',
+          'assignments',
+          'assignments.promotion',
+        ],
         withDeleted: includeDeleted,
       });
     } catch (error) {
@@ -194,37 +199,6 @@ export class PromotionSlotRepository {
       await manager.restore(PromotionSlot, id);
     } catch (error) {
       this.logError('restore', { id }, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Obtiene todos los slots de una promoción específica
-   * @param promotionId - ID de la promoción
-   * @param includeInactive - Si debe incluir slots inactivos
-   */
-  async findByPromotionId(
-    promotionId: string,
-    includeInactive: boolean = false,
-  ): Promise<PromotionSlot[]> {
-    try {
-      const whereCondition: Record<string, any> = { promotionId };
-
-      if (!includeInactive) {
-        whereCondition.isActive = true;
-      }
-
-      return await this.promotionSlotRepository.find({
-        where: whereCondition,
-        relations: ['options', 'options.product'],
-        order: { displayOrder: 'ASC' },
-      });
-    } catch (error) {
-      this.logError(
-        'findByPromotionId',
-        { promotionId, includeInactive },
-        error,
-      );
       throw error;
     }
   }

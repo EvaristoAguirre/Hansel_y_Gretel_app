@@ -31,6 +31,7 @@ import { transferOrderData } from 'src/DTOs/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
+import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
 
 @Injectable()
@@ -151,19 +152,62 @@ export class OrderService {
           let extraCost = 0;
 
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            //calcular constos para las selecciones premium
+            // Calcular costos para las selecciones premium
             for (const selection of pd.promotionSelections) {
+              // Obtener la asignación del slot para esta promoción (para obtener quantity)
+              const assignment = await queryRunner.manager.findOne(
+                PromotionSlotAssignment,
+                {
+                  where: {
+                    promotionId: product.id,
+                    slotId: selection.slotId,
+                  },
+                },
+              );
+
+              if (!assignment) {
+                throw new BadRequestException(
+                  `Slot ${selection.slotId} is not assigned to promotion ${product.id}`,
+                );
+              }
+
+              // Validar que la cantidad de productos seleccionados coincida con quantity
+              if (
+                !selection.selectedProductIds ||
+                selection.selectedProductIds.length !== assignment.quantity
+              ) {
+                throw new BadRequestException(
+                  `Slot "${selection.slotId}" requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
+                );
+              }
+
+              // Obtener el slot con sus opciones
               const slot = await queryRunner.manager.findOne(PromotionSlot, {
                 where: { id: selection.slotId, isActive: true },
                 relations: ['options'],
               });
 
-              const option = slot.options.find(
-                (o) => o.productId === selection.selectedProductId,
-              );
+              if (!slot) {
+                throw new NotFoundException(
+                  `Slot with ID ${selection.slotId} not found`,
+                );
+              }
 
-              if (option?.extraCost > 0) {
-                extraCost += option.extraCost;
+              // Calcular costo extra por cada producto seleccionado
+              for (const selectedProductId of selection.selectedProductIds) {
+                const option = slot.options.find(
+                  (o) => o.productId === selectedProductId && o.isActive,
+                );
+
+                if (!option) {
+                  throw new BadRequestException(
+                    `Product ${selectedProductId} is not a valid option for slot ${selection.slotId}`,
+                  );
+                }
+
+                if (option.extraCost > 0) {
+                  extraCost += option.extraCost;
+                }
               }
             }
             finalPrice += extraCost;
@@ -179,35 +223,81 @@ export class OrderService {
           });
           const savedOrderDetail = await queryRunner.manager.save(orderDetail);
 
-          //guardar selecciones de promoción
+          // Guardar selecciones de promoción (crear un registro por cada producto seleccionado)
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
             for (const selection of pd.promotionSelections) {
-              const slot = await queryRunner.manager.findOne(PromotionSlot, {
-                where: { id: selection.slotId, isActive: true },
-              });
-
-              const option = slot.options.find(
-                (o) => o.productId === selection.selectedProductId,
-              );
-
-              const promotionSelection = queryRunner.manager.create(
-                OrderPromotionSelection,
+              // Obtener la asignación del slot para esta promoción
+              const assignment = await queryRunner.manager.findOne(
+                PromotionSlotAssignment,
                 {
-                  orderDetail: savedOrderDetail,
-                  slotId: selection.slotId,
-                  selectedProductId: selection.selectedProductId,
-                  extraCostApplied: option?.extraCost || 0,
+                  where: {
+                    promotionId: product.id,
+                    slotId: selection.slotId,
+                  },
                 },
               );
-              await queryRunner.manager.save(promotionSelection);
+
+              if (!assignment) {
+                throw new BadRequestException(
+                  `Slot ${selection.slotId} is not assigned to promotion ${product.id}`,
+                );
+              }
+
+              // Validar que la cantidad de productos seleccionados coincida con quantity
+              if (
+                !selection.selectedProductIds ||
+                selection.selectedProductIds.length !== assignment.quantity
+              ) {
+                throw new BadRequestException(
+                  `Slot "${selection.slotId}" requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
+                );
+              }
+
+              // Obtener el slot con sus opciones
+              const slot = await queryRunner.manager.findOne(PromotionSlot, {
+                where: { id: selection.slotId, isActive: true },
+                relations: ['options'],
+              });
+
+              if (!slot) {
+                throw new NotFoundException(
+                  `Slot with ID ${selection.slotId} not found`,
+                );
+              }
+
+              // Crear un registro de OrderPromotionSelection por cada producto seleccionado
+              for (let i = 0; i < selection.selectedProductIds.length; i++) {
+                const selectedProductId = selection.selectedProductIds[i];
+                const option = slot.options?.find(
+                  (o) => o.productId === selectedProductId && o.isActive,
+                );
+
+                if (!option) {
+                  throw new BadRequestException(
+                    `Product ${selectedProductId} is not a valid option for slot ${selection.slotId}`,
+                  );
+                }
+
+                const promotionSelection = queryRunner.manager.create(
+                  OrderPromotionSelection,
+                  {
+                    orderDetail: savedOrderDetail,
+                    slotId: selection.slotId,
+                    selectedProductId: selectedProductId,
+                    extraCostApplied: option.extraCost || 0,
+                  },
+                );
+                await queryRunner.manager.save(promotionSelection);
+              }
             }
           }
 
-          //------------------- hay que corregir la deducción de stock
+          //------------------- Deducción de stock con soporte para promociones con slots
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
             pd.toppingsPerUnit,
+            pd.promotionSelections, // Pasar selecciones de promoción si aplica
           );
 
           const { detail, toppingDetails, subtotal } =
@@ -435,7 +525,7 @@ export class OrderService {
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
-        'Error fetching orders',
+        'Error fetching order details',
         error.message,
       );
     }
