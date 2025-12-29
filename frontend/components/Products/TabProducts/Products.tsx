@@ -2,14 +2,22 @@
 import { useAuth } from "@/app/context/authContext";
 import { useProducts } from "@/components/Hooks/useProducts";
 import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import { IProductToppingsGroupResponse, ProductForm, ProductForPromo, ProductsProps, ProductToppingsGroupDto } from "@/components/Interfaces/IProducts";
+import {
+  IProductToppingsGroupResponse,
+  ProductForm,
+  ProductForPromo,
+  ProductsProps,
+  ProductToppingsGroupDto,
+  SlotForm,
+} from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Box, Button } from "@mui/material";
 import { GridCellParams } from "@mui/x-data-grid";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./Modal/ProductCreationModal";
+import SlotCreationModal from "./Modal/SlotCreationModal";
 import { useCategoryStore } from "@/components/Categories/useCategoryStore";
 import { FormTypeProduct } from "@/components/Enums/view-products";
 import { useUnitContext } from "@/app/context/unitOfMeasureContext";
@@ -17,8 +25,10 @@ import { ICategory } from "@/components/Interfaces/ICategories";
 import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
 import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 
-
-const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelectedCategory }) => {
+const Products: React.FC<ProductsProps> = ({
+  selectedCategoryId,
+  onClearSelectedCategory,
+}) => {
   const {
     loading,
     setLoading,
@@ -36,10 +46,7 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
     connectWebSocket,
   } = useProducts();
 
-  const {
-    categories,
-  } = useCategoryStore();
-
+  const { categories } = useCategoryStore();
 
   useEffect(() => {
     connectWebSocket();
@@ -47,13 +54,19 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
-  const { units } = useUnitContext()
+  const { units } = useUnitContext();
 
   useEffect(() => {
     units.length === 0 ? setLoading(true) : setLoading(false);
   }, [units]);
 
+  const [slotModalOpen, setSlotModalOpen] = useState(false);
 
+  const handleSaveSlot = (slotData: SlotForm) => {
+    // TODO: Implementar la lógica para guardar el slot en el backend
+    console.log("Slot a crear:", slotData);
+    setSlotModalOpen(false);
+  };
 
   const handleSave = () => {
     if (token) {
@@ -62,7 +75,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
       } else {
         if (selectedCategoryId) {
           return handleEditProduct(token, selectedCategoryId);
-
         } else {
           return handleEditProduct(token);
         }
@@ -72,22 +84,33 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
 
   const handleChangeProductInfo = (
     field: keyof ProductForm,
-    value: string | number | boolean | ICategory[] | IingredientForm[] | ProductForPromo[] | null | ProductToppingsGroupDto[] | null
+    value:
+      | string
+      | number
+      | boolean
+      | ICategory[]
+      | IingredientForm[]
+      | ProductForPromo[]
+      | null
+      | ProductToppingsGroupDto[]
+      | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
-
-
 
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
     { field: "description", headerName: "Descripción", width: 300 },
     {
-      field: "price", headerName: "Precio", width: 100, renderCell: (params: any) =>
-        <>$ {params.value}</>
+      field: "price",
+      headerName: "Precio",
+      width: 100,
+      renderCell: (params: any) => <>$ {params.value}</>,
     },
     {
-      field: "cost", headerName: "Costo", width: 100, renderCell: (params: any) =>
-        <>$ {params.value}</>
+      field: "cost",
+      headerName: "Costo",
+      width: 100,
+      renderCell: (params: any) => <>$ {params.value}</>,
     },
     {
       field: "actions",
@@ -102,7 +125,6 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
             size="small"
             onClick={() => {
               setForm({
-
                 id: params.row.id,
                 code: params.row.code,
                 name: params.row.name,
@@ -112,20 +134,27 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
                 cost: normalizeNumber(params.row.cost),
                 baseCost: normalizeNumber(params.row.baseCost),
                 categories: params.row.categories,
-                ingredients: params.row.productIngredients?.map(mapIngredientResponseToForm) || [],
+                ingredients:
+                  params.row.productIngredients?.map(
+                    mapIngredientResponseToForm
+                  ) || [],
                 products: params.row.promotionDetails || [],
                 isActive: true,
                 allowsToppings: params.row.allowsToppings,
-                toppingsSettings: params.row.availableToppingGroups?.settings || [],
+                toppingsSettings:
+                  params.row.availableToppingGroups?.settings || [],
                 unitOfMeasure: params.row.unitOfMeasure,
                 unitOfMeasureId: params.row.unitOfMeasureId,
                 unitOfMeasureConversions: params.row.unitOfMeasureConversions,
-                availableToppingGroups: params.row.availableToppingGroups?.map((group: IProductToppingsGroupResponse) => ({
-                  toppingsGroupId: group.id,
-                  quantityOfTopping: parseFloat(group.quantityOfTopping),
-                  settings: group.settings,
-                  unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
-                })) || [],
+                availableToppingGroups:
+                  params.row.availableToppingGroups?.map(
+                    (group: IProductToppingsGroupResponse) => ({
+                      toppingsGroupId: group.id,
+                      quantityOfTopping: parseFloat(group.quantityOfTopping),
+                      settings: group.settings,
+                      unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
+                    })
+                  ) || [],
               });
               setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);
@@ -142,16 +171,13 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
           >
             <FontAwesomeIcon icon={faTrash} />
           </Button>
-        </div >
+        </div>
       ),
     },
   ];
 
-
-
   return (
     <Box flex={1} p={2} overflow="auto">
-
       <ProductTable
         loading={loading}
         rows={products}
@@ -161,6 +187,9 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
         onCreate={() => {
           setModalType(FormTypeProduct.CREATE);
           setModalOpen(true);
+        }}
+        onCreateSlot={() => {
+          setSlotModalOpen(true);
         }}
       />
 
@@ -178,8 +207,15 @@ const Products: React.FC<ProductsProps> = ({ selectedCategoryId, onClearSelected
           products={products}
         />
       )}
-    </Box>
 
+      {/* Slot Dialog */}
+      <SlotCreationModal
+        open={slotModalOpen}
+        onClose={() => setSlotModalOpen(false)}
+        onSave={handleSaveSlot}
+        products={products}
+      />
+    </Box>
   );
 };
 
