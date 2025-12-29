@@ -95,21 +95,11 @@ export class PromotionSlotService {
       throw new BadRequestException('Name is required and cannot be empty.');
     }
 
-    // Validar formato del promotionId solo si se proporciona
-    if (createDto.promotionId) {
-      this.validateUUID(createDto.promotionId, 'promotionId');
-    }
-
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Validar que la promoción exista solo si se proporciona
-      if (createDto.promotionId) {
-        await this.validatePromotionExists(createDto.promotionId);
-      }
-
       // Crear el slot (sin promotionId, quantity, displayOrder, isOptional)
       const slotData = {
         name: createDto.name,
@@ -121,8 +111,80 @@ export class PromotionSlotService {
         queryRunner,
       );
 
+      // Validar y crear opciones de productos para el slot
+      if (createDto.productIds && createDto.productIds.length > 0) {
+        // Validar que no haya IDs duplicados
+        const uniqueProductIds = [...new Set(createDto.productIds)];
+        if (uniqueProductIds.length !== createDto.productIds.length) {
+          throw new BadRequestException(
+            'Duplicate product IDs are not allowed.',
+          );
+        }
+
+        // Validar y crear cada opción de producto
+        for (const productId of uniqueProductIds) {
+          // Validar formato UUID (ya validado por DTO, pero por seguridad)
+          this.validateUUID(productId, 'productId');
+
+          // Validar que el producto exista
+          const product =
+            await this.productRepository.getProductById(productId);
+          if (!product) {
+            throw new NotFoundException(
+              `Product with ID ${productId} not found.`,
+            );
+          }
+
+          // Validar que el producto NO sea una promoción (evitar recursión)
+          if (product.type === 'promotion') {
+            throw new BadRequestException(
+              `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
+            );
+          }
+
+          // Validar que el producto esté activo
+          if (!product.isActive) {
+            throw new BadRequestException(
+              `Product with ID ${productId} is not active.`,
+            );
+          }
+
+          // Crear la opción del slot usando el queryRunner
+          const option = queryRunner.manager.create(PromotionSlotOption, {
+            slotId: promotionSlot.id,
+            productId: productId,
+            isDefault: false,
+            extraCost: 0,
+            displayOrder: 0,
+            isActive: true,
+          });
+
+          await queryRunner.manager.save(PromotionSlotOption, option);
+        }
+      }
+
+      // Cargar el slot con sus relaciones usando el queryRunner antes del commit
+      const promotionSlotWithOptions = await queryRunner.manager.findOne(
+        PromotionSlot,
+        {
+          where: { id: promotionSlot.id },
+          relations: [
+            'options',
+            'options.product',
+            'assignments',
+            'assignments.promotion',
+          ],
+        },
+      );
+
+      if (!promotionSlotWithOptions) {
+        throw new InternalServerErrorException(
+          'Error loading created promotion slot.',
+        );
+      }
+
       await queryRunner.commitTransaction();
-      return promotionSlot;
+      return promotionSlotWithOptions;
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
