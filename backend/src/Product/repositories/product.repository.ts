@@ -85,6 +85,44 @@ export class ProductRepository {
     });
   }
 
+  async getProduct(params: {
+    code?: number;
+    name?: string;
+  }): Promise<ProductResponseDto> {
+    const { code, name } = params;
+    if (!code && !name) {
+      throw new BadRequestException('Either code or name must be provided.');
+    }
+    try {
+      if (code) {
+        const product = await this.productRepository.findOne({
+          where: { code: code },
+          relations: ['categories'],
+        });
+        if (!product) {
+          throw new NotFoundException(`Product not found`);
+        }
+        return ProductMapper.toResponseDto(product);
+      }
+      if (name) {
+        const product = await this.productRepository.findOne({
+          where: { name: ILike(`%${name}%`) },
+          relations: ['categories'],
+        });
+        if (!product) {
+          throw new NotFoundException(`Product not found`);
+        }
+        return ProductMapper.toResponseDto(product);
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logError('getProduct', { code, name }, error);
+      throw error;
+    }
+  }
+
   async getProductById(id: string): Promise<Product> {
     const product = await this.getProductWithRelationsByQueryRunner(
       id,
@@ -116,54 +154,6 @@ export class ProductRepository {
       throw new NotFoundException(`Product not found with  id: ${id}`);
     }
     return product;
-  }
-
-  async getProductByCode(code: number): Promise<ProductResponseDto> {
-    if (!code) {
-      throw new BadRequestException('Either code must be provided.');
-    }
-
-    try {
-      const product = await this.productRepository.findOne({
-        where: { code: code },
-        relations: ['categories'],
-      });
-
-      if (!product) {
-        throw new NotFoundException(`Product not found with  code: ${code}`);
-      }
-      return ProductMapper.toResponseDto(product);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('getProductByCode', { code }, error);
-      throw error;
-    }
-  }
-
-  async getProductByName(name: string): Promise<ProductResponseDto> {
-    if (!name) {
-      throw new BadRequestException('Either name must be provided.');
-    }
-
-    try {
-      const product = await this.productRepository.findOne({
-        where: { name: ILike(`%${name}%`) },
-        relations: ['categories'],
-      });
-
-      if (!product) {
-        throw new NotFoundException(`Product not found with  name: ${name}`);
-      }
-      return ProductMapper.toResponseDto(product);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('getProductByName', { name }, error);
-      throw error;
-    }
   }
 
   //---- Estandarizado --------  con el dto nuevo
@@ -1066,6 +1056,7 @@ export class ProductRepository {
     isActive: boolean = true,
     page?: number,
     limit?: number,
+    type?: string,
   ): Promise<ProductResponseDto[]> {
     try {
       if (!name && !code && !categories) {
@@ -1088,6 +1079,9 @@ export class ProductRepository {
 
       if (categories && categories.length > 0) {
         whereConditions.categories = { id: In(categories) };
+      }
+      if (type) {
+        whereConditions.type = In([type as 'product' | 'promotion' | 'simple']);
       }
 
       const [products] = await this.productRepository.findAndCount({

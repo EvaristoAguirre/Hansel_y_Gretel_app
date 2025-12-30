@@ -6,16 +6,15 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateProductDto } from '../dtos/create-product.dto';
+import { CreateProductDto } from '../../dtos/create-product.dto';
 import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
-import { Product } from '../entities/product.entity';
-import { PromotionSlot } from '../entities/promotion-slot.entity';
-import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
+import { Product } from '../../entities/product.entity';
+import { PromotionSlot } from '../../entities/promotion-slot.entity';
+import { PromotionSlotAssignment } from '../../entities/promotion-slot-assignment.entity';
 import { ProductRepository } from 'src/Product/repositories/product.repository';
-import { ProductMapper } from '../productMapper';
 import { DataSource } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
@@ -24,7 +23,8 @@ import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { parseLocalizedNumber } from 'src/Helpers/parseLocalizedNumber';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
-import { CreatePromotionWithSlotsDto } from '../dtos/create-promotion-with-slots.dto';
+import { CreatePromotionWithSlotsDto } from '../../dtos/create-promotion-with-slots.dto';
+import { ProductReaderService } from './product-reader.service';
 
 @Injectable()
 export class ProductService {
@@ -37,97 +37,37 @@ export class ProductService {
     private readonly ingredientService: IngredientService,
     private readonly monitoringLogger: LoggerService,
     private readonly dataSource: DataSource,
+    //---------- nuevos servicios refactor -------
+    private readonly reader: ProductReaderService,
   ) {}
 
-  // ------- rta en string sin decimales y punto de mil
   async getAllProducts(
     page: number,
     limit: number,
   ): Promise<ProductResponseDto[]> {
-    try {
-      const products = await this.productRepository.getAllProducts(page, limit);
-      return ProductMapper.toResponseDtoArray(products);
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error fetching the products',
-        error.message,
-      );
-    }
+    return this.reader.getAllProducts(page, limit);
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async getProductById(id: string): Promise<ProductResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const product = await this.productRepository.getProductById(id);
-      return ProductMapper.toResponseDto(product);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
-    }
+    return this.reader.getProductById(id);
   }
 
-  // ---------- CUIDADO QUE ESTE ES PARA OTRO SERVICIO
   async getProductByIdToAnotherService(id: string): Promise<Product> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const product =
-        await this.productRepository.getProductByIdToAnotherService(id);
-      return product;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
-    }
+    return this.reader.getProductByIdToAnotherService(id);
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async getProductByCode(code: number): Promise<ProductResponseDto> {
-    return await this.productRepository.getProductByCode(code);
+    return this.reader.getProductByCode(code);
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async getProductByName(name: string): Promise<ProductResponseDto> {
-    return this.productRepository.getProductByName(name);
+    return this.reader.getProductByName(name);
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async getProductsByCategories(
     categories: string[],
   ): Promise<ProductResponseDto[]> {
-    const products =
-      await this.productRepository.getProductsByCategories(categories);
-    if (products.length === 0) {
-      throw new NotFoundException(
-        `No products found for the given categories: ${categories.join(', ')}`,
-      );
-    }
-    return products;
+    return this.reader.getProductsByCategories(categories);
   }
 
   // ------- rta en string sin decimales y punto de mil
@@ -379,7 +319,6 @@ export class ProductService {
     }
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async searchProducts(
     name?: string,
     code?: string,
@@ -388,7 +327,7 @@ export class ProductService {
     page?: number,
     limit?: number,
   ): Promise<ProductResponseDto[]> {
-    return this.productRepository.searchProducts(
+    return this.reader.searchProducts(
       name,
       code,
       categories,
@@ -398,7 +337,6 @@ export class ProductService {
     );
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async searchProductsToPromotion(
     isActive: boolean,
     page: number,
@@ -406,7 +344,7 @@ export class ProductService {
     name?: string,
     code?: number,
   ): Promise<ProductResponseDto[]> {
-    return this.productRepository.searchProductsToPromotion(
+    return this.reader.searchProductsToPromotion(
       isActive,
       page,
       limit,
@@ -415,16 +353,11 @@ export class ProductService {
     );
   }
 
-  // ------- rta en string sin decimales y punto de mil
   async getSimpleAndCompositeProducts(
     page: number,
     limit: number,
   ): Promise<ProductResponseDto[]> {
-    const products = await this.productRepository.getSimpleAndCompositeProducts(
-      page,
-      limit,
-    );
-    return ProductMapper.toResponseDtoArray(products);
+    return this.reader.getSimpleAndCompositeProducts(page, limit);
   }
 
   async checkProductsStockAvailability(
@@ -869,30 +802,10 @@ export class ProductService {
   }
 
   async getProductsWithStock(): Promise<Product[]> {
-    return this.productRepository.getProductsWithStock();
+    return this.reader.getProductsWithStock();
   }
 
   async getPromotionProductsToAnotherService(promotionId: string) {
-    if (!promotionId) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(promotionId)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      return await this.productRepository.getPromotionProductsToAnotherService(
-        promotionId,
-      );
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
-    }
+    return this.reader.getPromotionProductsToAnotherService(promotionId);
   }
 }

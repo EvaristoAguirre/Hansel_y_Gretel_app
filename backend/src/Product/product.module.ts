@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductController } from './controllers/product.controller';
-import { ProductService } from './services/product.service';
+import { ProductService } from './services/product-service/product.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { CategoryModule } from 'src/Category/category.module';
@@ -25,6 +25,7 @@ import { PromotionSlotAssignmentRepository } from './repositories/promotion-slot
 import { PromotionSlotService } from './services/promotion-slot.service';
 import { PromotionSlotAssignmentService } from './services/promotion-slot-assignment.service';
 import { PromotionSlotController } from './controllers/promotion-slot.controller';
+import { ProductReaderService } from './services/product-service/product-reader.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -50,6 +51,7 @@ import { PromotionSlotController } from './controllers/promotion-slot.controller
   controllers: [ProductController, PromotionSlotController],
   providers: [
     ProductService,
+    ProductReaderService,
     ProductRepository,
     PromotionSlotRepository,
     PromotionSlotAssignmentRepository,

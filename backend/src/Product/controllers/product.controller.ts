@@ -23,7 +23,7 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ProductService } from '../services/product.service';
+import { ProductService } from '../services/product-service/product.service';
 import { UUID } from 'crypto';
 import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
 import { CreateProductDto } from 'src/Product/dtos/create-product.dto';
