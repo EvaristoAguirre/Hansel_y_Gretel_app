@@ -909,22 +909,12 @@ export class ProductRepository {
     }
     const { categories, products, slots, ...otherAttributes } = updateData;
 
-    const promotion = await queryRunner.manager.findOne(Product, {
-      where: { id: id, isActive: true, type: 'promotion' },
-      relations: [
-        'categories',
-        'promotionDetails',
-        'promotionDetails.product',
-        'stock',
-        'stock.unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.toppingGroup',
-        'promotionSlotAssignments',
-        'promotionSlotAssignments.slot',
-        'promotionSlotAssignments.slot.options',
-        'promotionSlotAssignments.slot.options.product',
-      ],
-    });
+    const promotion = await this.getProductWithRelationsByQueryRunner(
+      id,
+      'promotion',
+      queryRunner,
+    );
+
     if (!promotion) {
       throw new NotFoundException(`Promotion with ID: ${id} not found`);
     }
@@ -1018,23 +1008,11 @@ export class ProductRepository {
     }
 
     await queryRunner.manager.save(promotion);
-    const updatedPromotion = await queryRunner.manager.findOne(Product, {
-      where: { id: id, isActive: true },
-      relations: [
-        'categories',
-        'promotionDetails',
-        'promotionDetails.product',
-        'stock',
-        'stock.unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.toppingGroup',
-        'availableToppingGroups.toppingGroup.toppings',
-        'promotionSlotAssignments',
-        'promotionSlotAssignments.slot',
-        'promotionSlotAssignments.slot.options',
-        'promotionSlotAssignments.slot.options.product',
-      ],
-    });
+    const updatedPromotion = await this.getProductWithRelationsByQueryRunner(
+      id,
+      'promotion',
+      queryRunner,
+    );
     return ProductMapper.toResponseDto(updatedPromotion);
   }
 
@@ -1645,6 +1623,8 @@ export class ProductRepository {
       'promotionSlotAssignments.slot.options',
       'promotionSlotAssignments.slot.options.product',
       'promotionSlotAssignments.slot.options.product.unitOfMeasure',
+      'stock',
+      'stock.unitOfMeasure',
     ];
   }
 }

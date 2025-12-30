@@ -27,6 +27,7 @@ import { PromotionSlotAssignmentService } from './services/promotion-slot-assign
 import { PromotionSlotController } from './controllers/promotion-slot.controller';
 import { ProductReaderService } from './services/product-service/product-reader.service';
 import { ProductCreaterService } from './services/product-service/product-creater.service';
+import { ProductUpdaterService } from './services/product-service/product-updater.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -54,6 +55,7 @@ import { ProductCreaterService } from './services/product-service/product-create
     ProductService,
     ProductReaderService,
     ProductCreaterService,
+    ProductUpdaterService,
     ProductRepository,
     PromotionSlotRepository,
     PromotionSlotAssignmentRepository,

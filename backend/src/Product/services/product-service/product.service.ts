@@ -22,6 +22,7 @@ import { parseLocalizedNumber } from 'src/Helpers/parseLocalizedNumber';
 import { CreatePromotionWithSlotsDto } from '../../dtos/create-promotion-with-slots.dto';
 import { ProductReaderService } from './product-reader.service';
 import { ProductCreaterService } from './product-creater.service';
+import { ProductUpdaterService } from './product-updater.service';
 
 @Injectable()
 export class ProductService {
@@ -35,6 +36,7 @@ export class ProductService {
     //---------- nuevos servicios refactor -------
     private readonly reader: ProductReaderService,
     private readonly creater: ProductCreaterService,
+    private readonly updater: ProductUpdaterService,
   ) {}
 
   async getAllProducts(
@@ -87,56 +89,7 @@ export class ProductService {
     id: string,
     updateData: UpdateProductDto,
   ): Promise<ProductResponseDto> {
-    const currentProduct = await this.productRepository.getProductById(id);
-    const productUpdated = await this.productRepository.updateProduct(
-      id,
-      updateData,
-    );
-
-    if (
-      currentProduct.type === 'simple' &&
-      typeof updateData.baseCost === 'number' &&
-      updateData.baseCost !== currentProduct.baseCost
-    ) {
-      const cascadeResult =
-        await this.costCascadeService.updateSimpleProductCostAndCascade(
-          productUpdated.id,
-          updateData.baseCost,
-        );
-      if (cascadeResult.success) {
-        console.log(`📦 Producto ${id} actualizado. Promociones afectadas:`);
-        for (const promoId of cascadeResult.updatedPromotions) {
-          console.log(`🎁 -> Promoción recalculada: ${promoId}`);
-        }
-      } else {
-        console.error(
-          `⚠️ Falló la cascada de costos para producto ${id}: ${cascadeResult.message}`,
-        );
-      }
-    }
-
-    if (
-      currentProduct.type === 'product' &&
-      Number(productUpdated.cost) !== Number(currentProduct.cost)
-    ) {
-      const cascadeResult =
-        await this.costCascadeService.updateSimpleProductCostAndCascade(
-          productUpdated.id,
-          updateData.baseCost,
-        );
-      if (cascadeResult.success) {
-        console.log(
-          `📦 Producto: ${productUpdated.name} ${id} actualizado. Promociones afectadas:`,
-        );
-        for (const promoId of cascadeResult.updatedPromotions) {
-          console.log(`🎁 -> Promoción recalculada: ${promoId}`);
-        }
-      } else {
-        console.error(
-          `⚠️ Falló la cascada de costos para producto ${productUpdated.name}: ${cascadeResult.message}`,
-        );
-      }
-    }
+    const productUpdated = await this.updater.updateProduct(id, updateData);
 
     this.eventEmitter.emit('product.updated', {
       product: productUpdated,
