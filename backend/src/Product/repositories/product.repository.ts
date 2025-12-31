@@ -14,7 +14,6 @@ import { UpdatePromotionSlotWithOptionsDto } from 'src/Product/dtos/update-slot-
 import { Category } from 'src/Category/category.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { CreatePromotionDto } from 'src/DTOs/create-promotion.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
@@ -24,11 +23,8 @@ import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableTop
 import { Product } from 'src/Product/entities/product.entity';
 import { PromotionProduct } from 'src/Product/entities/promotionProducts.entity';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
-import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { ProductMapper } from 'src/Product/productMapper';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
-import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
-import { CreatePromotionSlotWithOptionsDto } from '../dtos/create-slot-option-for-creation.dto';
 
 @Injectable()
 export class ProductRepository {
@@ -90,12 +86,16 @@ export class ProductRepository {
   }
 
   async getProductById(id: string): Promise<Product> {
-    const product = await this.getProductWithRelations(id, 'product');
+    const product = await this.getProductWithRelationsByQueryRunner(
+      id,
+      'product',
+    );
     if (!product) {
       throw new NotFoundException(`Product not found with  id: ${id}`);
     }
     return product;
   }
+
   async getProductByIdToAnotherService(id: string): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
@@ -299,8 +299,6 @@ export class ProductRepository {
     }
   }
 
-  // ----- NUEVO MÉTODO: CREAR PROMOCIÓN CON SLOTS Y PRODUCTOS -----
-
   private async createPromotion(
     queryRunner: QueryRunner,
     createPromotionDto: CreateProductDto,
@@ -315,10 +313,12 @@ export class ProductRepository {
 
     if (products && products.length > 0) {
       await this.createPromotionProducts(queryRunner, savedPromotion, products);
-      const promotionWithDetails = await this.getPromotionWithProductsRelations(
-        queryRunner,
-        savedPromotion.id,
-      );
+      const promotionWithDetails =
+        await this.getProductWithRelationsByQueryRunner(
+          savedPromotion.id,
+          'promotion',
+          queryRunner,
+        );
       return ProductMapper.toResponseDto(promotionWithDetails);
     } else {
       // Promoción sin productos ni slots (válida para crear estructura base)
@@ -508,9 +508,9 @@ export class ProductRepository {
 
     const productWithRelations =
       await this.getProductWithRelationsByQueryRunner(
-        queryRunner,
         savedProduct.id,
         'product',
+        queryRunner,
       );
 
     if (!productWithRelations) {
@@ -580,9 +580,9 @@ export class ProductRepository {
 
     const productWithRelations =
       await this.getProductWithRelationsByQueryRunner(
-        queryRunner,
         savedProduct.id,
         'product',
+        queryRunner,
       );
     if (!productWithRelations) {
       throw new NotFoundException('Product not found after creation');
@@ -697,7 +697,10 @@ export class ProductRepository {
       updateData.ingredients.length === 0 ||
       updateData.type === 'simple'
     ) {
-      const product = await this.getProductWithRelations(id, 'simple');
+      const product = await this.getProductWithRelationsByQueryRunner(
+        id,
+        'simple',
+      );
       if (!product) {
         throw new NotFoundException(`Product with ID: ${id} not found`);
       }
@@ -752,9 +755,9 @@ export class ProductRepository {
       const updatedProduct = await queryRunner.manager.save(product);
       const updatedProductWithRelations =
         await this.getProductWithRelationsByQueryRunner(
-          queryRunner,
           updatedProduct.id,
           updatedProduct.type,
+          queryRunner,
         );
       return ProductMapper.toResponseDto(updatedProductWithRelations);
     }
@@ -766,7 +769,10 @@ export class ProductRepository {
       );
     }
 
-    const product = await this.getProductWithRelations(id, updateData.type);
+    const product = await this.getProductWithRelationsByQueryRunner(
+      id,
+      updateData.type,
+    );
     Object.assign(product, otherAttributes);
 
     if (categories) {
@@ -893,9 +899,9 @@ export class ProductRepository {
     const updatedProduct = await queryRunner.manager.save(product);
     const updatedProductWithRelations =
       await this.getProductWithRelationsByQueryRunner(
-        queryRunner,
         updatedProduct.id,
         updatedProduct.type,
+        queryRunner,
       );
 
     return ProductMapper.toResponseDto(updatedProductWithRelations);
@@ -1212,51 +1218,6 @@ export class ProductRepository {
     }
   }
 
-  async getProductWithRelations(
-    id: string,
-    type: 'product' | 'promotion' | 'simple',
-  ): Promise<Product> {
-    const relations =
-      type === 'product' || type === 'simple'
-        ? [
-            'categories',
-            'productIngredients',
-            'productIngredients.ingredient',
-            'productIngredients.unitOfMeasure',
-            'promotionDetails',
-            'promotionDetails.product',
-            'stock',
-            'stock.unitOfMeasure',
-            'availableToppingGroups',
-            'availableToppingGroups.unitOfMeasure',
-            'availableToppingGroups.toppingGroup',
-            'availableToppingGroups.toppingGroup.toppings',
-          ]
-        : [
-            'categories',
-            'promotionDetails',
-            'promotionDetails.product',
-            'promotionDetails.product.productIngredients',
-            'promotionDetails.product.productIngredients.ingredient',
-            'promotionDetails.product.productIngredients.unitOfMeasure',
-            'promotionDetails.product.stock',
-            'promotionDetails.product.stock.unitOfMeasure',
-            'promotionSlots',
-            'promotionSlots.options',
-            'promotionSlots.options.product',
-          ];
-
-    const product = await this.productRepository.findOne({
-      where: { id, isActive: true },
-      relations,
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID: ${id} not found`);
-    }
-    return product;
-  }
-
   private async updateToppingsGroups(
     updateData: UpdateProductDto,
     product: Product,
@@ -1535,7 +1496,6 @@ export class ProductRepository {
    * Actualiza los slots de una promoción
    * @private
    */
-
   // ---- NO ANALIZAR LOS MÉTODOS RELACIONADOS AL UPDATE DE PROMOCIONES CON SLOTS ----
   private async updatePromotionSlots(
     queryRunner: QueryRunner,
@@ -1597,72 +1557,6 @@ export class ProductRepository {
     }
   }
 
-  //NUEVOS MÉTODOS: PROBANDO LO DE SLOTS
-  /**
-   * Obtiene las relaciones específicas para promociones con productos simples
-   */
-  private async getPromotionWithProductsRelations(
-    queryRunner: QueryRunner,
-    promotionId: string,
-  ): Promise<Product> {
-    const relations = [
-      'categories',
-      'unitOfMeasure',
-      'promotionDetails',
-      'promotionDetails.product',
-      'promotionDetails.product.unitOfMeasure',
-      'promotionDetails.product.productIngredients',
-      'promotionDetails.product.productIngredients.ingredient',
-      'promotionDetails.product.productIngredients.unitOfMeasure',
-      'promotionDetails.product.stock',
-      'promotionDetails.product.stock.unitOfMeasure',
-    ];
-
-    const promotion = await queryRunner.manager.findOne(Product, {
-      where: { id: promotionId, isActive: true },
-      relations,
-    });
-
-    if (!promotion) {
-      throw new NotFoundException(
-        `Promotion with ID: ${promotionId} not found`,
-      );
-    }
-
-    return promotion;
-  }
-
-  /**
-   * Obtiene las relaciones específicas para promociones con slots
-   */
-  private async getPromotionWithSlotsRelations(
-    queryRunner: QueryRunner,
-    promotionId: string,
-  ): Promise<Product> {
-    const relations = [
-      'categories',
-      'unitOfMeasure',
-      'promotionSlotAssignments',
-      'promotionSlotAssignments.slot',
-      'promotionSlotAssignments.slot.options',
-      'promotionSlotAssignments.slot.options.product',
-      'promotionSlotAssignments.slot.options.product.unitOfMeasure',
-    ];
-
-    const promotion = await queryRunner.manager.findOne(Product, {
-      where: { id: promotionId, isActive: true },
-      relations,
-    });
-
-    if (!promotion) {
-      throw new NotFoundException(
-        `Promotion with ID: ${promotionId} not found`,
-      );
-    }
-
-    return promotion;
-  }
-
   /**
    * Obtiene relaciones básicas para promociones sin productos ni slots
    */
@@ -1671,32 +1565,39 @@ export class ProductRepository {
     promotionId: string,
   ): Promise<Product> {
     const relations = ['categories', 'unitOfMeasure'];
-
     const promotion = await queryRunner.manager.findOne(Product, {
       where: { id: promotionId, isActive: true },
       relations,
     });
-
     if (!promotion) {
       throw new NotFoundException(
         `Promotion with ID: ${promotionId} not found`,
       );
     }
-
     return promotion;
   }
 
   /**
    * Método mejorado que carga solo las relaciones necesarias según el tipo
    */
-  private async getProductWithRelationsByQueryRunner(
-    queryRunner: QueryRunner,
+  async getProductWithRelationsByQueryRunner(
     id: string,
     type: 'product' | 'promotion' | 'simple',
+    queryRunner?: QueryRunner,
   ): Promise<Product> {
     const relations = this.getRelationsForProductType(type);
+    if (queryRunner) {
+      const product = await queryRunner.manager.findOne(Product, {
+        where: { id, isActive: true },
+        relations,
+      });
+      if (!product) {
+        throw new NotFoundException(`Product with ID: ${id} not found`);
+      }
+      return product;
+    }
 
-    const product = await queryRunner.manager.findOne(Product, {
+    const product = await this.productRepository.findOne({
       where: { id, isActive: true },
       relations,
     });
@@ -1728,6 +1629,7 @@ export class ProductRepository {
         'availableToppingGroups.unitOfMeasure',
         'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
+        'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
       ];
     }
 

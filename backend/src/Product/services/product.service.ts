@@ -155,9 +155,12 @@ export class ProductService {
   async createPromotionWithSlots(data: CreatePromotionWithSlotsDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction();
+    let isTransactionActive = false;
 
     try {
+      await queryRunner.startTransaction();
+      isTransactionActive = true;
+
       // Validar que se hayan proporcionado slots
       if (!data.slots || data.slots.length === 0) {
         throw new BadRequestException(
@@ -254,19 +257,25 @@ export class ProductService {
 
       // 4. Commit de la transacción
       await queryRunner.commitTransaction();
+      isTransactionActive = false;
 
       // 5. Recargar producto con todas las relaciones
-      const productWithSlots = await this.productRepository.getProductById(
-        product.id,
-      );
+      const productWithSlots =
+        await this.productRepository.getProductWithRelationsByQueryRunner(
+          product.id,
+          'promotion',
+        );
 
       this.eventEmitter.emit('product.created', {
         product: productWithSlots,
       });
 
-      return ProductMapper.toResponseDto(productWithSlots);
+      return productWithSlots;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      if (isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+
       if (error instanceof HttpException) {
         throw error;
       }
@@ -435,17 +444,19 @@ export class ProductService {
     }
 
     if (product.type === 'promotion') {
-      const promotion = await this.productRepository.getProductWithRelations(
-        productId,
-        'promotion',
-      );
+      const promotion =
+        await this.productRepository.getProductWithRelationsByQueryRunner(
+          productId,
+          'promotion',
+        );
       const result = await this.checkPromotionStock(promotion, quantityToSell);
       return result;
     } else {
-      const product = await this.productRepository.getProductWithRelations(
-        productId,
-        'product',
-      );
+      const product =
+        await this.productRepository.getProductWithRelationsByQueryRunner(
+          productId,
+          'product',
+        );
       const productStockCheck = await this.checkProductStock(
         product,
         quantityToSell,
