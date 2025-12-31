@@ -13,17 +13,11 @@ export class PromotionSlotOption {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ default: false })
-  isDefault: boolean; // Opción seleccionada por defecto
-
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   extraCost: number; // Costo adicional si aplica (ej: torta premium +$500)
 
   @Column({ default: true })
   isActive: boolean;
-
-  @Column({ type: 'int', default: 0 })
-  displayOrder: number; // Orden de presentación
 
   // -------- Relaciones --------
 

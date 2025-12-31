@@ -1,10 +1,4 @@
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsNumber,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsUUID, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePromotionSlotAssignmentDto {
@@ -36,4 +30,3 @@ export class CreatePromotionSlotAssignmentDto {
   @IsNotEmpty()
   isOptional: boolean;
 }
-

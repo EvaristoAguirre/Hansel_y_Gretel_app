@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsUUID, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsUUID, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSlotOptionDto {
@@ -23,14 +23,6 @@ export class CreateSlotOptionDto {
   productId: string;
 
   @ApiProperty({
-    description: 'Indica si esta es la opción seleccionada por defecto',
-    example: true,
-  })
-  @IsBoolean()
-  @IsNotEmpty()
-  isDefault: boolean;
-
-  @ApiProperty({
     description:
       'Costo adicional al precio base de la promoción si se elige esta opción',
     example: 500,
@@ -40,14 +32,4 @@ export class CreateSlotOptionDto {
   @IsNotEmpty()
   @Min(0)
   extraCost: number;
-
-  @ApiProperty({
-    description: 'Orden de visualización de esta opción en la UI',
-    example: 1,
-    minimum: 0,
-  })
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 }
