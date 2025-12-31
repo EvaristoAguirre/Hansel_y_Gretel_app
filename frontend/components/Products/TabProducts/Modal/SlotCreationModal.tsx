@@ -4,21 +4,25 @@ import {
   Box,
   TextField,
   Button,
-  FormControl,
   FormGroup,
   FormControlLabel,
   Checkbox,
   DialogActions,
   Typography,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { ProductResponse, SlotForm } from "@/components/Interfaces/IProducts";
 import { TypeProduct } from "@/components/Enums/view-products";
+import { useAuth } from "@/app/context/authContext";
+import { createPromotionSlot } from "@/api/promotionSlot";
 
 interface SlotCreationModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (slotData: SlotForm) => void;
+  onSave?: (slotData: SlotForm) => void;
   products: ProductResponse[];
 }
 
@@ -38,6 +42,8 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
   onSave,
   products,
 }) => {
+  const { getAccessToken } = useAuth();
+
   // Filtrar productos que no sean de tipo "promotion"
   const filteredProducts = products.filter(
     (product) => product.type !== TypeProduct.PROMO
@@ -47,6 +53,9 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
   const [errors, setErrors] = useState<{ name?: string; products?: string }>(
     {}
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // IDs de productos seleccionados
   const selectedIds = form.products.map((p) => p.id);
@@ -91,131 +100,184 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
-    if (validateForm()) {
-      onSave(form);
-      handleClose();
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    const token = getAccessToken();
+    if (!token) {
+      setApiError("No se pudo obtener el token de autenticación");
+      return;
     }
+
+    setIsLoading(true);
+    setApiError(null);
+
+    const result = await createPromotionSlot(form, token);
+
+    setIsLoading(false);
+
+    if (result.ok) {
+      setShowSuccess(true);
+      onSave?.(form);
+      handleClose();
+    } else {
+      setApiError(result.error || "Error al crear el slot");
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setShowSuccess(false);
   };
 
   const handleClose = () => {
     setForm(initialSlotForm);
     setErrors({});
+    setApiError(null);
     onClose();
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-    >
-      <Box
-        sx={{
-          width: 500,
-          bgcolor: "background.paper",
-          p: 4,
-          mx: "auto",
-          mt: 2,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          borderRadius: 2,
-          boxShadow: 24,
-        }}
+    <>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
-        <Grid container spacing={2}>
-          {/* Campo Nombre */}
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Nombre"
-              value={form.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              error={!!errors.name}
-              helperText={errors.name}
-              variant="outlined"
-              size="small"
-              placeholder="Ingrese el nombre del slot"
-            />
-          </Grid>
+        <Box
+          sx={{
+            width: 500,
+            bgcolor: "background.paper",
+            p: 4,
+            mx: "auto",
+            mt: 2,
+            maxHeight: "90vh",
+            overflowY: "auto",
+            borderRadius: 2,
+            boxShadow: 24,
+          }}
+        >
+          <Grid container spacing={2}>
+            {/* Campo Nombre */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Nombre"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                error={!!errors.name}
+                helperText={errors.name}
+                variant="outlined"
+                size="small"
+                placeholder="Ingrese el nombre del slot"
+              />
+            </Grid>
 
-          {/* Campo Descripción */}
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Descripción"
-              multiline
-              minRows={3}
-              value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              variant="outlined"
-              size="small"
-              placeholder="Ingrese una descripción (opcional)"
-            />
-          </Grid>
+            {/* Campo Descripción */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Descripción"
+                multiline
+                minRows={3}
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                variant="outlined"
+                size="small"
+                placeholder="Ingrese una descripción (opcional)"
+              />
+            </Grid>
 
-          {/* Selector Múltiple de Productos */}
-          <Grid item xs={12}>
-            <Typography variant="body2" color="textSecondary" mb={1}>
-              Productos
-            </Typography>
-            <div
-              style={{
-                maxHeight: "250px",
-                overflowY: "auto",
-                border: errors.products
-                  ? "1px solid #d32f2f"
-                  : "1px solid #ccc",
-                borderRadius: "4px",
-                padding: "8px",
-              }}
-            >
-              <FormGroup key={selectedIds.join(",")}>
-                {filteredProducts.map((product) => (
-                  <FormControlLabel
-                    key={product.id}
-                    control={
-                      <Checkbox
-                        checked={selectedIds.includes(product.id)}
-                        onChange={() => handleProductToggle(product)}
-                      />
-                    }
-                    label={capitalizeFirstLetter(product.name)}
-                  />
-                ))}
-              </FormGroup>
-              {filteredProducts.length === 0 && (
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  textAlign="center"
-                >
-                  No hay productos disponibles
+            {/* Selector Múltiple de Productos */}
+            <Grid item xs={12}>
+              <Typography variant="body2" color="textSecondary" mb={1}>
+                Productos
+              </Typography>
+              <div
+                style={{
+                  maxHeight: "250px",
+                  overflowY: "auto",
+                  border: errors.products
+                    ? "1px solid #d32f2f"
+                    : "1px solid #ccc",
+                  borderRadius: "4px",
+                  padding: "8px",
+                }}
+              >
+                <FormGroup key={selectedIds.join(",")}>
+                  {filteredProducts.map((product) => (
+                    <FormControlLabel
+                      key={product.id}
+                      control={
+                        <Checkbox
+                          checked={selectedIds.includes(product.id)}
+                          onChange={() => handleProductToggle(product)}
+                        />
+                      }
+                      label={capitalizeFirstLetter(product.name)}
+                    />
+                  ))}
+                </FormGroup>
+                {filteredProducts.length === 0 && (
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    textAlign="center"
+                  >
+                    No hay productos disponibles
+                  </Typography>
+                )}
+              </div>
+              {errors.products && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                  {errors.products}
                 </Typography>
               )}
-            </div>
-            {errors.products && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                {errors.products}
-              </Typography>
-            )}
+            </Grid>
           </Grid>
-        </Grid>
 
-        <DialogActions sx={{ justifyContent: "space-between", mt: 3, px: 0 }}>
-          <Button onClick={handleClose} color="warning">
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={!form.name.trim() || form.products.length === 0}
-          >
-            Crear Slot
-          </Button>
-        </DialogActions>
-      </Box>
-    </Modal>
+          {apiError && (
+            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              {apiError}
+            </Typography>
+          )}
+
+          <DialogActions sx={{ justifyContent: "space-between", mt: 3, px: 0 }}>
+            <Button onClick={handleClose} color="warning" disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={
+                !form.name.trim() || form.products.length === 0 || isLoading
+              }
+            >
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Crear Slot"
+              )}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Modal>
+
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          ¡Slot creado exitosamente!
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

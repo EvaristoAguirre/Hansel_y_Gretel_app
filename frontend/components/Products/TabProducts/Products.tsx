@@ -8,12 +8,11 @@ import {
   ProductForPromo,
   ProductsProps,
   ProductToppingsGroupDto,
-  SlotForm,
 } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Box, Button } from "@mui/material";
-import { GridCellParams } from "@mui/x-data-grid";
+import { Box, Button, Typography } from "@mui/material";
+import { GridCellParams, GridColDef } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { ProductTable } from "./ProductTable";
 import ProductCreationModal from "./Modal/ProductCreationModal";
@@ -24,6 +23,8 @@ import { useUnitContext } from "@/app/context/unitOfMeasureContext";
 import { ICategory } from "@/components/Interfaces/ICategories";
 import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
 import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
+import { getPromotionSlots } from "@/api/promotionSlot";
+import DataGridComponent from "@/components/Utils/DataGridComponent";
 
 const Products: React.FC<ProductsProps> = ({
   selectedCategoryId,
@@ -61,12 +62,45 @@ const Products: React.FC<ProductsProps> = ({
   }, [units]);
 
   const [slotModalOpen, setSlotModalOpen] = useState(false);
+  const [slots, setSlots] = useState<any[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const handleSaveSlot = (slotData: SlotForm) => {
-    // TODO: Implementar la lógica para guardar el slot en el backend
-    console.log("Slot a crear:", slotData);
-    setSlotModalOpen(false);
+  // Cargar slots al montar el componente
+  const fetchSlots = async () => {
+    if (!token) return;
+    setLoadingSlots(true);
+    const result = await getPromotionSlots(token);
+    setLoadingSlots(false);
+    if (result.ok && result.data) {
+      setSlots(result.data);
+    }
   };
+
+  useEffect(() => {
+    if (token) {
+      fetchSlots();
+    }
+  }, [token]);
+
+  // Columnas para la tabla de slots
+  const slotColumns: GridColDef[] = [
+    { field: "name", headerName: "Nombre", width: 200 },
+    { field: "description", headerName: "Descripción", width: 300 },
+    {
+      field: "options",
+      headerName: "Productos",
+      width: 400,
+      renderCell: (params: any) => {
+        const options = params.value || [];
+        console.log(options);
+        return (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {options.map((opt: any) => opt.name || opt.product.name).join(", ")}
+          </Box>
+        );
+      },
+    },
+  ];
 
   const handleSave = () => {
     if (token) {
@@ -208,11 +242,23 @@ const Products: React.FC<ProductsProps> = ({
         />
       )}
 
+      {/* Tabla de Slots */}
+      <Box mt={4}>
+        <Typography variant="h6" mb={2}>
+          Slots de Promoción
+        </Typography>
+        <DataGridComponent
+          rows={slots}
+          columns={slotColumns}
+          capitalize={["name", "description"]}
+        />
+      </Box>
+
       {/* Slot Dialog */}
       <SlotCreationModal
         open={slotModalOpen}
         onClose={() => setSlotModalOpen(false)}
-        onSave={handleSaveSlot}
+        onSave={() => fetchSlots()}
         products={products}
       />
     </Box>
