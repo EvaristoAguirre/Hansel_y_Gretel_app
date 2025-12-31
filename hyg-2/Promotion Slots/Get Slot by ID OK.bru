@@ -1,17 +1,17 @@
 meta {
-  name: Soft Delete Prom-Slot
+  name: Get Slot by ID OK
   type: http
-  seq: 7
+  seq: 3
 }
 
-delete {
+get {
   url: http://localhost:3000/promotion-slot/:id
   body: json
   auth: bearer
 }
 
 params:path {
-  id: 09654b64-19c7-44b8-b5e1-8c9ad2c191c3
+  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
 }
 
 headers {

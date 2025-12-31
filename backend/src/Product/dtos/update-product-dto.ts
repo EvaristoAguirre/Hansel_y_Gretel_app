@@ -14,7 +14,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PromotionProductDto } from '../../DTOs/create-promotion.dto';
-import { UpdatePromotionSlotWithOptionsDto } from './update-slot-option-for-update.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -87,9 +86,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdatePromotionSlotWithOptionsDto)
-  slots?: UpdatePromotionSlotWithOptionsDto[];
+  slots?: string[];
 }
 
 export class ProductIngredientDto {
