@@ -1,17 +1,17 @@
 meta {
-  name: Get Promotion Slot by ID OK
+  name: Get Slots by Promotion ID
   type: http
-  seq: 3
+  seq: 4
 }
 
 get {
-  url: http://localhost:3000/promotion-slot/:id
+  url: http://localhost:3000/promotion-slot/promotion/:promotionId
   body: json
   auth: bearer
 }
 
 params:path {
-  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
+  promotionId: c291f8fd-b0fa-4fbb-97d7-fe430fc8650f
 }
 
 headers {
