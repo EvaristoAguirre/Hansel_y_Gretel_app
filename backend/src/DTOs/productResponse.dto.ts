@@ -86,6 +86,10 @@ export class ProductResponseDto {
   @Expose()
   @Type(() => AvailableToppingGroupDto)
   availableToppingGroups?: AvailableToppingGroupDto[];
+
+  @Expose()
+  @Type(() => PromotionSlotAssignmentResponseDto)
+  promotionSlotAssignments?: PromotionSlotAssignmentResponseDto[];
 }
 
 export class ProductIngredientsResponseDto {
@@ -157,4 +161,39 @@ export class ToppingResponseDto {
 
   @Expose()
   name: string;
+}
+
+export class PromotionSlotAssignmentResponseDto {
+  slot: PromotionSlotResponseDto;
+  quantity: number;
+  isOptional: boolean;
+}
+
+export class PromotionSlotResponseDto {
+  @Expose()
+  name: string;
+
+  @Expose()
+  options: PromotionSlotOptionResponseDto[];
+}
+
+export class PromotionSlotOptionResponseDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  isDefault: boolean;
+
+  @Expose()
+  extraCost: number;
+
+  @Expose()
+  isActive: boolean;
+
+  @Expose()
+  displayOrder: number;
+
+  @Expose()
+  @Type(() => ProductResponseDto)
+  product: ProductResponseDto;
 }

@@ -1,13 +1,17 @@
 meta {
-  name: Create Promotion with Slots
+  name: Update Promo con Slots
   type: http
-  seq: 1
+  seq: 2
 }
 
-post {
-  url: http://localhost:3000/product/promo-with-slots
+put {
+  url: http://localhost:3000/product/:id
   body: json
   auth: bearer
+}
+
+params:path {
+  id: ea263d91-1504-4c25-a562-7ad7f59a71f8
 }
 
 headers {
@@ -21,14 +25,11 @@ auth:bearer {
 
 body:json {
   {
-    "name": "promo slots 13",
     "type": "promotion",
-    "price": 250000,
-    "description": "Combo especial de navidad",
+    "price": 2000000,
+    "description": "Combo",
     "code": 2037,
-    "categories": ["{{categoryId}}"],
-    "slots": ["d116d69f-ac5c-4b0a-a7b5-01b43d76787d", "284b087a-b9f4-4ee9-9d8d-ffe492490887"
-    ]
+    "categories": ["{{categoryId}}"]
   }
 }
 
