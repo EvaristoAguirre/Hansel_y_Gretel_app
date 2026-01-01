@@ -23,7 +23,8 @@ export enum TypeProduct {
 
 export enum FormTypeProduct {
   CREATE = 'create',
-  EDIT = 'edit'
+  EDIT = 'edit',
+  CREATE_SLOT = 'create_slot',
 }
 
 export enum TabProductKey {
