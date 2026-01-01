@@ -1,6 +1,6 @@
 import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { TypeProduct } from "../Enums/view-products";
-import { ICategory } from './ICategories';
+import { ICategory } from "./ICategories";
 import { IingredientForm, IingredientResponse } from "./Ingredients";
 import { IStockOfProduct } from "./IStock";
 import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
@@ -19,15 +19,22 @@ interface IProduct {
   type: TypeProduct;
 }
 export interface ProductForm extends IProduct {
-  [key: string]: string | number | boolean
-  | null | undefined | ICategory[] | IingredientForm[]
-  | IProductDataList[] | ProductForPromo[] | ProductToppingsGroupDto[];
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | ICategory[]
+    | IingredientForm[]
+    | IProductDataList[]
+    | ProductForPromo[]
+    | ProductToppingsGroupDto[];
   categories: ICategory[];
   ingredients: IingredientForm[];
   products: IProductDataList[];
   isActive: boolean;
   availableToppingGroups: ProductToppingsGroupDto[];
-
 }
 export interface ProductToppingsGroupDto {
   toppingsGroupId: string;
@@ -38,7 +45,7 @@ export interface ProductToppingsGroupDto {
     maxSelection: number;
     chargeExtra: boolean;
     extraCost: number;
-  }
+  };
 }
 export interface IProductToppingsGroupResponse {
   id: string;
@@ -59,7 +66,6 @@ export interface ProductForPromo {
   id?: string;
   name?: string;
   price?: number;
-
 }
 
 export interface IProductDataList {
@@ -68,32 +74,38 @@ export interface IProductDataList {
   quantity: number;
 }
 
-
 export interface ProductTableProps {
   rows: GridRowsProp;
   columns: GridColDef[];
   onCreate: () => void;
+  onCreateSlot: () => void;
   loading: boolean;
   selectedCategoryId: string | null;
   onClearSelectedCategory: () => void;
-
 }
 
 export interface ProductCreated extends IProduct {
-  [key: string]: string | number | boolean | null | string[] | IingredientForm[] | IPromotionDetails[] | undefined | IStockOfProduct;
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | null
+    | string[]
+    | IingredientForm[]
+    | IPromotionDetails[]
+    | undefined
+    | IStockOfProduct;
   quantity?: number | null;
   productIngredients: IingredientForm[] | null;
   promotionDetails: IPromotionDetails[] | null;
   stock: IStockOfProduct | null;
-};
-
+}
 
 export interface IPromotionDetails {
   id: string;
   quantity: number;
   product: IProduct;
 }
-
 
 export interface ProductResponse {
   id: string;
@@ -134,26 +146,31 @@ export interface SelectedProductsI {
   unitaryPrice?: string | null;
   commentOfProduct?: string | null;
   toppingsIds?: string[];
-  toppingsPerUnit?: string[][]
+  toppingsPerUnit?: string[][];
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
   internalId?: string;
-};
+}
 
 export interface IConfirmedProducts {
   id: string;
   isActive: boolean;
   orderId: string;
-  product: IProduct
+  product: IProduct;
   quantity: number;
   subtotal: number;
   unitaryPrice: string;
   batchId: string;
-};
+}
 
 export interface ICheckStock {
   productId: string;
   quantityToSell: number;
-  toppingsPerUnit?: string[]
-};
+  toppingsPerUnit?: string[];
+}
 
+export interface SlotForm {
+  name: string;
+  description: string;
+  products: ProductResponse[];
+}

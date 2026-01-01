@@ -15,6 +15,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   columns,
   loading,
   onCreate,
+  onCreateSlot,
   selectedCategoryId,
   onClearSelectedCategory,
 }) => {
@@ -107,6 +108,16 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           disabled={loading}
         >
           {loading ? <LoadingLottie /> : '+ Nuevo Producto'}
+        </Button>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{ marginRight: 2, width: '20%' }}
+          onClick={onCreateSlot}
+          disabled={loading}
+        >
+          {loading ? <LoadingLottie /> : '+ Nuevo Slot'}
         </Button>
 
         {/* Buscador de productos */}

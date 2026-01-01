@@ -161,9 +161,6 @@ const FormToppingsGroup = ({
                         ? "Este topping ya está en otro grupo"
                         : ""
                     }
-                    arrow
-                    placement="top"
-
                   >
 
                     <FormControlLabel

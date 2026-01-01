@@ -170,16 +170,16 @@ export class CreateProductDto {
   @Type(() => ProductToppingsGroupDto)
   availableToppingGroups?: ProductToppingsGroupDto[];
 
-  // @ApiPropertyOptional({
-  //   description: 'Configuración del grupo de toppings para este producto',
-  //   example: { maxSelection: 3, chargeExtra: true, extraCost: 200 },
-  // })
-  // @IsOptional()
-  // toppingsSettings?: {
-  //   maxSelection: number;
-  //   chargeExtra: boolean;
-  //   extraCost: number;
-  // };
+  @ApiPropertyOptional({
+    description: 'Configuración del grupo de toppings para este producto',
+    example: { maxSelection: 3, chargeExtra: true, extraCost: 200 },
+  })
+  @IsOptional()
+  toppingsSettings?: {
+    maxSelection: number;
+    chargeExtra: boolean;
+    extraCost: number;
+  };
 
   @ApiPropertyOptional({
     description: 'Indica si el producto está activo',

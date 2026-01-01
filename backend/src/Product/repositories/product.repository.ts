@@ -256,7 +256,10 @@ export class ProductRepository {
         availableToppingGroups,
         ...productData
       } = productToCreate;
-      await this.checkProductUniqueness(queryRunner, productData);
+      await this.checkProductUniqueness(queryRunner, {
+        name: productData.name,
+        code: productData.code,
+      });
 
       if (type === 'promotion') {
         const promotion = await this.createPromotion(
@@ -1766,9 +1769,7 @@ export class ProductRepository {
       const newOption = queryRunner.manager.create(PromotionSlotOption, {
         slotId,
         productId: optionData.productId,
-        isDefault: optionData.isDefault,
         extraCost: optionData.extraCost,
-        displayOrder: optionData.displayOrder,
         isActive: true,
       });
       await queryRunner.manager.save(PromotionSlotOption, newOption);
@@ -1815,34 +1816,17 @@ export class ProductRepository {
         // Actualizar opción existente
         await queryRunner.manager.update(PromotionSlotOption, optionData.id, {
           productId: optionData.productId,
-          isDefault: optionData.isDefault,
           extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
         });
       } else {
         // Crear nueva opción
         const newOption = queryRunner.manager.create(PromotionSlotOption, {
           slotId,
           productId: optionData.productId,
-          isDefault: optionData.isDefault,
           extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
           isActive: true,
         });
         await queryRunner.manager.save(PromotionSlotOption, newOption);
-      }
-
-      // Si se marca como default, desmarcar las demás opciones del mismo slot
-      if (optionData.isDefault) {
-        await queryRunner.manager.update(
-          PromotionSlotOption,
-          {
-            slotId,
-            id: optionData.id ? Not(optionData.id) : undefined,
-            isDefault: true,
-          },
-          { isDefault: false },
-        );
       }
     }
   }
