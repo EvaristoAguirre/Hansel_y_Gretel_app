@@ -6,11 +6,11 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
-import { PromotionProduct } from 'src/Product/promotionProducts.entity';
+import { PromotionProduct } from 'src/Product/entities/promotionProducts.entity';
 import { DataSource, In, QueryRunner } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { CostCascadeResult } from 'src/Types/cost-cascade.type';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { isUUID } from 'class-validator';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';

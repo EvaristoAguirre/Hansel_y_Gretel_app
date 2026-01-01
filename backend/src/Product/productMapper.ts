@@ -1,7 +1,9 @@
 import { plainToInstance } from 'class-transformer';
-import { Product } from './product.entity';
+import { Product } from './entities/product.entity';
 import {
   ProductResponseDto,
+  PromotionSlotResponseDto,
+  PromotionSlotOptionResponseDto,
   UnitOfMeasureResponseDto,
 } from 'src/DTOs/productResponse.dto';
 import { PromotionResponse } from 'src/DTOs/promotionResponse.dto';
@@ -72,6 +74,42 @@ export class ProductMapper {
           name: product.name,
         }),
       })) ?? [];
+
+    dto.promotionSlotAssignments =
+      product.promotionSlotAssignments?.map((assignment) => {
+        const slotDto = plainToInstance(
+          PromotionSlotResponseDto,
+          assignment.slot,
+          {
+            excludeExtraneousValues: true,
+          },
+        );
+
+        // Mapear manualmente las opciones porque necesitan transformación del producto
+        slotDto.options =
+          assignment.slot.options?.map((option) => {
+            const optionDto = plainToInstance(
+              PromotionSlotOptionResponseDto,
+              option,
+              {
+                excludeExtraneousValues: true,
+              },
+            );
+
+            // Transformar el producto dentro de la opción
+            if (option.product) {
+              optionDto.product = this.toResponseDto(option.product);
+            }
+
+            return optionDto;
+          }) ?? [];
+
+        return {
+          slot: slotDto,
+          quantity: assignment.quantity,
+          isOptional: assignment.isOptional,
+        };
+      }) ?? [];
     return dto;
   }
 

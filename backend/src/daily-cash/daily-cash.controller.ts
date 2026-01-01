@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -189,8 +190,9 @@ export class DailyCashController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getAllDailysCash(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 1000,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(1000), ParseIntPipe)
+    limit: number = 1000,
   ): Promise<DailyCash[]> {
     return this.dailyCashService.getAllDailyCash(page, limit);
   }

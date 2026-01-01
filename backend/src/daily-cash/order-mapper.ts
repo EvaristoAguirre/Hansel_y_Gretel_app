@@ -1,4 +1,4 @@
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { formatARNumber } from './formatAR-number';
 
 export class OrderMapper {

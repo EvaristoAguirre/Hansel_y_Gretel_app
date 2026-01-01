@@ -1,0 +1,69 @@
+meta {
+  name: Update Order - Add Promotion with Slots
+  type: http
+  seq: 2
+}
+
+patch {
+  url: http://localhost:3000/order/update/{{orderId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "productsDetails": [
+      {
+        "productId": "{{promotionId}}",
+        "quantity": 1,
+        "commentOfProduct": "Promoción con selecciones personalizadas",
+        "promotionSelections": [
+          {
+            "slotId": "{{slotId1}}",
+            "selectedProductId": "{{selectedProductId1}}",
+            "toppingsPerUnit": []
+          },
+          {
+            "slotId": "{{slotId2}}",
+            "selectedProductId": "{{selectedProductId2}}",
+            "toppingsPerUnit": [
+              ["{{toppingId1}}", "{{toppingId2}}"]
+            ]
+          }
+        ]
+      }
+    ],
+    "isPriority": false
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    console.log("✅ Orden actualizada exitosamente");
+    console.log("Total de la orden:", response.total);
+  
+    // Guardar información útil de la respuesta
+    if (response.orderDetails && response.orderDetails.length > 0) {
+      const promotionDetail = response.orderDetails.find(
+        detail => detail.product.type === "promotion"
+      );
+      if (promotionDetail && promotionDetail.promotionSelections) {
+        console.log("Selecciones guardadas:", promotionDetail.promotionSelections.length);
+      }
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

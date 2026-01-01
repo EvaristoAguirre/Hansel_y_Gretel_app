@@ -1,6 +1,5 @@
-import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from "@/components/URI/URI";
+import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from '@/components/URI/URI';
 import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
-
 
 export const createProduct = async (form: ProductForm, token: string) => {
   const payload = {
@@ -8,13 +7,20 @@ export const createProduct = async (form: ProductForm, token: string) => {
     categories: form.categories.map((c) => c.id),
   };
   const response = await fetch(URI_PRODUCT, {
-    method: "POST",
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || `Error ${response.status}: ${response.statusText}`
+    );
+  }
 
   return await response.json();
 };
@@ -25,10 +31,10 @@ export const editProduct = async (form: ProductForm, token: string) => {
     categories: form.categories.map((c) => c.id),
   };
   const response = await fetch(`${URI_PRODUCT}/${form.id}`, {
-    method: "PUT",
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
 
     body: JSON.stringify(payload),
@@ -38,28 +44,31 @@ export const editProduct = async (form: ProductForm, token: string) => {
 };
 
 // Para traer todos los productos con paginación:
-export const fetchProducts = async (page: string, limit: string, token: string) => {
+export const fetchProducts = async (
+  page: string,
+  limit: string,
+  token: string
+) => {
   const queryParams = new URLSearchParams({ page, limit }).toString();
 
   const response = await fetch(`${URI_PRODUCT}?${queryParams}`, {
-    method: "GET",
+    method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
   const data = await response.json();
   return data;
 };
 
-
 export const getProductsByCategory = async (id: string, token: string) => {
   try {
     const response = await fetch(`${URI_PRODUCT_BY_CATEGORY}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ categories: [id] }),
     });
@@ -73,22 +82,20 @@ export const getProductsByCategory = async (id: string, token: string) => {
 
     return await response.json();
   } catch (error) {
-    console.error("Error en getProductsByCategory:", error);
-    return { ok: false, message: "Error de conexión con el servidor" };
+    console.error('Error en getProductsByCategory:', error);
+    return { ok: false, message: 'Error de conexión con el servidor' };
   }
 };
 
 //función usada para validar un código en el form
 export const getProductByCode = async (code: number, token: string) => {
-
   try {
     const response = await fetch(`${URI_PRODUCT}/by-code/${code}`, {
-      method: "GET",
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
-
     });
 
     if (!response.ok) {
@@ -98,26 +105,31 @@ export const getProductByCode = async (code: number, token: string) => {
     const data = await response.json();
     return { ok: true, data };
   } catch (error) {
-    console.error("Error en getProductByCode:", error);
-    return { ok: false, status: 500, error: "Error al conectar con el servidor" };
+    console.error('Error en getProductByCode:', error);
+    return {
+      ok: false,
+      status: 500,
+      error: 'Error al conectar con el servidor',
+    };
   }
 };
 
 export const getProductByName = async (name: string, token: string) => {
-
   const queryParams = new URLSearchParams({
     name: name,
   });
 
   try {
-    const response = await fetch(`${URI_PRODUCT}/by-name?${queryParams.toString()}`, {
-      method: "GET",
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
-      },
-
-    });
+    const response = await fetch(
+      `${URI_PRODUCT}/by-name?${queryParams.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       return { ok: false, status: response.status };
@@ -126,31 +138,41 @@ export const getProductByName = async (name: string, token: string) => {
     const data = await response.json();
     return { ok: true, data };
   } catch (error) {
-    console.error("Error en getProductByCode:", error);
-    return { ok: false, status: 500, error: "Error al conectar con el servidor" };
+    console.error('Error en getProductByCode:', error);
+    return {
+      ok: false,
+      status: 500,
+      error: 'Error al conectar con el servidor',
+    };
   }
 };
-export const searchProducts = async (searchTerm: string, token: string, selectedCategoryId?: string | null) => {
+export const searchProducts = async (
+  searchTerm: string,
+  token: string,
+  selectedCategoryId?: string | null
+) => {
   try {
     // Detectamos si es un número
     const isNumeric = !isNaN(Number(searchTerm));
 
     const queryParams = new URLSearchParams({
-      [isNumeric ? "code" : "name"]: searchTerm,
-      limit: "10",
+      [isNumeric ? 'code' : 'name']: searchTerm,
+      limit: '10',
     });
 
-    const response = await fetch(`${URI_PRODUCT}/search?${queryParams.toString()}`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(
-        selectedCategoryId ? { categories: [selectedCategoryId] } : {}
-      )
-
-    });
+    const response = await fetch(
+      `${URI_PRODUCT}/search?${queryParams.toString()}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(
+          selectedCategoryId ? { categories: [selectedCategoryId] } : {}
+        ),
+      }
+    );
 
     if (!response.ok) {
       return [];
@@ -158,32 +180,36 @@ export const searchProducts = async (searchTerm: string, token: string, selected
 
     const data = await response.json();
 
-
     return data;
   } catch (error) {
-
-    console.error("❌ Error fetching searched products:", error);
+    console.error('❌ Error fetching searched products:', error);
     return [];
   }
 };
 
-
-export const searchProductsNotProm = async (searchTerm: string, token: string, selectedCategoryId?: string[] | null) => {
+export const searchProductsNotProm = async (
+  searchTerm: string,
+  token: string,
+  selectedCategoryId?: string[] | null
+) => {
   try {
     const isNumeric = !isNaN(Number(searchTerm));
     const queryParams = new URLSearchParams({
-      [isNumeric ? "code" : "name"]: searchTerm,
-      limit: "100",
+      [isNumeric ? 'code' : 'name']: searchTerm,
+      limit: '100',
     });
 
-    const response = await fetch(`${URI_PRODUCT}/prod-to-prom?${queryParams.toString()}`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({ "categories": selectedCategoryId })
-    });
+    const response = await fetch(
+      `${URI_PRODUCT}/prod-to-prom?${queryParams.toString()}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ categories: selectedCategoryId }),
+      }
+    );
 
     if (!response.ok) {
       return [];
@@ -191,21 +217,19 @@ export const searchProductsNotProm = async (searchTerm: string, token: string, s
 
     const data = await response.json();
 
-
     return data;
   } catch (error) {
-
-    console.error("❌ Error fetching searched products:", error);
+    console.error('❌ Error fetching searched products:', error);
     return [];
   }
 };
 
 export const checkStock = async (form: ICheckStock, token: string) => {
   const response = await fetch(`${URI_PRODUCT}/check-stock`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(form),
   });

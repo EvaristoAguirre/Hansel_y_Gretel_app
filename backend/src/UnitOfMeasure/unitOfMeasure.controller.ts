@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -108,15 +110,10 @@ export class UnitOfMeasureController {
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async getAllUnitOfMeasure(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<UnitOfMeasureSummaryResponseDto[]> {
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-    return this.unitOfMeasureService.getAllUnitOfMeasure(
-      pageNumber,
-      limitNumber,
-    );
+    return this.unitOfMeasureService.getAllUnitOfMeasure(page, limit);
   }
 
   @Get('conventional')

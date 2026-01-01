@@ -1,5 +1,5 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { Entity } from 'typeorm';
 
 @Entity()

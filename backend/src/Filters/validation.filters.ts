@@ -3,25 +3,28 @@ import {
   Catch,
   ArgumentsHost,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ValidationError } from 'class-validator';
 
-@Catch(ValidationError)
+@Catch(BadRequestException)
 export class ValidationExceptionFilter implements ExceptionFilter {
-  catch(exception: ValidationError[], host: ArgumentsHost) {
+  catch(exception: BadRequestException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const exceptionResponse = exception.getResponse() as any;
 
-    const errors = exception.map((err) => ({
-      property: err.property,
-      constraints: err.constraints,
-    }));
-
-    response.status(HttpStatus.BAD_REQUEST).json({
-      statusCode: HttpStatus.BAD_REQUEST,
-      message: 'Validation failed',
-      errors,
-    });
+    // Si la respuesta ya contiene errores de validación estructurados, usarlos
+    if (exceptionResponse.errors || exceptionResponse.details) {
+      response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: exceptionResponse.message || 'Error de validación',
+        errors: exceptionResponse.errors || [],
+        details: exceptionResponse.details || [],
+      });
+    } else {
+      // Si no, devolver la respuesta estándar
+      response.status(HttpStatus.BAD_REQUEST).json(exceptionResponse);
+    }
   }
 }

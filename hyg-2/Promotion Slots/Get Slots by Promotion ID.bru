@@ -1,0 +1,29 @@
+meta {
+  name: Get Slots by Promotion ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:3000/promotion-slot/promotion/:promotionId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  promotionId: c291f8fd-b0fa-4fbb-97d7-fe430fc8650f
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -26,7 +26,7 @@ import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
@@ -99,14 +99,21 @@ export class DailyCashService {
         page,
         limit,
       );
-      return DailyCashMapper.toMany(allDailyCash);
+      return DailyCashMapper.toMany(allDailyCash || []);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
+      // ✅ Loggear el error real para diagnóstico
+      console.error('Error en getAllDailyCash:', error);
+      console.error(
+        'Stack trace:',
+        error instanceof Error ? error.stack : 'No stack available',
+      );
+
       throw new InternalServerErrorException(
-        'Error updating the order. Please try again later.',
+        'Error fetching daily cash reports. Please try again later.',
         error.message,
       );
     }

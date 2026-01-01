@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import PDFDocument from 'pdfkit-table';
 import * as fs from 'fs';
-import { ProductService } from 'src/Product/product.service';
+import { ProductService } from 'src/Product/services/product-service/product.service';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()

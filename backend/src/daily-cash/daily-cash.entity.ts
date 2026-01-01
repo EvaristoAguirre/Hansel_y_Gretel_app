@@ -1,5 +1,5 @@
 import { DailyCashState } from 'src/Enums/states.enum';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { CashMovement } from './cash-movement.entity';
 

@@ -1,0 +1,29 @@
+meta {
+  name: Get Slot by ID OK
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3000/promotion-slot/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: 5881e90e-3157-4661-9c9c-3beb5c1954e2
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

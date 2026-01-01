@@ -1,0 +1,54 @@
+meta {
+  name: Create Promotion with Slots
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/product/promo-with-slots
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "promo slots 13",
+    "type": "promotion",
+    "price": 250000,
+    "description": "Combo especial de navidad",
+    "code": 2037,
+    "categories": ["{{categoryId}}"],
+    "slots": ["d116d69f-ac5c-4b0a-a7b5-01b43d76787d", "284b087a-b9f4-4ee9-9d8d-ffe492490887"
+    ]
+  }
+}
+
+vars:pre-request {
+  cafeAmericanoId: cc6c3661-34ab-4ddd-be14-d4bd1fd844fe
+  cafeConLecheId: 7f5f3c83-60f2-450b-b8ff-3d4f80d17a71
+  tortaChocolateId: 75e0adb5-4bf4-497a-a6ea-d3af481dd68d
+  tortaFrutillaId: f1773ffd-208f-47e6-9503-d5f6e0275843
+  categoryId: 75c3a17a-a9bf-4b2a-a973-ef0a13dbdb0f
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("promotionId", response.id);
+    console.log("Promotion created with ID:", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

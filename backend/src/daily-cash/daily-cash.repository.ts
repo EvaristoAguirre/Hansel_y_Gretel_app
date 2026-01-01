@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DailyCash } from './daily-cash.entity';
 import { Between, Repository } from 'typeorm';
@@ -14,12 +14,24 @@ export class DailyCashRepository {
     private readonly cashMovementRepository: Repository<CashMovement>,
   ) {}
 
-  async getAllDailysCash(page: number, limit: number): Promise<DailyCash[]> {
-    return await this.dailyCashRepository.find({
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['movements', 'orders', 'orders.payments'],
-    });
+  async getAllDailysCash(
+    page: number = 1,
+    limit: number = 1000,
+  ): Promise<DailyCash[]> {
+    if (page < 1 || limit < 1) {
+      throw new BadRequestException('Page and limit must be greater than 0');
+    }
+    try {
+      return await this.dailyCashRepository.find({
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ['movements', 'orders', 'orders.payments'],
+        // ✅ Asegurar que las relaciones opcionales no causen problemas
+      });
+    } catch (error) {
+      console.error('Error en getAllDailysCash repository:', error);
+      throw error;
+    }
   }
 
   async getDailyCashById(id: string): Promise<DailyCash> {

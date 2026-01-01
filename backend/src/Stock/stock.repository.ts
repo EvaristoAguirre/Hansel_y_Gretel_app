@@ -1,12 +1,11 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Stock } from './stock.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
@@ -89,7 +88,11 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       this.logError('getStockByProductId', { productId }, error);
       throw error;
     }
@@ -119,7 +122,11 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       this.logError('getStockByIngredientId', { ingredientId }, error);
       throw error;
     }
@@ -147,7 +154,11 @@ export class StockRepository {
 
       return stock;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      )
+        throw error;
       this.logError('getStockByToppingId', { toppingId }, error);
       throw error;
     }
