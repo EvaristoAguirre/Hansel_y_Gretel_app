@@ -26,6 +26,7 @@ import { OrderPayment } from './entities/order_payment.entity';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { OrderPromotionSelection } from './entities/order-promotion-selection.entity';
+import { OrderReaderService } from './services/order-reader.service';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { OrderPromotionSelection } from './entities/order-promotion-selection.en
     OrderRepository,
     ArchiveService,
     NotificationService,
+    OrderReaderService,
   ],
 })
 export class OrderModule {}

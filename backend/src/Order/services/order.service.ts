@@ -33,6 +33,7 @@ import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
+import { OrderReaderService } from './order-reader.service';
 
 @Injectable()
 export class OrderService {
@@ -50,6 +51,7 @@ export class OrderService {
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
     private readonly monitoringLogger: LoggerService,
+    private readonly reader: OrderReaderService,
   ) {}
 
   async openOrder(
@@ -444,95 +446,19 @@ export class OrderService {
   }
 
   async getAllOrders(page: number, limit: number): Promise<Order[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.orderRepo.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: [
-          'table',
-          'orderDetails',
-          'orderDetails.product',
-          'orderDetails.orderDetailToppings',
-          'orderDetails.orderDetailToppings.topping',
-          'payments',
-        ],
-      });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
-    }
+    return await this.reader.getAllOrders(page, limit);
   }
 
   async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id, isActive: true },
-        relations: [
-          'table',
-          'table.room',
-          'orderDetails',
-          'orderDetails.product',
-          'orderDetails.orderDetailToppings',
-          'orderDetails.orderDetailToppings.topping',
-          'payments',
-        ],
-      });
-      if (!order) {
-        throw new NotFoundException(`Order with ID: ${id} not found`);
-      }
-
-      const responseAdapted = await this.adaptResponse(order);
-      return responseAdapted;
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the order',
-        error.message,
-      );
-    }
+    return await this.reader.getOrderById(id);
   }
 
   async getOrderDetails(page: number, limit: number): Promise<OrderDetails[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.orderDetailsRepo.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['product', 'order'],
-      });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching order details',
-        error.message,
-      );
-    }
+    return await this.reader.getOrderDetails(page, limit);
   }
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.orderRepository.getOrdersForOpenOrPendingTables();
+    return await this.reader.getOrdersForOpenOrPendingTables();
   }
 
   async markOrderAsPendingPayment(
@@ -804,54 +730,7 @@ export class OrderService {
   }
 
   async orderDetailsById(id: string): Promise<OrderDetailsDto> {
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id: id },
-        relations: [
-          'table',
-          'table.room',
-          'orderDetails',
-          'orderDetails.product',
-          'payments',
-        ],
-      });
-
-      if (!order) {
-        throw new NotFoundException(`Orden con ID ${id} no encontrada`);
-      }
-
-      const orderSummary = {
-        id: order.id,
-        date: order.date,
-        table: order.table?.name || 'Sin mesa',
-        room: order.table?.room?.name || 'Sin salón',
-        numberCustomers: order.numberCustomers,
-        total: Number(order.total).toFixed(2),
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        closedAt: order.closedAt,
-        paymentMethods: Array.isArray(order.payments)
-          ? order.payments.map((p) => ({
-              methodOfPayment: p.methodOfPayment,
-              amount: Number(p.amount).toFixed(2),
-            }))
-          : [],
-        products: Array.isArray(order.orderDetails)
-          ? order.orderDetails.map((d) => ({
-              name: d.product?.name || 'Producto eliminado',
-              quantity: d.quantity,
-              commandNumber: d.commandNumber,
-            }))
-          : [],
-      };
-
-      return orderSummary;
-    } catch (error) {
-      console.error(`[OrderService] Error al obtener detalle de orden`, error);
-      throw new InternalServerErrorException(
-        'Error al obtener el detalle de la orden',
-      );
-    }
+    return await this.reader.orderDetailsById(id);
   }
 
   // ----------------- respuesta adaptada
