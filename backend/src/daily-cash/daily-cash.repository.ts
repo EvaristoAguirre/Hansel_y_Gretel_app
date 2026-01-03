@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DailyCash } from './daily-cash.entity';
 import { Between, Repository } from 'typeorm';
@@ -7,11 +7,10 @@ import { DailyCashState } from 'src/Enums/states.enum';
 import { CashMovement } from './cash-movement.entity';
 @Injectable()
 export class DailyCashRepository {
+  private readonly logger = new Logger(DailyCashRepository.name);
   constructor(
     @InjectRepository(DailyCash)
     private readonly dailyCashRepository: Repository<DailyCash>,
-    @InjectRepository(CashMovement)
-    private readonly cashMovementRepository: Repository<CashMovement>,
   ) {}
 
   async getAllDailysCash(
@@ -29,7 +28,7 @@ export class DailyCashRepository {
         // ✅ Asegurar que las relaciones opcionales no causen problemas
       });
     } catch (error) {
-      console.error('Error en getAllDailysCash repository:', error);
+      this.logger.error('getAllDailysCash', error);
       throw error;
     }
   }

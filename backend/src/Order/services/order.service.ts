@@ -1,9 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { OrderRepository } from '../repositories/order.repository';
@@ -33,6 +31,7 @@ import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
+import { OrderReaderService } from './order-reader.service';
 
 @Injectable()
 export class OrderService {
@@ -50,6 +49,7 @@ export class OrderService {
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
     private readonly monitoringLogger: LoggerService,
+    private readonly reader: OrderReaderService,
   ) {}
 
   async openOrder(
@@ -89,10 +89,8 @@ export class OrderService {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'An error occurred while creating the order. Please try again later.',
-      );
+      this.logger.error('openOrder', error);
+      throw error;
     }
   }
 
@@ -413,11 +411,10 @@ export class OrderService {
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
       return await this.adaptResponse(updatedOrder);
-    } catch (err) {
+    } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw err instanceof HttpException
-        ? err
-        : new InternalServerErrorException('Error updating order', err.message);
+      this.logger.error('updateOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -444,95 +441,19 @@ export class OrderService {
   }
 
   async getAllOrders(page: number, limit: number): Promise<Order[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.orderRepo.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: [
-          'table',
-          'orderDetails',
-          'orderDetails.product',
-          'orderDetails.orderDetailToppings',
-          'orderDetails.orderDetailToppings.topping',
-          'payments',
-        ],
-      });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
-    }
+    return await this.reader.getAllOrders(page, limit);
   }
 
   async getOrderById(id: string): Promise<OrderSummaryResponseDto> {
-    if (!id) {
-      throw new BadRequestException('Either ID must be provided.');
-    }
-    if (!isUUID(id)) {
-      throw new BadRequestException(
-        'Invalid ID format. ID must be a valid UUID.',
-      );
-    }
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id, isActive: true },
-        relations: [
-          'table',
-          'table.room',
-          'orderDetails',
-          'orderDetails.product',
-          'orderDetails.orderDetailToppings',
-          'orderDetails.orderDetailToppings.topping',
-          'payments',
-        ],
-      });
-      if (!order) {
-        throw new NotFoundException(`Order with ID: ${id} not found`);
-      }
-
-      const responseAdapted = await this.adaptResponse(order);
-      return responseAdapted;
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the order',
-        error.message,
-      );
-    }
+    return await this.reader.getOrderById(id);
   }
 
   async getOrderDetails(page: number, limit: number): Promise<OrderDetails[]> {
-    if (page <= 0 || limit <= 0) {
-      throw new BadRequestException(
-        'Page and limit must be positive integers.',
-      );
-    }
-    try {
-      return await this.orderDetailsRepo.find({
-        where: { isActive: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['product', 'order'],
-      });
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching order details',
-        error.message,
-      );
-    }
+    return await this.reader.getOrderDetails(page, limit);
   }
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.orderRepository.getOrdersForOpenOrPendingTables();
+    return await this.reader.getOrdersForOpenOrPendingTables();
   }
 
   async markOrderAsPendingPayment(
@@ -594,10 +515,8 @@ export class OrderService {
 
       return responseAdapted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error marking order as pending payment. Please try again later.',
-      );
+      this.logger.error('markOrderAsPendingPayment', error);
+      throw error;
     }
   }
 
@@ -626,25 +545,13 @@ export class OrderService {
       openDailyCash,
     );
 
-    // Log crítico: Cierre exitoso de orden (operación financiera importante)
-    this.monitoringLogger.log({
-      action: 'ORDER_CLOSED_SUCCESS',
-      orderId: id,
-      total: closeOrderDto.total,
-      dailyCashId: openDailyCash.id,
-      timestamp: new Date().toISOString(),
-    });
-
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 
     return closedOrder;
   }
 
   async cancelOrder(id: string): Promise<Order> {
-    this.logger.log(`🔄 [cancelOrder] Iniciando cancelación de orden ${id}`);
-
     if (!id || !isUUID(id)) {
-      this.logger.error(`❌ [cancelOrder] ID inválido: ${id}`);
       throw new BadRequestException('Invalid or missing order ID.');
     }
 
@@ -653,7 +560,6 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     try {
-      this.logger.log(`🔍 [cancelOrder] Buscando orden ${id}...`);
       const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
@@ -685,14 +591,8 @@ export class OrderService {
       order.isActive = false; // Marcar como inactiva para que no aparezca en búsquedas
 
       const updatedOrder = await queryRunner.manager.save(order);
-      this.logger.log(
-        `💾 [cancelOrder] Orden ${id} guardada con estado CANCELLED`,
-      );
 
       await queryRunner.commitTransaction();
-      this.logger.log(
-        `✅ [cancelOrder] Transacción completada para orden ${id}`,
-      );
 
       // Cambiar estado de mesa (fuera de la transacción)
       if (previousTableId) {
@@ -714,21 +614,14 @@ export class OrderService {
         ...updatedOrder,
         table: tableInfo, // Incluir el tableId en el evento
       };
-      this.logger.log(
-        `📢 Emitiendo evento order.deleted para orden ${id}, mesa ${previousTableId}`,
-      );
+
       this.eventEmitter.emit('order.deleted', { order: orderWithTableInfo });
-      this.logger.log(`✅ Evento order.deleted emitido correctamente`);
 
       return updatedOrder;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error cancelling the order.',
-        error.message,
-      );
+      this.logger.error('cancelOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -794,64 +687,17 @@ export class OrderService {
       this.eventEmitter.emit('table.updated', { table: tableToTransfer });
 
       return await this.getOrderById(currentOrder.id);
-    } catch (err) {
+    } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (err instanceof HttpException) throw err;
-      throw err;
+      this.logger.error('transferOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
   }
 
   async orderDetailsById(id: string): Promise<OrderDetailsDto> {
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id: id },
-        relations: [
-          'table',
-          'table.room',
-          'orderDetails',
-          'orderDetails.product',
-          'payments',
-        ],
-      });
-
-      if (!order) {
-        throw new NotFoundException(`Orden con ID ${id} no encontrada`);
-      }
-
-      const orderSummary = {
-        id: order.id,
-        date: order.date,
-        table: order.table?.name || 'Sin mesa',
-        room: order.table?.room?.name || 'Sin salón',
-        numberCustomers: order.numberCustomers,
-        total: Number(order.total).toFixed(2),
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        closedAt: order.closedAt,
-        paymentMethods: Array.isArray(order.payments)
-          ? order.payments.map((p) => ({
-              methodOfPayment: p.methodOfPayment,
-              amount: Number(p.amount).toFixed(2),
-            }))
-          : [],
-        products: Array.isArray(order.orderDetails)
-          ? order.orderDetails.map((d) => ({
-              name: d.product?.name || 'Producto eliminado',
-              quantity: d.quantity,
-              commandNumber: d.commandNumber,
-            }))
-          : [],
-      };
-
-      return orderSummary;
-    } catch (error) {
-      console.error(`[OrderService] Error al obtener detalle de orden`, error);
-      throw new InternalServerErrorException(
-        'Error al obtener el detalle de la orden',
-      );
-    }
+    return await this.reader.orderDetailsById(id);
   }
 
   // ----------------- respuesta adaptada

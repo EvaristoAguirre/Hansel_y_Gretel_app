@@ -1,9 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateCategoryDto } from '../DTOs/create-category.dto';
@@ -14,9 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CategoryRepository } from './category.repository';
 import { isUUID } from 'class-validator';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class CategoryService {
+  private readonly logger = new Logger(CategoryService.name);
   constructor(
     @InjectRepository(Category)
     private readonly repo: Repository<Category>,
@@ -66,11 +66,8 @@ export class CategoryService {
 
       return updatedCategory;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to update category',
-        error,
-      );
+      this.logger.error('updateCategory', error);
+      throw error;
     }
   }
 
@@ -89,22 +86,16 @@ export class CategoryService {
 
       return 'Category successfully deleted';
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to deactivate category',
-        error,
-      );
+      this.logger.error('deleteCategory', error);
+      throw error;
     }
   }
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
     try {
       return await this.categoryRepository.getAllCategorys(page, limit);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching categories',
-        error.message,
-      );
+      this.logger.error('getAllCategorys', error);
+      throw error;
     }
   }
 
@@ -127,13 +118,8 @@ export class CategoryService {
       }
       return categoryFinded;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the category',
-        error.message,
-      );
+      this.logger.error('getCategoryById', error);
+      throw error;
     }
   }
 
@@ -154,13 +140,8 @@ export class CategoryService {
       }
       return categoryFinded;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the category',
-        error.message,
-      );
+      this.logger.error('getCategoryByName', error);
+      throw error;
     }
   }
 }

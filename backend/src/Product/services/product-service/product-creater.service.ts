@@ -1,11 +1,10 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { CreateProductDto } from 'src/Product/dtos/create-product.dto';
 import { CreatePromotionWithSlotsDto } from 'src/Product/dtos/create-promotion-with-slots.dto';
 import { Product } from 'src/Product/entities/product.entity';
@@ -16,29 +15,12 @@ import { DataSource } from 'typeorm';
 
 @Injectable()
 export class ProductCreaterService {
+  private readonly logger = new Logger(ProductCreaterService.name);
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly dataSource: DataSource,
-    private readonly loggerService: LoggerService,
   ) {}
 
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este servicio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      service: 'ProductCreaterService',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
   // ------- rta en string sin decimales y punto de mil
   async createProduct(data: CreateProductDto): Promise<ProductResponseDto> {
     try {
@@ -46,10 +28,7 @@ export class ProductCreaterService {
 
       return productCreated;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('createProduct/Promotion', { data }, error);
+      this.logger.error('createProduct/Promotion', error);
       throw error;
     }
   }
@@ -174,10 +153,7 @@ export class ProductCreaterService {
         await queryRunner.rollbackTransaction();
       }
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('createPromotionWithSlots', { data }, error);
+      this.logger.error('createPromotionWithSlots', error);
       throw error;
     } finally {
       await queryRunner.release();

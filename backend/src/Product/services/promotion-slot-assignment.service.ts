@@ -1,8 +1,7 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { isUUID } from 'class-validator';
@@ -16,6 +15,7 @@ import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.e
 
 @Injectable()
 export class PromotionSlotAssignmentService {
+  private readonly logger = new Logger(PromotionSlotAssignmentService.name);
   constructor(
     private readonly assignmentRepository: PromotionSlotAssignmentRepository,
     private readonly slotRepository: PromotionSlotRepository,
@@ -110,22 +110,8 @@ export class PromotionSlotAssignmentService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.loggerService.error(
-        {
-          operation: 'create',
-          service: 'PromotionSlotAssignmentService',
-          context: { promotionId, createDto },
-        },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error creating promotion slot assignment.',
-        error.message,
-      );
+      this.logger.error('createPromotionSlotAssignment', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -143,22 +129,8 @@ export class PromotionSlotAssignmentService {
       await this.validatePromotionExists(promotionId);
       return await this.assignmentRepository.findByPromotionId(promotionId);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.loggerService.error(
-        {
-          operation: 'findByPromotionId',
-          service: 'PromotionSlotAssignmentService',
-          context: { promotionId },
-        },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error fetching slot assignments by promotion.',
-        error.message,
-      );
+      this.logger.error('findByPromotionId', error);
+      throw error;
     }
   }
 
@@ -172,22 +144,8 @@ export class PromotionSlotAssignmentService {
       await this.validateSlotExists(slotId);
       return await this.assignmentRepository.findBySlotId(slotId);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.loggerService.error(
-        {
-          operation: 'findBySlotId',
-          service: 'PromotionSlotAssignmentService',
-          context: { slotId },
-        },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error fetching slot assignments by slot.',
-        error.message,
-      );
+      this.logger.error('findBySlotId', error);
+      throw error;
     }
   }
 
@@ -215,9 +173,7 @@ export class PromotionSlotAssignmentService {
     try {
       const existing = await this.assignmentRepository.findById(id);
       if (!existing) {
-        throw new NotFoundException(
-          `Slot assignment with ID ${id} not found.`,
-        );
+        throw new NotFoundException(`Slot assignment with ID ${id} not found.`);
       }
 
       const updated = await this.assignmentRepository.update(
@@ -231,22 +187,8 @@ export class PromotionSlotAssignmentService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.loggerService.error(
-        {
-          operation: 'update',
-          service: 'PromotionSlotAssignmentService',
-          context: { id, updateDto },
-        },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error updating slot assignment.',
-        error.message,
-      );
+      this.logger.error('updatePromotionSlotAssignment', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -265,9 +207,7 @@ export class PromotionSlotAssignmentService {
     try {
       const existing = await this.assignmentRepository.findById(id);
       if (!existing) {
-        throw new NotFoundException(
-          `Slot assignment with ID ${id} not found.`,
-        );
+        throw new NotFoundException(`Slot assignment with ID ${id} not found.`);
       }
 
       await this.assignmentRepository.delete(id, queryRunner);
@@ -277,25 +217,10 @@ export class PromotionSlotAssignmentService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.loggerService.error(
-        {
-          operation: 'delete',
-          service: 'PromotionSlotAssignmentService',
-          context: { id },
-        },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error deleting slot assignment.',
-        error.message,
-      );
+      this.logger.error('deletePromotionSlotAssignment', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
   }
 }
-

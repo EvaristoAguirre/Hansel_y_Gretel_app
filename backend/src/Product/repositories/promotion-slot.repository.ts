@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
-import { LoggerService } from '../../Monitoring/monitoring-logger.service';
 import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { UpdatePromotionSlotDto } from '../dtos/update-promotion-slot.dto';
 
@@ -15,30 +14,12 @@ interface FindAllOptions {
 
 @Injectable()
 export class PromotionSlotRepository {
+  private readonly logger = new Logger(PromotionSlotRepository.name);
   constructor(
     @InjectRepository(PromotionSlot)
     private readonly promotionSlotRepository: Repository<PromotionSlot>,
     private readonly dataSource: DataSource,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ): void {
-    const errorInfo = {
-      operation,
-      repository: 'PromotionSlotRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   /**
    * Crea un nuevo PromotionSlot
@@ -57,7 +38,7 @@ export class PromotionSlotRepository {
       const promotionSlot = manager.create(PromotionSlot, createDto);
       return await manager.save(PromotionSlot, promotionSlot);
     } catch (error) {
-      this.logError('create', { createDto }, error);
+      this.logger.error('create', error);
       throw error;
     }
   }
@@ -93,7 +74,7 @@ export class PromotionSlotRepository {
 
       return await this.promotionSlotRepository.find(queryOptions);
     } catch (error) {
-      this.logError('findAll', { options }, error);
+      this.logger.error('findAll', error);
       throw error;
     }
   }
@@ -119,7 +100,7 @@ export class PromotionSlotRepository {
         withDeleted: includeDeleted,
       });
     } catch (error) {
-      this.logError('findById', { id, includeDeleted }, error);
+      this.logger.error('findById', error);
       throw error;
     }
   }
@@ -135,7 +116,7 @@ export class PromotionSlotRepository {
       });
       return count > 0;
     } catch (error) {
-      this.logError('existsById', { id }, error);
+      this.logger.error('existsById', error);
       throw error;
     }
   }
@@ -162,7 +143,7 @@ export class PromotionSlotRepository {
         relations: ['options', 'options.product'],
       });
     } catch (error) {
-      this.logError('update', { id, updateDto }, error);
+      this.logger.error('update', error);
       throw error;
     }
   }
@@ -180,7 +161,7 @@ export class PromotionSlotRepository {
     try {
       await manager.softDelete(PromotionSlot, id);
     } catch (error) {
-      this.logError('softDelete', { id }, error);
+      this.logger.error('softDelete', error);
       throw error;
     }
   }
@@ -198,7 +179,7 @@ export class PromotionSlotRepository {
     try {
       await manager.restore(PromotionSlot, id);
     } catch (error) {
-      this.logError('restore', { id }, error);
+      this.logger.error('restore', error);
       throw error;
     }
   }

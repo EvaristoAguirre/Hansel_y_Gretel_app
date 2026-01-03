@@ -1,36 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
-import { LoggerService } from '../../Monitoring/monitoring-logger.service';
 import { CreatePromotionSlotAssignmentDto } from '../dtos/create-promotion-slot-assignment.dto';
 import { UpdatePromotionSlotAssignmentDto } from '../dtos/update-promotion-slot-assignment.dto';
 
 @Injectable()
 export class PromotionSlotAssignmentRepository {
+  private readonly logger = new Logger(PromotionSlotAssignmentRepository.name);
   constructor(
     @InjectRepository(PromotionSlotAssignment)
     private readonly promotionSlotAssignmentRepository: Repository<PromotionSlotAssignment>,
     private readonly dataSource: DataSource,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ): void {
-    const errorInfo = {
-      operation,
-      repository: 'PromotionSlotAssignmentRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   /**
    * Crea una nueva asignación de slot a promoción
@@ -47,7 +29,7 @@ export class PromotionSlotAssignmentRepository {
       const assignment = manager.create(PromotionSlotAssignment, createDto);
       return await manager.save(PromotionSlotAssignment, assignment);
     } catch (error) {
-      this.logError('create', { createDto }, error);
+      this.logger.error('create', error);
       throw error;
     }
   }
@@ -62,7 +44,7 @@ export class PromotionSlotAssignmentRepository {
         relations: ['promotion', 'slot', 'slot.options'],
       });
     } catch (error) {
-      this.logError('findById', { id }, error);
+      this.logger.error('findById', error);
       throw error;
     }
   }
@@ -80,7 +62,7 @@ export class PromotionSlotAssignmentRepository {
         order: { createdAt: 'ASC' },
       });
     } catch (error) {
-      this.logError('findByPromotionId', { promotionId }, error);
+      this.logger.error('findByPromotionId', error);
       throw error;
     }
   }
@@ -95,7 +77,7 @@ export class PromotionSlotAssignmentRepository {
         relations: ['promotion'],
       });
     } catch (error) {
-      this.logError('findBySlotId', { slotId }, error);
+      this.logger.error('findBySlotId', error);
       throw error;
     }
   }
@@ -112,7 +94,7 @@ export class PromotionSlotAssignmentRepository {
         where: { promotionId, slotId },
       });
     } catch (error) {
-      this.logError('exists', { promotionId, slotId }, error);
+      this.logger.error('exists', error);
       throw error;
     }
   }
@@ -140,7 +122,7 @@ export class PromotionSlotAssignmentRepository {
       }
       return updated;
     } catch (error) {
-      this.logError('update', { id, updateDto }, error);
+      this.logger.error('update', error);
       throw error;
     }
   }
@@ -156,7 +138,7 @@ export class PromotionSlotAssignmentRepository {
     try {
       await manager.delete(PromotionSlotAssignment, id);
     } catch (error) {
-      this.logError('delete', { id }, error);
+      this.logger.error('delete', error);
       throw error;
     }
   }
@@ -168,4 +150,3 @@ export class PromotionSlotAssignmentRepository {
     return this.dataSource.createQueryRunner();
   }
 }
-

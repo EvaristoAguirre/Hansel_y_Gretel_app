@@ -1,8 +1,6 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { ProductRepository } from '../../repositories/product.repository';
@@ -11,9 +9,11 @@ import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
 import { ProductMapper } from 'src/Product/productMapper';
 import { isUUID } from 'class-validator';
 import { Product } from 'src/Product/entities/product.entity';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class ProductReaderService {
+  private readonly logger = new Logger(ProductReaderService.name);
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly monitoringLogger: LoggerService,
@@ -28,12 +28,8 @@ export class ProductReaderService {
       const products = await this.productRepository.getAllProducts(page, limit);
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error fetching the products',
-        error.message,
-      );
+      this.logger.error('getAllProducts', error);
+      throw error;
     }
   }
 
@@ -51,13 +47,8 @@ export class ProductReaderService {
       const product = await this.productRepository.getProductById(id);
       return ProductMapper.toResponseDto(product);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logger.error('getProductByIdToAnotherService', error);
+      throw error;
     }
   }
 
@@ -76,13 +67,8 @@ export class ProductReaderService {
         await this.productRepository.getProductByIdToAnotherService(id);
       return product;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logger.error('getProductByIdToAnotherService', error);
+      throw error;
     }
   }
 
@@ -178,13 +164,8 @@ export class ProductReaderService {
         promotionId,
       );
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logger.error('getPromotionProductsToAnotherService', error);
+      throw error;
     }
   }
 }

@@ -27,24 +27,6 @@ export class CostCascadeService {
     private readonly loggerService: LoggerService,
   ) {}
 
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este servicio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      service: 'CostCascadeService',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
-
   async updateIngredientCostAndCascade(
     ingredientId: string,
     newCost: number,
@@ -125,23 +107,7 @@ export class CostCascadeService {
       };
     } catch (error) {
       if (!isExternal) await queryRunner.rollbackTransaction();
-      this.logError(
-        'updateIngredientCostAndCascade',
-        {
-          ingredientId,
-          newCost,
-          updatedProductsCount: updatedProducts.size,
-          updatedPromotionsCount: updatedPromotions.size,
-          isExternal,
-        },
-        error,
-      );
-      return {
-        success: false,
-        updatedProducts: Array.from(updatedProducts),
-        updatedPromotions: Array.from(updatedPromotions),
-        message: error.message,
-      };
+      this.logger.error('updateIngredientCostAndCascade', error);
     } finally {
       if (!isExternal) await queryRunner.release();
     }
@@ -198,14 +164,7 @@ export class CostCascadeService {
       return product.id;
     } catch (error) {
       if (releaseQR) await qr.rollbackTransaction();
-      this.logError(
-        'calculateCompoundProductsCost',
-        {
-          productId,
-          hasQueryRunner: !!queryRunner,
-        },
-        error,
-      );
+      this.logger.error('calculateCompoundProductsCost', error);
       throw error;
     } finally {
       if (releaseQR) await qr.release();
@@ -263,14 +222,7 @@ export class CostCascadeService {
       return totalCost;
     } catch (error) {
       if (releaseQR) await qr.rollbackTransaction();
-      this.logError(
-        'calculatePromotionCost',
-        {
-          promotionId,
-          hasQueryRunner: !!queryRunner,
-        },
-        error,
-      );
+      this.logger.error('calculatePromotionCost', error);
       throw error;
     } finally {
       if (releaseQR) await qr.release();
@@ -328,22 +280,8 @@ export class CostCascadeService {
       };
     } catch (error) {
       if (!isExternal) await queryRunner.rollbackTransaction();
-      this.logError(
-        'updateSimpleProductCostAndCascade',
-        {
-          productId,
-          newCost,
-          updatedPromotionsCount: updatedPromotions.size,
-          isExternal,
-        },
-        error,
-      );
-      return {
-        success: false,
-        updatedProducts: [productId],
-        updatedPromotions: Array.from(updatedPromotions),
-        message: error.message,
-      };
+      this.logger.error('updateSimpleProductCostAndCascade', error);
+      throw error;
     } finally {
       if (!isExternal) await queryRunner.release();
     }

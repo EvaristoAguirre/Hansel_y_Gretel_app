@@ -1,16 +1,14 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { PromotionSlotRepository } from '../repositories/promotion-slot.repository';
 import { ProductRepository } from '../repositories/product.repository';
-import { LoggerService } from '../../Monitoring/monitoring-logger.service';
 import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { UpdatePromotionSlotDto } from '../dtos/update-promotion-slot.dto';
 import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
@@ -28,31 +26,14 @@ interface FindAllOptions {
 
 @Injectable()
 export class PromotionSlotService {
+  private readonly logger = new Logger(PromotionSlotService.name);
   constructor(
     private readonly promotionSlotRepository: PromotionSlotRepository,
     private readonly productRepository: ProductRepository,
-    private readonly loggerService: LoggerService,
     private readonly assignmentService: PromotionSlotAssignmentService,
     @InjectRepository(PromotionSlotOption)
     private readonly promotionSlotOptionRepository: Repository<PromotionSlotOption>,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ): void {
-    const errorInfo = {
-      operation,
-      service: 'PromotionSlotService',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   /**
    * Valida que un ID tenga formato UUID válido
@@ -81,7 +62,6 @@ export class PromotionSlotService {
         `Promotion with ID ${promotionId} not found.`,
       );
     }
-    console.log('exists', exists);
     return exists;
   }
 
@@ -178,9 +158,7 @@ export class PromotionSlotService {
       );
 
       if (!promotionSlotWithOptions) {
-        throw new InternalServerErrorException(
-          'Error loading created promotion slot.',
-        );
+        throw new Error('Error loading created promotion slot.');
       }
 
       await queryRunner.commitTransaction();
@@ -188,15 +166,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('create', { createDto }, error);
-      throw new InternalServerErrorException(
-        'Error creating promotion slot.',
-        error.message,
-      );
+      this.logger.error('createPromotionSlot', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -232,18 +203,10 @@ export class PromotionSlotService {
         this.validateUUID(options.promotionId, 'promotionId');
         await this.validatePromotionExists(options.promotionId);
       }
-      console.log('options', options);
       return await this.promotionSlotRepository.findAll(options);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('findAll', { options }, error);
-      throw new InternalServerErrorException(
-        'Error fetching promotion slots.',
-        error.message,
-      );
+      this.logger.error('findAllPromotionSlots', error);
+      throw error;
     }
   }
 
@@ -263,15 +226,8 @@ export class PromotionSlotService {
 
       return promotionSlot;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('findById', { id }, error);
-      throw new InternalServerErrorException(
-        'Error fetching promotion slot.',
-        error.message,
-      );
+      this.logger.error('findPromotionSlotById', error);
+      throw error;
     }
   }
 
@@ -304,19 +260,8 @@ export class PromotionSlotService {
 
       return slots;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError(
-        'findByPromotionId',
-        { promotionId, includeInactive },
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Error fetching promotion slots by promotion.',
-        error.message,
-      );
+      this.logger.error('findByPromotionId', error);
+      throw error;
     }
   }
 
@@ -364,15 +309,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('update', { id, updateDto }, error);
-      throw new InternalServerErrorException(
-        'Error updating promotion slot.',
-        error.message,
-      );
+      this.logger.error('updatePromotionSlot', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -404,15 +342,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('delete', { id }, error);
-      throw new InternalServerErrorException(
-        'Error deleting promotion slot.',
-        error.message,
-      );
+      this.logger.error('deletePromotionSlot', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -455,15 +386,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('restore', { id }, error);
-      throw new InternalServerErrorException(
-        'Error restoring promotion slot.',
-        error.message,
-      );
+      this.logger.error('restorePromotionSlot', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -555,15 +479,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('createOption', { createDto }, error);
-      throw new InternalServerErrorException(
-        'Error creating slot option.',
-        error.message,
-      );
+      this.logger.error('createOption', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -665,15 +582,8 @@ export class PromotionSlotService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('updateOption', { optionId, updateDto }, error);
-      throw new InternalServerErrorException(
-        'Error updating slot option.',
-        error.message,
-      );
+      this.logger.error('updateOption', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -755,16 +665,8 @@ export class PromotionSlotService {
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      this.logError('deleteOption', { optionId }, error);
-      throw new InternalServerErrorException(
-        'Error deleting slot option.',
-        error.message,
-      );
+      this.logger.error('deleteOption', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
