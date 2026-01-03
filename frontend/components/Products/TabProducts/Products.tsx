@@ -8,6 +8,7 @@ import {
   ProductForPromo,
   ProductsProps,
   ProductToppingsGroupDto,
+  SlotForPromo,
 } from "@/components/Interfaces/IProducts";
 import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,6 +25,7 @@ import { ICategory } from "@/components/Interfaces/ICategories";
 import { mapIngredientResponseToForm } from "@/components/Hooks/useProductStore";
 import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 import { getPromotionSlots } from "@/api/promotionSlot";
+import { createPromoWithSlots } from "@/api/products";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 
 const Products: React.FC<ProductsProps> = ({
@@ -116,6 +118,17 @@ const Products: React.FC<ProductsProps> = ({
     }
   };
 
+  const handleSaveCombo = async () => {
+    if (!token) return;
+
+    const result = await createPromoWithSlots(form, token);
+    if (result.ok) {
+      handleCloseModal();
+    } else {
+      console.error("Error al crear promo con slots:", result.error);
+    }
+  };
+
   const handleChangeProductInfo = (
     field: keyof ProductForm,
     value:
@@ -127,6 +140,7 @@ const Products: React.FC<ProductsProps> = ({
       | ProductForPromo[]
       | null
       | ProductToppingsGroupDto[]
+      | SlotForPromo[]
       | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
@@ -237,6 +251,7 @@ const Products: React.FC<ProductsProps> = ({
           onClose={handleCloseModal}
           onChange={handleChangeProductInfo}
           onSave={handleSave}
+          onSaveCombo={handleSaveCombo}
           categories={categories}
           products={products}
         />

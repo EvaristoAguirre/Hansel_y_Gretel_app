@@ -43,6 +43,7 @@ export const useProducts = () => {
     allowsToppings: false,
     toppingsSettings: null,
     availableToppingGroups: [],
+    slots: [],
   });
 
   // Llamada inicial para cargar productos
@@ -204,6 +205,7 @@ export const useProducts = () => {
       allowsToppings: false,
       toppingsSettings: null,
       availableToppingGroups: [],
+      slots: [],
     });
   };
 

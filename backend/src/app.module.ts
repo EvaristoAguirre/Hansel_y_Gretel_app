@@ -46,8 +46,8 @@ import { MonitoringModule } from './Monitoring/monitoring-logger.module';
           password: dbConfig.password,
           database: dbConfig.database,
           autoLoadEntities: false,
-          synchronize: false, // en false en produccion
-          dropSchema: false, //en false en produccion
+          synchronize: true, // en false en produccion
+          dropSchema: true, //en false en produccion
           logging: isDev ? ['warn', 'error'] : ['error'],
           schema: dbConfig.schema,
           entities: dbConfig.entities,

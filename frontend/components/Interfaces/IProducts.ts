@@ -29,12 +29,14 @@ export interface ProductForm extends IProduct {
     | IingredientForm[]
     | IProductDataList[]
     | ProductForPromo[]
-    | ProductToppingsGroupDto[];
+    | ProductToppingsGroupDto[]
+    | SlotForPromo[];
   categories: ICategory[];
   ingredients: IingredientForm[];
   products: IProductDataList[];
   isActive: boolean;
   availableToppingGroups: ProductToppingsGroupDto[];
+  slots: SlotForPromo[];
 }
 export interface ProductToppingsGroupDto {
   toppingsGroupId: string;
@@ -173,4 +175,17 @@ export interface SlotForm {
   name: string;
   description: string;
   products: ProductResponse[];
+}
+
+export interface SlotResponse {
+  id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  products: ProductResponse[];
+}
+
+export interface SlotForPromo {
+  slotId: string;
+  name?: string;
 }

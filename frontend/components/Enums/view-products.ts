@@ -30,5 +30,6 @@ export enum FormTypeProduct {
 export enum TabProductKey {
   SIMPLE_PRODUCT = 'SIMPLE PRODUCT',
   PRODUCT_WITH_INGREDIENT = 'PRODUCT WITH INGREDIENT',
-  PROMO = 'PROMO'
+  PROMO = 'PROMO',
+  COMBO = 'COMBO'
 }
