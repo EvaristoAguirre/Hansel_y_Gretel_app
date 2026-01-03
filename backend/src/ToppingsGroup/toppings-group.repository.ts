@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ILike, Repository } from 'typeorm';
@@ -13,34 +13,15 @@ import { ILike, Repository } from 'typeorm';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
 import { UpdateToppingsGroupDto } from 'src/DTOs/update-toppings-group.dto';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class ToppingsGroupRepository {
+  private readonly logger = new Logger(ToppingsGroupRepository.name);
   constructor(
     @InjectRepository(ToppingsGroup)
     private readonly toppingsGroupRepository: Repository<ToppingsGroup>,
     private readonly ingredientService: IngredientService,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'ToppingsGroupRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   async createToppingsGroup(
     createToppingsGroupDto: CreateToppingsGroupDto,
@@ -83,8 +64,7 @@ export class ToppingsGroupRepository {
         throw new InternalServerErrorException('Failed to load created group');
       return savedGroup;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('createToppingsGroup', { name, toppingsIds }, error);
+      this.logger.error('createToppingsGroup', error);
       throw error;
     }
   }
@@ -151,8 +131,7 @@ export class ToppingsGroupRepository {
         throw new InternalServerErrorException('Failed to load updated group');
       return updatedGroup;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('updateToppingsGroup', { id, updateToppingsGroupDto }, error);
+      this.logger.error('updateToppingsGroup', error);
       throw error;
     }
   }
@@ -171,8 +150,7 @@ export class ToppingsGroupRepository {
       }
       return toppingsGroup;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('getToppingsGroupById', { id }, error);
+      this.logger.error('getToppingsGroupById', error);
       throw error;
     }
   }
@@ -192,8 +170,7 @@ export class ToppingsGroupRepository {
         relations: ['toppings'],
       });
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('getAllToppingsGroups', { page, limit }, error);
+      this.logger.error('getAllToppingsGroups', error);
       throw error;
     }
   }
@@ -211,8 +188,7 @@ export class ToppingsGroupRepository {
         take: limit,
       });
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('getAllToppingsGroupsWithoutToppings', { page, limit }, error);
+      this.logger.error('getAllToppingsGroupsWithoutToppings', error);
       throw error;
     }
   }
@@ -233,10 +209,7 @@ export class ToppingsGroupRepository {
       }
       return toppingsGroup;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('getToppingsGroupByName', { name }, error);
+      this.logger.error('getToppingsGroupByName', error);
       throw error;
     }
   }
@@ -254,8 +227,7 @@ export class ToppingsGroupRepository {
       await this.toppingsGroupRepository.save(toppingsGroup);
       return `toppings group with ID ${id} has been deleted`;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('deleteToppingsGroup', { id }, error);
+      this.logger.error('deleteToppingsGroup', error);
       throw error;
     }
   }

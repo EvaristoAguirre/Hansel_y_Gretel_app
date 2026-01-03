@@ -2,9 +2,7 @@
 /* eslint-disable prettier/prettier */
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { IngredientRepository } from './ingredient.repository';
@@ -55,11 +53,8 @@ export class IngredientService {
 
       return this.adaptIngredientsResponse(ingredients);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching ingredients',
-        error.message,
-      );
+      this.logger.error('getAllIngredientsAndToppings', error);
+      throw error;
     }
   }
 
@@ -84,11 +79,8 @@ export class IngredientService {
 
       return this.adaptIngredientsResponse(ingredients);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching ingredients',
-        error.message,
-      );
+      this.logger.error('getAllIngredients', error);
+      throw error;
     }
   }
 
@@ -113,12 +105,8 @@ export class IngredientService {
 
       return this.adaptIngredientResponse(ingredient);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error fetching the ingredient by ID',
-        error.message,
-      );
+      this.logger.error('getIngredientById', error);
+      throw error;
     }
   }
 
@@ -143,12 +131,8 @@ export class IngredientService {
 
       return ingredient;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error fetching the ingredient by ID',
-        error.message,
-      );
+      this.logger.error('getIngredientByIdToAnotherService', error);
+      throw error;
     }
   }
 
@@ -168,12 +152,8 @@ export class IngredientService {
 
       return IngredientResponseFormatter.format(ingredient);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error fetching the unit of mesure',
-        error.message,
-      );
+      this.logger.error('getIngredientByName', error);
+      throw error;
     }
   }
 
@@ -302,11 +282,8 @@ export class IngredientService {
       return ingredientUpdatedWithFormatt;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error updating the ingredient',
-        error.message,
-      );
+      this.logger.error('updateIngredient', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -338,12 +315,8 @@ export class IngredientService {
 
       return ingredientSoftDeleted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error deleting the ingredient',
-        error.message,
-      );
+      this.logger.error('deleteIngredient', error);
+      throw error;
     }
   }
 
@@ -369,11 +342,8 @@ export class IngredientService {
       });
       return this.adaptToppingsResponse(toppings);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching toppings',
-        error.message,
-      );
+      this.logger.error('getAllToppings', error);
+      throw error;
     }
   }
   // ------- rta en string sin decimales y punto de mil
@@ -396,11 +366,8 @@ export class IngredientService {
       }
       return this.adaptToppingResponse(topping);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the topping',
-        error.message,
-      );
+      this.logger.error('getToppingById', error);
+      throw error;
     }
   }
 
@@ -429,11 +396,8 @@ export class IngredientService {
       }
       return IngredientResponseFormatter.format(topping);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the topping',
-        error.message,
-      );
+      this.logger.error('findToppingById', error);
+      throw error;
     }
   }
 

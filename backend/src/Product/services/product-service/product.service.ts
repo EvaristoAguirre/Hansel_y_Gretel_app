@@ -1,9 +1,8 @@
 /* eslint-disable prettier/prettier */
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from '../../dtos/create-product.dto';
@@ -16,7 +15,6 @@ import { ProductRepository } from 'src/Product/repositories/product.repository';
 import { isUUID } from 'class-validator';
 import { StockService } from 'src/Stock/stock.service';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
-import { CostCascadeService } from 'src/CostCascade/cost-cascade.service';
 import { IngredientService } from 'src/Ingredient/ingredient.service';
 import { parseLocalizedNumber } from 'src/Helpers/parseLocalizedNumber';
 import { CreatePromotionWithSlotsDto } from '../../dtos/create-promotion-with-slots.dto';
@@ -26,12 +24,12 @@ import { ProductUpdaterService } from './product-updater.service';
 
 @Injectable()
 export class ProductService {
+  private readonly logger = new Logger(ProductService.name);
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly stockService: StockService,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-    private readonly costCascadeService: CostCascadeService,
     private readonly ingredientService: IngredientService,
     //---------- nuevos servicios refactor -------
     private readonly reader: ProductReaderService,
@@ -116,13 +114,8 @@ export class ProductService {
 
       return productDeleted;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error fetching the product',
-        error.message,
-      );
+      this.logger.error('deleteProduct', error);
+      throw error;
     }
   }
 
@@ -464,13 +457,8 @@ export class ProductService {
         };
       }
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error checking promotion stock availability',
-        error.message,
-      );
+      this.logger.error('checkPromotionStock', error);
+      throw error;
     }
   }
 
@@ -576,16 +564,8 @@ export class ProductService {
               availableQty >= totalRequired ? 0 : totalRequired - availableQty,
           };
         } catch (error) {
-          console.error(
-            `[TOPPING CHECK] Error al procesar topping ${toppingId}:`,
-            error?.message || error,
-          );
-          return {
-            toppingId,
-            available: false,
-            message:
-              error?.message ?? 'Error inesperado al verificar el topping',
-          };
+          this.logger.error('checkToppingsStock', error);
+          throw error;
         }
       }),
     );

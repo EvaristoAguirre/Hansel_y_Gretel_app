@@ -1,9 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { OrderRepository } from '../repositories/order.repository';
@@ -91,10 +89,8 @@ export class OrderService {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'An error occurred while creating the order. Please try again later.',
-      );
+      this.logger.error('openOrder', error);
+      throw error;
     }
   }
 
@@ -415,11 +411,10 @@ export class OrderService {
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
       return await this.adaptResponse(updatedOrder);
-    } catch (err) {
+    } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw err instanceof HttpException
-        ? err
-        : new InternalServerErrorException('Error updating order', err.message);
+      this.logger.error('updateOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -520,10 +515,8 @@ export class OrderService {
 
       return responseAdapted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error marking order as pending payment. Please try again later.',
-      );
+      this.logger.error('markOrderAsPendingPayment', error);
+      throw error;
     }
   }
 
@@ -552,25 +545,13 @@ export class OrderService {
       openDailyCash,
     );
 
-    // Log crítico: Cierre exitoso de orden (operación financiera importante)
-    this.monitoringLogger.log({
-      action: 'ORDER_CLOSED_SUCCESS',
-      orderId: id,
-      total: closeOrderDto.total,
-      dailyCashId: openDailyCash.id,
-      timestamp: new Date().toISOString(),
-    });
-
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 
     return closedOrder;
   }
 
   async cancelOrder(id: string): Promise<Order> {
-    this.logger.log(`🔄 [cancelOrder] Iniciando cancelación de orden ${id}`);
-
     if (!id || !isUUID(id)) {
-      this.logger.error(`❌ [cancelOrder] ID inválido: ${id}`);
       throw new BadRequestException('Invalid or missing order ID.');
     }
 
@@ -579,7 +560,6 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     try {
-      this.logger.log(`🔍 [cancelOrder] Buscando orden ${id}...`);
       const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
@@ -611,14 +591,8 @@ export class OrderService {
       order.isActive = false; // Marcar como inactiva para que no aparezca en búsquedas
 
       const updatedOrder = await queryRunner.manager.save(order);
-      this.logger.log(
-        `💾 [cancelOrder] Orden ${id} guardada con estado CANCELLED`,
-      );
 
       await queryRunner.commitTransaction();
-      this.logger.log(
-        `✅ [cancelOrder] Transacción completada para orden ${id}`,
-      );
 
       // Cambiar estado de mesa (fuera de la transacción)
       if (previousTableId) {
@@ -640,21 +614,14 @@ export class OrderService {
         ...updatedOrder,
         table: tableInfo, // Incluir el tableId en el evento
       };
-      this.logger.log(
-        `📢 Emitiendo evento order.deleted para orden ${id}, mesa ${previousTableId}`,
-      );
+
       this.eventEmitter.emit('order.deleted', { order: orderWithTableInfo });
-      this.logger.log(`✅ Evento order.deleted emitido correctamente`);
 
       return updatedOrder;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (error instanceof HttpException) throw error;
-
-      throw new InternalServerErrorException(
-        'Error cancelling the order.',
-        error.message,
-      );
+      this.logger.error('cancelOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }
@@ -720,10 +687,10 @@ export class OrderService {
       this.eventEmitter.emit('table.updated', { table: tableToTransfer });
 
       return await this.getOrderById(currentOrder.id);
-    } catch (err) {
+    } catch (error) {
       await queryRunner.rollbackTransaction();
-      if (err instanceof HttpException) throw err;
-      throw err;
+      this.logger.error('transferOrder', error);
+      throw error;
     } finally {
       await queryRunner.release();
     }

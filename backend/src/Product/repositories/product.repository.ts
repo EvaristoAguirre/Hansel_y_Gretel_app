@@ -4,6 +4,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -41,6 +42,7 @@ import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
 
 @Injectable()
 export class ProductRepository {
+  private readonly logger = new Logger(ProductRepository.name);
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -48,26 +50,7 @@ export class ProductRepository {
     private readonly promotionProductRepository: Repository<PromotionProduct>,
     private readonly dataSource: DataSource,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'ProductRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   //---- Estandarizado  -------- con el dto nuevo
   async getAllProducts(page: number, limit: number): Promise<Product[]> {
@@ -131,7 +114,7 @@ export class ProductRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      this.logError('getProduct', { code, name }, error);
+      this.logger.error('getProduct', error);
       throw error;
     }
   }
@@ -231,8 +214,7 @@ export class ProductRepository {
         .getMany();
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getProductsByCategories', { categories }, error);
+      this.logger.error('getProductsByCategories', error);
       throw error;
     }
   }
@@ -292,10 +274,7 @@ export class ProductRepository {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('createProduct', { type: productToCreate.type }, error);
+      this.logger.error('createProduct', error);
       throw error;
     } finally {
       await queryRunner.release();
@@ -622,8 +601,7 @@ export class ProductRepository {
         }
       }
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('checkProductUniqueness', { productData }, error);
+      this.logger.error('checkProductUniqueness', error);
       throw error;
     }
   }
@@ -671,10 +649,7 @@ export class ProductRepository {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('updateProduct', { id, type: updateData.type }, error);
+      this.logger.error('updateProduct', error);
       throw error;
     } finally {
       await queryRunner.release();
@@ -1109,14 +1084,7 @@ export class ProductRepository {
 
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError(
-        'searchProducts',
-        { name, code, categories, page, limit },
-        error,
-      );
+      this.logger.error('searchProducts', error);
       throw error;
     }
   }
@@ -1166,14 +1134,7 @@ export class ProductRepository {
 
       return ProductMapper.toResponseDtoArray(products);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError(
-        'searchProductsToPromotion',
-        { name, code, page, limit },
-        error,
-      );
+      this.logger.error('searchProductsToPromotion', error);
       throw error;
     }
   }
@@ -1195,10 +1156,7 @@ export class ProductRepository {
         relations: ['stock', 'stock.unitOfMeasure'],
       });
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      this.logError('getSimpleAndCompositeProducts', { page, limit }, error);
+      this.logger.error('getSimpleAndCompositeProducts', error);
       throw error;
     }
   }
@@ -1547,14 +1505,7 @@ export class ProductRepository {
 
       // Las asignaciones existentes que siguen en la lista se mantienen sin cambios
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError(
-        'updatePromotionSlots',
-        { promotionId: promotion.id, slotsCount: slotsIds?.length },
-        error,
-      );
+      this.logger.error('updatePromotionSlots', error);
       throw error;
     }
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './category.entity';
 import { Repository } from 'typeorm';
@@ -6,29 +6,30 @@ import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class CategoryRepository {
+  private readonly logger = new Logger(CategoryRepository.name);
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     private readonly loggerService: LoggerService,
   ) {}
 
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'CategoryRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
+  // /**
+  //  * Método auxiliar para loguear errores con información estructurada
+  //  * Centraliza el formato de logs para este repositorio
+  //  */
+  // private logError(
+  //   operation: string,
+  //   context: Record<string, any>,
+  //   error: any,
+  // ) {
+  //   const errorInfo = {
+  //     operation,
+  //     repository: 'CategoryRepository',
+  //     context,
+  //     timestamp: new Date().toISOString(),
+  //   };
+  //   this.loggerService.error(errorInfo, error);
+  // }
 
   async getAllCategorys(page: number, limit: number): Promise<Category[]> {
     try {
@@ -38,7 +39,7 @@ export class CategoryRepository {
         take: limit,
       });
     } catch (error) {
-      this.logError('getAllCategorys', { page, limit }, error);
+      this.logger.error('getAllCategorys', error);
       throw error;
     }
   }
@@ -51,7 +52,7 @@ export class CategoryRepository {
 
       return categoryFinded;
     } catch (error) {
-      this.logError('getCategoryById', { id }, error);
+      this.logger.error('getCategoryById', error);
       throw error;
     }
   }
@@ -65,7 +66,7 @@ export class CategoryRepository {
 
       return categoryFinded;
     } catch (error) {
-      this.logError('getCategoryByName', { name }, error);
+      this.logger.error('getCategoryByName', error);
       throw error;
     }
   }

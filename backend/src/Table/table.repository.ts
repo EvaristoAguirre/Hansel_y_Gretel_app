@@ -12,7 +12,6 @@ import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
 import { Room } from 'src/Room/room.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class TableRepository {
@@ -22,26 +21,7 @@ export class TableRepository {
     private readonly tableRepository: Repository<Table>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'TableRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   async createTable(table: CreateTableDto): Promise<Table> {
     const { roomId, ...tableData } = table;
@@ -71,11 +51,7 @@ export class TableRepository {
       });
       return tableFinded;
     } catch (error) {
-      this.logError(
-        'createTable',
-        { roomId, tableName: tableData.name },
-        error,
-      );
+      this.logger.error('createTable', error);
       throw error;
     }
   }
@@ -100,7 +76,7 @@ export class TableRepository {
       });
       return tableUpdated;
     } catch (error) {
-      this.logError('updateTable', { id, updateData }, error);
+      this.logger.error('updateTable', error);
       throw error;
     }
   }
@@ -114,7 +90,7 @@ export class TableRepository {
       const tableDeleted = await this.tableRepository.delete(id);
       return id;
     } catch (error) {
-      this.logError('deleteTable', { id }, error);
+      this.logger.error('deleteTable', error);
       throw error;
     }
   }
@@ -156,7 +132,7 @@ export class TableRepository {
 
       return result;
     } catch (error) {
-      this.logError('getAllTables', { page, limit }, error);
+      this.logger.error('getAllTables', error);
       throw error;
     }
   }
@@ -184,7 +160,7 @@ export class TableRepository {
 
       return table;
     } catch (error) {
-      this.logError('getTableById', { id }, error);
+      this.logger.error('getTableById', error);
       throw error;
     }
   }
@@ -208,7 +184,7 @@ export class TableRepository {
       );
       return table;
     } catch (error) {
-      this.logError('getTableByName', { name }, error);
+      this.logger.error('getTableByName', error);
       throw error;
     }
   }
@@ -217,7 +193,7 @@ export class TableRepository {
     try {
       await this.tableRepository.update(tableId, { state });
     } catch (error) {
-      this.logError('updateTableState', { tableId, state }, error);
+      this.logger.error('updateTableState', error);
       throw error;
     }
   }
@@ -251,7 +227,7 @@ export class TableRepository {
 
       return result;
     } catch (error) {
-      this.logError('getTablesByRoom', { roomId }, error);
+      this.logger.error('getTablesByRoom', error);
       throw error;
     }
   }
@@ -272,7 +248,7 @@ export class TableRepository {
         );
       return tables;
     } catch (error) {
-      this.logError('getAllTablesAvailable', { page, limit }, error);
+      this.logger.error('getAllTablesAvailable', error);
       throw error;
     }
   }

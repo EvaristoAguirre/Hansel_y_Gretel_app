@@ -1,8 +1,6 @@
 import {
   BadRequestException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -48,11 +46,8 @@ export class OrderReaderService {
         ],
       });
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching orders',
-        error.message,
-      );
+      this.logger.error('getAllOrders', error);
+      throw error;
     }
   }
 
@@ -85,11 +80,8 @@ export class OrderReaderService {
       const responseAdapted = await this.adaptResponse(order);
       return responseAdapted;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching the order',
-        error.message,
-      );
+      this.logger.error('getOrderById', error);
+      throw error;
     }
   }
 
@@ -149,11 +141,8 @@ export class OrderReaderService {
         relations: ['product', 'order'],
       });
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching order details',
-        error.message,
-      );
+      this.logger.error('getOrderDetails', error);
+      throw error;
     }
   }
 
@@ -213,10 +202,8 @@ export class OrderReaderService {
 
       return orderSummary;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error al obtener el detalle de la orden',
-      );
+      this.logger.error('orderDetailsById', error);
+      throw error;
     }
   }
 }

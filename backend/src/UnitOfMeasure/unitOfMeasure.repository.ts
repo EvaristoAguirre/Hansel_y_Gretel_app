@@ -7,7 +7,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -20,36 +20,17 @@ import {
   UnitOfMeasureSummaryResponseDto,
 } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
 import { isUUID } from 'class-validator';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class UnitOfMeasureRepository {
+  private readonly logger = new Logger(UnitOfMeasureRepository.name);
   constructor(
     @InjectRepository(UnitOfMeasure)
     private readonly unitOfMeasureRepository: Repository<UnitOfMeasure>,
     @InjectRepository(UnitConversion)
     private readonly unitConversionRepository: Repository<UnitConversion>,
     private readonly dataSource: DataSource,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'UnitOfMeasureRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   // ---------------   estandarizada con el nuevo dto
   async createUnitOfMeasure(
@@ -161,14 +142,7 @@ export class UnitOfMeasureRepository {
 
       return this.mapUnitWithConversions(fullUnit);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      this.logError('createUnitOfMeasure', { name, abbreviation }, error);
+      this.logger.error('createUnitOfMeasure', error);
       throw error;
     }
   }
@@ -201,8 +175,7 @@ export class UnitOfMeasureRepository {
 
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getAllUnitOfMeasure', { pageNumber, limitNumber }, error);
+      this.logger.error('getAllUnitOfMeasure', error);
       throw error;
     }
   }
@@ -232,12 +205,7 @@ export class UnitOfMeasureRepository {
       });
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError(
-        'getConventionalUnitOfMeasure',
-        { pageNumber, limitNumber },
-        error,
-      );
+      this.logger.error('getConventionalUnitOfMeasure', error);
       throw error;
     }
   }
@@ -262,12 +230,7 @@ export class UnitOfMeasureRepository {
 
       return units.map((unit) => this.mapUnitWithConversions(unit));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError(
-        'getNotConventionalUnitOfMeasure',
-        { pageNumber, limitNumber },
-        error,
-      );
+      this.logger.error('getNotConventionalUnitOfMeasure', error);
       throw error;
     }
   }
@@ -290,13 +253,7 @@ export class UnitOfMeasureRepository {
       }
       return unitOfMeasure;
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      this.logError('getUnitOfMeasureById', { id }, error);
+      this.logger.error('getUnitOfMeasureById', error);
       throw error;
     }
   }
@@ -329,8 +286,7 @@ export class UnitOfMeasureRepository {
           : null,
       }));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getUnitsOfVolume', {}, error);
+      this.logger.error('getUnitsOfVolume', error);
       throw error;
     }
   }
@@ -361,8 +317,7 @@ export class UnitOfMeasureRepository {
           : null,
       }));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getUnitsOfMass', {}, error);
+      this.logger.error('getUnitsOfMass', error);
       throw error;
     }
   }
@@ -392,8 +347,7 @@ export class UnitOfMeasureRepository {
           : null,
       }));
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getUnitOfUnit', {}, error);
+      this.logger.error('getUnitOfUnit', error);
       throw error;
     }
   }
@@ -514,7 +468,7 @@ export class UnitOfMeasureRepository {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof HttpException) throw error;
-      this.logError('updateUnitOfMeasure', { id, updateData }, error);
+      this.logger.error('updateUnitOfMeasure', error);
       throw error;
     } finally {
       await queryRunner.release();
@@ -629,8 +583,8 @@ export class UnitOfMeasureRepository {
           visited,
         );
       }
-    } catch (e) {
-      console.error('Error en conversión intermedia:', e.message);
+    } catch (error) {
+      this.logger.error('convertUnit', error);
     }
 
     // 5. Último intento
@@ -948,10 +902,7 @@ export class UnitOfMeasureRepository {
 
       return units;
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      this.logError('searchUnit', { name, abbreviation }, error);
+      this.logger.error('searchUnit', error);
       throw error;
     }
   }
@@ -966,8 +917,7 @@ export class UnitOfMeasureRepository {
       }
       return unitOfMeasure;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logError('getUnitOfMeasureUnidad', {}, error);
+      this.logger.error('getUnitOfMeasureUnidad', error);
       throw error;
     }
   }

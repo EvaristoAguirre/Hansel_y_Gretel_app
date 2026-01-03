@@ -313,52 +313,11 @@ export class StockService {
     toppingsPerUnit?: string[][],
     promotionSelections?: PromotionSelectionDto[],
   ) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:309',
-        message: 'deductStock ENTRY',
-        data: {
-          productId,
-          quantity,
-          hasToppings: !!toppingsPerUnit?.length,
-          hasSelections: !!promotionSelections?.length,
-          selectionsCount: promotionSelections?.length,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'A',
-      }),
-    }).catch(() => {});
-    // #endregion
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
     if (!product) {
       throw new NotFoundException(`Product with ID ${productId} not found.`);
     }
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:318',
-        message: 'Product loaded',
-        data: {
-          productId: product.id,
-          productName: product.name,
-          productType: product.type,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'A',
-      }),
-    }).catch(() => {});
-    // #endregion
 
     const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
     const unidadId = unidad?.id;
@@ -372,28 +331,6 @@ export class StockService {
     } else if (product.type === 'product') {
       await this.deductCompositeStock(product, quantity);
     } else if (product.type === 'promotion') {
-      // #region agent log
-      fetch(
-        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            location: 'stock.service.ts:333',
-            message: 'Processing promotion',
-            data: {
-              productId: product.id,
-              hasSelections: !!promotionSelections?.length,
-              selectionsCount: promotionSelections?.length,
-            },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            runId: 'run1',
-            hypothesisId: 'A',
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       // Si hay selecciones, usar el nuevo método con slots
       if (promotionSelections && promotionSelections.length > 0) {
         await this.deductPromotionStockWithSelections(
@@ -485,27 +422,6 @@ export class StockService {
     quantity: number,
     selections: PromotionSelectionDto[],
   ) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:416',
-        message: 'deductPromotionStockWithSelections ENTRY',
-        data: {
-          promotionId: promotion.id,
-          promotionName: promotion.name,
-          quantity,
-          selectionsCount: selections.length,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'B',
-      }),
-    }).catch(() => {});
-    // #endregion
-
     // Cargar asignaciones de slots de la promoción
     const assignments = await this.promotionSlotRepository.manager.find(
       PromotionSlotAssignment,
@@ -514,30 +430,6 @@ export class StockService {
         relations: ['slot', 'slot.options', 'slot.options.product'],
       },
     );
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:424',
-        message: 'Assignments loaded',
-        data: {
-          assignmentsCount: assignments?.length,
-          assignments: assignments?.map((a) => ({
-            id: a.id,
-            slotId: a.slotId,
-            quantity: a.quantity,
-            isOptional: a.isOptional,
-          })),
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'B',
-      }),
-    }).catch(() => {});
-    // #endregion
 
     // Validar que existan asignaciones
     if (!assignments || assignments.length === 0) {
@@ -549,31 +441,6 @@ export class StockService {
     // Por cada asignación de slot
     for (const assignment of assignments) {
       const slot = assignment.slot;
-
-      // #region agent log
-      fetch(
-        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            location: 'stock.service.ts:435',
-            message: 'Processing slot assignment',
-            data: {
-              slotId: slot.id,
-              slotName: slot.name,
-              isOptional: assignment.isOptional,
-              quantity: assignment.quantity,
-              optionsCount: slot.options?.length,
-            },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            runId: 'run1',
-            hypothesisId: 'B',
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
 
       // Buscar la selección del cliente para este slot
       const selection = selections?.find((s) => s.slotId === slot.id);
@@ -597,30 +464,6 @@ export class StockService {
           );
         }
 
-        // #region agent log
-        fetch(
-          'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              location: 'stock.service.ts:447',
-              message: 'Selection found',
-              data: {
-                slotId: slot.id,
-                selectedProductIds: selection.selectedProductIds,
-                selectedProductsCount: selection.selectedProductIds?.length,
-                hasToppings: !!selection.toppingsPerUnit?.length,
-              },
-              timestamp: Date.now(),
-              sessionId: 'debug-session',
-              runId: 'run1',
-              hypothesisId: 'B',
-            }),
-          },
-        ).catch(() => {});
-        // #endregion
-
         // Deducir stock por cada producto seleccionado
         for (let i = 0; i < selection.selectedProductIds.length; i++) {
           const selectedProductId = selection.selectedProductIds[i];
@@ -638,31 +481,6 @@ export class StockService {
 
           // Obtener toppings para este producto específico (si hay)
           const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
-
-          // #region agent log
-          fetch(
-            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                location: 'stock.service.ts:464',
-                message: 'Deducting stock for selected product',
-                data: {
-                  selectedProductId,
-                  quantityToDeduct: quantity,
-                  slotQuantity: assignment.quantity,
-                  promotionQuantity: quantity,
-                  hasToppings: toppingsForThisProduct.length > 0,
-                },
-                timestamp: Date.now(),
-                sessionId: 'debug-session',
-                runId: 'run1',
-                hypothesisId: 'A',
-              }),
-            },
-          ).catch(() => {});
-          // #endregion
 
           // Deducir stock del producto seleccionado
           // Multiplicar por la cantidad de promociones (quantity ya es por producto individual)
@@ -805,21 +623,6 @@ export class StockService {
     quantity: number,
     selections: PromotionSelectionDto[],
   ): Promise<{ available: boolean; insufficientItems: string[] }> {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:597',
-        message: 'checkPromotionStockAvailability ENTRY',
-        data: { promotionId, quantity, selectionsCount: selections.length },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'E',
-      }),
-    }).catch(() => {});
-    // #endregion
     const insufficientItems: string[] = [];
 
     // Cargar asignaciones de slots de la promoción
@@ -830,25 +633,6 @@ export class StockService {
         relations: ['slot', 'slot.options', 'slot.options.product'],
       },
     );
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:608',
-        message: 'Assignments loaded for check',
-        data: {
-          assignmentsCount: assignments?.length,
-          hasAssignments: !!assignments?.length,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'E',
-      }),
-    }).catch(() => {});
-    // #endregion
 
     // Por cada asignación de slot
     for (const assignment of assignments) {
@@ -928,29 +712,6 @@ export class StockService {
           const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
 
           if (toppingsForThisProduct.length > 0) {
-            // #region agent log
-            fetch(
-              'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  location: 'stock.service.ts:694',
-                  message: 'Checking toppings stock',
-                  data: {
-                    toppingsPerUnitCount: toppingsForThisProduct.length,
-                    requiredQuantity,
-                    productId: selectedProductId,
-                  },
-                  timestamp: Date.now(),
-                  sessionId: 'debug-session',
-                  runId: 'run1',
-                  hypothesisId: 'C',
-                }),
-              },
-            ).catch(() => {});
-            // #endregion
-
             // Contar cuántas veces aparece cada topping para este producto
             const toppingCountMap: Record<string, number> = {};
             for (const toppingId of toppingsForThisProduct) {
@@ -1000,61 +761,12 @@ export class StockService {
               // Calcular cantidad total requerida: cantidad por uso * número de usos
               const totalToCheckInSource = totalUses * quantityPerUse;
 
-              // #region agent log
-              fetch(
-                'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    location: 'stock.service.ts:737',
-                    message: 'Topping stock calculation',
-                    data: {
-                      toppingId,
-                      quantityPerUse,
-                      totalUses,
-                      totalToCheckInSource,
-                    },
-                    timestamp: Date.now(),
-                    sessionId: 'debug-session',
-                    runId: 'run1',
-                    hypothesisId: 'C',
-                  }),
-                },
-              ).catch(() => {});
-              // #endregion
-
               const quantityToCheck =
                 await this.unitOfMeasureService.convertUnit(
                   sourceUnitId,
                   targetUnitId,
                   totalToCheckInSource,
                 );
-
-              // #region agent log
-              fetch(
-                'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    location: 'stock.service.ts:748',
-                    message: 'Topping stock comparison',
-                    data: {
-                      toppingId,
-                      quantityToCheck,
-                      availableStock: toppingStock.quantityInStock,
-                      hasEnough:
-                        Number(toppingStock.quantityInStock) >= quantityToCheck,
-                    },
-                    timestamp: Date.now(),
-                    sessionId: 'debug-session',
-                    runId: 'run1',
-                    hypothesisId: 'C',
-                  }),
-                },
-              ).catch(() => {});
-              // #endregion
 
               if (Number(toppingStock.quantityInStock) < quantityToCheck) {
                 insufficientItems.push(
@@ -1067,25 +779,6 @@ export class StockService {
       }
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:716',
-        message: 'checkPromotionStockAvailability EXIT',
-        data: {
-          available: insufficientItems.length === 0,
-          insufficientItemsCount: insufficientItems.length,
-          insufficientItems,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'E',
-      }),
-    }).catch(() => {});
-    // #endregion
     return {
       available: insufficientItems.length === 0,
       insufficientItems,
@@ -1102,26 +795,6 @@ export class StockService {
     product: Product,
     requiredQuantity: number,
   ): Promise<boolean> {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'stock.service.ts:728',
-        message: 'checkProductStock ENTRY',
-        data: {
-          productId: product.id,
-          productName: product.name,
-          productType: product.type,
-          requiredQuantity,
-        },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-        hypothesisId: 'A',
-      }),
-    }).catch(() => {});
-    // #endregion
     if (product.type === 'simple') {
       if (!product.stock) {
         return false;
@@ -1142,29 +815,6 @@ export class StockService {
       );
 
       const result = product.stock.quantityInStock >= quantityToCheck;
-      // #region agent log
-      fetch(
-        'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            location: 'stock.service.ts:751',
-            message: 'checkProductStock simple result',
-            data: {
-              productId: product.id,
-              hasStock: result,
-              available: product.stock.quantityInStock,
-              required: quantityToCheck,
-            },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            runId: 'run1',
-            hypothesisId: 'A',
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
       return result;
     } else if (product.type === 'product') {
       // Verificar ingredientes
@@ -1176,28 +826,6 @@ export class StockService {
           );
 
         if (!ingredient || !ingredient.stock) {
-          // #region agent log
-          fetch(
-            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                location: 'stock.service.ts:761',
-                message: 'Ingredient without stock',
-                data: {
-                  ingredientId: pi.ingredient.id,
-                  hasIngredient: !!ingredient,
-                  hasStock: !!ingredient?.stock,
-                },
-                timestamp: Date.now(),
-                sessionId: 'debug-session',
-                runId: 'run1',
-                hypothesisId: 'A',
-              }),
-            },
-          ).catch(() => {});
-          // #endregion
           return false;
         }
 
@@ -1212,28 +840,6 @@ export class StockService {
         );
 
         if (ingredient.stock.quantityInStock < quantityToCheck) {
-          // #region agent log
-          fetch(
-            'http://127.0.0.1:7242/ingest/a8a89acd-2352-4f1e-ae86-02cc26cfa6f0',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                location: 'stock.service.ts:775',
-                message: 'Insufficient ingredient stock',
-                data: {
-                  ingredientId: ingredient.id,
-                  available: ingredient.stock.quantityInStock,
-                  required: quantityToCheck,
-                },
-                timestamp: Date.now(),
-                sessionId: 'debug-session',
-                runId: 'run1',
-                hypothesisId: 'A',
-              }),
-            },
-          ).catch(() => {});
-          // #endregion
           return false;
         }
       }
