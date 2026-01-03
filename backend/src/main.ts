@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { EnvNames } from './common/names.env';
 import { ExceptionFilters } from './Filters/globalException.filters';
 // import { GlobalExceptionFilter } from './Filters/globalException.filters';
+import * as express from 'express';
 
 async function bootstrap() {
   const configService = new ConfigService();
@@ -96,6 +97,34 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.use(express.json({ limit: '1mb' })); // Limita tamaño de JSON
+  app.use(
+    express.urlencoded({
+      extended: true,
+      limit: '1mb',
+      parameterLimit: 1000, // Limita cantidad de parámetros
+    }),
+  );
+
+  // Rate limiting global
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Demasiadas peticiones, intenta más tarde',
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(globalLimiter);
+
+  // Rate limiting estricto para login
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: 'Demasiados intentos de login',
+    skipSuccessfulRequests: true, // Solo cuenta intentos fallidos
+  });
+  app.use('/user/login', loginLimiter);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -109,55 +138,11 @@ async function bootstrap() {
   const loggerService = app.get(LoggerService);
 
   app.useGlobalFilters(new ExceptionFilters(loggerService));
-
-  // const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-  // app.useGlobalFilters(
-  //   new ValidationExceptionFilter(),
-  //   new JwtExceptionFilter(),
-  //   new DatabaseExceptionFilter(),
-  //   new LoggingExceptionFilter(loggerService),
-  //   // new GlobalExceptionFilter(),
-  // );
-  // app.useGlobalPipes(
-  //   new ValidationPipe({
-  //     whitelist: true,
-  //     forbidNonWhitelisted: true,
-  //     transform: true,
-  //     transformOptions: {
-  //       enableImplicitConversion: true,
-  //     },
-  //     exceptionFactory: (errors) => {
-  //       const messages = errors.map((error) => {
-  //         const constraints = error.constraints
-  //           ? Object.values(error.constraints).join(', ')
-  //           : 'Validation error';
-  //         return `${error.property}: ${constraints}`;
-  //       });
-  //       return new BadRequestException({
-  //         statusCode: 400,
-  //         message: 'Error de validación',
-  //         errors: errors.map((error) => ({
-  //           property: error.property,
-  //           value: error.value,
-  //           constraints: error.constraints || {},
-  //           children: error.children || [],
-  //         })),
-  //         details: messages,
-  //       });
-  //     },
-  //   }),
-  // );
   app.use(LoggerMidleware);
 
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
-  app.use(
-    '/user/login',
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 10,
-    }),
-  );
+
   await app.listen(3000);
 
   const port = app.getHttpServer().address().port;
