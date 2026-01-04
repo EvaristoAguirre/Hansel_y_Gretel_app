@@ -1,5 +1,19 @@
-import { URI_PRODUCT, URI_PRODUCT_BY_CATEGORY } from '@/components/URI/URI';
+import {
+  URI_PRODUCT,
+  URI_PRODUCT_BY_CATEGORY,
+  URI_PRODUCT_PROMO_WITH_SLOTS,
+} from '@/components/URI/URI';
 import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
+
+export interface CreatePromoWithSlotsPayload {
+  name: string;
+  code?: number;
+  description?: string;
+  price?: number;
+  categories?: string[];
+  type?: 'promotion';
+  slots?: string[];
+}
 
 export const createProduct = async (form: ProductForm, token: string) => {
   const payload = {
@@ -235,4 +249,49 @@ export const checkStock = async (form: ICheckStock, token: string) => {
   });
 
   return await response.json();
+};
+
+export const createPromoWithSlots = async (
+  form: ProductForm,
+  token: string
+): Promise<{ ok: boolean; data?: any; error?: string }> => {
+  const payload: CreatePromoWithSlotsPayload = {
+    name: form.name,
+    code: form.code ?? undefined,
+    description: form.description || undefined,
+    price: form.price ?? undefined,
+    categories: form.categories.map((c) => c.id),
+    type: 'promotion',
+    slots: form.slots?.map((s) => s.slotId) || [],
+  };
+
+  try {
+    const response = await fetch(URI_PRODUCT_PROMO_WITH_SLOTS, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        ok: false,
+        error:
+          errorData.message ||
+          `Error ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error('Error en createPromoWithSlots:', error);
+    return {
+      ok: false,
+      error: 'Error al conectar con el servidor',
+    };
+  }
 };
