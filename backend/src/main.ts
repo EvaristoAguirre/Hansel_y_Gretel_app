@@ -109,7 +109,7 @@ async function bootstrap() {
   // Rate limiting global
   const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 500,
     message: 'Demasiadas peticiones, intenta más tarde',
     standardHeaders: true,
     legacyHeaders: false,

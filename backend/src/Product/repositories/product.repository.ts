@@ -1065,6 +1065,10 @@ export class ProductRepository {
           'availableToppingGroups.unitOfMeasure',
           'availableToppingGroups.toppingGroup',
           'availableToppingGroups.toppingGroup.toppings',
+          'promotionSlotAssignments',
+          'promotionSlotAssignments.slot',
+          'promotionSlotAssignments.slot.options',
+          'promotionSlotAssignments.slot.options.product',
         ],
         skip: offset,
         take: limit,
@@ -1647,7 +1651,6 @@ export class ProductRepository {
 
     const assignmentData = {
       quantity: slotData.quantity,
-      isOptional: slotData.isOptional,
     };
 
     if (existingAssignment) {
@@ -1696,7 +1699,6 @@ export class ProductRepository {
       promotionId,
       slotId: savedSlot.id,
       quantity: slotData.quantity,
-      isOptional: slotData.isOptional,
     });
     await queryRunner.manager.save(PromotionSlotAssignment, assignment);
 
@@ -1717,9 +1719,7 @@ export class ProductRepository {
       const newOption = queryRunner.manager.create(PromotionSlotOption, {
         slotId,
         productId: optionData.productId,
-        isDefault: optionData.isDefault,
         extraCost: optionData.extraCost,
-        displayOrder: optionData.displayOrder,
         isActive: true,
       });
       await queryRunner.manager.save(PromotionSlotOption, newOption);
@@ -1766,34 +1766,17 @@ export class ProductRepository {
         // Actualizar opción existente
         await queryRunner.manager.update(PromotionSlotOption, optionData.id, {
           productId: optionData.productId,
-          isDefault: optionData.isDefault,
           extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
         });
       } else {
         // Crear nueva opción
         const newOption = queryRunner.manager.create(PromotionSlotOption, {
           slotId,
           productId: optionData.productId,
-          isDefault: optionData.isDefault,
           extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
           isActive: true,
         });
         await queryRunner.manager.save(PromotionSlotOption, newOption);
-      }
-
-      // Si se marca como default, desmarcar las demás opciones del mismo slot
-      if (optionData.isDefault) {
-        await queryRunner.manager.update(
-          PromotionSlotOption,
-          {
-            slotId,
-            id: optionData.id ? Not(optionData.id) : undefined,
-            isDefault: true,
-          },
-          { isDefault: false },
-        );
       }
     }
   }

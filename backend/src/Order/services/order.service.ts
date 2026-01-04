@@ -5,13 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderRepository } from '../repositories/order.repository';
-import { CreateOrderDto } from 'src/DTOs/create-order.dto';
+import { CreateOrderDto } from 'src/Order/dtos/create-order.dto';
 import { Order } from '../entities/order.entity';
-import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+import { UpdateOrderDto } from 'src/Order/dtos/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDetails } from '../entities/order_details.entity';
-import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
-import { CloseOrderDto } from 'src/DTOs/close-order.dto';
+import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
+import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { OrderState, TableState } from 'src/Enums/states.enum';
@@ -25,9 +25,8 @@ import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
-import { transferOrderData } from 'src/DTOs/transfer-order.dto';
+import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
@@ -40,7 +39,6 @@ export class OrderService {
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(OrderDetails)
-    private readonly orderDetailsRepo: Repository<OrderDetails>,
     private readonly orderRepository: OrderRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly tableService: TableService,
@@ -48,7 +46,6 @@ export class OrderService {
     private readonly dataSource: DataSource,
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
-    private readonly monitoringLogger: LoggerService,
     private readonly reader: OrderReaderService,
   ) {}
 

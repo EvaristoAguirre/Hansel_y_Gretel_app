@@ -17,19 +17,10 @@ export class CreateSlotOptionForCreationDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsBoolean()
-  @IsNotEmpty()
-  isDefault: boolean;
-
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
   extraCost: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 }
 
 export class CreatePromotionSlotWithOptionsDto {
@@ -45,11 +36,6 @@ export class CreatePromotionSlotWithOptionsDto {
   @IsNotEmpty()
   @Min(1)
   quantity: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 
   @IsBoolean()
   @IsNotEmpty()

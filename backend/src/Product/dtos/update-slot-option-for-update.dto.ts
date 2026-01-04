@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -23,19 +22,10 @@ export class UpdateSlotOptionForUpdateDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsBoolean()
-  @IsNotEmpty()
-  isDefault: boolean;
-
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
   extraCost: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 }
 
 /**
@@ -58,15 +48,6 @@ export class UpdatePromotionSlotWithOptionsDto {
   @IsNotEmpty()
   @Min(1)
   quantity: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
-
-  @IsBoolean()
-  @IsNotEmpty()
-  isOptional: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })

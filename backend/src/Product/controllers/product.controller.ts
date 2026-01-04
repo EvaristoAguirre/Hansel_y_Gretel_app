@@ -391,9 +391,31 @@ export class ProductController {
    * roles: ADMIN, ENCARGADO
    */
   @Post('promo-with-slots')
+  @ApiOperation({
+    summary: 'Crear promoción con slots',
+    description:
+      'Crea una nueva promoción asignando slots existentes. Los slots ya deben existir en la base de datos.',
+  })
+  @ApiBody({
+    type: CreatePromotionWithSlotsDto,
+    description: 'Datos de la promoción con slots a crear',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Promoción creada exitosamente con sus slots asignados',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos inválidos o slots no encontrados',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permisos para crear promociones',
+  })
   createPromotionWithSlots(
     @Body() createPromotionWithSlots: CreatePromotionWithSlotsDto,
-  ) {
+  ): Promise<ProductResponseDto> {
     return this.productService.createPromotionWithSlots(
       createPromotionWithSlots,
     );

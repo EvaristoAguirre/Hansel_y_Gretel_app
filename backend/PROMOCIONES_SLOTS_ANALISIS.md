@@ -110,17 +110,11 @@ export class PromotionSlotOption {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ default: false })
-  isDefault: boolean; // Opción seleccionada por defecto
-
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   extraCost: number; // Costo adicional si aplica (ej: torta premium +$500)
 
   @Column({ default: true })
   isActive: boolean;
-
-  @Column({ type: 'int', default: 0 })
-  displayOrder: number; // Orden de presentación
 
   // -------- Relaciones --------
 
@@ -228,8 +222,8 @@ promotionSelections: OrderPromotionSelection[];
 │  │ (promotion)  │         │                 │                       │
 │  │              │         │ - name          │                       │
 │  │ - name       │         │ - quantity      │                       │
-│  │ - price      │         │ - isOptional    │                       │
-│  │ - type       │         │ - displayOrder  │                       │
+│  │ - price      │         │                 │                       │
+│  │ - type       │         │                 │                       │
 │  └──────────────┘         └────────┬────────┘                       │
 │                                    │                                 │
 │                                    │ 1                               │
@@ -238,9 +232,7 @@ promotionSelections: OrderPromotionSelection[];
 │                           ┌─────────────────────┐                   │
 │                           │ PromotionSlotOption │                   │
 │                           │                     │                   │
-│                           │ - isDefault         │                   │
 │                           │ - extraCost         │                   │
-│                           │ - displayOrder      │                   │
 │                           └──────────┬──────────┘                   │
 │                                      │                               │
 │                                      │ * ──── 1                      │
@@ -588,7 +580,7 @@ FROM promotion_products pp
 JOIN products p ON p.id = pp.productId;
 
 -- Luego crear las opciones correspondientes
-INSERT INTO promotion_slot_options (id, slotId, productId, isDefault)
+INSERT INTO promotion_slot_options (id, slotId, productId)
 SELECT
   gen_random_uuid(),
   ps.id,
@@ -746,9 +738,9 @@ POST /products
       "isOptional": false,
       "displayOrder": 0,
       "options": [
-        { "productId": "uuid-cafe-americano", "isDefault": true, "extraCost": 0 },
-        { "productId": "uuid-cafe-con-leche", "isDefault": false, "extraCost": 0 },
-        { "productId": "uuid-cappuccino", "isDefault": false, "extraCost": 200 }
+        { "productId": "uuid-cafe-americano",  "extraCost": 0 },
+        { "productId": "uuid-cafe-con-leche","extraCost": 0 },
+        { "productId": "uuid-cappuccino", "extraCost": 200 }
       ]
     },
     {
@@ -757,10 +749,10 @@ POST /products
       "isOptional": false,
       "displayOrder": 1,
       "options": [
-        { "productId": "uuid-torta-chocolate", "isDefault": true, "extraCost": 0 },
-        { "productId": "uuid-torta-frutilla", "isDefault": false, "extraCost": 0 },
-        { "productId": "uuid-torta-limon", "isDefault": false, "extraCost": 0 },
-        { "productId": "uuid-torta-premium", "isDefault": false, "extraCost": 500 }
+        { "productId": "uuid-torta-chocolate", "extraCost": 0 },
+        { "productId": "uuid-torta-frutilla", "extraCost": 0 },
+        { "productId": "uuid-torta-limon", "extraCost": 0 },
+        { "productId": "uuid-torta-premium", "extraCost": 500 }
       ]
     }
   ]

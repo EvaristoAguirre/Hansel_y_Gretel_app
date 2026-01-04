@@ -74,7 +74,9 @@ export class ProductService {
     return productCreated;
   }
 
-  async createPromotionWithSlots(data: CreatePromotionWithSlotsDto) {
+  async createPromotionWithSlots(
+    data: CreatePromotionWithSlotsDto,
+  ): Promise<ProductResponseDto> {
     const promotionCreated = await this.creater.createPromotionWithSlots(data);
     this.eventEmitter.emit('product.created', {
       product: promotionCreated,

@@ -67,17 +67,13 @@ export interface IPromotionSlot {
   name: string; // "Torta", "Bebida"
   description?: string;
   quantity: number; // Cantidad de este slot
-  displayOrder: number;
-  isOptional: boolean;
   isActive: boolean;
   options: IPromotionSlotOption[];
 }
 
 export interface IPromotionSlotOption {
   id: string;
-  isDefault: boolean;
   extraCost: number; // Costo adicional (ej: torta premium +$500)
-  displayOrder: number;
   isActive: boolean;
   product: IProductBasic; // Producto seleccionable
   productId: string;
@@ -96,16 +92,12 @@ export interface CreatePromotionSlotDto {
   name: string;
   description?: string;
   quantity: number;
-  displayOrder: number;
-  isOptional: boolean;
   options: CreateSlotOptionDto[];
 }
 
 export interface CreateSlotOptionDto {
   productId: string;
-  isDefault: boolean;
   extraCost: number;
-  displayOrder: number;
 }
 ```
 

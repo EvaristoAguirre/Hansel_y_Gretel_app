@@ -22,16 +22,16 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { OrderService } from '../services/order.service';
-import { CreateOrderDto } from 'src/DTOs/create-order.dto';
+import { CreateOrderDto } from 'src/Order/dtos/create-order.dto';
 import { Order } from '../entities/order.entity';
-import { UpdateOrderDto } from 'src/DTOs/update-order.dto';
+import { UpdateOrderDto } from 'src/Order/dtos/update-order.dto';
 import { OrderDetails } from '../entities/order_details.entity';
-import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
-import { CloseOrderDto } from 'src/DTOs/close-order.dto';
-import { transferOrderData } from 'src/DTOs/transfer-order.dto';
+import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
+import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
 @ApiTags('Pedido')

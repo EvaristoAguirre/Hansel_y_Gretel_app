@@ -89,9 +89,7 @@ export interface IProductBasic {
  */
 export interface IPromotionSlotOption {
   id: string;
-  isDefault: boolean;
   extraCost: number; // Costo adicional (ej: torta premium +$500)
-  displayOrder: number;
   isActive: boolean;
   product: IProductBasic; // Producto seleccionable
   productId: string;
@@ -118,9 +116,7 @@ export interface IPromotionSlot {
  */
 export interface CreateSlotOptionDto {
   productId: string;
-  isDefault: boolean;
   extraCost: number;
-  displayOrder: number;
 }
 
 /**
@@ -130,8 +126,6 @@ export interface CreatePromotionSlotDto {
   name: string;
   description?: string;
   quantity: number;
-  displayOrder: number;
-  isOptional: boolean;
   options: CreateSlotOptionDto[];
 }
 
@@ -408,9 +402,7 @@ export const SlotOptionsEditor: React.FC<SlotOptionsEditorProps> = ({
 
     const newOption: CreateSlotOptionDto = {
       productId: product.id,
-      isDefault: options.length === 0, // Primera opción es default
       extraCost: 0,
-      displayOrder: options.length,
     };
 
     onOptionsChange([...options, newOption]);
@@ -419,23 +411,11 @@ export const SlotOptionsEditor: React.FC<SlotOptionsEditorProps> = ({
   const handleRemoveOption = (index: number) => {
     const newOptions = options.filter((_, i) => i !== index);
 
-    // Si eliminamos la opción default, marcar la primera como default
-    if (options[index].isDefault && newOptions.length > 0) {
-      newOptions[0].isDefault = true;
-    }
-
     onOptionsChange(newOptions);
   };
 
   const handleUpdateOption = (index: number, updated: CreateSlotOptionDto) => {
     const newOptions = [...options];
-
-    // Si se marca como default, desmarcar las demás
-    if (updated.isDefault) {
-      newOptions.forEach((opt, i) => {
-        opt.isDefault = i === index;
-      });
-    }
 
     newOptions[index] = updated;
     onOptionsChange(newOptions);
@@ -870,16 +850,6 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
   useEffect(() => {
     const initialSelections = Array.from({ length: quantity }, () => {
       const unitSelections: { [slotId: string]: PromotionSelectionDto } = {};
-
-      promotion.promotionSlots?.forEach((slot) => {
-        const defaultOption = slot.options.find((o) => o.isDefault);
-        if (defaultOption) {
-          unitSelections[slot.id] = {
-            slotId: slot.id,
-            selectedProductId: defaultOption.productId,
-          };
-        }
-      });
 
       return unitSelections;
     });

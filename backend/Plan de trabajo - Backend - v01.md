@@ -13,7 +13,7 @@
   - Relación con PromotionSlotOption (options)
 
 - ✅ **Entidad `PromotionSlotOption`** (`src/Product/entities/promotion-slot-option.entity.ts`)
-  - Campos: isDefault, extraCost, isActive, displayOrder
+  - Campos: extraCost, isActive
   - Relación con PromotionSlot (slot)
   - Relación con Product (product seleccionable)
 
@@ -105,19 +105,10 @@ export class CreateSlotOptionDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsBoolean()
-  @IsNotEmpty()
-  isDefault: boolean;
-
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
   extraCost: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 }
 ```
 
@@ -142,28 +133,20 @@ export class CreateSlotOptionDto {
 1. **`createOption(createDto: CreateSlotOptionDto): Promise<PromotionSlotOption>`**
    - Validar que `slotId` exista
    - Validar que `productId` exista y no sea promoción
-   - Si `isDefault === true`, desmarcar otras opciones default del mismo slot
    - Crear opción en transacción
    - Retornar opción creada con relaciones
 
 2. **`updateOption(optionId: string, updateDto: UpdateSlotOptionDto): Promise<PromotionSlotOption>`**
    - Validar que opción exista
-   - Si cambia `isDefault` a true, desmarcar otras
    - Actualizar en transacción
 
 3. **`deleteOption(optionId: string): Promise<{ message: string }>`**
    - Soft delete de la opción
    - Validar que quede al menos una opción activa en el slot
-   - Si era default, marcar otra como default automáticamente
 
 4. **`reorderOptions(slotId: string, orderArray: string[]): Promise<void>`**
    - Recibir array de IDs en el orden deseado
    - Actualizar `displayOrder` de cada opción
-   - Ejecutar en transacción
-
-5. **`setDefaultOption(slotId: string, optionId: string): Promise<PromotionSlotOption>`**
-   - Desmarcar todas las opciones del slot
-   - Marcar la opción especificada como default
    - Ejecutar en transacción
 
 **Validaciones de negocio:**
@@ -283,19 +266,10 @@ export class CreateSlotOptionForCreationDto {
   @IsNotEmpty()
   productId: string;
 
-  @IsBoolean()
-  @IsNotEmpty()
-  isDefault: boolean;
-
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
   extraCost: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  displayOrder: number;
 }
 
 export class CreatePromotionSlotWithOptionsDto {
@@ -373,20 +347,12 @@ private async createPromotionWithSlots(productData: CreateProductDto): Promise<P
         throw new BadRequestException(`Slot "${slotData.name}" no puede tener más de 10 opciones`);
       }
 
-      // Validar que haya exactamente una opción default
-      const defaultCount = slotData.options.filter(o => o.isDefault).length;
-      if (defaultCount !== 1) {
-        throw new BadRequestException(`Slot "${slotData.name}" debe tener exactamente una opción marcada como default`);
-      }
-
       // Crear el slot
       const slot = await queryRunner.manager.create(PromotionSlot, {
         promotionId: product.id,
         name: slotData.name,
         description: slotData.description,
         quantity: slotData.quantity,
-        displayOrder: slotData.displayOrder,
-        isOptional: slotData.isOptional,
         isActive: true,
       });
       await queryRunner.manager.save(PromotionSlot, slot);
@@ -411,9 +377,7 @@ private async createPromotionWithSlots(productData: CreateProductDto): Promise<P
         const option = queryRunner.manager.create(PromotionSlotOption, {
           slotId: slot.id,
           productId: optionData.productId,
-          isDefault: optionData.isDefault,
           extraCost: optionData.extraCost,
-          displayOrder: optionData.displayOrder,
           isActive: true,
         });
         await queryRunner.manager.save(PromotionSlotOption, option);

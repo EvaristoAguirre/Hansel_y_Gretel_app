@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { PromotionSlotRepository } from '../repositories/promotion-slot.repository';
 import { ProductRepository } from '../repositories/product.repository';
@@ -80,7 +80,7 @@ export class PromotionSlotService {
     await queryRunner.startTransaction();
 
     try {
-      // Crear el slot (sin promotionId, quantity, displayOrder, isOptional)
+      // Crear el slot (sin promotionId, quantity)
       const slotData = {
         name: createDto.name,
         description: createDto.description,
@@ -133,9 +133,7 @@ export class PromotionSlotService {
           const option = queryRunner.manager.create(PromotionSlotOption, {
             slotId: promotionSlot.id,
             productId: productId,
-            isDefault: false,
             extraCost: 0,
-            displayOrder: 0,
             isActive: true,
           });
 
@@ -411,10 +409,6 @@ export class PromotionSlotService {
       throw new BadRequestException('Extra cost cannot be negative.');
     }
 
-    if (createDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
-    }
-
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -446,15 +440,6 @@ export class PromotionSlotService {
       if (product.type === 'promotion') {
         throw new BadRequestException(
           `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
-        );
-      }
-
-      // Si la nueva opción debe ser default, desmarcar otras opciones default del mismo slot
-      if (createDto.isDefault) {
-        await queryRunner.manager.update(
-          PromotionSlotOption,
-          { slotId: createDto.slotId, isDefault: true },
-          { isDefault: false },
         );
       }
 
@@ -507,10 +492,6 @@ export class PromotionSlotService {
       throw new BadRequestException('Extra cost cannot be negative.');
     }
 
-    if (updateDto.displayOrder !== undefined && updateDto.displayOrder < 0) {
-      throw new BadRequestException('Display order cannot be negative.');
-    }
-
     const queryRunner = this.promotionSlotRepository.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -550,19 +531,6 @@ export class PromotionSlotService {
             `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
           );
         }
-      }
-
-      // Si cambia isDefault a true, desmarcar otras opciones del mismo slot
-      if (updateDto.isDefault === true && !existingOption.isDefault) {
-        await queryRunner.manager.update(
-          PromotionSlotOption,
-          {
-            slotId: existingOption.slotId,
-            isDefault: true,
-            id: Not(optionId),
-          },
-          { isDefault: false },
-        );
       }
 
       // Actualizar la opción
@@ -627,30 +595,6 @@ export class PromotionSlotService {
         throw new BadRequestException(
           'Cannot delete the last active option of a slot. At least one option must remain active.',
         );
-      }
-
-      // Si era la opción default, marcar otra como default automáticamente
-      if (existingOption.isDefault) {
-        // Buscar otra opción activa del mismo slot
-        const otherOption = await queryRunner.manager.findOne(
-          PromotionSlotOption,
-          {
-            where: {
-              slotId: existingOption.slotId,
-              isActive: true,
-              id: Not(optionId),
-            },
-            order: { displayOrder: 'ASC' },
-          },
-        );
-
-        if (otherOption) {
-          await queryRunner.manager.update(
-            PromotionSlotOption,
-            otherOption.id,
-            { isDefault: true },
-          );
-        }
       }
 
       // Soft delete de la opción (marcar como inactiva)

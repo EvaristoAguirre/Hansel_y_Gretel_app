@@ -162,27 +162,9 @@ export class ToppingResponseDto {
   @Expose()
   name: string;
 }
-
-export class PromotionSlotAssignmentResponseDto {
-  slot: PromotionSlotResponseDto;
-  quantity: number;
-  isOptional: boolean;
-}
-
-export class PromotionSlotResponseDto {
-  @Expose()
-  name: string;
-
-  @Expose()
-  options: PromotionSlotOptionResponseDto[];
-}
-
 export class PromotionSlotOptionResponseDto {
   @Expose()
   id: string;
-
-  @Expose()
-  isDefault: boolean;
 
   @Expose()
   extraCost: number;
@@ -191,9 +173,32 @@ export class PromotionSlotOptionResponseDto {
   isActive: boolean;
 
   @Expose()
-  displayOrder: number;
-
-  @Expose()
   @Type(() => ProductResponseDto)
   product: ProductResponseDto;
+}
+export class PromotionSlotResponseDto {
+  @Expose()
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  description?: string;
+
+  @Expose()
+  @Type(() => PromotionSlotOptionResponseDto)
+  options: PromotionSlotOptionResponseDto[];
+}
+
+export class PromotionSlotAssignmentResponseDto {
+  @Expose()
+  @Type(() => PromotionSlotResponseDto)
+  slot: PromotionSlotResponseDto;
+
+  @Expose()
+  quantity: number;
+
+  @Expose()
+  isOptional: boolean;
 }
