@@ -1,3 +1,4 @@
+import { ProductMapper } from '../../productMapper';
 import {
   BadRequestException,
   Injectable,
@@ -33,7 +34,9 @@ export class ProductCreaterService {
     }
   }
 
-  async createPromotionWithSlots(data: CreatePromotionWithSlotsDto) {
+  async createPromotionWithSlots(
+    data: CreatePromotionWithSlotsDto,
+  ): Promise<ProductResponseDto> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     let isTransactionActive = false;
@@ -147,7 +150,7 @@ export class ProductCreaterService {
           'promotion',
         );
 
-      return productWithSlots;
+      return ProductMapper.toResponseDto(productWithSlots);
     } catch (error) {
       if (isTransactionActive) {
         await queryRunner.rollbackTransaction();

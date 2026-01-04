@@ -11,14 +11,14 @@ import { OrderDetails } from '../entities/order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
-import { CloseOrderDto } from 'src/DTOs/close-order.dto';
+import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';
-import { OrderDetailsDto } from 'src/DTOs/order-details.dto';
+import { OrderDetailsDto } from 'src/Order/dtos/order-details.dto';
 import { Logger } from '@nestjs/common';
 import { OrderPayment } from '../entities/order_payment.entity';
 

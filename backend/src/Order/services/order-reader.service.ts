@@ -8,7 +8,7 @@ import { OrderRepository } from '../repositories/order.repository';
 import { Order } from '../entities/order.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { OrderSummaryResponseDto } from 'src/DTOs/orderSummaryResponse.dto';
+import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { isUUID } from 'class-validator';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
 import { OrderDetails } from '../entities/order_details.entity';
