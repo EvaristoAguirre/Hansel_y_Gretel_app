@@ -39,14 +39,19 @@ export const StepperTable: React.FC<Props> = ({
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>(
     {}
   );
-  const { confirmedProducts, selectedOrderByTable, setSelectedOrderByTable, fetchOrderBySelectedTable } = useOrderContext();
+  const {
+    confirmedProducts,
+    selectedOrderByTable,
+    setSelectedOrderByTable,
+    fetchOrderBySelectedTable,
+    handleCancelOrder,
+  } = useOrderContext();
   const { setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
   const token = getAccessToken();
   const userRole = userRoleFromToken();
-
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -90,12 +95,15 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const imprimirComanda = () => {
-    console.log("Imprimiendo comanda:", confirmedProducts);
+    console.log('Imprimiendo comanda:', confirmedProducts);
     // función de impresión
   };
 
   const handleTableAvailable = async (table: ITable, token: string) => {
-    const tableEdited = await editTable({ ...table, state: TableState.AVAILABLE }, token);
+    const tableEdited = await editTable(
+      { ...table, state: TableState.AVAILABLE },
+      token
+    );
     if (tableEdited) {
       setSelectedTable(tableEdited);
       updateTable(tableEdited);
@@ -104,7 +112,6 @@ export const StepperTable: React.FC<Props> = ({
     }
     handleComplete();
   };
-
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -131,7 +138,6 @@ export const StepperTable: React.FC<Props> = ({
         return selectedTable.state === TableState.OPEN ? (
           <OrderEditor
             handleNextStep={handleNextStep}
-
             handleBackStep={handleBack}
             handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
@@ -142,7 +148,7 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         ) : selectedTable.state === TableState.CLOSED ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
-            La orden ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo
+            La orden ya pasó a "Pagada", pasar mesa a disponible e iniciar nuevo
             pedido.
           </div>
         ) : (
@@ -170,12 +176,15 @@ export const StepperTable: React.FC<Props> = ({
         if (userRole === UserRole.MOZO) {
           return (
             <div className="flex justify-center text-red-500 font-bold my-16">
-              El pago debe ser realizado por el encargado. La orden está pendiente de pago.
+              El cobro debe ser realizado por el encargado. La orden está
+              pendiente de cobro.
             </div>
           );
         }
-        return selectedOrderByTable ? <PayOrder handleComplete={handleComplete} /> :
-          (selectedTable?.state === TableState.CLOSED) && (
+        return selectedOrderByTable ? (
+          <PayOrder handleComplete={handleComplete} />
+        ) : (
+          selectedTable?.state === TableState.CLOSED && (
             <>
               <div className="flex justify-center text-red-500 font-bold my-16">
                 Orden PAGADA. Finalizó el ciclo de la orden.
@@ -185,25 +194,40 @@ export const StepperTable: React.FC<Props> = ({
                 variant="outlined"
                 sx={{
                   mt: 2,
-                  borderColor: "#7e9d8a",
-                  color: "black",
-                  "&:hover": {
-                    backgroundColor: "#f9b32d",
-                    color: "black",
+                  borderColor: '#7e9d8a',
+                  color: 'black',
+                  '&:hover': {
+                    backgroundColor: '#f9b32d',
+                    color: 'black',
                   },
                 }}
                 onClick={() => handleTableAvailable(selectedTable, token!)}
               >
                 <TableBar sx={{ mr: 1 }} />
-                Pasar Mesa a: <Box component="span" sx={{ color: "green", ml: 1 }}>Disponible</Box>
+                Pasar Mesa a:{' '}
+                <Box component="span" sx={{ color: 'green', ml: 1 }}>
+                  Disponible
+                </Box>
               </Button>
             </>
           )
+        );
+    }
+  };
+
+  // agregado para CANCELAR LA ORDEN - Eva
+  const handleCancelOrderClick = async () => {
+    if (selectedOrderByTable?.id) {
+      await handleCancelOrder(selectedOrderByTable.id);
+      // Resetear el stepper después de cancelar
+      handleReset();
+      // Volver al primer paso
+      setActiveStep(0);
     }
   };
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       <Stepper nonLinear activeStep={activeStep}>
         {steps.map((label, index) => (
           <Step key={label} completed={completed[index]}>
@@ -224,7 +248,7 @@ export const StepperTable: React.FC<Props> = ({
         ) : (
           <React.Fragment>
             <Box sx={{ mt: 2, mb: 1 }}>{renderStepContent(activeStep)}</Box>
-            <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
               <Button
                 color="inherit"
                 disabled={activeStep === 0}
@@ -233,7 +257,17 @@ export const StepperTable: React.FC<Props> = ({
               >
                 Atrás
               </Button>
-              <Box sx={{ flex: "1 1 auto" }} />
+              <Box sx={{ flex: '1 1 auto' }} />
+              {selectedOrderByTable?.id && (
+                <Button
+                  color="error"
+                  variant="outlined"
+                  onClick={handleCancelOrderClick}
+                  sx={{ mr: 1, ml: 1 }}
+                >
+                  Cancelar Orden
+                </Button>
+              )}
               <Button onClick={handleNextStep} sx={{}}>
                 Siguiente
               </Button>

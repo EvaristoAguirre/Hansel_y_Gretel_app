@@ -39,6 +39,7 @@ export class OrderService {
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(OrderDetails)
+    private readonly orderDetailsRepo: Repository<OrderDetails>,
     private readonly orderRepository: OrderRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly tableService: TableService,
