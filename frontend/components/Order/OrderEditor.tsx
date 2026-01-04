@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useState } from 'react';
 import {
   Button,
   List,
@@ -10,29 +10,38 @@ import {
   FormControlLabel,
   Switch,
   Divider,
-} from "@mui/material";
-import { Add, Remove, Delete, Comment, AutoAwesome, SpaceBar } from "@mui/icons-material";
-import { Box } from "@mui/system";
-import { useOrderContext } from "../../app/context/order.context";
-import "../../styles/pedidoEditor.css";
-import { useProducts } from "../Hooks/useProducts";
-import useOrder from "../Hooks/useOrder";
-import LoadingLottie from "../Loader/Loading";
-import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
-import AutoGrowTextarea from "../Utils/Textarea";
-import { fetchCategories } from "@/api/categories";
-import { ICategory } from "../Interfaces/ICategories";
-import { searchProducts } from "@/api/products";
-import AutoCompleteProduct from "../Utils/Autocomplete";
-import { CategorySelector } from "./filterCategories";
-import { useAuth } from "@/app/context/authContext";
-import { fetchToppingsGroupById } from "@/api/topping";
-import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
-import { formatNumber } from "../Utils/FormatNumber";
-import { normalizeNumber } from "../Utils/NormalizeNumber";
+} from '@mui/material';
+import {
+  Add,
+  Remove,
+  Delete,
+  Comment,
+  AutoAwesome,
+  SpaceBar,
+} from '@mui/icons-material';
+import { Box } from '@mui/system';
+import { useOrderContext } from '../../app/context/order.context';
+import '../../styles/pedidoEditor.css';
+import { useProducts } from '../Hooks/useProducts';
+import useOrder from '../Hooks/useOrder';
+import LoadingLottie from '../Loader/Loading';
+import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
+import AutoGrowTextarea from '../Utils/Textarea';
+import { fetchCategories } from '@/api/categories';
+import { ICategory } from '../Interfaces/ICategories';
+import { searchProducts } from '@/api/products';
+import AutoCompleteProduct from '../Utils/Autocomplete';
+import { CategorySelector } from './filterCategories';
+import { useAuth } from '@/app/context/authContext';
+import { fetchToppingsGroupById } from '@/api/topping';
+import ToppingsGroupsViewer from './ToppingsSection.tsx/ToppingsGroupsViewer';
+import { formatNumber } from '../Utils/FormatNumber';
+import { normalizeNumber } from '../Utils/NormalizeNumber';
+import { ProductResponse, SelectedProductsI } from '../Interfaces/IProducts';
+import { TypeProduct } from '../Enums/view-products';
+import { PromotionSlotSelector } from './PromotionSlotSelector';
+import { getSlotsByPromotionId } from '@/api/promotionSlot';
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
-
-
 
 export interface Product {
   price: number;
@@ -47,13 +56,21 @@ interface Props {
   handleBackStep: () => void;
   handleReset: () => void;
 }
-const OrderEditor = ({
-  handleNextStep,
-  handleCompleteStep,
-}: Props) => {
+const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const { productosDisponibles, setProductosDisponibles } = useOrder();
   const { fetchAndSetProducts, products } = useProducts();
   const { getAccessToken } = useAuth();
+
+  // Agregar al inicio del componente:
+  const [promotionSlotModal, setPromotionSlotModal] = useState<{
+    open: boolean;
+    promotion: ProductResponse | null;
+    quantity: number;
+  }>({
+    open: false,
+    promotion: null,
+    quantity: 1,
+  });
 
   useEffect(() => {
     const token = getAccessToken();
@@ -74,32 +91,81 @@ const OrderEditor = ({
     highlightedProducts,
     removeHighlightedProduct,
     selectedToppingsByProduct,
-    toppingsByProductGroup
+    toppingsByProductGroup,
   } = useOrderContext();
 
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [visibleCommentInputs, setVisibleCommentInputs] = useState<{ [key: string]: boolean }>({});
-  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [visibleCommentInputs, setVisibleCommentInputs] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>(
+    {}
+  );
   const [categories, setCategories] = useState<ICategory[]>([]);
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
 
   useEffect(() => {
-    token && fetchCategories(token).then((categories = []) => setCategories(categories));
+    token &&
+      fetchCategories(token).then((categories = []) =>
+        setCategories(categories)
+      );
   }, []);
 
-
-
   const confirmarPedido: () => Promise<void> = async () => {
-    const productDetails = selectedProducts.map((product) => ({
-      productId: product.productId,
-      quantity: product.quantity,
-      toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
-      commentOfProduct: commentInputs[product.productId]
+    const productDetails = selectedProducts.map((product) => {
+      const baseDetail: any = {
+        productId: product.productId,
+        quantity: product.quantity,
+        toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
+        commentOfProduct: commentInputs[product.productId],
+      };
 
-    }));
+      // Si el producto tiene selecciones de slots, transformarlas al formato del backend
+      if (product.slotSelections && product.slotSelections.length > 0) {
+        // Agrupar por slotId y convertir selectedProductId (singular) a selectedProductIds (plural, array)
+        // También agrupar toppingsPerUnit por slotId
+        const promotionSelectionsMap = new Map<
+          string,
+          { selectedProductIds: string[]; toppingsPerUnit: string[][] }
+        >();
+
+        product.slotSelections.forEach((selection) => {
+          const { slotId, selectedProductId, toppingsPerUnit } = selection;
+          if (!promotionSelectionsMap.has(slotId)) {
+            promotionSelectionsMap.set(slotId, {
+              selectedProductIds: [],
+              toppingsPerUnit: [],
+            });
+          }
+          const slotData = promotionSelectionsMap.get(slotId)!;
+          slotData.selectedProductIds.push(selectedProductId);
+          // toppingsPerUnit es un array de topping IDs para este producto
+          // Como cada slot tiene quantity=1 (por ahora), será un array con 1 elemento
+          slotData.toppingsPerUnit.push(toppingsPerUnit || []);
+        });
+
+        // Convertir el Map a array de PromotionSelectionDto
+        // Formato esperado: { slotId: string, selectedProductIds: string[], toppingsPerUnit?: string[][] }
+        const promotionSelections = Array.from(
+          promotionSelectionsMap.entries()
+        ).map(([slotId, { selectedProductIds, toppingsPerUnit }]) => ({
+          slotId,
+          selectedProductIds,
+          // toppingsPerUnit: Array de toppings, uno por cada producto seleccionado
+          // Si todos los arrays están vacíos, no incluir el campo
+          ...(toppingsPerUnit.some((toppings) => toppings.length > 0)
+            ? { toppingsPerUnit }
+            : {}),
+        }));
+
+        baseDetail.promotionSelections = promotionSelections;
+      }
+
+      return baseDetail;
+    }) as SelectedProductsI[]; // Cast para compatibilidad con handleEditOrder
 
     if (selectedOrderByTable) {
       setLoading(true);
@@ -147,7 +213,6 @@ const OrderEditor = ({
     const totalPrice = basePrice + toppingExtra;
     const formattedPrice = formatNumber(totalPrice);
 
-
     return formattedPrice;
   };
 
@@ -176,12 +241,14 @@ const OrderEditor = ({
     return unitaryPriceNum * quantity + toppingExtra;
   };
 
-
   useEffect(() => {
     const calcularSubtotal = () => {
       const subtotal = selectedProducts.reduce((acc, product) => {
         const toppings = toppingsByProductGroup[product.productId] ?? [];
-        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
+        return (
+          acc +
+          calcularPrecioConToppingsNumero(product, product.quantity, toppings)
+        );
       }, 0);
       setSubtotal(subtotal);
     };
@@ -189,7 +256,10 @@ const OrderEditor = ({
     const calculateTotal = () => {
       const total = confirmedProducts.reduce((acc, product) => {
         const toppings = toppingsByProductGroup[product.productId] ?? [];
-        return acc + calcularPrecioConToppingsNumero(product, product.quantity, toppings);
+        return (
+          acc +
+          calcularPrecioConToppingsNumero(product, product.quantity, toppings)
+        );
       }, 0);
       setTotal(total);
     };
@@ -197,8 +267,6 @@ const OrderEditor = ({
     calcularSubtotal();
     calculateTotal();
   }, [selectedProducts, confirmedProducts, toppingsByProductGroup]);
-
-
 
   const toggleCommentInput = (productId: string) => {
     setVisibleCommentInputs((prev) => ({
@@ -214,7 +282,7 @@ const OrderEditor = ({
    * Si el producto eliminado estaba siendo editado, se cancela la edición.
    */
   const handleDeleteProductAndComment = (productId: string) => {
-    handleDeleteSelectedProduct(productId)
+    handleDeleteSelectedProduct(productId);
     setCommentInputs((prevCommentInputs) => {
       const newCommentInputs = { ...prevCommentInputs };
       delete newCommentInputs[productId];
@@ -226,12 +294,13 @@ const OrderEditor = ({
    * Fracción de código para buscar productos en base a nombre,
    * código o categorías seleccionadas.
    */
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
-    const results = token && await searchProducts(trimmedTerm, token, categories.join(','));
+    const results =
+      token && (await searchProducts(trimmedTerm, token, categories.join(',')));
     if (results) setProductosDisponibles(results);
   };
 
@@ -245,63 +314,124 @@ const OrderEditor = ({
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
-  const [visibleToppings, setVisibleToppings] = useState<{ [productId: string]: boolean }>({});
+  const [visibleToppings, setVisibleToppings] = useState<{
+    [productId: string]: boolean;
+  }>({});
   const handleShowToppings = (productId: string) => {
-    setVisibleToppings(prev => ({
+    setVisibleToppings((prev) => ({
       ...prev,
-      [productId]: !prev[productId]
+      [productId]: !prev[productId],
     }));
   };
 
+  // Función para manejar la selección de productos, detectando promociones con slots
+  const handleProductSelection = async (product: ProductResponse) => {
+    // Verificar si es una promoción
+    if (product.type === TypeProduct.PROMO) {
+      // Verificar si tiene slots
+      if (token) {
+        try {
+          const slotsResult = await getSlotsByPromotionId(product.id, token);
+          if (
+            slotsResult.ok &&
+            slotsResult.data &&
+            slotsResult.data.length > 0
+          ) {
+            // Tiene slots, abrir modal de selección
+            setPromotionSlotModal({
+              open: true,
+              promotion: product,
+              quantity: 1,
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('Error al verificar slots de promoción:', error);
+          // Si hay error, continuar con el flujo normal
+        }
+      }
+    }
+
+    // Si no es promoción con slots, usar el flujo normal
+    await handleSelectedProducts(product);
+  };
+
+  // Función para manejar la confirmación de selección de slots
+  const handleConfirmSlotSelection = async (
+    selections: {
+      slotId: string;
+      selectedProductId: string;
+      toppingsPerUnit?: string[];
+    }[]
+  ) => {
+    if (!promotionSlotModal.promotion) return;
+
+    const promotion = promotionSlotModal.promotion;
+    const quantity = promotionSlotModal.quantity;
+
+    // Crear el producto con las selecciones de slots (incluyendo toppings)
+    const newProduct = {
+      productId: promotion.id,
+      quantity: quantity,
+      unitaryPrice: promotion.price,
+      productName: promotion.name,
+      allowsToppings: promotion.allowsToppings,
+      commentOfProduct: promotion.commentOfProduct,
+      availableToppingGroups: promotion.availableToppingGroups,
+      slotSelections: selections, // Guardar selecciones de slots con toppings
+    };
+
+    setSelectedProducts([...selectedProducts, newProduct]);
+    setPromotionSlotModal({ open: false, promotion: null, quantity: 1 });
+  };
 
   return loading ? (
     <LoadingLottie />
   ) : (
-    <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "row",
-          gap: "2rem",
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '2rem',
         }}
       >
         <div
           style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            border: "1px solid #d4c0b3",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            padding: "1rem",
-            justifyContent: "space-between",
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid #d4c0b3',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            padding: '1rem',
+            justifyContent: 'space-between',
           }}
         >
           <div
             style={{
-              height: "2rem",
-              backgroundColor: "#856D5E",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#ffffff",
-              marginBottom: "1rem",
+              height: '2rem',
+              backgroundColor: '#856D5E',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#ffffff',
+              marginBottom: '1rem',
             }}
           >
             <h2>Seleccionar productos</h2>
           </div>
-          <Box sx={{ borderRadius: "5px" }}>
+          <Box sx={{ borderRadius: '5px' }}>
             <CategorySelector
               categories={categories}
               selected={selectedCats}
               onChangeSelected={setSelectedCats}
             />
 
-
             <AutoCompleteProduct
               options={productosDisponibles}
               onSearch={(value) => handleSearch(value)}
-              onSelect={handleSelectedProducts}
+              onSelect={handleProductSelection}
             />
 
             {/* PRODUCTOS PRE-SELECCIONADOS */}
@@ -309,13 +439,13 @@ const OrderEditor = ({
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "16rem",
-                  overflowY: "auto",
-                  border: "2px solid #856D5E",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
-                  fontSize: "0.8rem",
-                  padding: "0.5rem",
+                  maxHeight: '16rem',
+                  overflowY: 'auto',
+                  border: '2px solid #856D5E',
+                  borderRadius: '5px',
+                  marginTop: '0.5rem',
+                  fontSize: '0.8rem',
+                  padding: '0.5rem',
                 }}
               >
                 <div className="w-full flex items-center justify-start mb-2 text-[#856D5E]">
@@ -326,67 +456,78 @@ const OrderEditor = ({
                   <ListItem
                     key={index}
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
-                      width: "100%",
-                      padding: "3px",
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      width: '100%',
+                      padding: '3px',
                     }}
                   >
                     {/* Línea principal de datos del producto */}
                     <div
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        color: "#ffffff",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        color: '#ffffff',
+                        justifyContent: 'space-between',
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => decreaseProductNumber(item.productId)}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <IconButton
+                          size="small"
+                          sx={{ padding: '4px' }}
+                          onClick={() => decreaseProductNumber(item.productId)}
+                        >
                           <Remove fontSize="small" color="error" />
                         </IconButton>
                         <Typography
                           sx={{
-                            border: "1px solid #856D5E",
-                            color: "#856D5E",
-                            width: "1.5rem",
-                            textAlign: "center",
-                            borderRadius: "5px",
+                            border: '1px solid #856D5E',
+                            color: '#856D5E',
+                            width: '1.5rem',
+                            textAlign: 'center',
+                            borderRadius: '5px',
                           }}
                         >
                           {item.quantity}
                         </Typography>
-                        <IconButton size="small" sx={{ padding: "4px" }} onClick={() => increaseProductNumber(item)}>
+                        <IconButton
+                          size="small"
+                          sx={{ padding: '4px' }}
+                          onClick={() => increaseProductNumber(item)}
+                        >
                           <Add fontSize="small" color="success" />
                         </IconButton>
                       </div>
 
-
                       <Tooltip title={item.productName} arrow>
                         <ListItemText
                           style={{
-                            color: "black",
-                            display: "-webkit-box",
-                            WebkitBoxOrient: "vertical",
+                            color: 'black',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
                             WebkitLineClamp: 1,
-                            overflow: "hidden",
-                            maxWidth: "15rem",
+                            overflow: 'hidden',
+                            maxWidth: '15rem',
                           }}
-                          primary={capitalizeFirstLetter(item.productName ?? "")}
+                          primary={capitalizeFirstLetter(
+                            item.productName ?? ''
+                          )}
                         />
                       </Tooltip>
 
-                      <Typography style={{ color: "black" }}>
-                        ${calcularPrecioConToppings(item, item.quantity, toppingsByProductGroup[item.productId] ?? [])}
+                      <Typography style={{ color: 'black' }}>
+                        $
+                        {calcularPrecioConToppings(
+                          item,
+                          item.quantity,
+                          toppingsByProductGroup[item.productId] ?? []
+                        )}
                       </Typography>
 
-
-
-
                       {/* ICON DE AGREGADOS */}
-                      <div style={{ display: "flex", alignItems: "center" }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
                         {item.allowsToppings && (
                           <Tooltip title="Agregados" arrow>
                             <IconButton
@@ -396,16 +537,18 @@ const OrderEditor = ({
                                 removeHighlightedProduct(item.productId);
                               }}
                               sx={{
-                                "@keyframes heartbeat": {
-                                  "0%": { transform: "scale(1)" },
-                                  "14%": { transform: "scale(1.3)" },
-                                  "28%": { transform: "scale(1)" },
-                                  "42%": { transform: "scale(1.3)" },
-                                  "70%": { transform: "scale(1)" },
+                                '@keyframes heartbeat': {
+                                  '0%': { transform: 'scale(1)' },
+                                  '14%': { transform: 'scale(1.3)' },
+                                  '28%': { transform: 'scale(1)' },
+                                  '42%': { transform: 'scale(1.3)' },
+                                  '70%': { transform: 'scale(1)' },
                                 },
-                                animation: highlightedProducts.has(item.productId)
-                                  ? "heartbeat 2.2s infinite ease-in-out"
-                                  : "none",
+                                animation: highlightedProducts.has(
+                                  item.productId
+                                )
+                                  ? 'heartbeat 2.2s infinite ease-in-out'
+                                  : 'none',
                               }}
                             >
                               <AutoAwesome />
@@ -413,13 +556,18 @@ const OrderEditor = ({
                           </Tooltip>
                         )}
                         <Tooltip title="Comentarios" arrow>
-                          <IconButton onClick={() => toggleCommentInput(item.productId)}>
-                            <Comment style={{ color: "#856D5E" }} />
+                          <IconButton
+                            onClick={() => toggleCommentInput(item.productId)}
+                          >
+                            <Comment style={{ color: '#856D5E' }} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Eliminar" arrow>
-                          <IconButton onClick={() =>
-                            handleDeleteProductAndComment(item.productId)}>
+                          <IconButton
+                            onClick={() =>
+                              handleDeleteProductAndComment(item.productId)
+                            }
+                          >
                             <Delete />
                           </IconButton>
                         </Tooltip>
@@ -427,68 +575,74 @@ const OrderEditor = ({
                     </div>
 
                     {/* Comentario */}
-                    {
-                      visibleCommentInputs[item.productId] && (
-                        <div style={{ marginTop: "0.5rem", width: "100%" }}>
-                          <AutoGrowTextarea
-                            value={
-                              commentInputs[item.productId] !== undefined
-                                ? commentInputs[item.productId]
-                                : item.commentOfProduct ?? ""
-                            }
-                            placeholder="Comentario al producto"
-                            onChange={(value) =>
-                              setCommentInputs((prev) => ({
-                                ...prev,
-                                [item.productId]: value,
-                              }))
-                            }
-                            onBlur={() =>
-                              productComment(item.productId, commentInputs[item.productId] || "")
-                            }
-                          />
-                        </div>
-                      )
-                    }
+                    {visibleCommentInputs[item.productId] && (
+                      <div style={{ marginTop: '0.5rem', width: '100%' }}>
+                        <AutoGrowTextarea
+                          value={
+                            commentInputs[item.productId] !== undefined
+                              ? commentInputs[item.productId]
+                              : item.commentOfProduct ?? ''
+                          }
+                          placeholder="Comentario al producto"
+                          onChange={(value) =>
+                            setCommentInputs((prev) => ({
+                              ...prev,
+                              [item.productId]: value,
+                            }))
+                          }
+                          onBlur={() =>
+                            productComment(
+                              item.productId,
+                              commentInputs[item.productId] || ''
+                            )
+                          }
+                        />
+                      </div>
+                    )}
                     {/* ::::::::::::::::::::::::::::: */}
                     {/* AGREGADOS */}
                     {visibleToppings[item.productId] && (
                       <ToppingsGroupsViewer
                         groups={item.availableToppingGroups ?? []}
-                        fetchGroupById={(id: string) => fetchToppingsGroupById(token as string, id)}
+                        fetchGroupById={(id: string) =>
+                          fetchToppingsGroupById(token as string, id)
+                        }
                         productId={item.productId}
                       />
                     )}
-                    <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
-
+                    <Divider color="#856D5E" sx={{ marginTop: '10px' }} />
                   </ListItem>
                 ))}
               </List>
-
             ) : (
               <Typography
                 style={{
-                  margin: "1rem 0",
-                  color: "gray",
-                  fontSize: "0.8rem",
-                  width: "100%",
+                  margin: '1rem 0',
+                  color: 'gray',
+                  fontSize: '0.8rem',
+                  width: '100%',
                 }}
               >
                 No hay productos pre-seleccionados.
               </Typography>
             )}
 
-
-            <div style={{ display: "flex", justifyContent: "space-between", flexDirection: "row" }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+              }}
+            >
               <Typography
                 style={{
-                  width: "50%",
-                  margin: "1rem 0",
-                  color: "black",
-                  fontWeight: "bold",
+                  width: '50%',
+                  margin: '1rem 0',
+                  color: 'black',
+                  fontWeight: 'bold',
                 }}
               >
-                Subtotal:  ${formatNumber(subtotal)}
+                Subtotal: ${formatNumber(subtotal)}
               </Typography>
               <FormControlLabel
                 control={
@@ -498,7 +652,11 @@ const OrderEditor = ({
                   />
                 }
                 label="Orden Prioritaria"
-                style={{ fontSize: "0.8rem", color: `${isPriority ? "red" : "gray"}`, fontWeight: "bold" }}
+                style={{
+                  fontSize: '0.8rem',
+                  color: `${isPriority ? 'red' : 'gray'}`,
+                  fontWeight: 'bold',
+                }}
               />
             </div>
             <div>
@@ -506,10 +664,10 @@ const OrderEditor = ({
                 fullWidth
                 variant="contained"
                 sx={{
-                  backgroundColor: "#f9b32d",
-                  filter: "brightness(90%)",
-                  color: "black",
-                  "&:hover": { filter: "none", color: "black" },
+                  backgroundColor: '#f9b32d',
+                  filter: 'brightness(90%)',
+                  color: 'black',
+                  '&:hover': { filter: 'none', color: 'black' },
                 }}
                 onClick={confirmarPedido}
               >
@@ -523,11 +681,11 @@ const OrderEditor = ({
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "12rem",
-                  overflowY: "auto",
-                  border: "2px solid #856D5E",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
+                  maxHeight: '12rem',
+                  overflowY: 'auto',
+                  border: '2px solid #856D5E',
+                  borderRadius: '5px',
+                  marginTop: '0.5rem',
                 }}
               >
                 <div
@@ -540,25 +698,25 @@ const OrderEditor = ({
                   <ListItem
                     key={index}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      height: "2.3rem",
-                      margin: "0.3rem 0",
-                      color: "#ffffff",
-                      borderBottom: "1px solid #856D5E",
-                      justifyContent: "space-between",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      height: '2.3rem',
+                      margin: '0.3rem 0',
+                      color: '#ffffff',
+                      borderBottom: '1px solid #856D5E',
+                      justifyContent: 'space-between',
                     }}
                   >
                     <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
+                          color: 'black',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 1,
-                          overflow: "hidden",
-                          maxWidth: "5rem",
+                          overflow: 'hidden',
+                          maxWidth: '5rem',
                         }}
                         primary={item.quantity}
                       />
@@ -566,29 +724,31 @@ const OrderEditor = ({
                     <Tooltip title={item.productName} arrow>
                       <ListItemText
                         style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
+                          color: 'black',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 1,
-                          overflow: "hidden",
+                          overflow: 'hidden',
                         }}
                         primary={item.productName}
                       />
                     </Tooltip>
-                    <Typography style={{ color: "black" }}>
-                      ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}
+                    <Typography style={{ color: 'black' }}>
+                      $
+                      {formatNumber(
+                        normalizeNumber(item.unitaryPrice) * item.quantity
+                      )}
                     </Typography>
-
                   </ListItem>
                 ))}
               </List>
             ) : (
               <Typography
                 style={{
-                  margin: "1rem 0",
-                  color: "gray",
-                  fontSize: "0.8rem",
-                  width: "100%",
+                  margin: '1rem 0',
+                  color: 'gray',
+                  fontSize: '0.8rem',
+                  width: '100%',
                 }}
               >
                 No hay productos confirmados.
@@ -596,18 +756,37 @@ const OrderEditor = ({
             )}
             <Typography
               style={{
-                width: "50%",
-                margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
+                width: '50%',
+                margin: '1rem 0',
+                color: 'black',
+                fontWeight: 'bold',
               }}
             >
-              Total:  ${formatNumber(total)}
+              Total: ${formatNumber(total)}
             </Typography>
           </Box>
         </div>
       </div>
-    </div >
+
+      {/* Modal de selección de slots para promociones */}
+      <PromotionSlotSelector
+        open={promotionSlotModal.open}
+        promotion={
+          promotionSlotModal.promotion
+            ? {
+                id: promotionSlotModal.promotion.id,
+                name: promotionSlotModal.promotion.name,
+                price: parseFloat(promotionSlotModal.promotion.price),
+              }
+            : { id: '', name: '', price: 0 }
+        }
+        quantity={promotionSlotModal.quantity}
+        onConfirm={handleConfirmSlotSelection}
+        onCancel={() =>
+          setPromotionSlotModal({ open: false, promotion: null, quantity: 1 })
+        }
+      />
+    </div>
   );
 };
 

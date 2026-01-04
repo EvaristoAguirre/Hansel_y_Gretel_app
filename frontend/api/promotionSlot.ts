@@ -1,5 +1,5 @@
-import { URI_PROMOTION_SLOT } from "@/components/URI/URI";
-import { SlotForm } from "@/components/Interfaces/IProducts";
+import { URI_PROMOTION_SLOT } from '@/components/URI/URI';
+import { SlotForm } from '@/components/Interfaces/IProducts';
 
 export interface CreateSlotPayload {
   name: string;
@@ -19,9 +19,9 @@ export const createPromotionSlot = async (
 
   try {
     const response = await fetch(URI_PROMOTION_SLOT, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
@@ -40,10 +40,10 @@ export const createPromotionSlot = async (
     const data = await response.json();
     return { ok: true, data };
   } catch (error) {
-    console.error("Error en createPromotionSlot:", error);
+    console.error('Error en createPromotionSlot:', error);
     return {
       ok: false,
-      error: "Error al conectar con el servidor",
+      error: 'Error al conectar con el servidor',
     };
   }
 };
@@ -53,9 +53,9 @@ export const getPromotionSlots = async (
 ): Promise<{ ok: boolean; data?: any[]; error?: string }> => {
   try {
     const response = await fetch(URI_PROMOTION_SLOT, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
     });
@@ -73,10 +73,47 @@ export const getPromotionSlots = async (
     const data = await response.json();
     return { ok: true, data };
   } catch (error) {
-    console.error("Error en getPromotionSlots:", error);
+    console.error('Error en getPromotionSlots:', error);
     return {
       ok: false,
-      error: "Error al conectar con el servidor",
+      error: 'Error al conectar con el servidor',
+    };
+  }
+};
+
+export const getSlotsByPromotionId = async (
+  promotionId: string,
+  token: string
+): Promise<{ ok: boolean; data?: any[]; error?: string }> => {
+  try {
+    const response = await fetch(
+      `${URI_PROMOTION_SLOT}/promotion/${promotionId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        ok: false,
+        error:
+          errorData.message ||
+          `Error ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error('Error en getSlotsByPromotionId:', error);
+    return {
+      ok: false,
+      error: 'Error al conectar con el servidor',
     };
   }
 };

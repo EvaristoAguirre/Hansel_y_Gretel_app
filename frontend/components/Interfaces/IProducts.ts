@@ -1,9 +1,9 @@
-import { GridColDef, GridRowsProp } from "@mui/x-data-grid";
-import { TypeProduct } from "../Enums/view-products";
-import { ICategory } from "./ICategories";
-import { IingredientForm, IingredientResponse } from "./Ingredients";
-import { IStockOfProduct } from "./IStock";
-import { IUnitOfMeasureStandard } from "./IUnitOfMeasure";
+import { GridColDef, GridRowsProp } from '@mui/x-data-grid';
+import { TypeProduct } from '../Enums/view-products';
+import { ICategory } from './ICategories';
+import { IingredientForm, IingredientResponse } from './Ingredients';
+import { IStockOfProduct } from './IStock';
+import { IUnitOfMeasureStandard } from './IUnitOfMeasure';
 
 interface IProduct {
   allowsToppings: boolean;
@@ -152,6 +152,11 @@ export interface SelectedProductsI {
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
   internalId?: string;
+  slotSelections?: {
+    slotId: string;
+    selectedProductId: string;
+    toppingsPerUnit?: string[];
+  }[]; // Selecciones de slots para promociones (incluye toppings del producto seleccionado)
 }
 
 export interface IConfirmedProducts {
