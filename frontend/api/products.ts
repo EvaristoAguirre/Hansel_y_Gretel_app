@@ -238,6 +238,40 @@ export const searchProductsNotProm = async (
   }
 };
 
+export const getProductById = async (
+  id: string,
+  token: string
+): Promise<{ ok: boolean; data?: any; error?: string }> => {
+  try {
+    const response = await fetch(`${URI_PRODUCT}/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        ok: false,
+        error:
+          errorData.message ||
+          `Error ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+  } catch (error) {
+    console.error('Error en getProductById:', error);
+    return {
+      ok: false,
+      error: 'Error al conectar con el servidor',
+    };
+  }
+};
+
 export const checkStock = async (form: ICheckStock, token: string) => {
   const response = await fetch(`${URI_PRODUCT}/check-stock`, {
     method: 'POST',

@@ -133,12 +133,17 @@ export class OrderService {
         const toppingsToSave: OrderDetailToppings[] = [];
         const printProducts: any[] = [];
 
-        console.log(
-          '🔍 [DEBUG] Productos recibidos en updateOrder:',
-          JSON.stringify(updateData.productsDetails, null, 2),
+        this.logger.log(
+          `[updateOrder] Total de productos recibidos: ${updateData.productsDetails.length}`,
+        );
+        this.logger.debug(
+          `[updateOrder] Payload completo: ${JSON.stringify(updateData.productsDetails, null, 2)}`,
         );
 
         for (const pd of updateData.productsDetails) {
+          this.logger.log(
+            `[updateOrder] Procesando producto ID: ${pd.productId}, Cantidad: ${pd.quantity}`,
+          );
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: pd.productId, isActive: true },
           });
@@ -148,8 +153,30 @@ export class OrderService {
           let extraCost = 0;
 
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            this.logger.log(
+              `[updateOrder] Promoción detectada: ${product.name} (ID: ${product.id})`,
+            );
+            this.logger.log(
+              `[updateOrder] Número de selecciones de slots: ${pd.promotionSelections.length}`,
+            );
+            this.logger.debug(
+              `[updateOrder] promotionSelections completo: ${JSON.stringify(pd.promotionSelections, null, 2)}`,
+            );
+
             // Calcular costos para las selecciones premium
             for (const selection of pd.promotionSelections) {
+              this.logger.log(
+                `[updateOrder] Procesando selección de slot ID: ${selection.slotId}`,
+              );
+              this.logger.log(
+                `[updateOrder] Productos seleccionados en slot: ${selection.selectedProductIds?.length || 0}`,
+              );
+              this.logger.debug(
+                `[updateOrder] selectedProductIds: ${JSON.stringify(selection.selectedProductIds)}`,
+              );
+              this.logger.debug(
+                `[updateOrder] toppingsPerUnit en selección: ${JSON.stringify(selection.toppingsPerUnit)}`,
+              );
               // Obtener la asignación del slot para esta promoción (para obtener quantity)
               const assignment = await queryRunner.manager.findOne(
                 PromotionSlotAssignment,
@@ -221,7 +248,30 @@ export class OrderService {
 
           // Guardar selecciones de promoción (crear un registro por cada producto seleccionado)
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            this.logger.log(
+              `[updateOrder] Guardando selecciones de promoción para producto: ${product.name}`,
+            );
             for (const selection of pd.promotionSelections) {
+              this.logger.log(
+                `[updateOrder] Guardando selección - Slot ID: ${selection.slotId}, Productos: ${selection.selectedProductIds?.length || 0}`,
+              );
+              if (
+                selection.toppingsPerUnit &&
+                selection.toppingsPerUnit.length > 0
+              ) {
+                this.logger.log(
+                  `[updateOrder] Toppings encontrados en selección - Total de arrays: ${selection.toppingsPerUnit.length}`,
+                );
+                selection.toppingsPerUnit.forEach((toppings, index) => {
+                  this.logger.debug(
+                    `[updateOrder] Toppings para producto índice ${index} en slot ${selection.slotId}: ${JSON.stringify(toppings)}`,
+                  );
+                });
+              } else {
+                this.logger.debug(
+                  `[updateOrder] No hay toppings en esta selección del slot ${selection.slotId}`,
+                );
+              }
               // Obtener la asignación del slot para esta promoción
               const assignment = await queryRunner.manager.findOne(
                 PromotionSlotAssignment,
@@ -274,6 +324,15 @@ export class OrderService {
                   );
                 }
 
+                // Obtener toppings para este producto específico (si existen)
+                const toppingsForThisProduct =
+                  selection.toppingsPerUnit?.[i] || [];
+                if (toppingsForThisProduct.length > 0) {
+                  this.logger.log(
+                    `[updateOrder] Producto ${selectedProductId} (índice ${i}) tiene ${toppingsForThisProduct.length} toppings: ${JSON.stringify(toppingsForThisProduct)}`,
+                  );
+                }
+
                 const promotionSelection = queryRunner.manager.create(
                   OrderPromotionSelection,
                   {
@@ -284,11 +343,27 @@ export class OrderService {
                   },
                 );
                 await queryRunner.manager.save(promotionSelection);
+                this.logger.debug(
+                  `[updateOrder] OrderPromotionSelection guardada - Slot: ${selection.slotId}, Producto: ${selectedProductId}, ExtraCost: ${option.extraCost || 0}`,
+                );
               }
             }
           }
 
           //------------------- Deducción de stock con soporte para promociones con slots
+          this.logger.log(
+            `[updateOrder] Iniciando deducción de stock para producto: ${product.name}`,
+          );
+          if (pd.toppingsPerUnit && pd.toppingsPerUnit.length > 0) {
+            this.logger.debug(
+              `[updateOrder] Toppings del producto (pd.toppingsPerUnit): ${JSON.stringify(pd.toppingsPerUnit)}`,
+            );
+          }
+          if (pd.promotionSelections && pd.promotionSelections.length > 0) {
+            this.logger.debug(
+              `[updateOrder] Selecciones de promoción enviadas a deductStock: ${JSON.stringify(pd.promotionSelections)}`,
+            );
+          }
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
@@ -296,6 +371,9 @@ export class OrderService {
             pd.promotionSelections, // Pasar selecciones de promoción si aplica
           );
 
+          this.logger.log(
+            `[updateOrder] Construyendo OrderDetail con toppings para: ${product.name}`,
+          );
           const { detail, toppingDetails, subtotal } =
             await this.orderRepository.buildOrderDetailWithToppings(
               order,
@@ -304,13 +382,16 @@ export class OrderService {
               queryRunner,
             );
           detail.commentOfProduct = pd.commentOfProduct;
+          this.logger.log(
+            `[updateOrder] OrderDetail creado - ID: ${detail.id}, Subtotal: ${subtotal}, Toppings guardados: ${toppingDetails.length}`,
+          );
           detailsToSave.push(detail);
           toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
 
           // 🖨️ Construir datos de impresión para este producto específico
-          console.log(
-            `🔍 [DEBUG] Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}`,
+          this.logger.debug(
+            `[updateOrder] Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}`,
           );
           console.log(
             `🔍 [DEBUG] toppingDetails disponibles:`,

@@ -179,13 +179,20 @@ export class OrderRepository {
 
       let totalExtraCost = 0;
 
-      console.log(
-        `🔍 [DEBUG] buildOrderDetailWithToppings - Producto: ${product.name}, Cantidad: ${quantity}`,
+      this.logger.log(
+        `[buildOrderDetailWithToppings] Procesando producto: ${product.name}, Cantidad: ${quantity}`,
       );
-      console.log(
-        `🔍 [DEBUG] toppingsPerUnit recibidos:`,
-        JSON.stringify(detailData.toppingsPerUnit, null, 2),
+      this.logger.debug(
+        `[buildOrderDetailWithToppings] DTO completo recibido: ${JSON.stringify(detailData, null, 2)}`,
       );
+      this.logger.debug(
+        `[buildOrderDetailWithToppings] toppingsPerUnit: ${JSON.stringify(detailData.toppingsPerUnit)}`,
+      );
+      if (detailData.promotionSelections) {
+        this.logger.debug(
+          `[buildOrderDetailWithToppings] promotionSelections: ${JSON.stringify(detailData.promotionSelections)}`,
+        );
+      }
 
       if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
         if (detailData.toppingsPerUnit.length !== quantity) {
@@ -196,9 +203,8 @@ export class OrderRepository {
 
         for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
           const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
-          console.log(
-            `🔍 [DEBUG] Procesando unidad ${unitIndex}, toppings:`,
-            JSON.stringify(toppingsForUnit, null, 2),
+          this.logger.debug(
+            `[buildOrderDetailWithToppings] Procesando unidad ${unitIndex}, toppings: ${JSON.stringify(toppingsForUnit)}`,
           );
 
           for (const toppingId of toppingsForUnit) {
@@ -252,10 +258,119 @@ export class OrderRepository {
               unitIndex: unitIndex,
             });
 
-            console.log(
-              `🔍 [DEBUG] Topping creado - Nombre: ${topping.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
+            this.logger.debug(
+              `[buildOrderDetailWithToppings] Topping creado - Nombre: ${topping.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
             );
             toppingDetails.push(td);
+          }
+        }
+      }
+
+      // Procesar toppings de productos dentro de slots (promotionSelections)
+      if (detailData.promotionSelections && detailData.promotionSelections.length > 0) {
+        this.logger.log(
+          `[buildOrderDetailWithToppings] Procesando toppings de productos dentro de slots`,
+        );
+
+        // Iterar sobre cada unidad del producto principal (la promoción)
+        for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+          // Para cada selección de slot
+          for (const selection of detailData.promotionSelections) {
+            if (!selection.toppingsPerUnit || selection.toppingsPerUnit.length === 0) {
+              continue;
+            }
+
+            this.logger.debug(
+              `[buildOrderDetailWithToppings] Procesando toppings del slot ${selection.slotId} para unidad ${unitIndex}`,
+            );
+
+            // Iterar sobre cada producto seleccionado en este slot
+            for (let productIndex = 0; productIndex < selection.selectedProductIds.length; productIndex++) {
+              const selectedProductId = selection.selectedProductIds[productIndex];
+              const toppingsForThisProduct = selection.toppingsPerUnit[productIndex] || [];
+
+              if (toppingsForThisProduct.length === 0) {
+                continue;
+              }
+
+              this.logger.debug(
+                `[buildOrderDetailWithToppings] Producto ${selectedProductId} (índice ${productIndex}) tiene ${toppingsForThisProduct.length} toppings en unidad ${unitIndex}`,
+              );
+
+              // Obtener el producto seleccionado para obtener su configuración de toppings
+              const selectedProduct = await qr.manager.findOne(Product, {
+                where: { id: selectedProductId, isActive: true },
+              });
+
+              if (!selectedProduct) {
+                this.logger.warn(
+                  `[buildOrderDetailWithToppings] Producto seleccionado ${selectedProductId} no encontrado, saltando toppings`,
+                );
+                continue;
+              }
+
+              // Procesar cada topping
+              for (const toppingId of toppingsForThisProduct) {
+                const topping = await qr.manager.findOne(Ingredient, {
+                  where: { id: toppingId, isActive: true },
+                  relations: ['toppingsGroups'],
+                });
+
+                if (!topping) {
+                  this.logger.warn(
+                    `[buildOrderDetailWithToppings] Topping ${toppingId} no encontrado`,
+                  );
+                  continue;
+                }
+
+                const toppingGroup = topping.toppingsGroups?.[0];
+                if (!toppingGroup) {
+                  this.logger.warn(
+                    `[buildOrderDetailWithToppings] El topping ${topping.name} no tiene grupo asignado`,
+                  );
+                  continue;
+                }
+
+                // Obtener la configuración de toppings del PRODUCTO SELECCIONADO (no de la promoción)
+                const config = await qr.manager.findOne(
+                  ProductAvailableToppingGroup,
+                  {
+                    where: {
+                      product: { id: selectedProduct.id },
+                      toppingGroup: { id: toppingGroup.id },
+                    },
+                    relations: ['unitOfMeasure'],
+                  },
+                );
+
+                if (!config) {
+                  this.logger.warn(
+                    `[buildOrderDetailWithToppings] El producto ${selectedProduct.name} no tiene configuración para el grupo de topping ${toppingGroup.name}`,
+                  );
+                  continue;
+                }
+
+                if (
+                  config.settings?.chargeExtra &&
+                  typeof config.settings.extraCost === 'number'
+                ) {
+                  totalExtraCost += Number(config.settings.extraCost);
+                }
+
+                const td = qr.manager.create(OrderDetailToppings, {
+                  topping,
+                  orderDetails: null,
+                  unitOfMeasure: config.unitOfMeasure,
+                  unitOfMeasureName: config.unitOfMeasure?.name,
+                  unitIndex: unitIndex, // unitIndex se refiere a la unidad del producto principal (promoción)
+                });
+
+                this.logger.debug(
+                  `[buildOrderDetailWithToppings] Topping de producto seleccionado creado - Nombre: ${topping.name}, Producto: ${selectedProduct.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
+                );
+                toppingDetails.push(td);
+              }
+            }
           }
         }
       }
