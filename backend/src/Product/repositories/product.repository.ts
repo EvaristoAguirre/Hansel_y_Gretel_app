@@ -995,9 +995,18 @@ export class ProductRepository {
     // Actualizar slots si están presentes
     if (slots !== undefined) {
       await this.updatePromotionSlots(queryRunner, promotion, slots);
+      // Recalcular el costo basado en los slots actualizados
+      await this.calculatePromotionCostWithSlots(queryRunner, promotion);
     }
 
+    // Desvincular relaciones antes de guardar para evitar actualizaciones no deseadas
+    // Las asignaciones de slots ya fueron manejadas manualmente
+    const tempAssignments = promotion.promotionSlotAssignments;
+    promotion.promotionSlotAssignments = undefined;
+
     await queryRunner.manager.save(promotion);
+
+    // Recargar la promoción completa con todas sus relaciones actualizadas
     const updatedPromotion = await this.getProductWithRelationsByQueryRunner(
       id,
       'promotion',
@@ -1474,15 +1483,53 @@ export class ProductRepository {
         }
       }
 
-      // Obtener los IDs de slots que ya tienen asignación
-      const existingSlotIds = existingAssignments.map((a) => a.slotId);
+      // Contar ocurrencias de cada slot en el array de entrada
+      const slotCounts = new Map<string, number>();
+      for (const slotId of incomingSlotIds) {
+        slotCounts.set(slotId, (slotCounts.get(slotId) || 0) + 1);
+      }
 
-      // Asignaciones a eliminar (existen en BD pero no en la actualización)
+      // Crear un mapa de asignaciones existentes por slotId para acceso rápido
+      const existingAssignmentsMap = new Map<string, PromotionSlotAssignment>();
+      for (const assignment of existingAssignments) {
+        existingAssignmentsMap.set(assignment.slotId, assignment);
+      }
+
+      // Procesar cada slot único
+      for (const [slotId, quantity] of slotCounts.entries()) {
+        const existingAssignment = existingAssignmentsMap.get(slotId);
+
+        if (existingAssignment) {
+          // Si ya existe una asignación, actualizar su quantity
+          existingAssignment.quantity = quantity;
+          await queryRunner.manager.save(
+            PromotionSlotAssignment,
+            existingAssignment,
+          );
+        } else {
+          // Si no existe, crear una nueva asignación
+          const newAssignment = queryRunner.manager.create(
+            PromotionSlotAssignment,
+            {
+              promotionId: promotion.id,
+              slotId,
+              quantity,
+              isOptional: false, // Por defecto no opcional
+            },
+          );
+          await queryRunner.manager.save(
+            PromotionSlotAssignment,
+            newAssignment,
+          );
+        }
+      }
+
+      // Eliminar asignaciones que ya no están en la lista de entrada
+      const incomingSlotIdsSet = new Set(slotCounts.keys());
       const assignmentsToRemove = existingAssignments.filter(
-        (assignment) => !incomingSlotIds.includes(assignment.slotId),
+        (assignment) => !incomingSlotIdsSet.has(assignment.slotId),
       );
 
-      // Eliminar solo las asignaciones (NO hacer soft delete del slot)
       if (assignmentsToRemove.length > 0) {
         const assignmentIdsToRemove = assignmentsToRemove.map((a) => a.id);
         await queryRunner.manager.delete(
@@ -1490,26 +1537,6 @@ export class ProductRepository {
           assignmentIdsToRemove,
         );
       }
-
-      // Crear asignaciones para slots nuevos (que no tenían asignación previa)
-      const newSlotIds = incomingSlotIds.filter(
-        (slotId) => !existingSlotIds.includes(slotId),
-      );
-
-      if (newSlotIds.length > 0) {
-        const newAssignments = newSlotIds.map((slotId) =>
-          queryRunner.manager.create(PromotionSlotAssignment, {
-            promotionId: promotion.id,
-            slotId,
-            quantity: 1,
-            isOptional: true,
-          }),
-        );
-
-        await queryRunner.manager.save(PromotionSlotAssignment, newAssignments);
-      }
-
-      // Las asignaciones existentes que siguen en la lista se mantienen sin cambios
     } catch (error) {
       this.logger.error('updatePromotionSlots', error);
       throw error;
@@ -1780,6 +1807,69 @@ export class ProductRepository {
         });
         await queryRunner.manager.save(PromotionSlotOption, newOption);
       }
+    }
+  }
+
+  /**
+   * Calcula el costo de una promoción basándose en los slots asignados
+   * El costo se calcula como el promedio de los costos de las opciones de cada slot
+   */
+  private async calculatePromotionCostWithSlots(
+    queryRunner: QueryRunner,
+    promotion: Product,
+  ): Promise<void> {
+    try {
+      let totalCost = 0;
+
+      // Obtener las asignaciones de slots de la promoción con sus relaciones
+      const assignments = await queryRunner.manager.find(
+        PromotionSlotAssignment,
+        {
+          where: { promotionId: promotion.id },
+          relations: ['slot', 'slot.options', 'slot.options.product'],
+        },
+      );
+
+      // Calcular el costo para cada slot asignado
+      for (const assignment of assignments) {
+        const slot = assignment.slot;
+
+        if (!slot || !slot.options || slot.options.length === 0) {
+          continue;
+        }
+
+        // Filtrar solo opciones activas con productos válidos
+        const activeOptions = slot.options.filter(
+          (option) => option.isActive && option.product,
+        );
+
+        if (activeOptions.length === 0) {
+          continue;
+        }
+
+        // Calcular el costo promedio del slot
+        // Para cada opción: costo del producto + extraCost
+        const slotCosts: number[] = [];
+
+        for (const option of activeOptions) {
+          const optionCost = parseFloat(String(option.product.cost || 0));
+          const extraCost = parseFloat(String(option.extraCost || 0));
+          slotCosts.push(optionCost + extraCost);
+        }
+
+        // Calcular promedio del slot
+        const slotAverageCost =
+          slotCosts.reduce((sum, cost) => sum + cost, 0) / slotCosts.length;
+
+        // Multiplicar por la cantidad del slot en la promoción
+        totalCost += slotAverageCost * assignment.quantity;
+      }
+
+      // Actualizar el costo de la promoción
+      promotion.cost = totalCost;
+    } catch (error) {
+      this.logger.error('calculatePromotionCostWithSlots', error);
+      throw error;
     }
   }
 }

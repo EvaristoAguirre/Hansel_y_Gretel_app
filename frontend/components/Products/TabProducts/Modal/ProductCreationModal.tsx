@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Box,
@@ -11,32 +11,32 @@ import {
   Chip,
   DialogActions,
   Tooltip,
-} from "@mui/material";
-import Grid from "@mui/material/Grid";
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   ProductForm,
   ProductForPromo,
   ProductResponse,
   ProductToppingsGroupDto,
   SlotForPromo,
-} from "@/components/Interfaces/IProducts";
-import { ICategory } from "@/components/Interfaces/ICategories";
+} from '@/components/Interfaces/IProducts';
+import { ICategory } from '@/components/Interfaces/ICategories';
 import {
   FormTypeProduct,
   TabProductKey,
   TypeProduct,
-} from "@/components/Enums/view-products";
-import { getProductByCode, getProductByName } from "@/api/products";
-import { useAuth } from "@/app/context/authContext";
-import { IingredientForm } from "@/components/Interfaces/Ingredients";
-import IngredientDialog from "./IngredientDialog";
-import InputsPromo from "./InputsPromo";
-import InputsPromoWithSlots from "./InputsPromoWithSlots";
-import { IUnitOfMeasureForm } from "@/components/Interfaces/IUnitOfMeasure";
-import { NumericFormat } from "react-number-format";
-import { CheckAllowsToppings } from "./Toppings/CheckAllowsToppings";
-import { AvailableToppingsGroups } from "./Toppings/AvailableToppingsGroups";
-import NumericInput from "@/components/Utils/NumericInput";
+} from '@/components/Enums/view-products';
+import { getProductByCode, getProductByName } from '@/api/products';
+import { useAuth } from '@/app/context/authContext';
+import { IingredientForm } from '@/components/Interfaces/Ingredients';
+import IngredientDialog from './IngredientDialog';
+import InputsPromo from './InputsPromo';
+import InputsPromoWithSlots from './InputsPromoWithSlots';
+import { IUnitOfMeasureForm } from '@/components/Interfaces/IUnitOfMeasure';
+import { NumericFormat } from 'react-number-format';
+import { CheckAllowsToppings } from './Toppings/CheckAllowsToppings';
+import { AvailableToppingsGroups } from './Toppings/AvailableToppingsGroups';
+import NumericInput from '@/components/Utils/NumericInput';
 
 interface ProductCreationModalProps {
   open: boolean;
@@ -87,8 +87,9 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   useEffect(() => {
     if (modalType === FormTypeProduct.EDIT) {
       if (form.type === TypeProduct.PROMO) {
-        // Si es promo y tiene slots, abrir en COMBO
-        if (form.slots && form.slots.length > 0) {
+        // Mejorar la detección de slots: verificar tanto por existencia como por longitud
+        const hasSlots = Array.isArray(form.slots) && form.slots.length > 0;
+        if (hasSlots) {
           setTabValue(TabProductKey.COMBO);
         } else {
           setTabValue(TabProductKey.PROMO);
@@ -101,25 +102,28 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       } else {
         setTabValue(TabProductKey.SIMPLE_PRODUCT);
       }
+    } else {
+      // Resetear a la pestaña por defecto cuando no es edición
+      setTabValue(TabProductKey.SIMPLE_PRODUCT);
     }
-  }, [modalType, form.type, form.ingredients, form.slots]);
+  }, [modalType, form.type, form.ingredients?.length, form.slots?.length]);
 
   const [errors, setErrors] = useState<Errors>({
-    code: "",
-    name: "",
-    price: "",
-    baseCost: "",
-    cost: "",
-    categories: "",
-    products: "",
-    ingredients: "",
-    isActive: "",
-    id: "",
-    availableToppingGroups: "",
-    toppingsSettings: "",
-    unitOfMeasure: "",
-    unitOfMeasureId: "",
-    unitOfMeasureConversions: "",
+    code: '',
+    name: '',
+    price: '',
+    baseCost: '',
+    cost: '',
+    categories: '',
+    products: '',
+    ingredients: '',
+    isActive: '',
+    id: '',
+    availableToppingGroups: '',
+    toppingsSettings: '',
+    unitOfMeasure: '',
+    unitOfMeasureId: '',
+    unitOfMeasureConversions: '',
   });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
@@ -139,70 +143,70 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   useEffect(() => {
     if (!form.allowsToppings) {
-      onChange("availableToppingGroups", []);
+      onChange('availableToppingGroups', []);
     }
   }, [form.allowsToppings]);
 
   const fieldLabels: Record<keyof ProductForm, string> = {
-    code: "Código",
-    name: "Nombre",
-    description: "Descripción",
-    price: "Precio",
-    baseCost: "Costo Base",
-    cost: "Costo Total",
-    categories: "Categoría",
-    ingredients: "Ingredientes",
-    isActive: "Inactivo",
-    id: "ID",
+    code: 'Código',
+    name: 'Nombre',
+    description: 'Descripción',
+    price: 'Precio',
+    baseCost: 'Costo Base',
+    cost: 'Costo Total',
+    categories: 'Categoría',
+    ingredients: 'Ingredientes',
+    isActive: 'Inactivo',
+    id: 'ID',
   };
 
   const validateField = async (field: string, value: any) => {
-    let error = "";
+    let error = '';
 
-    if (field === "categories" && Array.isArray(value) && value.length === 0) {
-      error = "Debe seleccionar al menos una categoría";
+    if (field === 'categories' && Array.isArray(value) && value.length === 0) {
+      error = 'Debe seleccionar al menos una categoría';
     }
-    if (["code", "name", "price", "baseCost"].includes(field)) {
+    if (['code', 'name', 'price', 'baseCost'].includes(field)) {
       if (!value) {
-        error = "Este campo es obligatorio";
-      } else if (field === "code") {
+        error = 'Este campo es obligatorio';
+      } else if (field === 'code') {
         setIsCheckingCode(true);
         try {
           if (token) {
             const result = await getProductByCode(value, token);
             if (result.ok) {
-              error = "El código ya está en uso";
+              error = 'El código ya está en uso';
             } else if (result.status === 404) {
-              error = "";
+              error = '';
             } else {
-              error = result.error || "Error al validar el código";
+              error = result.error || 'Error al validar el código';
             }
           }
         } catch (err) {
-          console.error("Error al validar el código:", err);
-          error = "Error al conectar con el servidor";
+          console.error('Error al validar el código:', err);
+          error = 'Error al conectar con el servidor';
         } finally {
           setIsCheckingCode(false);
         }
-      } else if ((field === "price" || field === "baseCost") && value <= 0) {
-        error = "Debe ser un número positivo";
-      } else if (field === "name") {
+      } else if ((field === 'price' || field === 'baseCost') && value <= 0) {
+        error = 'Debe ser un número positivo';
+      } else if (field === 'name') {
         if (token) {
           const result = await getProductByName(value, token);
           if (result.ok) {
-            error = "El nombre ya está en uso";
+            error = 'El nombre ya está en uso';
           } else if (result.status === 404) {
-            error = "";
+            error = '';
           } else {
-            error = result.error || "Error al validar el nombre";
+            error = result.error || 'Error al validar el nombre';
           }
         }
       }
 
       setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
     }
-    if (field === "products" && Array.isArray(value) && value.length === 0) {
-      error = "Debe seleccionar al menos un producto";
+    if (field === 'products' && Array.isArray(value) && value.length === 0) {
+      error = 'Debe seleccionar al menos un producto';
       setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
     }
   };
@@ -217,10 +221,10 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     return form.availableToppingGroups.every(
       (group) =>
         !!group.toppingsGroupId &&
-        typeof group.quantityOfTopping === "number" &&
+        typeof group.quantityOfTopping === 'number' &&
         group.quantityOfTopping > 0 &&
         group.settings &&
-        typeof group.settings.maxSelection === "number" &&
+        typeof group.settings.maxSelection === 'number' &&
         group.settings.maxSelection >= 1 &&
         group.unitOfMeasureId
     );
@@ -230,32 +234,32 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     const hasErrors = Object.values(currentErrors).some((error) => error);
     const validationFields: { [key in TabProductKey]: string[] } = {
       [TabProductKey.SIMPLE_PRODUCT]: [
-        "code",
-        "name",
-        "price",
-        "baseCost",
-        "categories",
-        "availableToppingGroups",
+        'code',
+        'name',
+        'price',
+        'baseCost',
+        'categories',
+        'availableToppingGroups',
       ],
       [TabProductKey.PRODUCT_WITH_INGREDIENT]: [
-        "code",
-        "name",
-        "price",
-        "ingredients",
+        'code',
+        'name',
+        'price',
+        'ingredients',
       ],
-      [TabProductKey.PROMO]: ["code", "name", "price", "products"],
-      [TabProductKey.COMBO]: ["code", "name", "price", "slots"],
+      [TabProductKey.PROMO]: ['code', 'name', 'price', 'products'],
+      [TabProductKey.COMBO]: ['code', 'name', 'price', 'slots'],
     };
 
     const hasEmptyFields =
       validationFields[tabValue]?.some((field) => {
-        if (field === "products") {
+        if (field === 'products') {
           return !Array.isArray(form.products) || form.products.length === 0;
-        } else if (field === "ingredients") {
+        } else if (field === 'ingredients') {
           return (
             !Array.isArray(form.ingredients) || form.ingredients.length === 0
           );
-        } else if (field === "slots") {
+        } else if (field === 'slots') {
           return !Array.isArray(form.slots) || form.slots.length === 0;
         }
         return !form[field as keyof ProductForm];
@@ -276,25 +280,25 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
       (newValue === TabProductKey.PROMO || newValue === TabProductKey.COMBO) &&
       form.type !== TypeProduct.PROMO
     ) {
-      onChange("type", TypeProduct.PROMO);
+      onChange('type', TypeProduct.PROMO);
     } else if (
       newValue !== TabProductKey.PROMO &&
       newValue !== TabProductKey.COMBO &&
       form.type === TypeProduct.PROMO
     ) {
-      onChange("type", TypeProduct.PRODUCT);
+      onChange('type', TypeProduct.PRODUCT);
     }
   };
 
   const handleSaveIngredients = (ingredientsForm: IingredientForm[]) => {
-    onChange("ingredients", ingredientsForm);
+    onChange('ingredients', ingredientsForm);
   };
   const handleProductsPromo = (productsForm: ProductForPromo[]) => {
-    onChange("products", productsForm);
+    onChange('products', productsForm);
   };
 
   const handleSlotsPromo = (slotsForm: SlotForPromo[]) => {
-    onChange("slots", slotsForm);
+    onChange('slots', slotsForm);
   };
 
   const handleSaveProduct = async () => {
@@ -346,45 +350,45 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   const getButtonText = () => {
     if (modalType === FormTypeProduct.CREATE) {
       if (tabValue === TabProductKey.COMBO) {
-        return "Crear promo con slots";
+        return 'Crear promo con slots';
       }
       return form.type === TypeProduct.PRODUCT
-        ? "Crear producto"
-        : "Crear promo";
+        ? 'Crear producto'
+        : 'Crear promo';
     }
     if (modalType === FormTypeProduct.EDIT) {
       if (tabValue === TabProductKey.COMBO) {
-        return "Guardar promo con slots";
+        return 'Guardar promo con slots';
       }
       return form.type === TypeProduct.PRODUCT ||
         form.type === TypeProduct.SIMPLE
-        ? "Guardar producto"
-        : "Guardar promo";
+        ? 'Guardar producto'
+        : 'Guardar promo';
     }
-    return "Guardar producto";
+    return 'Guardar producto';
   };
 
-  const fieldsToRender = ["name", "code", "price"];
+  const fieldsToRender = ['name', 'code', 'price'];
 
   if (tabValue === TabProductKey.SIMPLE_PRODUCT) {
-    fieldsToRender.push("baseCost", "cost");
+    fieldsToRender.push('baseCost', 'cost');
   }
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
     >
       <Box
         sx={{
           width: 800,
-          bgcolor: "background.paper",
+          bgcolor: 'background.paper',
           p: 4,
-          mx: "auto",
+          mx: 'auto',
           mt: 2,
-          maxHeight: "90vh",
-          overflowY: "auto",
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}
       >
         <Tabs
@@ -417,12 +421,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         <Grid container spacing={1} mt={1}>
           {fieldsToRender.map((field, index) => (
             <Grid item xs={12} sm={6} key={field}>
-              {field === "price" || field === "baseCost" ? (
+              {field === 'price' || field === 'baseCost' ? (
                 <Tooltip
                   title={
-                    field === "baseCost"
-                      ? "Costo base del producto, sin incluir agregados"
-                      : ""
+                    field === 'baseCost'
+                      ? 'Costo base del producto, sin incluir agregados'
+                      : ''
                   }
                   arrow
                   placement="top"
@@ -444,13 +448,13 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               ) : (
                 <Tooltip
                   title={
-                    field === "cost"
-                      ? "Costo total calculado automáticamente, incluye el Costo Base + Costo Agregados. No se puede editar"
-                      : ""
+                    field === 'cost'
+                      ? 'Costo total calculado automáticamente, incluye el Costo Base + Costo Agregados. No se puede editar'
+                      : ''
                   }
                   arrow
                   placement="top"
-                  disableHoverListener={field !== "cost"}
+                  disableHoverListener={field !== 'cost'}
                   enterDelay={150}
                 >
                   <Box>
@@ -458,49 +462,49 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                       fullWidth
                       label={fieldLabels[field]}
                       type={
-                        ["price", "baseCost", "cost"].includes(field)
-                          ? "number"
-                          : "text"
+                        ['price', 'baseCost', 'cost'].includes(field)
+                          ? 'number'
+                          : 'text'
                       }
                       inputProps={{
                         onKeyDown: (e) => {
                           if (
-                            ["price", "baseCost", "code", "cost"].includes(
+                            ['price', 'baseCost', 'code', 'cost'].includes(
                               field
                             ) &&
-                            ["e", "E", "+", "-"].includes(e.key)
+                            ['e', 'E', '+', '-'].includes(e.key)
                           ) {
                             e.preventDefault();
                           }
                         },
-                        readOnly: field === "cost",
-                        style: field === "cost" ? { cursor: "default" } : {},
+                        readOnly: field === 'cost',
+                        style: field === 'cost' ? { cursor: 'default' } : {},
                       }}
-                      value={form[field] ?? ""}
+                      value={form[field] ?? ''}
                       onChange={(e) => {
-                        const value = ["price", "baseCost"].includes(field)
-                          ? e.target.value === ""
+                        const value = ['price', 'baseCost'].includes(field)
+                          ? e.target.value === ''
                             ? null
                             : parseFloat(e.target.value)
-                          : field === "code"
-                          ? e.target.value === ""
+                          : field === 'code'
+                          ? e.target.value === ''
                             ? null
                             : parseInt(e.target.value, 10)
                           : e.target.value;
                         onChange(field as keyof ProductForm, value);
-                        if (!["code", "name"].includes(field)) {
+                        if (!['code', 'name'].includes(field)) {
                           validateField(field, value);
                         }
                       }}
                       onBlur={(e) => {
-                        if (["code", "name"].includes(field)) {
+                        if (['code', 'name'].includes(field)) {
                           validateField(field, e.target.value);
                         }
                       }}
                       error={!!errors[field]}
                       helperText={
-                        isCheckingCode && field === "code"
-                          ? "Verificando código..."
+                        isCheckingCode && field === 'code'
+                          ? 'Verificando código...'
                           : errors[field]
                       }
                       variant="outlined"
@@ -517,8 +521,8 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               label="Descripción"
               multiline
               minRows={2}
-              value={form.description ?? ""}
-              onChange={(e) => onChange("description", e.target.value)}
+              value={form.description ?? ''}
+              onChange={(e) => onChange('description', e.target.value)}
               variant="outlined"
               size="small"
             />
@@ -533,7 +537,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                 getOptionLabel={(option) => option.name}
                 value={form.categories}
                 onChange={(_, newValue) => {
-                  onChange("categories", newValue);
+                  onChange('categories', newValue);
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -547,12 +551,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
                   value.map((option, index) => (
                     <Chip
                       {...getTagProps({ index })}
-                      key={typeof option === "string" ? option : option.id}
+                      key={typeof option === 'string' ? option : option.id}
                       label={option.name}
                       sx={{
-                        backgroundColor: "#f3d49ab8",
-                        color: "black",
-                        fontWeight: "bold",
+                        backgroundColor: '#f3d49ab8',
+                        color: 'black',
+                        fontWeight: 'bold',
                       }}
                     />
                   ))
@@ -595,7 +599,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
             <CheckAllowsToppings
               allowsToppings={form.allowsToppings}
               setAllowsToppings={(value) => {
-                onChange("allowsToppings", value as boolean);
+                onChange('allowsToppings', value as boolean);
               }}
             />
 
@@ -603,7 +607,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               <AvailableToppingsGroups
                 value={form.availableToppingGroups ?? []}
                 onChange={(updatedGroups) => {
-                  onChange("availableToppingGroups", updatedGroups);
+                  onChange('availableToppingGroups', updatedGroups);
                   validateForm();
                 }}
                 units={units}
@@ -617,7 +621,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           </>
         )}
 
-        <DialogActions sx={{ justifyContent: "space-between" }}>
+        <DialogActions sx={{ justifyContent: 'space-between' }}>
           <Button
             sx={{ mt: 2 }}
             onClick={() => {

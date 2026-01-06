@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,15 +7,15 @@ import {
   Chip,
   CircularProgress,
   FormControl,
-} from "@mui/material";
+} from '@mui/material';
 import {
   ProductForm,
   SlotResponse,
   SlotForPromo,
-} from "@/components/Interfaces/IProducts";
-import { TabProductKey } from "@/components/Enums/view-products";
-import { useAuth } from "@/app/context/authContext";
-import { getPromotionSlots } from "@/api/promotionSlot";
+} from '@/components/Interfaces/IProducts';
+import { TabProductKey } from '@/components/Enums/view-products';
+import { useAuth } from '@/app/context/authContext';
+import { getPromotionSlots } from '@/api/promotionSlot';
 
 interface InputsPromoWithSlotsProps {
   form: ProductForm;
@@ -48,7 +48,7 @@ const InputsPromoWithSlots: React.FC<InputsPromoWithSlotsProps> = ({
       if (result.ok && result.data) {
         setAvailableSlots(result.data);
       } else {
-        setError(result.error || "Error al cargar los slots");
+        setError(result.error || 'Error al cargar los slots');
       }
 
       setLoading(false);
@@ -57,10 +57,28 @@ const InputsPromoWithSlots: React.FC<InputsPromoWithSlotsProps> = ({
     fetchSlots();
   }, [getAccessToken]);
 
-  // Sincronizar slots seleccionados con el form al cargar
+  // Sincronizar slots seleccionados con el form al cargar o cuando cambie
   useEffect(() => {
-    if (form.slots && form.slots.length > 0 && selectedSlots.length === 0) {
-      setSelectedSlots(form.slots);
+    if (form.slots && Array.isArray(form.slots) && form.slots.length > 0) {
+      // Comparar por contenido, no solo por longitud
+      const currentSlotIds = selectedSlots
+        .map((s) => s.slotId)
+        .sort()
+        .join(',');
+      const formSlotIds = form.slots
+        .map((s) => s.slotId)
+        .sort()
+        .join(',');
+
+      if (currentSlotIds !== formSlotIds) {
+        setSelectedSlots(form.slots);
+      }
+    } else if (
+      (!form.slots || form.slots.length === 0) &&
+      selectedSlots.length > 0
+    ) {
+      // Limpiar si el form no tiene slots pero selectedSlots sí tiene
+      setSelectedSlots([]);
     }
   }, [form.slots]);
 
@@ -95,8 +113,8 @@ const InputsPromoWithSlots: React.FC<InputsPromoWithSlotsProps> = ({
         // Si no se encuentra, crear un objeto temporal
         return {
           id: slot.slotId,
-          name: slot.name || "",
-          description: "",
+          name: slot.name || '',
+          description: '',
           isActive: true,
           products: [],
         } as SlotResponse;
@@ -151,9 +169,9 @@ const InputsPromoWithSlots: React.FC<InputsPromoWithSlotsProps> = ({
                 key={`${option.id}-${index}`}
                 label={option.name}
                 sx={{
-                  backgroundColor: "#a8d5ba",
-                  color: "black",
-                  fontWeight: "bold",
+                  backgroundColor: '#a8d5ba',
+                  color: 'black',
+                  fontWeight: 'bold',
                 }}
               />
             ))
