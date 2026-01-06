@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,14 +14,14 @@ import {
   CircularProgress,
   Checkbox,
   Chip,
-} from '@mui/material';
-import { useAuth } from '@/app/context/authContext';
-import { getSlotsByPromotionId } from '@/api/promotionSlot';
-import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
-import { getProductById } from '@/api/products';
-import { fetchToppingsGroupById } from '@/api/topping';
-import { IProductToppingsGroupResponse } from '../Interfaces/IProducts';
-import { ITopping } from '../Interfaces/IToppings';
+} from "@mui/material";
+import { useAuth } from "@/app/context/authContext";
+import { getSlotsByPromotionId } from "@/api/promotionSlot";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
+import { getProductById } from "@/api/products";
+import { fetchToppingsGroupById } from "@/api/topping";
+import { IProductToppingsGroupResponse } from "../Interfaces/IProducts";
+import { ITopping } from "../Interfaces/IToppings";
 
 interface SlotOption {
   id: string;
@@ -125,16 +125,13 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         setSelections(initialSelections);
       }
     } catch (error) {
-      console.error('Error al obtener slots:', error);
+      console.error("Error al obtener slots:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectionChange = async (
-    slotId: string,
-    productId: string
-  ) => {
+  const handleSelectionChange = async (slotId: string, productId: string) => {
     setSelections((prev) => ({
       ...prev,
       [slotId]: productId,
@@ -162,15 +159,12 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           }));
         }
       } catch (error) {
-        console.error('Error al obtener información del producto:', error);
+        console.error("Error al obtener información del producto:", error);
       }
     }
   };
 
-  const handleToggleToppingGroup = async (
-    slotId: string,
-    groupId: string
-  ) => {
+  const handleToggleToppingGroup = async (slotId: string, groupId: string) => {
     const key = `${slotId}-${groupId}`;
     setVisibleToppingGroups((prev) => ({
       ...prev,
@@ -188,7 +182,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           }));
         }
       } catch (error) {
-        console.error('Error al cargar toppings del grupo:', error);
+        console.error("Error al cargar toppings del grupo:", error);
       }
     }
   };
@@ -233,7 +227,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
       alert(
         `Por favor selecciona productos para: ${missingSlots
           .map((s) => s.name)
-          .join(', ')}`
+          .join(", ")}`
       );
       return;
     }
@@ -248,7 +242,8 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         return {
           slotId,
           selectedProductId,
-          toppingsPerUnit: toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
+          toppingsPerUnit:
+            toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
         };
       }
     );
@@ -260,79 +255,75 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
     <Dialog
       open={open}
       onClose={onCancel}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '8px',
+          borderRadius: "8px",
         },
       }}
     >
       <DialogTitle
         sx={{
-          backgroundColor: '#856D5E',
-          color: '#ffffff',
-          textAlign: 'center',
-          py: 2,
+          backgroundColor: "#856D5E",
+          color: "#ffffff",
+          textAlign: "center",
+          py: 1.5,
         }}
       >
-        <Typography variant="h6">
+        <Typography variant="subtitle1" fontWeight="bold">
           {capitalizeFirstLetter(promotion.name)} - Seleccionar Opciones
         </Typography>
-        <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
+        <Typography variant="caption" sx={{ opacity: 0.9 }}>
           Cantidad: {quantity}
         </Typography>
       </DialogTitle>
 
-      <DialogContent sx={{ mt: 2, minHeight: '400px' }}>
+      <DialogContent sx={{ pt: 2, pb: 1 }}>
         {loading ? (
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: '300px',
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 4,
             }}
           >
-            <CircularProgress />
+            <CircularProgress size={32} />
           </Box>
         ) : slots.length === 0 ? (
-          <Typography sx={{ textAlign: 'center', py: 4, color: 'gray' }}>
+          <Typography sx={{ textAlign: "center", py: 2, color: "gray" }}>
             No hay slots disponibles para esta promoción
           </Typography>
         ) : (
           slots.map((slot, index) => (
-            <Box key={slot.id} sx={{ mb: 3 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: 1,
-                }}
+            <Box key={slot.id} sx={{ mb: 2 }}>
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: "bold", color: "#856D5E", mb: 0.5 }}
               >
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: 'bold', color: '#856D5E' }}
-                >
-                  {capitalizeFirstLetter(slot.name)}
-                  {slot.isOptional && (
-                    <Typography
-                      component="span"
-                      sx={{ ml: 1, fontSize: '0.8rem', color: 'gray' }}
-                    >
-                      (Opcional)
-                    </Typography>
-                  )}
-                </Typography>
-              </Box>
+                {capitalizeFirstLetter(slot.name)}
+                {slot.isOptional && (
+                  <Typography
+                    component="span"
+                    sx={{ ml: 1, fontSize: "0.75rem", color: "gray" }}
+                  >
+                    (Opcional)
+                  </Typography>
+                )}
+              </Typography>
               {slot.description && (
-                <Typography variant="body2" sx={{ mb: 1, color: 'gray' }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "gray", display: "block", mb: 0.5 }}
+                >
                   {slot.description}
                 </Typography>
               )}
               <RadioGroup
-                value={selections[slot.id] || ''}
+                value={selections[slot.id] || ""}
                 onChange={(e) => handleSelectionChange(slot.id, e.target.value)}
+                sx={{ gap: 0 }}
               >
                 {slot.options
                   ?.filter((option) => option.isActive)
@@ -340,27 +331,30 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                     <FormControlLabel
                       key={option.id}
                       value={option.productId}
+                      sx={{ my: -0.25 }}
                       control={
                         <Radio
+                          size="small"
                           sx={{
-                            color: '#856D5E',
-                            '&.Mui-checked': {
-                              color: '#856D5E',
+                            color: "#856D5E",
+                            "&.Mui-checked": {
+                              color: "#856D5E",
                             },
                           }}
                         />
                       }
                       label={
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Typography variant="body2">
                             {capitalizeFirstLetter(option.product.name)}
                           </Typography>
                           {option.extraCost > 0 && (
                             <Typography
+                              variant="body2"
                               sx={{
                                 ml: 1,
-                                color: '#856D5E',
-                                fontWeight: 'bold',
+                                color: "#856D5E",
+                                fontWeight: "bold",
                               }}
                             >
                               (+${option.extraCost.toFixed(2)})
@@ -377,151 +371,153 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                 selectedProductsInfo[slot.id]?.availableToppingGroups &&
                 selectedProductsInfo[slot.id].availableToppingGroups!.length >
                   0 && (
-                  <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid #d4c0b3' }}>
+                  <Box sx={{ mt: 1, pl: 1.5, borderLeft: "2px solid #d4c0b3" }}>
                     <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 600, mb: 1, color: '#856D5E' }}
+                      variant="caption"
+                      sx={{ fontWeight: 600, color: "#856D5E" }}
                     >
                       Agregados disponibles:
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {selectedProductsInfo[slot.id].availableToppingGroups!.map(
-                        (group) => {
-                          const groupKey = `${slot.id}-${group.id}`;
-                          const isVisible =
-                            visibleToppingGroups[groupKey] || false;
-                          const slotToppings = toppingsBySlot[slot.id] || {};
-                          const selectedGroupToppings =
-                            slotToppings[group.id] || [];
-                          const groupToppings = loadedToppings[group.id] || [];
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.5,
+                        mt: 0.5,
+                      }}
+                    >
+                      {selectedProductsInfo[
+                        slot.id
+                      ].availableToppingGroups!.map((group) => {
+                        const groupKey = `${slot.id}-${group.id}`;
+                        const isVisible =
+                          visibleToppingGroups[groupKey] || false;
+                        const slotToppings = toppingsBySlot[slot.id] || {};
+                        const selectedGroupToppings =
+                          slotToppings[group.id] || [];
+                        const groupToppings = loadedToppings[group.id] || [];
 
-                          return (
-                            <Box
-                              key={group.id}
+                        return (
+                          <Box
+                            key={group.id}
+                            sx={{
+                              flex: "1 1 calc(50% - 0.25rem)",
+                              backgroundColor: "#856d5e52",
+                              borderRadius: "6px",
+                              padding: "0.5rem",
+                              border: "1px solid #856D5E",
+                            }}
+                          >
+                            <Chip
+                              label={capitalizeFirstLetter(group.name)}
+                              size="small"
+                              onClick={() =>
+                                handleToggleToppingGroup(slot.id, group.id)
+                              }
                               sx={{
-                                flex: '1 1 calc(50% - 0.5rem)',
-                                backgroundColor: '#856d5e52',
-                                borderRadius: '8px',
-                                padding: '0.75rem',
-                                border: '1px solid #856D5E',
+                                marginBottom: "0.25rem",
+                                border: "1px solid #856D5E",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                backgroundColor: "#ffffffa8",
+                                "&:hover": {
+                                  backgroundColor: "#ffffff",
+                                },
                               }}
-                            >
-                              <Chip
-                                label={capitalizeFirstLetter(group.name)}
-                                onClick={() =>
-                                  handleToggleToppingGroup(slot.id, group.id)
-                                }
-                                sx={{
-                                  marginBottom: '0.5rem',
-                                  border: '1px solid #856D5E',
-                                  fontWeight: 500,
-                                  cursor: 'pointer',
-                                  backgroundColor: '#ffffffa8',
-                                  '&:hover': {
-                                    backgroundColor: '#ffffff',
-                                  },
-                                }}
-                              />
+                            />
 
-                              {isVisible && groupToppings.length > 0 && (
-                                <Box sx={{ pl: 1 }}>
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      display: 'block',
-                                      mb: 0.5,
-                                      color: 'gray',
-                                    }}
-                                  >
-                                    Máxima selección: {group.settings.maxSelection}
-                                  </Typography>
-                                  <Divider sx={{ mb: 0.5 }} />
-                                  {groupToppings.map((topping) => {
-                                    const isChecked =
-                                      selectedGroupToppings.includes(topping.id);
+                            {isVisible && groupToppings.length > 0 && (
+                              <Box sx={{ pl: 0.5 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: "gray", fontSize: "0.7rem" }}
+                                >
+                                  Máx: {group.settings.maxSelection}
+                                </Typography>
+                                <Divider sx={{ my: 0.25 }} />
+                                {groupToppings.map((topping) => {
+                                  const isChecked =
+                                    selectedGroupToppings.includes(topping.id);
 
-                                    return (
-                                      <FormControlLabel
-                                        key={topping.id}
-                                        control={
-                                          <Checkbox
-                                            checked={isChecked}
-                                            onChange={(e) =>
-                                              handleToppingChange(
-                                                slot.id,
-                                                group.id,
-                                                topping.id,
-                                                e.target.checked,
-                                                group.settings.maxSelection
-                                              )
-                                            }
-                                            size="small"
-                                            sx={{
-                                              color: '#856D5E',
-                                              '&.Mui-checked': {
-                                                color: '#856D5E',
-                                              },
-                                            }}
-                                          />
-                                        }
-                                        label={
-                                          <Box
-                                            sx={{
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                            }}
-                                          >
-                                            <Typography
-                                              variant="body2"
-                                              sx={{ fontWeight: 500 }}
-                                            >
-                                              {capitalizeFirstLetter(topping.name)}
-                                            </Typography>
-                                            {group.settings.chargeExtra &&
-                                              group.settings.extraCost > 0 && (
-                                                <Typography
-                                                  variant="caption"
-                                                  sx={{
-                                                    color: '#9e0404',
-                                                    fontStyle: 'italic',
-                                                  }}
-                                                >
-                                                  + ${group.settings.extraCost.toFixed(
-                                                    2
-                                                  )}{' '}
-                                                  adicional
-                                                </Typography>
-                                              )}
-                                          </Box>
-                                        }
-                                      />
-                                    );
-                                  })}
-                                </Box>
-                              )}
-                            </Box>
-                          );
-                        }
-                      )}
+                                  return (
+                                    <FormControlLabel
+                                      key={topping.id}
+                                      sx={{ my: -0.5, display: "flex" }}
+                                      control={
+                                        <Checkbox
+                                          checked={isChecked}
+                                          onChange={(e) =>
+                                            handleToppingChange(
+                                              slot.id,
+                                              group.id,
+                                              topping.id,
+                                              e.target.checked,
+                                              group.settings.maxSelection
+                                            )
+                                          }
+                                          size="small"
+                                          sx={{
+                                            color: "#856D5E",
+                                            p: 0.5,
+                                            "&.Mui-checked": {
+                                              color: "#856D5E",
+                                            },
+                                          }}
+                                        />
+                                      }
+                                      label={
+                                        <Typography
+                                          variant="caption"
+                                          sx={{ fontWeight: 500 }}
+                                        >
+                                          {capitalizeFirstLetter(topping.name)}
+                                          {group.settings.chargeExtra &&
+                                            group.settings.extraCost > 0 && (
+                                              <Typography
+                                                component="span"
+                                                variant="caption"
+                                                sx={{
+                                                  color: "#9e0404",
+                                                  ml: 0.5,
+                                                }}
+                                              >
+                                                (+$
+                                                {group.settings.extraCost.toFixed(
+                                                  2
+                                                )}
+                                                )
+                                              </Typography>
+                                            )}
+                                        </Typography>
+                                      }
+                                    />
+                                  );
+                                })}
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Box>
                 )}
 
               {index < slots.length - 1 && (
-                <Divider sx={{ mt: 2, borderColor: '#d4c0b3' }} />
+                <Divider sx={{ mt: 1.5, borderColor: "#d4c0b3" }} />
               )}
             </Box>
           ))
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #d4c0b3' }}>
+      <DialogActions sx={{ px: 2, py: 1.5, borderTop: "1px solid #d4c0b3" }}>
         <Button
           onClick={onCancel}
+          size="small"
           sx={{
-            color: '#856D5E',
-            '&:hover': {
-              backgroundColor: '#f5f5f5',
+            color: "#856D5E",
+            "&:hover": {
+              backgroundColor: "#f5f5f5",
             },
           }}
         >
@@ -530,17 +526,18 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         <Button
           onClick={handleConfirm}
           variant="contained"
+          size="small"
           sx={{
-            backgroundColor: '#f9b32d',
-            color: 'black',
-            '&:hover': {
-              backgroundColor: '#f9b32d',
-              filter: 'brightness(90%)',
+            backgroundColor: "#f9b32d",
+            color: "black",
+            "&:hover": {
+              backgroundColor: "#f9b32d",
+              filter: "brightness(90%)",
             },
           }}
           disabled={loading || slots.length === 0}
         >
-          Confirmar Selección
+          Confirmar
         </Button>
       </DialogActions>
     </Dialog>

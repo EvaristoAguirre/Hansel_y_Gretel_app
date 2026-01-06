@@ -94,7 +94,6 @@ const Products: React.FC<ProductsProps> = ({
       width: 400,
       renderCell: (params: any) => {
         const options = params.value || [];
-        console.log(options);
         return (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
             {options.map((opt: any) => opt.name || opt.product.name).join(", ")}
@@ -172,6 +171,21 @@ const Products: React.FC<ProductsProps> = ({
             className="bg-[--color-primary]"
             size="small"
             onClick={() => {
+              console.log(params.row);
+
+              // Mapear promotionSlotAssignments a slots para el formulario
+              const slotsFromAssignments =
+                params.row.promotionSlotAssignments?.map(
+                  (assignment: {
+                    slot: { id: string; name: string };
+                    quantity: number;
+                    isOptional: boolean;
+                  }) => ({
+                    slotId: assignment.slot.id,
+                    name: assignment.slot.name,
+                  })
+                ) || [];
+
               setForm({
                 id: params.row.id,
                 code: params.row.code,
@@ -203,6 +217,7 @@ const Products: React.FC<ProductsProps> = ({
                       unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
                     })
                   ) || [],
+                slots: slotsFromAssignments,
               });
               setModalType(FormTypeProduct.EDIT);
               setModalOpen(true);

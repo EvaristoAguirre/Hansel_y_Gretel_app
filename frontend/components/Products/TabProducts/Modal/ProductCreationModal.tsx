@@ -87,7 +87,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   useEffect(() => {
     if (modalType === FormTypeProduct.EDIT) {
       if (form.type === TypeProduct.PROMO) {
-        setTabValue(TabProductKey.PROMO);
+        // Si es promo y tiene slots, abrir en COMBO
+        if (form.slots && form.slots.length > 0) {
+          setTabValue(TabProductKey.COMBO);
+        } else {
+          setTabValue(TabProductKey.PROMO);
+        }
       } else if (
         form.type === TypeProduct.PRODUCT &&
         form.ingredients.length > 0
@@ -97,7 +102,7 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
         setTabValue(TabProductKey.SIMPLE_PRODUCT);
       }
     }
-  }, [modalType, form.type, form.ingredients]);
+  }, [modalType, form.type, form.ingredients, form.slots]);
 
   const [errors, setErrors] = useState<Errors>({
     code: "",
@@ -307,6 +312,8 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
 
   const onDisableTabs = (tabKey: TabProductKey) => {
     if (modalType === FormTypeProduct.EDIT) {
+      const hasSlots = form.slots && form.slots.length > 0;
+
       switch (tabKey) {
         case TabProductKey.SIMPLE_PRODUCT:
           return form.type === TypeProduct.PROMO || form.ingredients.length > 0;
@@ -321,10 +328,12 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
           );
 
         case TabProductKey.PROMO:
-          return form.type !== TypeProduct.PROMO;
+          // Deshabilitar PROMO si no es tipo promo o si tiene slots (debe usar COMBO)
+          return form.type !== TypeProduct.PROMO || hasSlots;
 
         case TabProductKey.COMBO:
-          return form.type !== TypeProduct.PROMO;
+          // Deshabilitar COMBO si no es tipo promo o si no tiene slots
+          return form.type !== TypeProduct.PROMO || !hasSlots;
 
         default:
           return false;

@@ -77,6 +77,8 @@ export class ProductRepository {
         'availableToppingGroups.unitOfMeasure',
         'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
       ],
     });
   }
