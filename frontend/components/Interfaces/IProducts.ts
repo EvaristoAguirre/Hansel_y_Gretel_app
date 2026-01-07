@@ -109,6 +109,27 @@ export interface IPromotionDetails {
   product: IProduct;
 }
 
+export interface PromotionSlotOptionResponse {
+  id: string;
+  productId: string;
+  isDefault: boolean;
+  extraCost: number;
+  product: ProductResponse;
+}
+
+export interface PromotionSlotResponse {
+  id: string;
+  name: string;
+  description?: string;
+  options: PromotionSlotOptionResponse[];
+}
+
+export interface PromotionSlotAssignmentResponse {
+  slot: PromotionSlotResponse;
+  quantity: number;
+  isOptional: boolean;
+}
+
 export interface ProductResponse {
   id: string;
   code: number;
@@ -125,6 +146,7 @@ export interface ProductResponse {
   stock: IStockOfProduct;
   availableToppingGroups: IProductToppingsGroupResponse[];
   toppingsPerUnit?: string[][];
+  promotionSlotAssignments?: PromotionSlotAssignmentResponse[];
 }
 
 export interface ProductState {

@@ -40,19 +40,35 @@ export const createProduct = async (form: ProductForm, token: string) => {
 };
 
 export const editProduct = async (form: ProductForm, token: string) => {
-  const payload = {
+  const payload: any = {
     ...form,
     categories: form.categories.map((c) => c.id),
   };
+
+  // Mapear slots de SlotForPromo[] a string[] si existen
+  if (form.slots && Array.isArray(form.slots)) {
+    payload.slots = form.slots.map((s) => s.slotId);
+  }
+
+  // Eliminar campos que no deben enviarse
+  delete payload.cost;
+  delete payload.id;
+
   const response = await fetch(`${URI_PRODUCT}/${form.id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-
     body: JSON.stringify(payload),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || `Error ${response.status}: ${response.statusText}`
+    );
+  }
 
   return await response.json();
 };
