@@ -55,7 +55,7 @@ export const FormIngredient = ({
 
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error);
-    const hasEmptyFields = ["name", "cost"].some(
+    const hasEmptyFields = ["name", "cost", "unitOfMeasureId"].some(
       (field) => !formIngredients[field as keyof Iingredient]
     );
     setIsFormValid(!hasErrors && !hasEmptyFields);
