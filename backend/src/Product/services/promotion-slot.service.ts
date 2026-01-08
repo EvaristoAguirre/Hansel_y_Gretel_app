@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, QueryRunner, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { PromotionSlotRepository } from '../repositories/promotion-slot.repository';
 import { ProductRepository } from '../repositories/product.repository';
@@ -16,6 +16,7 @@ import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
 import { PromotionSlotAssignmentService } from './promotion-slot-assignment.service';
+import { Product } from '../entities/product.entity';
 
 interface FindAllOptions {
   page?: number;
@@ -295,28 +296,135 @@ export class PromotionSlotService {
     await queryRunner.startTransaction();
 
     try {
-      // Verificar que el slot existe
-      const existingSlot = await this.promotionSlotRepository.findById(id);
+      // Verificar que el slot existe y cargar con opciones
+      const existingSlot = await queryRunner.manager.findOne(PromotionSlot, {
+        where: { id },
+        relations: ['options'],
+      });
+
       if (!existingSlot) {
         throw new NotFoundException(`Promotion slot with ID ${id} not found.`);
       }
 
-      // Actualizar el slot
-      const updatedSlot = await this.promotionSlotRepository.update(
-        id,
-        updateDto,
-        queryRunner,
-      );
+      // Preparar datos para actualizar (sin productIds)
+      const { productIds, ...slotUpdateData } = updateDto;
+
+      // Actualizar los campos básicos del slot
+      if (Object.keys(slotUpdateData).length > 0) {
+        await this.promotionSlotRepository.update(
+          id,
+          slotUpdateData,
+          queryRunner,
+        );
+      }
+
+      // Si se proporcionaron productIds, actualizar las opciones
+      if (productIds && productIds.length > 0) {
+        await this.updateSlotOptions(queryRunner, id, existingSlot, productIds);
+      }
+
+      // Cargar el slot actualizado con todas las relaciones
+      const updatedSlot = await queryRunner.manager.findOne(PromotionSlot, {
+        where: { id },
+        relations: [
+          'options',
+          'options.product',
+          'assignments',
+          'assignments.promotion',
+        ],
+      });
+
+      if (!updatedSlot) {
+        throw new Error('Error loading updated promotion slot.');
+      }
 
       await queryRunner.commitTransaction();
       return updatedSlot;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-
       this.logger.error('updatePromotionSlot', error);
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  /**
+   * Actualiza las opciones de un slot
+   * @param queryRunner - QueryRunner para la transacción
+   * @param slotId - ID del slot
+   * @param existingSlot - Slot existente con opciones cargadas
+   * @param newProductIds - Array de IDs de productos que deben ser opciones
+   */
+  private async updateSlotOptions(
+    queryRunner: QueryRunner,
+    slotId: string,
+    existingSlot: PromotionSlot,
+    newProductIds: string[],
+  ): Promise<void> {
+    // Validar que todos los productos existan y estén activos
+    const products = await queryRunner.manager.find(Product, {
+      where: {
+        id: In(newProductIds),
+        isActive: true,
+        type: In(['simple', 'product']), // No permitir promociones
+      },
+    });
+
+    const foundProductIds = products.map((p) => p.id);
+    const invalidProductIds = newProductIds.filter(
+      (id) => !foundProductIds.includes(id),
+    );
+
+    if (invalidProductIds.length > 0) {
+      throw new BadRequestException(
+        `Los siguientes productos no existen o no están activos: ${invalidProductIds.join(', ')}`,
+      );
+    }
+
+    // Obtener las opciones actuales del slot
+    const existingOptions = existingSlot.options || [];
+    const existingProductIds = existingOptions.map((opt) => opt.productId);
+
+    // Identificar opciones a eliminar (están en actuales pero no en nuevas)
+    const productIdsToRemove = existingProductIds.filter(
+      (id) => !newProductIds.includes(id),
+    );
+
+    // Identificar productos a agregar (están en nuevas pero no en actuales)
+    const productIdsToAdd = newProductIds.filter(
+      (id) => !existingProductIds.includes(id),
+    );
+
+    // Eliminar opciones que ya no están en la lista
+    if (productIdsToRemove.length > 0) {
+      const optionsToRemove = existingOptions.filter((opt) =>
+        productIdsToRemove.includes(opt.productId),
+      );
+
+      // Validar que no se elimine la última opción
+      const remainingOptionsCount =
+        existingOptions.length - optionsToRemove.length;
+      if (remainingOptionsCount < 1) {
+        throw new BadRequestException(
+          'No se puede eliminar todas las opciones. El slot debe tener al menos una opción.',
+        );
+      }
+
+      for (const option of optionsToRemove) {
+        await queryRunner.manager.delete(PromotionSlotOption, option.id);
+      }
+    }
+
+    // Crear nuevas opciones para productos que no existían
+    for (const productId of productIdsToAdd) {
+      const newOption = queryRunner.manager.create(PromotionSlotOption, {
+        slotId: slotId,
+        productId: productId,
+        extraCost: 0,
+        isActive: true,
+      });
+      await queryRunner.manager.save(PromotionSlotOption, newOption);
     }
   }
 

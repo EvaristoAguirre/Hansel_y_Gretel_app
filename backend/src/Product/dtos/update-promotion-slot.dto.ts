@@ -1,4 +1,11 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdatePromotionSlotDto {
@@ -30,4 +37,15 @@ export class UpdatePromotionSlotDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiProperty({
+    description: 'IDs de los productos que serán parte del slot',
+    example: ['uuid-producto-1', 'uuid-producto-2'],
+    required: false,
+  })
+  @IsArray()
+  @IsUUID('all', { each: true })
+  @ArrayMinSize(1)
+  @IsOptional()
+  productIds?: string[];
 }
