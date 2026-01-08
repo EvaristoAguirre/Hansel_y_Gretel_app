@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Box,
@@ -17,13 +17,19 @@ import Grid from "@mui/material/Grid";
 import { ProductResponse, SlotForm } from "@/components/Interfaces/IProducts";
 import { TypeProduct } from "@/components/Enums/view-products";
 import { useAuth } from "@/app/context/authContext";
-import { createPromotionSlot } from "@/api/promotionSlot";
+import { createPromotionSlot, editPromotionSlot } from "@/api/promotionSlot";
 
 interface SlotCreationModalProps {
   open: boolean;
   onClose: () => void;
   onSave?: (slotData: SlotForm) => void;
   products: ProductResponse[];
+  editingSlot?: {
+    id: string;
+    name: string;
+    description: string;
+    options: ProductResponse[];
+  } | null;
 }
 
 const initialSlotForm: SlotForm = {
@@ -41,13 +47,15 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
   onClose,
   onSave,
   products,
+  editingSlot,
 }) => {
   const { getAccessToken } = useAuth();
+  const isEditing = !!editingSlot;
 
   // Filtrar productos que no sean de tipo "promotion"
-  const filteredProducts = products.filter(
-    (product) => product.type !== TypeProduct.PROMO
-  );
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((product) => product.type !== TypeProduct.PROMO)
+    : [];
 
   const [form, setForm] = useState<SlotForm>(initialSlotForm);
   const [errors, setErrors] = useState<{ name?: string; products?: string }>(
@@ -56,6 +64,29 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Cargar datos del slot cuando se está editando
+  useEffect(() => {
+    if (editingSlot && open) {
+      // Mapear los productos del slot a ProductResponse
+      const slotProducts = editingSlot.options.map((opt: any) => {
+        // Si opt tiene un producto anidado (opt.product), usamos ese
+        if (opt.product) {
+          return opt.product;
+        }
+        // Si ya es un ProductResponse directo
+        return opt;
+      });
+
+      setForm({
+        name: editingSlot.name,
+        description: editingSlot.description || "",
+        products: slotProducts,
+      });
+    } else if (!open) {
+      setForm(initialSlotForm);
+    }
+  }, [editingSlot, open]);
 
   // IDs de productos seleccionados
   const selectedIds = form.products.map((p) => p.id);
@@ -112,7 +143,12 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
     setIsLoading(true);
     setApiError(null);
 
-    const result = await createPromotionSlot(form, token);
+    let result;
+    if (isEditing && editingSlot) {
+      result = await editPromotionSlot(editingSlot.id, form, token);
+    } else {
+      result = await createPromotionSlot(form, token);
+    }
 
     setIsLoading(false);
 
@@ -121,7 +157,10 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
       onSave?.(form);
       handleClose();
     } else {
-      setApiError(result.error || "Error al crear el slot");
+      setApiError(
+        result.error ||
+          (isEditing ? "Error al editar el slot" : "Error al crear el slot")
+      );
     }
   };
 
@@ -254,6 +293,8 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
             >
               {isLoading ? (
                 <CircularProgress size={24} color="inherit" />
+              ) : isEditing ? (
+                "Guardar Cambios"
               ) : (
                 "Crear Slot"
               )}
@@ -274,7 +315,9 @@ const SlotCreationModal: React.FC<SlotCreationModalProps> = ({
           variant="filled"
           sx={{ width: "100%" }}
         >
-          ¡Slot creado exitosamente!
+          {isEditing
+            ? "¡Slot editado exitosamente!"
+            : "¡Slot creado exitosamente!"}
         </Alert>
       </Snackbar>
     </>
