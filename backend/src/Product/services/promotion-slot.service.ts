@@ -248,12 +248,18 @@ export class PromotionSlotService {
       const assignments =
         await this.assignmentService.findByPromotionId(promotionId);
 
-      // Extraer los slots de las asignaciones
-      const slots = assignments.map((assignment) => assignment.slot);
+      // Expandir cada slot según su quantity en la asignación
+      const slots: PromotionSlot[] = [];
+      for (const assignment of assignments) {
+        // Filtrar por isActive si es necesario
+        if (!includeInactive && !assignment.slot.isActive) {
+          continue;
+        }
 
-      // Filtrar por isActive si es necesario
-      if (!includeInactive) {
-        return slots.filter((slot) => slot.isActive);
+        // Agregar el slot tantas veces como indique quantity
+        for (let i = 0; i < assignment.quantity; i++) {
+          slots.push(assignment.slot);
+        }
       }
 
       return slots;
