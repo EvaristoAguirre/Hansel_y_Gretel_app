@@ -125,39 +125,14 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
       // Si el producto tiene selecciones de slots, transformarlas al formato del backend
       if (product.slotSelections && product.slotSelections.length > 0) {
-        // Agrupar por slotId y convertir selectedProductId (singular) a selectedProductIds (plural, array)
-        // También agrupar toppingsPerUnit por slotId
-        const promotionSelectionsMap = new Map<
-          string,
-          { selectedProductIds: string[]; toppingsPerUnit: string[][] }
-        >();
-
-        product.slotSelections.forEach((selection) => {
-          const { slotId, selectedProductId, toppingsPerUnit } = selection;
-          if (!promotionSelectionsMap.has(slotId)) {
-            promotionSelectionsMap.set(slotId, {
-              selectedProductIds: [],
-              toppingsPerUnit: [],
-            });
-          }
-          const slotData = promotionSelectionsMap.get(slotId)!;
-          slotData.selectedProductIds.push(selectedProductId);
-          // toppingsPerUnit es un array de topping IDs para este producto
-          // Como cada slot tiene quantity=1 (por ahora), será un array con 1 elemento
-          slotData.toppingsPerUnit.push(toppingsPerUnit || []);
-        });
-
-        // Convertir el Map a array de PromotionSelectionDto
-        // Formato esperado: { slotId: string, selectedProductIds: string[], toppingsPerUnit?: string[][] }
-        const promotionSelections = Array.from(
-          promotionSelectionsMap.entries()
-        ).map(([slotId, { selectedProductIds, toppingsPerUnit }]) => ({
-          slotId,
-          selectedProductIds,
-          // toppingsPerUnit: Array de toppings, uno por cada producto seleccionado
-          // Si todos los arrays están vacíos, no incluir el campo
-          ...(toppingsPerUnit.some((toppings) => toppings.length > 0)
-            ? { toppingsPerUnit }
+        // Cada selección es un elemento separado (sin agrupar por slotId)
+        // Esto permite que slots repetidos tengan selecciones independientes
+        const promotionSelections = product.slotSelections.map((selection) => ({
+          slotId: selection.slotId,
+          selectedProductIds: [selection.selectedProductId],
+          // toppingsPerUnit como array de arrays (un array por cada producto)
+          ...(selection.toppingsPerUnit && selection.toppingsPerUnit.length > 0
+            ? { toppingsPerUnit: [selection.toppingsPerUnit] }
             : {}),
         }));
 
