@@ -1,26 +1,26 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepButton from '@mui/material/StepButton';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Order from '../Order/Order';
-import { useOrderContext } from '../../app/context/order.context';
-import PayOrder from '../Order/Pay';
-import TableEditor from './TableEditor';
-import OrderEditor from '../Order/OrderEditor';
-import { ITable } from '../Interfaces/ITable';
-import { TableState } from '../Enums/table';
-import { editTable } from '@/api/tables';
-import { useRoomContext } from '@/app/context/room.context';
-import { useTableStore } from './useTableStore';
-import { useOrderStore } from '../Order/useOrderStore';
-import { useAuth } from '@/app/context/authContext';
-import { TableBar } from '@mui/icons-material';
-import { UserRole } from '../Enums/user';
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepButton from "@mui/material/StepButton";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Order from "../Order/Order";
+import { useOrderContext } from "../../app/context/order.context";
+import PayOrder from "../Order/Pay";
+import TableEditor from "./TableEditor";
+import OrderEditor from "../Order/OrderEditor";
+import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
+import { editTable } from "@/api/tables";
+import { useRoomContext } from "@/app/context/room.context";
+import { useTableStore } from "./useTableStore";
+import { useOrderStore } from "../Order/useOrderStore";
+import { useAuth } from "@/app/context/authContext";
+import { TableBar } from "@mui/icons-material";
+import { UserRole } from "../Enums/user";
 
-const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
+const steps = ["Info Mesa", "Editar Pedido", "Productos Confirmados", "Pago"];
 
 interface Props {
   selectedTable: ITable;
@@ -95,7 +95,7 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const imprimirComanda = () => {
-    console.log('Imprimiendo comanda:', confirmedProducts);
+    console.log("Imprimiendo comanda:", confirmedProducts);
     // función de impresión
   };
 
@@ -194,18 +194,18 @@ export const StepperTable: React.FC<Props> = ({
                 variant="outlined"
                 sx={{
                   mt: 2,
-                  borderColor: '#7e9d8a',
-                  color: 'black',
-                  '&:hover': {
-                    backgroundColor: '#f9b32d',
-                    color: 'black',
+                  borderColor: "#7e9d8a",
+                  color: "black",
+                  "&:hover": {
+                    backgroundColor: "#f9b32d",
+                    color: "black",
                   },
                 }}
                 onClick={() => handleTableAvailable(selectedTable, token!)}
               >
                 <TableBar sx={{ mr: 1 }} />
-                Pasar Mesa a:{' '}
-                <Box component="span" sx={{ color: 'green', ml: 1 }}>
+                Pasar Mesa a:{" "}
+                <Box component="span" sx={{ color: "green", ml: 1 }}>
                   Disponible
                 </Box>
               </Button>
@@ -227,7 +227,7 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: "100%" }}>
       <Stepper nonLinear activeStep={activeStep}>
         {steps.map((label, index) => (
           <Step key={label} completed={completed[index]}>
@@ -248,7 +248,7 @@ export const StepperTable: React.FC<Props> = ({
         ) : (
           <React.Fragment>
             <Box sx={{ mt: 2, mb: 1 }}>{renderStepContent(activeStep)}</Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "row", pt: 2 }}>
               <Button
                 color="inherit"
                 disabled={activeStep === 0}
@@ -257,7 +257,7 @@ export const StepperTable: React.FC<Props> = ({
               >
                 Atrás
               </Button>
-              <Box sx={{ flex: '1 1 auto' }} />
+              <Box sx={{ flex: "1 1 auto" }} />
               {selectedOrderByTable?.id && (
                 <Button
                   color="error"
