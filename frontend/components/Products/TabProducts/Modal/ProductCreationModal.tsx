@@ -84,29 +84,64 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
   );
   const [disableTabs, setDisableTabs] = useState<TabProductKey[]>([]);
 
+  // useEffect(() => {
+  //   if (modalType === FormTypeProduct.EDIT) {
+  //     if (form.type === TypeProduct.PROMO) {
+  //       // Mejorar la detección de slots: verificar tanto por existencia como por longitud
+  //       const hasSlots = Array.isArray(form.slots) && form.slots.length > 0;
+  //       if (hasSlots) {
+  //         setTabValue(TabProductKey.COMBO);
+  //       } else {
+  //         setTabValue(TabProductKey.PROMO);
+  //       }
+  //     } else if (
+  //       form.type === TypeProduct.PRODUCT &&
+  //       form.ingredients.length > 0
+  //     ) {
+  //       setTabValue(TabProductKey.PRODUCT_WITH_INGREDIENT);
+  //     } else {
+  //       setTabValue(TabProductKey.SIMPLE_PRODUCT);
+  //     }
+  //   } else {
+  //     // Resetear a la pestaña por defecto cuando no es edición
+  //     setTabValue(TabProductKey.SIMPLE_PRODUCT);
+  //   }
+  // }, [modalType, form.type, form.ingredients?.length, form.slots?.length]);
+
+  // Reemplazar el useEffect de las líneas 87-109 con:
+  const [shouldAutoSwitchTab, setShouldAutoSwitchTab] = useState(true);
+
   useEffect(() => {
-    if (modalType === FormTypeProduct.EDIT) {
-      if (form.type === TypeProduct.PROMO) {
-        // Mejorar la detección de slots: verificar tanto por existencia como por longitud
-        const hasSlots = Array.isArray(form.slots) && form.slots.length > 0;
-        if (hasSlots) {
-          setTabValue(TabProductKey.COMBO);
+    if (!open) {
+      // Resetear cuando se cierra el modal
+      setShouldAutoSwitchTab(true);
+      return;
+    }
+
+    // Solo cambiar automáticamente la pestaña si está permitido (primera carga o modo EDIT)
+    if (shouldAutoSwitchTab) {
+      if (modalType === FormTypeProduct.EDIT) {
+        if (form.type === TypeProduct.PROMO) {
+          const hasSlots = Array.isArray(form.slots) && form.slots.length > 0;
+          if (hasSlots) {
+            setTabValue(TabProductKey.COMBO);
+          } else {
+            setTabValue(TabProductKey.PROMO);
+          }
+        } else if (
+          form.type === TypeProduct.PRODUCT &&
+          form.ingredients.length > 0
+        ) {
+          setTabValue(TabProductKey.PRODUCT_WITH_INGREDIENT);
         } else {
-          setTabValue(TabProductKey.PROMO);
+          setTabValue(TabProductKey.SIMPLE_PRODUCT);
         }
-      } else if (
-        form.type === TypeProduct.PRODUCT &&
-        form.ingredients.length > 0
-      ) {
-        setTabValue(TabProductKey.PRODUCT_WITH_INGREDIENT);
       } else {
         setTabValue(TabProductKey.SIMPLE_PRODUCT);
       }
-    } else {
-      // Resetear a la pestaña por defecto cuando no es edición
-      setTabValue(TabProductKey.SIMPLE_PRODUCT);
+      setShouldAutoSwitchTab(false); // Desactivar cambio automático después de la primera carga
     }
-  }, [modalType, form.type, form.ingredients?.length, form.slots?.length]);
+  }, [modalType, form.type, form.slots?.length, open, shouldAutoSwitchTab]); // Remover form.ingredients?.length
 
   const [errors, setErrors] = useState<Errors>({
     code: '',
@@ -271,11 +306,32 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
     setIsFormValid(!hasErrors && !hasEmptyFields && isValidToppings);
   };
 
+  // const handleTabChange = (
+  //   event: React.SyntheticEvent,
+  //   newValue: TabProductKey
+  // ) => {
+  //   setTabValue(newValue);
+  //   if (
+  //     (newValue === TabProductKey.PROMO || newValue === TabProductKey.COMBO) &&
+  //     form.type !== TypeProduct.PROMO
+  //   ) {
+  //     onChange('type', TypeProduct.PROMO);
+  //   } else if (
+  //     newValue !== TabProductKey.PROMO &&
+  //     newValue !== TabProductKey.COMBO &&
+  //     form.type === TypeProduct.PROMO
+  //   ) {
+  //     onChange('type', TypeProduct.PRODUCT);
+  //   }
+  // };
+
+  // Modificar handleTabChange para permitir cambios manuales
   const handleTabChange = (
     event: React.SyntheticEvent,
     newValue: TabProductKey
   ) => {
     setTabValue(newValue);
+    setShouldAutoSwitchTab(false); // Desactivar cambio automático cuando el usuario cambia manualmente
     if (
       (newValue === TabProductKey.PROMO || newValue === TabProductKey.COMBO) &&
       form.type !== TypeProduct.PROMO

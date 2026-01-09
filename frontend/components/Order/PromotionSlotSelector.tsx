@@ -72,6 +72,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
   const [slots, setSlots] = useState<Slot[]>([]);
+  console.log("slots", slots);
   const [loading, setLoading] = useState(false);
   const [selections, setSelections] = useState<{ [slotId: string]: string }>(
     {}

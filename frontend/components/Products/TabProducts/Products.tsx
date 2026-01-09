@@ -1,7 +1,7 @@
-'use client';
-import { useAuth } from '@/app/context/authContext';
-import { useProducts } from '@/components/Hooks/useProducts';
-import { IingredientForm } from '@/components/Interfaces/Ingredients';
+"use client";
+import { useAuth } from "@/app/context/authContext";
+import { useProducts } from "@/components/Hooks/useProducts";
+import { IingredientForm } from "@/components/Interfaces/Ingredients";
 import {
   IProductToppingsGroupResponse,
   ProductForm,
@@ -9,28 +9,28 @@ import {
   ProductsProps,
   ProductToppingsGroupDto,
   SlotForPromo,
-} from '@/components/Interfaces/IProducts';
-import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Box, Button, Typography } from '@mui/material';
-import { GridCellParams, GridColDef } from '@mui/x-data-grid';
-import React, { useEffect, useState } from 'react';
-import { ProductTable } from './ProductTable';
-import ProductCreationModal from './Modal/ProductCreationModal';
-import SlotCreationModal from './Modal/SlotCreationModal';
-import { useCategoryStore } from '@/components/Categories/useCategoryStore';
-import { FormTypeProduct } from '@/components/Enums/view-products';
-import { useUnitContext } from '@/app/context/unitOfMeasureContext';
-import { ICategory } from '@/components/Interfaces/ICategories';
+} from "@/components/Interfaces/IProducts";
+import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Box, Button, Typography } from "@mui/material";
+import { GridCellParams, GridColDef } from "@mui/x-data-grid";
+import React, { useEffect, useState } from "react";
+import { ProductTable } from "./ProductTable";
+import ProductCreationModal from "./Modal/ProductCreationModal";
+import SlotCreationModal from "./Modal/SlotCreationModal";
+import { useCategoryStore } from "@/components/Categories/useCategoryStore";
+import { FormTypeProduct } from "@/components/Enums/view-products";
+import { useUnitContext } from "@/app/context/unitOfMeasureContext";
+import { ICategory } from "@/components/Interfaces/ICategories";
 import {
   mapIngredientResponseToForm,
   useProductStore,
-} from '@/components/Hooks/useProductStore';
-import { normalizeNumber } from '@/components/Utils/NormalizeNumber';
-import { getPromotionSlots } from '@/api/promotionSlot';
-import { createPromoWithSlots, editProduct } from '@/api/products';
-import DataGridComponent from '@/components/Utils/DataGridComponent';
-import Swal from 'sweetalert2';
+} from "@/components/Hooks/useProductStore";
+import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
+import { getPromotionSlots, deletePromotionSlot } from "@/api/promotionSlot";
+import { createPromoWithSlots, editProduct } from "@/api/products";
+import DataGridComponent from "@/components/Utils/DataGridComponent";
+import Swal from "sweetalert2";
 
 const Products: React.FC<ProductsProps> = ({
   selectedCategoryId,
@@ -71,6 +71,7 @@ const Products: React.FC<ProductsProps> = ({
   const [slotModalOpen, setSlotModalOpen] = useState(false);
   const [slots, setSlots] = useState<any[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<any | null>(null);
 
   // Cargar slots al montar el componente
   const fetchSlots = async () => {
@@ -89,28 +90,96 @@ const Products: React.FC<ProductsProps> = ({
     }
   }, [token]);
 
+  // Función para eliminar un slot
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!token) return;
+
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+      const deleteResult = await deletePromotionSlot(slotId, token);
+      if (deleteResult.ok) {
+        Swal.fire("Eliminado", "El slot ha sido eliminado.", "success");
+        fetchSlots();
+      } else {
+        Swal.fire(
+          "Error",
+          deleteResult.error || "No se pudo eliminar el slot.",
+          "error"
+        );
+      }
+    }
+  };
+
+  // Función para abrir el modal de edición de slot
+  const handleEditSlot = (slot: any) => {
+    setEditingSlot(slot);
+    setSlotModalOpen(true);
+  };
+
+  // Función para cerrar el modal de slot
+  const handleCloseSlotModal = () => {
+    setSlotModalOpen(false);
+    setEditingSlot(null);
+  };
+
   // Columnas para la tabla de slots
   const slotColumns: GridColDef[] = [
-    { field: 'name', headerName: 'Nombre', width: 200 },
-    { field: 'description', headerName: 'Descripción', width: 300 },
+    { field: "name", headerName: "Nombre", width: 200 },
+    { field: "description", headerName: "Descripción", width: 300 },
     {
-      field: 'options',
-      headerName: 'Productos',
+      field: "options",
+      headerName: "Productos",
       width: 400,
       renderCell: (params: any) => {
         const options = params.value || [];
         return (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {options.map((opt: any) => opt.name || opt.product.name).join(', ')}
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {options.map((opt: any) => opt.name || opt.product.name).join(", ")}
           </Box>
         );
       },
+    },
+    {
+      field: "actions",
+      headerName: "Acciones",
+      width: 150,
+      renderCell: (params: GridCellParams) => (
+        <div>
+          <Button
+            variant="contained"
+            sx={{ mr: 1 }}
+            className="bg-[--color-primary]"
+            size="small"
+            onClick={() => handleEditSlot(params.row)}
+          >
+            <FontAwesomeIcon icon={faEdit} />
+          </Button>
+          <Button
+            className="bg-[--color-primary]"
+            variant="contained"
+            size="small"
+            onClick={() => handleDeleteSlot(params.row.id)}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+          </Button>
+        </div>
+      ),
     },
   ];
 
   const handleSave = () => {
     if (token) {
-      if (modalType === 'create') {
+      if (modalType === "create") {
         return handleCreateProduct(token);
       } else {
         if (selectedCategoryId) {
@@ -139,9 +208,9 @@ const Products: React.FC<ProductsProps> = ({
         handleCloseModal();
 
         Swal.fire(
-          'Éxito',
-          'Promoción con slots editada correctamente.',
-          'success'
+          "Éxito",
+          "Promoción con slots editada correctamente.",
+          "success"
         );
       } else {
         // Crear nueva promoción con slots
@@ -151,17 +220,17 @@ const Products: React.FC<ProductsProps> = ({
           handleCloseModal();
         } else {
           Swal.fire(
-            'Error',
-            result.error || 'No se pudo crear la promoción.',
-            'error'
+            "Error",
+            result.error || "No se pudo crear la promoción.",
+            "error"
           );
         }
       }
     } catch (error: any) {
       Swal.fire(
-        'Error',
-        error.message || 'No se pudo guardar la promoción con slots.',
-        'error'
+        "Error",
+        error.message || "No se pudo guardar la promoción con slots.",
+        "error"
       );
       console.error(error);
     }
@@ -183,24 +252,24 @@ const Products: React.FC<ProductsProps> = ({
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
   const columns = [
-    { field: 'code', headerName: 'Código', width: 100 },
-    { field: 'name', headerName: 'Nombre', width: 200 },
-    { field: 'description', headerName: 'Descripción', width: 300 },
+    { field: "code", headerName: "Código", width: 100 },
+    { field: "name", headerName: "Nombre", width: 200 },
+    { field: "description", headerName: "Descripción", width: 300 },
     {
-      field: 'price',
-      headerName: 'Precio',
+      field: "price",
+      headerName: "Precio",
       width: 100,
       renderCell: (params: any) => <>$ {params.value}</>,
     },
     {
-      field: 'cost',
-      headerName: 'Costo',
+      field: "cost",
+      headerName: "Costo",
       width: 100,
       renderCell: (params: any) => <>$ {params.value}</>,
     },
     {
-      field: 'actions',
-      headerName: 'Acciones',
+      field: "actions",
+      headerName: "Acciones",
       width: 150,
       renderCell: (params: GridCellParams) => (
         <div>
@@ -332,16 +401,17 @@ const Products: React.FC<ProductsProps> = ({
         <DataGridComponent
           rows={slots}
           columns={slotColumns}
-          capitalize={['name', 'description']}
+          capitalize={["name", "description"]}
         />
       </Box>
 
       {/* Slot Dialog */}
       <SlotCreationModal
         open={slotModalOpen}
-        onClose={() => setSlotModalOpen(false)}
+        onClose={handleCloseSlotModal}
         onSave={() => fetchSlots()}
         products={products}
+        editingSlot={editingSlot}
       />
     </Box>
   );

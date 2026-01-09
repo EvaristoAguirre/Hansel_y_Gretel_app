@@ -146,6 +146,8 @@ export class ProductRepository {
         'availableToppingGroups.unitOfMeasure',
         'availableToppingGroups.toppingGroup.toppings',
         'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
       ],
     });
     if (!product) {
@@ -199,6 +201,11 @@ export class ProductRepository {
           'productsAvailableInGroup.toppings',
           'productsAvailableInGroupToppings',
         )
+        .leftJoinAndSelect(
+          'product.promotionSlotAssignments',
+          'promotionSlotAssignments',
+        )
+        .leftJoinAndSelect('promotionSlotAssignments.slot', 'slot')
         .where((qb) => {
           const subQuery = qb
             .subQuery()
@@ -1616,6 +1623,8 @@ export class ProductRepository {
         'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
         'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
       ];
     }
 

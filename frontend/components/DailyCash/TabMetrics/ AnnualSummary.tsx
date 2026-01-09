@@ -35,7 +35,7 @@ const AnnualSummary = () => {
     <Box sx={{ backgroundColor: "primary.light", p: 2, borderRadius: 3 }}>
       <Stack direction="row" spacing={2} mb={2} alignItems="center" justifyContent="flex-end">
         <Select value={year} onChange={handleYearChange} size="small">
-          {[2023, 2024, 2025, 2026].map((y) => (
+          {[2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
             <MenuItem key={y} value={y}>
               {y}
             </MenuItem>

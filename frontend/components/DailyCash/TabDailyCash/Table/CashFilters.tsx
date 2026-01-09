@@ -24,7 +24,7 @@ const CashFilters = ({ month, year, setMonth, setYear }: Props) => {
       <FormControl>
         <InputLabel>Año</InputLabel>
         <Select value={year} onChange={(e) => setYear(Number(e.target.value))} label="Año" size="small">
-          {[2023, 2024, 2025].map((y) => (
+          {[2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
             <MenuItem key={y} value={y}>
               {y}
             </MenuItem>

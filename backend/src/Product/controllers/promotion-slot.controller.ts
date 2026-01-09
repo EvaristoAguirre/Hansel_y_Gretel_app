@@ -26,11 +26,11 @@ import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UpdatePromotionSlotDto } from '../dtos/update-promotion-slot.dto';
-import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
-import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
-import { CreatePromotionSlotAssignmentDto } from '../dtos/create-promotion-slot-assignment.dto';
-import { UpdatePromotionSlotAssignmentDto } from '../dtos/update-promotion-slot-assignment.dto';
-import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
+// import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
+// import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
+// import { CreatePromotionSlotAssignmentDto } from '../dtos/create-promotion-slot-assignment.dto';
+// import { UpdatePromotionSlotAssignmentDto } from '../dtos/update-promotion-slot-assignment.dto';
+// import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
 
 interface FindAllOptions {
   page?: number;
@@ -414,350 +414,350 @@ export class PromotionSlotController {
   }
 
   // Crear opción en un slot
-  @Post('option')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Crear una opción de producto en un slot',
-    description:
-      'Agrega un producto como opción disponible dentro de un slot. Por ejemplo, agregar "Torta de Chocolate" como opción del slot "Torta".',
-  })
-  @ApiBody({
-    type: CreateSlotOptionDto,
-    description: 'Datos de la opción a crear',
-    examples: {
-      example1: {
-        summary: 'Opción sin costo extra (default)',
-        value: {
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          productId: '123e4567-e89b-12d3-a456-426614174100',
-          extraCost: 0,
-        },
-      },
-      example2: {
-        summary: 'Opción premium con costo adicional',
-        value: {
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          productId: '123e4567-e89b-12d3-a456-426614174101',
-          extraCost: 500,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Opción creada exitosamente',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174010',
-        slotId: '123e4567-e89b-12d3-a456-426614174001',
-        productId: '123e4567-e89b-12d3-a456-426614174100',
-        extraCost: 0,
-        isActive: true,
-        product: {
-          id: '123e4567-e89b-12d3-a456-426614174100',
-          name: 'Torta de Chocolate',
-          price: 5000,
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Slot o producto no encontrado' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async createSlotOption(@Body() createData: CreateSlotOptionDto) {
-    return await this.promotionSlotService.createOption(createData);
-  }
+  // @Post('option')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Crear una opción de producto en un slot',
+  //   description:
+  //     'Agrega un producto como opción disponible dentro de un slot. Por ejemplo, agregar "Torta de Chocolate" como opción del slot "Torta".',
+  // })
+  // @ApiBody({
+  //   type: CreateSlotOptionDto,
+  //   description: 'Datos de la opción a crear',
+  //   examples: {
+  //     example1: {
+  //       summary: 'Opción sin costo extra (default)',
+  //       value: {
+  //         slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //         productId: '123e4567-e89b-12d3-a456-426614174100',
+  //         extraCost: 0,
+  //       },
+  //     },
+  //     example2: {
+  //       summary: 'Opción premium con costo adicional',
+  //       value: {
+  //         slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //         productId: '123e4567-e89b-12d3-a456-426614174101',
+  //         extraCost: 500,
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'Opción creada exitosamente',
+  //   schema: {
+  //     example: {
+  //       id: '123e4567-e89b-12d3-a456-426614174010',
+  //       slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //       productId: '123e4567-e89b-12d3-a456-426614174100',
+  //       extraCost: 0,
+  //       isActive: true,
+  //       product: {
+  //         id: '123e4567-e89b-12d3-a456-426614174100',
+  //         name: 'Torta de Chocolate',
+  //         price: 5000,
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  // @ApiResponse({ status: 404, description: 'Slot o producto no encontrado' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async createSlotOption(@Body() createData: CreateSlotOptionDto) {
+  //   return await this.promotionSlotService.createOption(createData);
+  // }
 
   // Actualizar opción
-  @Patch('option/:optionId')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Actualizar una opción de slot',
-    description:
-      'Actualiza los datos de una opción existente. Todos los campos son opcionales.',
-  })
-  @ApiParam({
-    name: 'optionId',
-    type: String,
-    description: 'ID de la opción a actualizar',
-    example: '123e4567-e89b-12d3-a456-426614174010',
-  })
-  @ApiBody({
-    type: UpdateSlotOptionDto,
-    description: 'Datos a actualizar de la opción',
-    examples: {
-      example1: {
-        summary: 'Cambiar costo extra',
-        value: {
-          extraCost: 1000,
-        },
-      },
-      example2: {
-        summary: 'Cambiar producto',
-        value: {
-          productId: '123e4567-e89b-12d3-a456-426614174102',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Opción actualizada exitosamente',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174010',
-        slotId: '123e4567-e89b-12d3-a456-426614174001',
-        productId: '123e4567-e89b-12d3-a456-426614174100',
-        extraCost: 1000,
-        isActive: true,
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Opción no encontrada' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async updateSlotOption(
-    @Param('optionId') optionId: string,
-    @Body() updateData: UpdateSlotOptionDto,
-  ) {
-    return await this.promotionSlotService.updateOption(optionId, updateData);
-  }
+  // @Patch('option/:optionId')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Actualizar una opción de slot',
+  //   description:
+  //     'Actualiza los datos de una opción existente. Todos los campos son opcionales.',
+  // })
+  // @ApiParam({
+  //   name: 'optionId',
+  //   type: String,
+  //   description: 'ID de la opción a actualizar',
+  //   example: '123e4567-e89b-12d3-a456-426614174010',
+  // })
+  // @ApiBody({
+  //   type: UpdateSlotOptionDto,
+  //   description: 'Datos a actualizar de la opción',
+  //   examples: {
+  //     example1: {
+  //       summary: 'Cambiar costo extra',
+  //       value: {
+  //         extraCost: 1000,
+  //       },
+  //     },
+  //     example2: {
+  //       summary: 'Cambiar producto',
+  //       value: {
+  //         productId: '123e4567-e89b-12d3-a456-426614174102',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Opción actualizada exitosamente',
+  //   schema: {
+  //     example: {
+  //       id: '123e4567-e89b-12d3-a456-426614174010',
+  //       slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //       productId: '123e4567-e89b-12d3-a456-426614174100',
+  //       extraCost: 1000,
+  //       isActive: true,
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  // @ApiResponse({ status: 404, description: 'Opción no encontrada' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async updateSlotOption(
+  //   @Param('optionId') optionId: string,
+  //   @Body() updateData: UpdateSlotOptionDto,
+  // ) {
+  //   return await this.promotionSlotService.updateOption(optionId, updateData);
+  // }
 
   // Eliminar opción
-  @Delete('option/:optionId')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Eliminar una opción de slot',
-    description:
-      'Elimina una opción de producto de un slot. Esta operación es permanente.',
-  })
-  @ApiParam({
-    name: 'optionId',
-    type: String,
-    description: 'ID de la opción a eliminar',
-    example: '123e4567-e89b-12d3-a456-426614174010',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Opción eliminada exitosamente',
-    schema: {
-      example: {
-        message: 'Opción eliminada exitosamente',
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Opción no encontrada' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async deleteSlotOption(@Param('optionId') optionId: string) {
-    return await this.promotionSlotService.deleteOption(optionId);
-  }
+  // @Delete('option/:optionId')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Eliminar una opción de slot',
+  //   description:
+  //     'Elimina una opción de producto de un slot. Esta operación es permanente.',
+  // })
+  // @ApiParam({
+  //   name: 'optionId',
+  //   type: String,
+  //   description: 'ID de la opción a eliminar',
+  //   example: '123e4567-e89b-12d3-a456-426614174010',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Opción eliminada exitosamente',
+  //   schema: {
+  //     example: {
+  //       message: 'Opción eliminada exitosamente',
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 404, description: 'Opción no encontrada' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async deleteSlotOption(@Param('optionId') optionId: string) {
+  //   return await this.promotionSlotService.deleteOption(optionId);
+  // }
 
   // ==================== ENDPOINTS PARA ASIGNACIONES ====================
 
-  @Post('assignment/:promotionId')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Asignar un slot a una promoción',
-    description:
-      'Asigna un slot existente a una promoción con cantidad e indicador de opcionalidad específicos.',
-  })
-  @ApiParam({
-    name: 'promotionId',
-    type: String,
-    description: 'ID de la promoción',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @ApiBody({
-    type: CreatePromotionSlotAssignmentDto,
-    description: 'Datos para asignar el slot a la promoción',
-    examples: {
-      example1: {
-        summary: 'Asignar slot con cantidad 1',
-        value: {
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          quantity: 1,
-          isOptional: false,
-        },
-      },
-      example2: {
-        summary: 'Asignar slot con cantidad 2',
-        value: {
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          quantity: 2,
-          isOptional: true,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Slot asignado a la promoción exitosamente',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174010',
-        promotionId: '123e4567-e89b-12d3-a456-426614174000',
-        slotId: '123e4567-e89b-12d3-a456-426614174001',
-        quantity: 2,
-        isOptional: false,
-        createdAt: '2024-01-15T10:30:00.000Z',
-        updatedAt: '2024-01-15T10:30:00.000Z',
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Promoción o slot no encontrado' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async createAssignment(
-    @Param('promotionId') promotionId: string,
-    @Body() createData: CreatePromotionSlotAssignmentDto,
-  ): Promise<PromotionSlotAssignment> {
-    return await this.assignmentService.create(promotionId, createData);
-  }
+  // @Post('assignment/:promotionId')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Asignar un slot a una promoción',
+  //   description:
+  //     'Asigna un slot existente a una promoción con cantidad e indicador de opcionalidad específicos.',
+  // })
+  // @ApiParam({
+  //   name: 'promotionId',
+  //   type: String,
+  //   description: 'ID de la promoción',
+  //   example: '123e4567-e89b-12d3-a456-426614174000',
+  // })
+  // @ApiBody({
+  //   type: CreatePromotionSlotAssignmentDto,
+  //   description: 'Datos para asignar el slot a la promoción',
+  //   examples: {
+  //     example1: {
+  //       summary: 'Asignar slot con cantidad 1',
+  //       value: {
+  //         slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //         quantity: 1,
+  //         isOptional: false,
+  //       },
+  //     },
+  //     example2: {
+  //       summary: 'Asignar slot con cantidad 2',
+  //       value: {
+  //         slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //         quantity: 2,
+  //         isOptional: true,
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 201,
+  //   description: 'Slot asignado a la promoción exitosamente',
+  //   schema: {
+  //     example: {
+  //       id: '123e4567-e89b-12d3-a456-426614174010',
+  //       promotionId: '123e4567-e89b-12d3-a456-426614174000',
+  //       slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //       quantity: 2,
+  //       isOptional: false,
+  //       createdAt: '2024-01-15T10:30:00.000Z',
+  //       updatedAt: '2024-01-15T10:30:00.000Z',
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  // @ApiResponse({ status: 404, description: 'Promoción o slot no encontrado' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async createAssignment(
+  //   @Param('promotionId') promotionId: string,
+  //   @Body() createData: CreatePromotionSlotAssignmentDto,
+  // ): Promise<PromotionSlotAssignment> {
+  //   return await this.assignmentService.create(promotionId, createData);
+  // }
 
-  @Get('assignment/promotion/:promotionId')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
-  @ApiOperation({
-    summary: 'Obtener asignaciones de slots por promoción',
-    description:
-      'Obtiene todas las asignaciones de slots asociadas a una promoción específica.',
-  })
-  @ApiParam({
-    name: 'promotionId',
-    type: String,
-    description: 'ID de la promoción',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de asignaciones de slots de la promoción',
-    schema: {
-      example: [
-        {
-          id: '123e4567-e89b-12d3-a456-426614174010',
-          promotionId: '123e4567-e89b-12d3-a456-426614174000',
-          slotId: '123e4567-e89b-12d3-a456-426614174001',
-          quantity: 2,
-          isOptional: false,
-          slot: {
-            id: '123e4567-e89b-12d3-a456-426614174001',
-            name: 'Porción de Torta',
-            description: 'Selecciona tu torta favorita',
-            options: [],
-          },
-        },
-      ],
-    },
-  })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  async getAssignmentsByPromotion(
-    @Param('promotionId') promotionId: string,
-  ): Promise<PromotionSlotAssignment[]> {
-    return await this.assignmentService.findByPromotionId(promotionId);
-  }
+  // @Get('assignment/promotion/:promotionId')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
+  // @ApiOperation({
+  //   summary: 'Obtener asignaciones de slots por promoción',
+  //   description:
+  //     'Obtiene todas las asignaciones de slots asociadas a una promoción específica.',
+  // })
+  // @ApiParam({
+  //   name: 'promotionId',
+  //   type: String,
+  //   description: 'ID de la promoción',
+  //   example: '123e4567-e89b-12d3-a456-426614174000',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Lista de asignaciones de slots de la promoción',
+  //   schema: {
+  //     example: [
+  //       {
+  //         id: '123e4567-e89b-12d3-a456-426614174010',
+  //         promotionId: '123e4567-e89b-12d3-a456-426614174000',
+  //         slotId: '123e4567-e89b-12d3-a456-426614174001',
+  //         quantity: 2,
+  //         isOptional: false,
+  //         slot: {
+  //           id: '123e4567-e89b-12d3-a456-426614174001',
+  //           name: 'Porción de Torta',
+  //           description: 'Selecciona tu torta favorita',
+  //           options: [],
+  //         },
+  //       },
+  //     ],
+  //   },
+  // })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // async getAssignmentsByPromotion(
+  //   @Param('promotionId') promotionId: string,
+  // ): Promise<PromotionSlotAssignment[]> {
+  //   return await this.assignmentService.findByPromotionId(promotionId);
+  // }
 
-  @Get('assignment/slot/:slotId')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
-  @ApiOperation({
-    summary: 'Obtener asignaciones de un slot',
-    description:
-      'Obtiene todas las promociones a las que está asignado un slot específico.',
-  })
-  @ApiParam({
-    name: 'slotId',
-    type: String,
-    description: 'ID del slot',
-    example: '123e4567-e89b-12d3-a456-426614174001',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de asignaciones del slot',
-  })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  async getAssignmentsBySlot(
-    @Param('slotId') slotId: string,
-  ): Promise<PromotionSlotAssignment[]> {
-    return await this.assignmentService.findBySlotId(slotId);
-  }
+  // @Get('assignment/slot/:slotId')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
+  // @ApiOperation({
+  //   summary: 'Obtener asignaciones de un slot',
+  //   description:
+  //     'Obtiene todas las promociones a las que está asignado un slot específico.',
+  // })
+  // @ApiParam({
+  //   name: 'slotId',
+  //   type: String,
+  //   description: 'ID del slot',
+  //   example: '123e4567-e89b-12d3-a456-426614174001',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Lista de asignaciones del slot',
+  // })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // async getAssignmentsBySlot(
+  //   @Param('slotId') slotId: string,
+  // ): Promise<PromotionSlotAssignment[]> {
+  //   return await this.assignmentService.findBySlotId(slotId);
+  // }
 
-  @Patch('assignment/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Actualizar una asignación de slot',
-    description:
-      'Actualiza la cantidad o el indicador de opcionalidad de una asignación existente.',
-  })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'ID de la asignación a actualizar',
-    example: '123e4567-e89b-12d3-a456-426614174010',
-  })
-  @ApiBody({
-    type: UpdatePromotionSlotAssignmentDto,
-    description: 'Datos a actualizar de la asignación',
-    examples: {
-      example1: {
-        summary: 'Cambiar cantidad',
-        value: {
-          quantity: 3,
-        },
-      },
-      example2: {
-        summary: 'Cambiar a opcional',
-        value: {
-          isOptional: true,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Asignación actualizada exitosamente',
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async updateAssignment(
-    @Param('id') id: string,
-    @Body() updateData: UpdatePromotionSlotAssignmentDto,
-  ): Promise<PromotionSlotAssignment> {
-    return await this.assignmentService.update(id, updateData);
-  }
+  // @Patch('assignment/:id')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Actualizar una asignación de slot',
+  //   description:
+  //     'Actualiza la cantidad o el indicador de opcionalidad de una asignación existente.',
+  // })
+  // @ApiParam({
+  //   name: 'id',
+  //   type: String,
+  //   description: 'ID de la asignación a actualizar',
+  //   example: '123e4567-e89b-12d3-a456-426614174010',
+  // })
+  // @ApiBody({
+  //   type: UpdatePromotionSlotAssignmentDto,
+  //   description: 'Datos a actualizar de la asignación',
+  //   examples: {
+  //     example1: {
+  //       summary: 'Cambiar cantidad',
+  //       value: {
+  //         quantity: 3,
+  //       },
+  //     },
+  //     example2: {
+  //       summary: 'Cambiar a opcional',
+  //       value: {
+  //         isOptional: true,
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Asignación actualizada exitosamente',
+  // })
+  // @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  // @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async updateAssignment(
+  //   @Param('id') id: string,
+  //   @Body() updateData: UpdatePromotionSlotAssignmentDto,
+  // ): Promise<PromotionSlotAssignment> {
+  //   return await this.assignmentService.update(id, updateData);
+  // }
 
-  @Delete('assignment/:id')
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
-  @ApiOperation({
-    summary: 'Eliminar una asignación de slot',
-    description:
-      'Elimina la asignación de un slot a una promoción. El slot y la promoción no se eliminan.',
-  })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'ID de la asignación a eliminar',
-    example: '123e4567-e89b-12d3-a456-426614174010',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Asignación eliminada exitosamente',
-    schema: {
-      example: {
-        message:
-          'Slot assignment with ID 123e4567-e89b-12d3-a456-426614174010 deleted successfully.',
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
-  async deleteAssignment(
-    @Param('id') id: string,
-  ): Promise<{ message: string }> {
-    return await this.assignmentService.delete(id);
-  }
+  // @Delete('assignment/:id')
+  // @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  // @ApiOperation({
+  //   summary: 'Eliminar una asignación de slot',
+  //   description:
+  //     'Elimina la asignación de un slot a una promoción. El slot y la promoción no se eliminan.',
+  // })
+  // @ApiParam({
+  //   name: 'id',
+  //   type: String,
+  //   description: 'ID de la asignación a eliminar',
+  //   example: '123e4567-e89b-12d3-a456-426614174010',
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Asignación eliminada exitosamente',
+  //   schema: {
+  //     example: {
+  //       message:
+  //         'Slot assignment with ID 123e4567-e89b-12d3-a456-426614174010 deleted successfully.',
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  // async deleteAssignment(
+  //   @Param('id') id: string,
+  // ): Promise<{ message: string }> {
+  //   return await this.assignmentService.delete(id);
+  // }
 }
