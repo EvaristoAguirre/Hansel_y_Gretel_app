@@ -9,7 +9,7 @@ import { PromotionSlotAssignmentRepository } from '../repositories/promotion-slo
 import { PromotionSlotRepository } from '../repositories/promotion-slot.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { LoggerService } from '../../Monitoring/monitoring-logger.service';
-import { CreatePromotionSlotAssignmentDto } from '../dtos/create-promotion-slot-assignment.dto';
+// import { CreatePromotionSlotAssignmentDto } from '../dtos/create-promotion-slot-assignment.dto';
 import { UpdatePromotionSlotAssignmentDto } from '../dtos/update-promotion-slot-assignment.dto';
 import { PromotionSlotAssignment } from '../entities/promotion-slot-assignment.entity';
 
@@ -55,67 +55,67 @@ export class PromotionSlotAssignmentService {
   /**
    * Valida que un slot exista
    */
-  private async validateSlotExists(slotId: string): Promise<void> {
-    const slot = await this.slotRepository.findById(slotId);
-    if (!slot) {
-      throw new NotFoundException(`Slot with ID ${slotId} not found.`);
-    }
-  }
+  // private async validateSlotExists(slotId: string): Promise<void> {
+  //   const slot = await this.slotRepository.findById(slotId);
+  //   if (!slot) {
+  //     throw new NotFoundException(`Slot with ID ${slotId} not found.`);
+  //   }
+  // }
 
-  /**
-   * Crea una nueva asignación de slot a promoción
-   */
-  async create(
-    promotionId: string,
-    createDto: CreatePromotionSlotAssignmentDto,
-  ): Promise<PromotionSlotAssignment> {
-    this.validateUUID(promotionId, 'promotionId');
-    this.validateUUID(createDto.slotId, 'slotId');
+  // /**
+  //  * Crea una nueva asignación de slot a promoción
+  //  */
+  // async create(
+  //   promotionId: string,
+  //   createDto: CreatePromotionSlotAssignmentDto,
+  // ): Promise<PromotionSlotAssignment> {
+  //   this.validateUUID(promotionId, 'promotionId');
+  //   this.validateUUID(createDto.slotId, 'slotId');
 
-    if (createDto.quantity < 1) {
-      throw new BadRequestException('Quantity must be at least 1.');
-    }
+  //   if (createDto.quantity < 1) {
+  //     throw new BadRequestException('Quantity must be at least 1.');
+  //   }
 
-    const queryRunner = this.assignmentRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  //   const queryRunner = this.assignmentRepository.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    try {
-      // Validar que la promoción y el slot existan
-      await this.validatePromotionExists(promotionId);
-      await this.validateSlotExists(createDto.slotId);
+  //   try {
+  //     // Validar que la promoción y el slot existan
+  //     await this.validatePromotionExists(promotionId);
+  //     await this.validateSlotExists(createDto.slotId);
 
-      // Verificar que no exista ya una asignación entre este slot y esta promoción
-      const existing = await this.assignmentRepository.exists(
-        promotionId,
-        createDto.slotId,
-      );
-      if (existing) {
-        throw new BadRequestException(
-          `Slot ${createDto.slotId} is already assigned to promotion ${promotionId}.`,
-        );
-      }
+  //     // Verificar que no exista ya una asignación entre este slot y esta promoción
+  //     const existing = await this.assignmentRepository.exists(
+  //       promotionId,
+  //       createDto.slotId,
+  //     );
+  //     if (existing) {
+  //       throw new BadRequestException(
+  //         `Slot ${createDto.slotId} is already assigned to promotion ${promotionId}.`,
+  //       );
+  //     }
 
-      // Crear la asignación
-      const assignment = await this.assignmentRepository.create(
-        {
-          ...createDto,
-          promotionId,
-        },
-        queryRunner,
-      );
+  //     // Crear la asignación
+  //     const assignment = await this.assignmentRepository.create(
+  //       {
+  //         ...createDto,
+  //         promotionId,
+  //       },
+  //       queryRunner,
+  //     );
 
-      await queryRunner.commitTransaction();
-      return assignment;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
+  //     await queryRunner.commitTransaction();
+  //     return assignment;
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
 
-      this.logger.error('createPromotionSlotAssignment', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     this.logger.error('createPromotionSlotAssignment', error);
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 
   /**
    * Obtiene todas las asignaciones de una promoción
@@ -137,17 +137,17 @@ export class PromotionSlotAssignmentService {
   /**
    * Obtiene todas las asignaciones de un slot
    */
-  async findBySlotId(slotId: string): Promise<PromotionSlotAssignment[]> {
-    this.validateUUID(slotId, 'slotId');
+  // async findBySlotId(slotId: string): Promise<PromotionSlotAssignment[]> {
+  //   this.validateUUID(slotId, 'slotId');
 
-    try {
-      await this.validateSlotExists(slotId);
-      return await this.assignmentRepository.findBySlotId(slotId);
-    } catch (error) {
-      this.logger.error('findBySlotId', error);
-      throw error;
-    }
-  }
+  //   try {
+  //     await this.validateSlotExists(slotId);
+  //     return await this.assignmentRepository.findBySlotId(slotId);
+  //   } catch (error) {
+  //     this.logger.error('findBySlotId', error);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Actualiza una asignación

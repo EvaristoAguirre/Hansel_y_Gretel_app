@@ -11,8 +11,8 @@ import { PromotionSlotRepository } from '../repositories/promotion-slot.reposito
 import { ProductRepository } from '../repositories/product.repository';
 import { CreatePromotionSlotDto } from '../dtos/create-promotion-slot.dto';
 import { UpdatePromotionSlotDto } from '../dtos/update-promotion-slot.dto';
-import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
-import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
+// import { CreateSlotOptionDto } from '../dtos/create-slot-option.dto';
+// import { UpdateSlotOptionDto } from '../dtos/update-slot-option.dto';
 import { PromotionSlot } from '../entities/promotion-slot.entity';
 import { PromotionSlotOption } from '../entities/promotion-slot-option.entity';
 import { PromotionSlotAssignmentService } from './promotion-slot-assignment.service';
@@ -511,222 +511,222 @@ export class PromotionSlotService {
    * Crea una nueva opción para un slot
    * @param createDto - Datos para crear la opción
    */
-  async createOption(
-    createDto: CreateSlotOptionDto,
-  ): Promise<PromotionSlotOption> {
-    // Validar formato de IDs
-    this.validateUUID(createDto.slotId, 'slotId');
-    this.validateUUID(createDto.productId, 'productId');
+  // async createOption(
+  //   createDto: CreateSlotOptionDto,
+  // ): Promise<PromotionSlotOption> {
+  //   // Validar formato de IDs
+  //   this.validateUUID(createDto.slotId, 'slotId');
+  //   this.validateUUID(createDto.productId, 'productId');
 
-    // Validar campos numéricos
-    if (createDto.extraCost < 0) {
-      throw new BadRequestException('Extra cost cannot be negative.');
-    }
+  //   // Validar campos numéricos
+  //   if (createDto.extraCost < 0) {
+  //     throw new BadRequestException('Extra cost cannot be negative.');
+  //   }
 
-    const queryRunner = this.promotionSlotRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  //   const queryRunner = this.promotionSlotRepository.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    try {
-      // Validar que el slot exista
-      const slot = await queryRunner.manager.findOne(PromotionSlot, {
-        where: { id: createDto.slotId, isActive: true },
-      });
+  //   try {
+  //     // Validar que el slot exista
+  //     const slot = await queryRunner.manager.findOne(PromotionSlot, {
+  //       where: { id: createDto.slotId, isActive: true },
+  //     });
 
-      if (!slot) {
-        throw new NotFoundException(
-          `Promotion slot with ID ${createDto.slotId} not found.`,
-        );
-      }
+  //     if (!slot) {
+  //       throw new NotFoundException(
+  //         `Promotion slot with ID ${createDto.slotId} not found.`,
+  //       );
+  //     }
 
-      // Validar que el producto exista y esté activo
-      const product = await this.productRepository.getProductById(
-        createDto.productId,
-      );
+  //     // Validar que el producto exista y esté activo
+  //     const product = await this.productRepository.getProductById(
+  //       createDto.productId,
+  //     );
 
-      if (!product) {
-        throw new NotFoundException(
-          `Product with ID ${createDto.productId} not found.`,
-        );
-      }
+  //     if (!product) {
+  //       throw new NotFoundException(
+  //         `Product with ID ${createDto.productId} not found.`,
+  //       );
+  //     }
 
-      // Validar que el producto NO sea una promoción (evitar recursión)
-      if (product.type === 'promotion') {
-        throw new BadRequestException(
-          `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
-        );
-      }
+  //     // Validar que el producto NO sea una promoción (evitar recursión)
+  //     if (product.type === 'promotion') {
+  //       throw new BadRequestException(
+  //         `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
+  //       );
+  //     }
 
-      // Crear la opción
-      const option = queryRunner.manager.create(PromotionSlotOption, {
-        ...createDto,
-        isActive: true,
-      });
+  //     // Crear la opción
+  //     const option = queryRunner.manager.create(PromotionSlotOption, {
+  //       ...createDto,
+  //       isActive: true,
+  //     });
 
-      const savedOption = await queryRunner.manager.save(
-        PromotionSlotOption,
-        option,
-      );
+  //     const savedOption = await queryRunner.manager.save(
+  //       PromotionSlotOption,
+  //       option,
+  //     );
 
-      await queryRunner.commitTransaction();
+  //     await queryRunner.commitTransaction();
 
-      // Retornar opción con relaciones
-      return await this.promotionSlotOptionRepository.findOne({
-        where: { id: savedOption.id },
-        relations: ['product', 'slot'],
-      });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
+  //     // Retornar opción con relaciones
+  //     return await this.promotionSlotOptionRepository.findOne({
+  //       where: { id: savedOption.id },
+  //       relations: ['product', 'slot'],
+  //     });
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
 
-      this.logger.error('createOption', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     this.logger.error('createOption', error);
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 
   /**
    * Actualiza una opción existente de un slot
    * @param optionId - ID de la opción a actualizar
    * @param updateDto - Datos a actualizar
    */
-  async updateOption(
-    optionId: string,
-    updateDto: UpdateSlotOptionDto,
-  ): Promise<PromotionSlotOption> {
-    this.validateUUID(optionId, 'optionId');
+  // async updateOption(
+  //   optionId: string,
+  //   updateDto: UpdateSlotOptionDto,
+  // ): Promise<PromotionSlotOption> {
+  //   this.validateUUID(optionId, 'optionId');
 
-    // Validar que hay datos para actualizar
-    if (Object.keys(updateDto).length === 0) {
-      throw new BadRequestException('No update data provided.');
-    }
+  //   // Validar que hay datos para actualizar
+  //   if (Object.keys(updateDto).length === 0) {
+  //     throw new BadRequestException('No update data provided.');
+  //   }
 
-    // Validar campos numéricos si se proporcionan
-    if (updateDto.extraCost !== undefined && updateDto.extraCost < 0) {
-      throw new BadRequestException('Extra cost cannot be negative.');
-    }
+  //   // Validar campos numéricos si se proporcionan
+  //   if (updateDto.extraCost !== undefined && updateDto.extraCost < 0) {
+  //     throw new BadRequestException('Extra cost cannot be negative.');
+  //   }
 
-    const queryRunner = this.promotionSlotRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  //   const queryRunner = this.promotionSlotRepository.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    try {
-      // Verificar que la opción existe
-      const existingOption = await queryRunner.manager.findOne(
-        PromotionSlotOption,
-        {
-          where: { id: optionId, isActive: true },
-          relations: ['slot'],
-        },
-      );
+  //   try {
+  //     // Verificar que la opción existe
+  //     const existingOption = await queryRunner.manager.findOne(
+  //       PromotionSlotOption,
+  //       {
+  //         where: { id: optionId, isActive: true },
+  //         relations: ['slot'],
+  //       },
+  //     );
 
-      if (!existingOption) {
-        throw new NotFoundException(
-          `Slot option with ID ${optionId} not found.`,
-        );
-      }
+  //     if (!existingOption) {
+  //       throw new NotFoundException(
+  //         `Slot option with ID ${optionId} not found.`,
+  //       );
+  //     }
 
-      // Si se actualiza el producto, validar que exista y no sea promoción
-      if (updateDto.productId) {
-        this.validateUUID(updateDto.productId, 'productId');
+  //     // Si se actualiza el producto, validar que exista y no sea promoción
+  //     if (updateDto.productId) {
+  //       this.validateUUID(updateDto.productId, 'productId');
 
-        const product = await this.productRepository.getProductById(
-          updateDto.productId,
-        );
+  //       const product = await this.productRepository.getProductById(
+  //         updateDto.productId,
+  //       );
 
-        if (!product) {
-          throw new NotFoundException(
-            `Product with ID ${updateDto.productId} not found.`,
-          );
-        }
+  //       if (!product) {
+  //         throw new NotFoundException(
+  //           `Product with ID ${updateDto.productId} not found.`,
+  //         );
+  //       }
 
-        if (product.type === 'promotion') {
-          throw new BadRequestException(
-            `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
-          );
-        }
-      }
+  //       if (product.type === 'promotion') {
+  //         throw new BadRequestException(
+  //           `Cannot add promotion "${product.name}" as a slot option. Only regular products are allowed.`,
+  //         );
+  //       }
+  //     }
 
-      // Actualizar la opción
-      await queryRunner.manager.update(
-        PromotionSlotOption,
-        optionId,
-        updateDto,
-      );
+  //     // Actualizar la opción
+  //     await queryRunner.manager.update(
+  //       PromotionSlotOption,
+  //       optionId,
+  //       updateDto,
+  //     );
 
-      await queryRunner.commitTransaction();
+  //     await queryRunner.commitTransaction();
 
-      // Retornar opción actualizada con relaciones
-      return await this.promotionSlotOptionRepository.findOne({
-        where: { id: optionId },
-        relations: ['product', 'slot'],
-      });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
+  //     // Retornar opción actualizada con relaciones
+  //     return await this.promotionSlotOptionRepository.findOne({
+  //       where: { id: optionId },
+  //       relations: ['product', 'slot'],
+  //     });
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
 
-      this.logger.error('updateOption', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     this.logger.error('updateOption', error);
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 
   /**
    * Elimina una opción de un slot (soft delete)
    * @param optionId - ID de la opción a eliminar
    */
-  async deleteOption(optionId: string): Promise<{ message: string }> {
-    this.validateUUID(optionId, 'optionId');
+  // async deleteOption(optionId: string): Promise<{ message: string }> {
+  //   this.validateUUID(optionId, 'optionId');
 
-    const queryRunner = this.promotionSlotRepository.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  //   const queryRunner = this.promotionSlotRepository.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    try {
-      // Verificar que la opción existe
-      const existingOption = await queryRunner.manager.findOne(
-        PromotionSlotOption,
-        {
-          where: { id: optionId, isActive: true },
-        },
-      );
+  //   try {
+  //     // Verificar que la opción existe
+  //     const existingOption = await queryRunner.manager.findOne(
+  //       PromotionSlotOption,
+  //       {
+  //         where: { id: optionId, isActive: true },
+  //       },
+  //     );
 
-      if (!existingOption) {
-        throw new NotFoundException(
-          `Slot option with ID ${optionId} not found.`,
-        );
-      }
+  //     if (!existingOption) {
+  //       throw new NotFoundException(
+  //         `Slot option with ID ${optionId} not found.`,
+  //       );
+  //     }
 
-      // Validar que quede al menos una opción activa en el slot
-      const activeOptionsCount = await queryRunner.manager.count(
-        PromotionSlotOption,
-        {
-          where: { slotId: existingOption.slotId, isActive: true },
-        },
-      );
+  //     // Validar que quede al menos una opción activa en el slot
+  //     const activeOptionsCount = await queryRunner.manager.count(
+  //       PromotionSlotOption,
+  //       {
+  //         where: { slotId: existingOption.slotId, isActive: true },
+  //       },
+  //     );
 
-      if (activeOptionsCount <= 1) {
-        throw new BadRequestException(
-          'Cannot delete the last active option of a slot. At least one option must remain active.',
-        );
-      }
+  //     if (activeOptionsCount <= 1) {
+  //       throw new BadRequestException(
+  //         'Cannot delete the last active option of a slot. At least one option must remain active.',
+  //       );
+  //     }
 
-      // Soft delete de la opción (marcar como inactiva)
-      await queryRunner.manager.update(PromotionSlotOption, optionId, {
-        isActive: false,
-      });
+  //     // Soft delete de la opción (marcar como inactiva)
+  //     await queryRunner.manager.update(PromotionSlotOption, optionId, {
+  //       isActive: false,
+  //     });
 
-      await queryRunner.commitTransaction();
+  //     await queryRunner.commitTransaction();
 
-      return {
-        message: `Slot option with ID ${optionId} deleted successfully.`,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error('deleteOption', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //     return {
+  //       message: `Slot option with ID ${optionId} deleted successfully.`,
+  //     };
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+  //     this.logger.error('deleteOption', error);
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 }
