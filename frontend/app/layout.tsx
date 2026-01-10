@@ -4,7 +4,6 @@ import Navbar from '@/components/Navbar/Navbar';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import theme from '@/styles/theme';
 import { AuthProvider } from './context/authContext';
-// import Footer from "@/components/Footer/Footer";
 
 export const metadata: Metadata = {
   title: 'Hansel&Gretel App',
@@ -26,7 +25,6 @@ export default function RootLayout({
               <CssBaseline />
               <Navbar />
               <main>{children}</main>
-              {/* <Footer /> */}
             </ThemeProvider>
           </AuthProvider>
         </div>
