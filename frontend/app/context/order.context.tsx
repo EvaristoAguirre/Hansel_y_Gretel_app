@@ -1,5 +1,5 @@
-'use client';
-import { URI_ORDER, URI_ORDER_OPEN, URI_TABLE } from '@/components/URI/URI';
+"use client";
+import { URI_ORDER, URI_ORDER_OPEN, URI_TABLE } from "@/components/URI/URI";
 import {
   createContext,
   useContext,
@@ -7,25 +7,25 @@ import {
   useCallback,
   useEffect,
   use,
-} from 'react';
-import Swal from 'sweetalert2';
+} from "react";
+import Swal from "sweetalert2";
 import {
   ICheckStock,
   ProductResponse,
   SelectedProductsI,
-} from '../../components/Interfaces/IProducts';
-import { useOrderStore } from '../../components/Order/useOrderStore';
-import { useRoomContext } from './room.context';
-import { IOrderDetails } from '@/components/Interfaces/IOrder';
-import { useAuth } from './authContext';
-import { checkStock } from '@/api/products';
-import { cancelOrder } from '@/api/order';
-import { useTableStore } from '@/components/Table/useTableStore';
-import { ITable } from '@/components/Interfaces/ITable';
-import { TableState } from '@/components/Enums/table';
-import { OrderState } from '@/components/Enums/order';
-import { editTable } from '@/api/tables';
-import { webSocketService } from '@/services/websocket.service';
+} from "../../components/Interfaces/IProducts";
+import { useOrderStore } from "../../components/Order/useOrderStore";
+import { useRoomContext } from "./room.context";
+import { IOrderDetails } from "@/components/Interfaces/IOrder";
+import { useAuth } from "./authContext";
+import { checkStock } from "@/api/products";
+import { cancelOrder } from "@/api/order";
+import { useTableStore } from "@/components/Table/useTableStore";
+import { ITable } from "@/components/Interfaces/ITable";
+import { TableState } from "@/components/Enums/table";
+import { OrderState } from "@/components/Enums/order";
+import { editTable } from "@/api/tables";
+import { webSocketService } from "@/services/websocket.service";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -115,8 +115,8 @@ export const useOrderContext = () => {
 const OrderProvider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
-  if (typeof window !== 'undefined') {
-    window.console.log('🚀 [OrderProvider] Componente renderizado');
+  if (typeof window !== "undefined") {
+    window.console.log("🚀 [OrderProvider] Componente renderizado");
   }
 
   const { getAccessToken } = useAuth();
@@ -150,26 +150,26 @@ const OrderProvider = ({
   }>({});
 
   useEffect(() => {
-    console.log('🔌 [OrderProvider] useEffect de token ejecutado');
+    console.log("🔌 [OrderProvider] useEffect de token ejecutado");
     const token = getAccessToken();
     if (token) {
-      console.log('🔌 [OrderProvider] Token obtenido');
+      console.log("🔌 [OrderProvider] Token obtenido");
       setToken(token);
     } else {
-      console.log('🔌 [OrderProvider] No hay token disponible');
+      console.log("🔌 [OrderProvider] No hay token disponible");
     }
 
     // Asegurar que el WebSocket esté conectado
-    console.log('🔌 [OrderProvider] Inicializando WebSocket...');
+    console.log("🔌 [OrderProvider] Inicializando WebSocket...");
     try {
       const socket = webSocketService.connect();
       console.log(
-        '🔌 [OrderProvider] WebSocket conectado?',
+        "🔌 [OrderProvider] WebSocket conectado?",
         webSocketService.isConnected()
       );
-      console.log('🔌 [OrderProvider] Socket ID:', socket?.id);
+      console.log("🔌 [OrderProvider] Socket ID:", socket?.id);
     } catch (error) {
-      console.error('🔌 [OrderProvider] Error al conectar WebSocket:', error);
+      console.error("🔌 [OrderProvider] Error al conectar WebSocket:", error);
     }
   }, [getAccessToken]);
 
@@ -214,17 +214,17 @@ const OrderProvider = ({
   );
 
   const fetchOrderBySelectedTable = useCallback(async () => {
-    console.log('📥 [fetchOrderBySelectedTable] ===== INICIANDO =====');
+    console.log("📥 [fetchOrderBySelectedTable] ===== INICIANDO =====");
     console.log(
-      '📥 [fetchOrderBySelectedTable] Mesa seleccionada:',
+      "📥 [fetchOrderBySelectedTable] Mesa seleccionada:",
       selectedTable?.id
     );
     console.log(
-      '📥 [fetchOrderBySelectedTable] Estado de la mesa (selectedTable):',
+      "📥 [fetchOrderBySelectedTable] Estado de la mesa (selectedTable):",
       selectedTable?.state
     );
     console.log(
-      '📥 [fetchOrderBySelectedTable] Órdenes de la mesa:',
+      "📥 [fetchOrderBySelectedTable] Órdenes de la mesa:",
       selectedTable?.orders
     );
 
@@ -232,7 +232,7 @@ const OrderProvider = ({
     const updatedTable = tables.find((t) => t.id === selectedTable?.id);
     const actualTableState = updatedTable?.state || selectedTable?.state;
     console.log(
-      '📥 [fetchOrderBySelectedTable] Estado de la mesa (actualizado):',
+      "📥 [fetchOrderBySelectedTable] Estado de la mesa (actualizado):",
       actualTableState
     );
 
@@ -242,7 +242,7 @@ const OrderProvider = ({
       actualTableState === TableState.CLOSED
     ) {
       console.log(
-        '📥 [fetchOrderBySelectedTable] Mesa disponible o cerrada, limpiando orden'
+        "📥 [fetchOrderBySelectedTable] Mesa disponible o cerrada, limpiando orden"
       );
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
@@ -260,7 +260,7 @@ const OrderProvider = ({
         if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
           orderId = tableWithOrders.orders[0];
           console.log(
-            '📥 [fetchOrderBySelectedTable] Orden encontrada en mesa:',
+            "📥 [fetchOrderBySelectedTable] Orden encontrada en mesa:",
             orderId
           );
         } else {
@@ -271,12 +271,12 @@ const OrderProvider = ({
           if (orderInStore) {
             orderId = orderInStore.id;
             console.log(
-              '📥 [fetchOrderBySelectedTable] Orden encontrada en store:',
+              "📥 [fetchOrderBySelectedTable] Orden encontrada en store:",
               orderId
             );
           } else {
             console.log(
-              '📥 [fetchOrderBySelectedTable] No se encontró orden. Buscando por tableId en backend...'
+              "📥 [fetchOrderBySelectedTable] No se encontró orden. Buscando por tableId en backend..."
             );
             // Si no hay orden en el store, intentar obtener todas las órdenes de la mesa desde el backend
             // Por ahora, asumimos que si la mesa tiene estado diferente a AVAILABLE/CLOSED, tiene una orden
@@ -285,7 +285,7 @@ const OrderProvider = ({
               const ordersResponse = await fetch(
                 `${URI_ORDER}?tableId=${selectedTable.id}`,
                 {
-                  method: 'GET',
+                  method: "GET",
                   headers: {
                     Authorization: `Bearer ${token}`,
                   },
@@ -296,18 +296,18 @@ const OrderProvider = ({
                 if (ordersData && ordersData.length > 0) {
                   // Obtener la orden más reciente o la que esté en estado pending_payment
                   const pendingOrder = ordersData.find(
-                    (o: IOrderDetails) => o.state === 'pending_payment'
+                    (o: IOrderDetails) => o.state === "pending_payment"
                   );
                   orderId = pendingOrder?.id || ordersData[0]?.id;
                   console.log(
-                    '📥 [fetchOrderBySelectedTable] Orden obtenida desde backend:',
+                    "📥 [fetchOrderBySelectedTable] Orden obtenida desde backend:",
                     orderId
                   );
                 }
               }
             } catch (error) {
               console.error(
-                '📥 [fetchOrderBySelectedTable] Error al obtener órdenes por tableId:',
+                "📥 [fetchOrderBySelectedTable] Error al obtener órdenes por tableId:",
                 error
               );
             }
@@ -316,11 +316,11 @@ const OrderProvider = ({
 
         if (orderId) {
           console.log(
-            '📥 [fetchOrderBySelectedTable] Obteniendo orden:',
+            "📥 [fetchOrderBySelectedTable] Obteniendo orden:",
             orderId
           );
           const response = await fetch(`${URI_ORDER}/${orderId}`, {
-            method: 'GET',
+            method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -328,9 +328,9 @@ const OrderProvider = ({
           if (response.ok) {
             const data: IOrderDetails = await response.json();
 
-            console.log('📥 [fetchOrderBySelectedTable] Orden obtenida:', data);
+            console.log("📥 [fetchOrderBySelectedTable] Orden obtenida:", data);
             console.log(
-              '📥 [fetchOrderBySelectedTable] Productos en orden:',
+              "📥 [fetchOrderBySelectedTable] Productos en orden:",
               data.products?.length
             );
 
@@ -340,7 +340,7 @@ const OrderProvider = ({
 
             if (productsByOrder && productsByOrder.length > 0) {
               console.log(
-                '📥 [fetchOrderBySelectedTable] Adaptando productos...'
+                "📥 [fetchOrderBySelectedTable] Adaptando productos..."
               );
               // Adaptar ProductLineDto[] a SelectedProductsI[]
               // El backend devuelve ProductLineDto con unitaryPrice: number
@@ -361,19 +361,21 @@ const OrderProvider = ({
                 })
               );
               console.log(
-                '📥 [fetchOrderBySelectedTable] Productos adaptados:',
+                "📥 [fetchOrderBySelectedTable] Productos adaptados:",
                 adaptedProducts.length
               );
               handleSetProductsByOrder(adaptedProducts);
             } else {
               console.log(
-                '📥 [fetchOrderBySelectedTable] No hay productos en la orden'
+                "📥 [fetchOrderBySelectedTable] No hay productos en la orden"
               );
               setConfirmedProducts([]);
             }
           } else {
-            console.error(
-              '📥 [fetchOrderBySelectedTable] Error al obtener la orden:',
+            // Usar console.warn en lugar de console.error porque el 400 es esperado
+            // cuando la orden ya no existe (fue pagada/cancelada)
+            console.warn(
+              "📥 [fetchOrderBySelectedTable] Orden no encontrada o inválida:",
               response.status
             );
             setSelectedOrderByTable(null);
@@ -381,25 +383,25 @@ const OrderProvider = ({
           }
         } else {
           console.log(
-            '📥 [fetchOrderBySelectedTable] No se encontró orden para la mesa'
+            "📥 [fetchOrderBySelectedTable] No se encontró orden para la mesa"
           );
           setSelectedOrderByTable(null);
           setConfirmedProducts([]);
         }
       } catch (error) {
         console.error(
-          '📥 [fetchOrderBySelectedTable] Error al obtener el pedido:',
+          "📥 [fetchOrderBySelectedTable] Error al obtener el pedido:",
           error
         );
         setSelectedOrderByTable(null);
         setConfirmedProducts([]);
       }
     } else {
-      console.log('📥 [fetchOrderBySelectedTable] No hay mesa seleccionada');
+      console.log("📥 [fetchOrderBySelectedTable] No hay mesa seleccionada");
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
     }
-  }, [selectedTable, token, handleSetProductsByOrder]);
+  }, [selectedTable, token, handleSetProductsByOrder, tables, orders]);
 
   useEffect(() => {
     // No hacer fetch si la mesa está en estado AVAILABLE o CLOSED
@@ -412,8 +414,14 @@ const OrderProvider = ({
       actualTableState === TableState.CLOSED
     ) {
       console.log(
-        '📥 [fetchOrderBySelectedTable] Mesa en estado AVAILABLE/CLOSED, saltando fetch'
+        "📥 [fetchOrderBySelectedTable] Mesa en estado AVAILABLE/CLOSED, limpiando estado y saltando fetch"
       );
+      // Limpiar el estado cuando la mesa está disponible o cerrada
+      setSelectedOrderByTable(null);
+      setConfirmedProducts([]);
+      setSelectedProducts([]);
+      setSelectedToppingsByProduct({});
+      setToppingsByProductGroup({});
       return;
     }
     fetchOrderBySelectedTable();
@@ -434,7 +442,7 @@ const OrderProvider = ({
 
       return stock;
     } catch (error) {
-      console.error('Error al obtener el stock:', error);
+      console.error("Error al obtener el stock:", error);
     }
   };
 
@@ -453,7 +461,7 @@ const OrderProvider = ({
 
       return stock;
     } catch (error) {
-      console.error('Error al obtener el stock:', error);
+      console.error("Error al obtener el stock:", error);
     }
   };
 
@@ -469,8 +477,8 @@ const OrderProvider = ({
     const stockResponse = await checkStockAvailability(product.id, newQuantity);
     if (!stockResponse?.available) {
       Swal.fire({
-        icon: 'error',
-        title: 'Stock insuficiente',
+        icon: "error",
+        title: "Stock insuficiente",
         text: stockResponse.message,
       });
       return;
@@ -550,11 +558,11 @@ const OrderProvider = ({
 
   // Listener para evento de ticket impreso
   useEffect(() => {
-    if (typeof window === 'undefined') return; // Solo en cliente
+    if (typeof window === "undefined") return; // Solo en cliente
 
-    console.log('🔔 [orderTicketPrinted] ===== REGISTRANDO LISTENER =====');
+    console.log("🔔 [orderTicketPrinted] ===== REGISTRANDO LISTENER =====");
     console.log(
-      '🔔 [orderTicketPrinted] WebSocket conectado?',
+      "🔔 [orderTicketPrinted] WebSocket conectado?",
       webSocketService.isConnected()
     );
 
@@ -563,22 +571,22 @@ const OrderProvider = ({
 
     // Listener genérico para ver todos los eventos (debug)
     socket.onAny((eventName, ...args) => {
-      console.log('🔍 [WebSocket Debug] Evento recibido:', eventName, args);
-      if (eventName === 'orderTicketPrinted') {
+      console.log("🔍 [WebSocket Debug] Evento recibido:", eventName, args);
+      if (eventName === "orderTicketPrinted") {
         console.log(
-          '🔍 [WebSocket Debug] ⚡⚡⚡ EVENTO orderTicketPrinted DETECTADO ⚡⚡⚡'
+          "🔍 [WebSocket Debug] ⚡⚡⚡ EVENTO orderTicketPrinted DETECTADO ⚡⚡⚡"
         );
       }
     });
 
     const handleTicketPrinted = async (data: any) => {
       console.log(
-        '🔔 [orderTicketPrinted] ⚡⚡⚡ EVENTO RECIBIDO ⚡⚡⚡',
+        "🔔 [orderTicketPrinted] ⚡⚡⚡ EVENTO RECIBIDO ⚡⚡⚡",
         data
       );
-      console.log('🔔 [orderTicketPrinted] Tipo de data:', typeof data);
+      console.log("🔔 [orderTicketPrinted] Tipo de data:", typeof data);
       console.log(
-        '🔔 [orderTicketPrinted] Data completa:',
+        "🔔 [orderTicketPrinted] Data completa:",
         JSON.stringify(data, null, 2)
       );
 
@@ -587,23 +595,23 @@ const OrderProvider = ({
       const orderId = orderData.id;
       const orderTableId = orderData.table?.id || orderData.tableId;
 
-      console.log('🔔 [orderTicketPrinted] Order ID extraído:', orderId);
-      console.log('🔔 [orderTicketPrinted] Table ID extraído:', orderTableId);
+      console.log("🔔 [orderTicketPrinted] Order ID extraído:", orderId);
+      console.log("🔔 [orderTicketPrinted] Table ID extraído:", orderTableId);
 
-      console.log('🔔 [orderTicketPrinted] Evento recibido:', {
+      console.log("🔔 [orderTicketPrinted] Evento recibido:", {
         orderId,
         orderTableId,
       });
       console.log(
-        '🔔 [orderTicketPrinted] Mesa seleccionada:',
+        "🔔 [orderTicketPrinted] Mesa seleccionada:",
         selectedTable?.id
       );
       console.log(
-        '🔔 [orderTicketPrinted] Orden seleccionada:',
+        "🔔 [orderTicketPrinted] Orden seleccionada:",
         selectedOrderByTable?.id
       );
       console.log(
-        '🔔 [orderTicketPrinted] Órdenes en store:',
+        "🔔 [orderTicketPrinted] Órdenes en store:",
         orders.map((o) => o.id)
       );
 
@@ -623,16 +631,16 @@ const OrderProvider = ({
         orderTableInStore;
 
       console.log(
-        '🔔 [orderTicketPrinted] ¿Pertenece a mesa seleccionada?',
+        "🔔 [orderTicketPrinted] ¿Pertenece a mesa seleccionada?",
         belongsToSelectedTable
       );
 
       if (belongsToSelectedTable && token) {
         try {
-          console.log('🔔 [orderTicketPrinted] Haciendo fetch de la orden...');
+          console.log("🔔 [orderTicketPrinted] Haciendo fetch de la orden...");
           // Hacer fetch de la orden completa adaptada desde el backend
           const response = await fetch(`${URI_ORDER}/${orderId}`, {
-            method: 'GET',
+            method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -640,9 +648,9 @@ const OrderProvider = ({
 
           if (response.ok) {
             const orderData: IOrderDetails = await response.json();
-            console.log('🔔 [orderTicketPrinted] Orden obtenida:', orderData);
+            console.log("🔔 [orderTicketPrinted] Orden obtenida:", orderData);
             console.log(
-              '🔔 [orderTicketPrinted] Productos en orden:',
+              "🔔 [orderTicketPrinted] Productos en orden:",
               orderData.products?.length
             );
 
@@ -662,7 +670,7 @@ const OrderProvider = ({
               orders.some((o) => o.id === orderId); // También si existe en el store
 
             console.log(
-              '🔔 [orderTicketPrinted] Condiciones ANTES de actualizar:',
+              "🔔 [orderTicketPrinted] Condiciones ANTES de actualizar:",
               {
                 isSelectedOrder,
                 isSelectedTable,
@@ -688,18 +696,18 @@ const OrderProvider = ({
                   ? OrderState.PENDING_PAYMENT
                   : orderData.state || OrderState.PENDING_PAYMENT;
               console.log(
-                '🔔 [orderTicketPrinted] Actualizando selectedOrderByTable'
+                "🔔 [orderTicketPrinted] Actualizando selectedOrderByTable"
               );
               console.log(
-                '🔔 [orderTicketPrinted] Estado anterior:',
+                "🔔 [orderTicketPrinted] Estado anterior:",
                 selectedOrderByTable?.state
               );
               console.log(
-                '🔔 [orderTicketPrinted] Estado nuevo de la orden:',
+                "🔔 [orderTicketPrinted] Estado nuevo de la orden:",
                 orderData.state
               );
               console.log(
-                '🔔 [orderTicketPrinted] Estado que se establecerá:',
+                "🔔 [orderTicketPrinted] Estado que se establecerá:",
                 newState
               );
 
@@ -709,12 +717,12 @@ const OrderProvider = ({
               });
 
               console.log(
-                '🔔 [orderTicketPrinted] selectedOrderByTable actualizado con estado:',
+                "🔔 [orderTicketPrinted] selectedOrderByTable actualizado con estado:",
                 newState
               );
             } else {
               console.log(
-                '🔔 [orderTicketPrinted] NO se actualiza selectedOrderByTable. Razón:',
+                "🔔 [orderTicketPrinted] NO se actualiza selectedOrderByTable. Razón:",
                 {
                   isSelectedOrder,
                   isSelectedTable,
@@ -738,7 +746,7 @@ const OrderProvider = ({
               shouldUpdateSelectedOrder; // Si actualizamos selectedOrderByTable, también actualizar productos
 
             console.log(
-              '🔔 [orderTicketPrinted] Condiciones de actualización de productos:',
+              "🔔 [orderTicketPrinted] Condiciones de actualización de productos:",
               {
                 isSelectedOrder,
                 isSelectedTable,
@@ -758,9 +766,9 @@ const OrderProvider = ({
               shouldUpdateProducts
             ) {
               console.log(
-                '🔔 [orderTicketPrinted] Actualizando confirmedProducts con',
+                "🔔 [orderTicketPrinted] Actualizando confirmedProducts con",
                 orderData.products.length,
-                'productos'
+                "productos"
               );
               // Adaptar ProductLineDto[] a SelectedProductsI[]
               // El backend devuelve ProductLineDto con unitaryPrice: number
@@ -780,13 +788,13 @@ const OrderProvider = ({
                   // Por ahora no mapeamos los toppings ya que no se usan en confirmedProducts
                 }));
               console.log(
-                '🔔 [orderTicketPrinted] Productos adaptados:',
+                "🔔 [orderTicketPrinted] Productos adaptados:",
                 adaptedProducts.length
               );
               handleSetProductsByOrder(adaptedProducts);
             } else {
               console.log(
-                '🔔 [orderTicketPrinted] No se actualizan productos. Razón:',
+                "🔔 [orderTicketPrinted] No se actualizan productos. Razón:",
                 {
                   hasProducts: orderData.products?.length > 0,
                   shouldUpdate: shouldUpdateProducts,
@@ -799,52 +807,52 @@ const OrderProvider = ({
             }
           } else {
             console.error(
-              '🔔 [orderTicketPrinted] Error en respuesta:',
+              "🔔 [orderTicketPrinted] Error en respuesta:",
               response.status
             );
           }
         } catch (error) {
           console.error(
-            '🔔 [orderTicketPrinted] Error al obtener la orden actualizada:',
+            "🔔 [orderTicketPrinted] Error al obtener la orden actualizada:",
             error
           );
         }
       } else {
-        console.log('🔔 [orderTicketPrinted] No se procesa el evento. Razón:', {
+        console.log("🔔 [orderTicketPrinted] No se procesa el evento. Razón:", {
           belongsToSelectedTable,
           hasToken: !!token,
         });
       }
     };
 
-    console.log('🔔 [orderTicketPrinted] Suscribiendo al evento...');
+    console.log("🔔 [orderTicketPrinted] Suscribiendo al evento...");
 
     // Registrar el listener cuando el socket esté conectado
     const registerListener = () => {
       if (webSocketService.isConnected()) {
         console.log(
-          '🔔 [orderTicketPrinted] Socket conectado, registrando listeners...'
+          "🔔 [orderTicketPrinted] Socket conectado, registrando listeners..."
         );
         // Registrar listener para orderTicketPrinted
-        webSocketService.on('orderTicketPrinted', handleTicketPrinted);
+        webSocketService.on("orderTicketPrinted", handleTicketPrinted);
         // También registrar listener para orderUpdatedPending como alternativa
         // (este evento también se emite cuando se imprime el ticket)
-        webSocketService.on('orderUpdatedPending', handleTicketPrinted);
+        webSocketService.on("orderUpdatedPending", handleTicketPrinted);
         console.log(
-          '🔔 [orderTicketPrinted] Listeners registrados correctamente'
+          "🔔 [orderTicketPrinted] Listeners registrados correctamente"
         );
       } else {
         console.log(
-          '🔔 [orderTicketPrinted] Socket no conectado, esperando conexión...'
+          "🔔 [orderTicketPrinted] Socket no conectado, esperando conexión..."
         );
-        socket.once('connect', () => {
+        socket.once("connect", () => {
           console.log(
-            '🔔 [orderTicketPrinted] Socket conectado ahora, registrando listeners...'
+            "🔔 [orderTicketPrinted] Socket conectado ahora, registrando listeners..."
           );
-          webSocketService.on('orderTicketPrinted', handleTicketPrinted);
-          webSocketService.on('orderUpdatedPending', handleTicketPrinted);
+          webSocketService.on("orderTicketPrinted", handleTicketPrinted);
+          webSocketService.on("orderUpdatedPending", handleTicketPrinted);
           console.log(
-            '🔔 [orderTicketPrinted] Listeners registrados correctamente'
+            "🔔 [orderTicketPrinted] Listeners registrados correctamente"
           );
         });
       }
@@ -853,9 +861,9 @@ const OrderProvider = ({
     registerListener();
 
     return () => {
-      console.log('🔔 [orderTicketPrinted] Limpiando listeners...');
-      webSocketService.off('orderTicketPrinted', handleTicketPrinted);
-      webSocketService.off('orderUpdatedPending', handleTicketPrinted);
+      console.log("🔔 [orderTicketPrinted] Limpiando listeners...");
+      webSocketService.off("orderTicketPrinted", handleTicketPrinted);
+      webSocketService.off("orderUpdatedPending", handleTicketPrinted);
       socket.offAny();
     };
   }, [
@@ -869,11 +877,11 @@ const OrderProvider = ({
 
   // Listener para evento de orden cancelada/eliminada
   useEffect(() => {
-    if (typeof window === 'undefined') return; // Solo en cliente
+    if (typeof window === "undefined") return; // Solo en cliente
 
-    console.log('🗑️ [orderDeleted] ===== REGISTRANDO LISTENER =====');
+    console.log("🗑️ [orderDeleted] ===== REGISTRANDO LISTENER =====");
     console.log(
-      '🗑️ [orderDeleted] WebSocket conectado?',
+      "🗑️ [orderDeleted] WebSocket conectado?",
       webSocketService.isConnected()
     );
 
@@ -881,19 +889,19 @@ const OrderProvider = ({
 
     // Listener genérico para ver todos los eventos (debug)
     socket.onAny((eventName, ...args) => {
-      console.log('🔍 [WebSocket Debug] Evento recibido:', eventName, args);
-      if (eventName === 'orderDeleted') {
+      console.log("🔍 [WebSocket Debug] Evento recibido:", eventName, args);
+      if (eventName === "orderDeleted") {
         console.log(
-          '🔍 [WebSocket Debug] ⚡⚡⚡ EVENTO orderDeleted DETECTADO ⚡⚡⚡'
+          "🔍 [WebSocket Debug] ⚡⚡⚡ EVENTO orderDeleted DETECTADO ⚡⚡⚡"
         );
       }
     });
 
     const handleOrderDeleted = async (data: any) => {
-      console.log('🗑️ [orderDeleted] ⚡⚡⚡ EVENTO RECIBIDO ⚡⚡⚡', data);
-      console.log('🗑️ [orderDeleted] Tipo de data:', typeof data);
+      console.log("🗑️ [orderDeleted] ⚡⚡⚡ EVENTO RECIBIDO ⚡⚡⚡", data);
+      console.log("🗑️ [orderDeleted] Tipo de data:", typeof data);
       console.log(
-        '🗑️ [orderDeleted] Data completa:',
+        "🗑️ [orderDeleted] Data completa:",
         JSON.stringify(data, null, 2)
       );
 
@@ -909,18 +917,18 @@ const OrderProvider = ({
       if (!tableId) {
         const orderInStore = orders.find((o) => o.id === orderId);
         tableId = orderInStore?.table?.id;
-        console.log('🗑️ [orderDeleted] Table ID obtenido del store:', tableId);
+        console.log("🗑️ [orderDeleted] Table ID obtenido del store:", tableId);
       }
 
-      console.log('🗑️ [orderDeleted] Order ID:', orderId);
-      console.log('🗑️ [orderDeleted] Table ID:', tableId);
-      console.log('🗑️ [orderDeleted] Mesa seleccionada:', selectedTable?.id);
+      console.log("🗑️ [orderDeleted] Order ID:", orderId);
+      console.log("🗑️ [orderDeleted] Table ID:", tableId);
+      console.log("🗑️ [orderDeleted] Mesa seleccionada:", selectedTable?.id);
       console.log(
-        '🗑️ [orderDeleted] Orden seleccionada:',
+        "🗑️ [orderDeleted] Orden seleccionada:",
         selectedOrderByTable?.id
       );
       console.log(
-        '🗑️ [orderDeleted] Órdenes en mesa seleccionada:',
+        "🗑️ [orderDeleted] Órdenes en mesa seleccionada:",
         selectedTable?.orders
       );
 
@@ -936,10 +944,10 @@ const OrderProvider = ({
         !!tableInStore; // Si la mesa está en el store, también actualizar
 
       console.log(
-        '🗑️ [orderDeleted] ¿Pertenece a mesa seleccionada?',
+        "🗑️ [orderDeleted] ¿Pertenece a mesa seleccionada?",
         belongsToSelectedTable
       );
-      console.log('🗑️ [orderDeleted] Condiciones:', {
+      console.log("🗑️ [orderDeleted] Condiciones:", {
         tableMatch: selectedTable?.id === tableId,
         orderMatch: selectedOrderByTable?.id === orderId,
         inTableOrders: selectedTable?.orders?.includes(orderId),
@@ -948,12 +956,12 @@ const OrderProvider = ({
       });
 
       if (belongsToSelectedTable) {
-        console.log('🗑️ [orderDeleted] Limpiando estado local...');
+        console.log("🗑️ [orderDeleted] Limpiando estado local...");
 
         // Limpiar el estado de la orden SIEMPRE si es la orden seleccionada
         if (selectedOrderByTable?.id === orderId) {
           console.log(
-            '🗑️ [orderDeleted] Es la orden seleccionada, limpiando...'
+            "🗑️ [orderDeleted] Es la orden seleccionada, limpiando..."
           );
           setSelectedOrderByTable(null);
           setConfirmedProducts([]);
@@ -964,7 +972,7 @@ const OrderProvider = ({
 
         // Actualizar la mesa a AVAILABLE si la orden pertenece a esa mesa
         if (tableId) {
-          console.log('🗑️ [orderDeleted] Actualizando mesa a AVAILABLE...');
+          console.log("🗑️ [orderDeleted] Actualizando mesa a AVAILABLE...");
 
           // Si es la mesa seleccionada, actualizarla directamente
           if (selectedTable && selectedTable.id === tableId) {
@@ -977,7 +985,7 @@ const OrderProvider = ({
               state: TableState.AVAILABLE,
             } as ITable;
             setSelectedTable(updatedTable);
-            console.log('🗑️ [orderDeleted] Mesa seleccionada actualizada');
+            console.log("🗑️ [orderDeleted] Mesa seleccionada actualizada");
           }
 
           // Actualizar la mesa en el store de mesas
@@ -992,7 +1000,7 @@ const OrderProvider = ({
             } as ITable;
             updateTable(finalUpdatedTable);
             console.log(
-              '🗑️ [orderDeleted] Mesa actualizada en store:',
+              "🗑️ [orderDeleted] Mesa actualizada en store:",
               finalUpdatedTable.id
             );
 
@@ -1003,14 +1011,14 @@ const OrderProvider = ({
           } else {
             // Si la mesa no está en el store pero tenemos el tableId, intentar obtenerla
             console.log(
-              '🗑️ [orderDeleted] Mesa no encontrada en store, intentando obtener desde backend...'
+              "🗑️ [orderDeleted] Mesa no encontrada en store, intentando obtener desde backend..."
             );
             try {
               // Usar el endpoint correcto para obtener la mesa
               const response = await fetch(
-                `${URI_TABLE}/by-room/${selectedTable?.room?.id || ''}`,
+                `${URI_TABLE}/by-room/${selectedTable?.room?.id || ""}`,
                 {
-                  method: 'GET',
+                  method: "GET",
                   headers: {
                     Authorization: `Bearer ${token}`,
                   },
@@ -1031,12 +1039,12 @@ const OrderProvider = ({
                   setSelectedTable(updatedTable);
                 }
                 console.log(
-                  '🗑️ [orderDeleted] Mesa obtenida desde backend y actualizada'
+                  "🗑️ [orderDeleted] Mesa obtenida desde backend y actualizada"
                 );
               }
             } catch (error) {
               console.error(
-                '🗑️ [orderDeleted] Error al obtener mesa desde backend:',
+                "🗑️ [orderDeleted] Error al obtener mesa desde backend:",
                 error
               );
             }
@@ -1044,31 +1052,31 @@ const OrderProvider = ({
         }
       } else {
         console.log(
-          '🗑️ [orderDeleted] No se actualiza porque no pertenece a la mesa seleccionada'
+          "🗑️ [orderDeleted] No se actualiza porque no pertenece a la mesa seleccionada"
         );
       }
     };
 
-    console.log('🗑️ [orderDeleted] Suscribiendo al evento...');
+    console.log("🗑️ [orderDeleted] Suscribiendo al evento...");
 
     // Registrar el listener cuando el socket esté conectado
     const registerListener = () => {
       if (webSocketService.isConnected()) {
         console.log(
-          '🗑️ [orderDeleted] Socket conectado, registrando listener...'
+          "🗑️ [orderDeleted] Socket conectado, registrando listener..."
         );
-        webSocketService.on('orderDeleted', handleOrderDeleted);
-        console.log('🗑️ [orderDeleted] Listener registrado correctamente');
+        webSocketService.on("orderDeleted", handleOrderDeleted);
+        console.log("🗑️ [orderDeleted] Listener registrado correctamente");
       } else {
         console.log(
-          '🗑️ [orderDeleted] Socket no conectado, esperando conexión...'
+          "🗑️ [orderDeleted] Socket no conectado, esperando conexión..."
         );
-        socket.once('connect', () => {
+        socket.once("connect", () => {
           console.log(
-            '🗑️ [orderDeleted] Socket conectado ahora, registrando listener...'
+            "🗑️ [orderDeleted] Socket conectado ahora, registrando listener..."
           );
-          webSocketService.on('orderDeleted', handleOrderDeleted);
-          console.log('🗑️ [orderDeleted] Listener registrado correctamente');
+          webSocketService.on("orderDeleted", handleOrderDeleted);
+          console.log("🗑️ [orderDeleted] Listener registrado correctamente");
         });
       }
     };
@@ -1076,8 +1084,8 @@ const OrderProvider = ({
     registerListener();
 
     return () => {
-      console.log('🗑️ [orderDeleted] Limpiando listener...');
-      webSocketService.off('orderDeleted', handleOrderDeleted);
+      console.log("🗑️ [orderDeleted] Limpiando listener...");
+      webSocketService.off("orderDeleted", handleOrderDeleted);
       socket.offAny();
     };
   }, [selectedTable, selectedOrderByTable, orders, tables, token]);
@@ -1100,8 +1108,8 @@ const OrderProvider = ({
       );
       if (!stockResponse?.available) {
         Swal.fire({
-          icon: 'error',
-          title: 'Stock insuficiente',
+          icon: "error",
+          title: "Stock insuficiente",
           text: stockResponse.message,
         });
         return;
@@ -1124,8 +1132,8 @@ const OrderProvider = ({
       const stockResponse = await checkStockAvailability(id, newQuantity);
       if (!stockResponse?.available) {
         Swal.fire({
-          icon: 'error',
-          title: 'Stock insuficiente',
+          icon: "error",
+          title: "Stock insuficiente",
           text: stockResponse.message,
         });
         return;
@@ -1173,9 +1181,9 @@ const OrderProvider = ({
       };
 
       const response = await fetch(URI_ORDER_OPEN, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(pedido),
@@ -1183,7 +1191,7 @@ const OrderProvider = ({
 
       if (response.status !== 201) {
         const errorData = await response.json();
-        console.error('Error:', errorData);
+        console.error("Error:", errorData);
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
@@ -1202,7 +1210,7 @@ const OrderProvider = ({
       };
       handleSelectTable(updatedTable);
     } catch (error) {
-      Swal.fire('Error', 'No se pudo abrir la mesa.', 'error');
+      Swal.fire("Error", "No se pudo abrir la mesa.", "error");
     }
   };
 
@@ -1219,9 +1227,9 @@ const OrderProvider = ({
 
     try {
       const response = await fetch(`${URI_ORDER}/update/${id}`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -1236,14 +1244,14 @@ const OrderProvider = ({
         if (response.status === 400) {
           const errorData = await response.json();
           Swal.fire({
-            icon: 'error',
-            title: 'Error',
+            icon: "error",
+            title: "Error",
             text: errorData.message,
           });
           return;
         } else {
           const errorData = await response.json();
-          console.error('Error:', errorData);
+          console.error("Error:", errorData);
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
       }
@@ -1266,12 +1274,12 @@ const OrderProvider = ({
 
   const handleCancelOrder = async (id: string) => {
     const confirm = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción no se puede deshacer.',
-      icon: 'warning',
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Sí, anular',
-      cancelButtonText: 'Cancelar',
+      confirmButtonText: "Sí, anular",
+      cancelButtonText: "Cancelar",
     });
 
     if (confirm.isConfirmed) {
@@ -1321,24 +1329,24 @@ const OrderProvider = ({
               }
             } catch (error) {
               console.error(
-                'Error al actualizar la mesa en el backend:',
+                "Error al actualizar la mesa en el backend:",
                 error
               );
             }
           }
 
           Swal.fire({
-            icon: 'success',
-            title: 'Pedido cancelado',
-            text: 'El pedido ha sido cancelado con éxito. Puedes iniciar una nueva orden.',
+            icon: "success",
+            title: "Pedido cancelado",
+            text: "El pedido ha sido cancelado con éxito. Puedes iniciar una nueva orden.",
           });
         }
       } catch (error) {
-        console.error('Error al cancelar la orden:', error);
+        console.error("Error al cancelar la orden:", error);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo cancelar el pedido. Por favor, intenta nuevamente.',
+          icon: "error",
+          title: "Error",
+          text: "No se pudo cancelar el pedido. Por favor, intenta nuevamente.",
         });
       }
     }
@@ -1350,21 +1358,21 @@ const OrderProvider = ({
     }
 
     const confirm = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción no se puede deshacer.',
-      icon: 'warning',
+      title: "¿Estás seguro?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
     });
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_ORDER}/${id}`, { method: 'DELETE' });
+        await fetch(`${URI_ORDER}/${id}`, { method: "DELETE" });
         removeOrder(id);
-        Swal.fire('Eliminado', 'Pedido eliminado correctamente.', 'success');
+        Swal.fire("Eliminado", "Pedido eliminado correctamente.", "success");
       } catch (error) {
-        Swal.fire('Error', 'No se pudo eliminar el pedido.', 'error');
+        Swal.fire("Error", "No se pudo eliminar el pedido.", "error");
         console.error(error);
       }
     }

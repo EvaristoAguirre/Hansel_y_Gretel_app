@@ -115,17 +115,51 @@ export class OrderService {
       if (updateData.state && updateData.state !== OrderState.OPEN) {
         throw new ConflictException('Only "OPEN" orders can be modified');
       }
+
+      // 📋 LOG: Estado inicial de la orden y mesa
+      let mesaId = order.table?.id || 'sin-mesa';
+      const estadoOrdenInicial = order.state;
+      const estadoMesaInicial = order.table?.state || 'sin-estado';
+      const tienePagosInicial = order.payments && order.payments.length > 0;
+      const montoTotalPagosInicial =
+        order.payments?.reduce((acc, p) => acc + Number(p.amount), 0) || 0;
+
+      this.logger.log(
+        `📋 [updateOrder] Estado inicial - Mesa ID: ${mesaId}, Estado orden: ${estadoOrdenInicial}, Estado mesa: ${estadoMesaInicial}, Tiene pagos: ${tienePagosInicial}, Monto total pagos: ${montoTotalPagosInicial}`,
+      );
+      this.logger.log(
+        `📋 [updateOrder] log: estado de ${mesaId} - Orden: ${estadoOrdenInicial}, Mesa: ${estadoMesaInicial}, Pagado: ${tienePagosInicial ? 'Sí' : 'No'}`,
+      );
+
       if (updateData.tableId) {
+        const mesaIdAnterior = order.table?.id || 'sin-mesa';
+        const estadoMesaAnterior = order.table?.state || 'sin-estado';
         const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
         });
         if (!table) throw new NotFoundException('Table not found');
         order.table = table;
+        mesaId = table.id; // Actualizar la variable para los logs siguientes
+        this.logger.log(
+          `🔄 [updateOrder] Cambio de mesa - Mesa anterior ID: ${mesaIdAnterior}, Mesa nueva ID: ${table.id}, Estado mesa anterior: ${estadoMesaAnterior}, Estado mesa nueva: ${table.state}`,
+        );
+        this.logger.log(
+          `🔄 [updateOrder] log: estado de ${table.id} - Cambio de mesa: ${mesaIdAnterior} → ${table.id}, Estado mesa: ${table.state}`,
+        );
       }
 
       if (updateData.numberCustomers)
         order.numberCustomers = updateData.numberCustomers;
-      if (updateData.state) order.state = updateData.state;
+      if (updateData.state) {
+        const estadoOrdenAnterior = order.state;
+        order.state = updateData.state;
+        this.logger.log(
+          `🔄 [updateOrder] Cambio de estado de orden - Mesa ID: ${mesaId}, Estado anterior: ${estadoOrdenAnterior}, Estado nuevo: ${updateData.state}`,
+        );
+        this.logger.log(
+          `🔄 [updateOrder] log: estado de ${mesaId} - Cambio estado orden: ${estadoOrdenAnterior} → ${updateData.state}`,
+        );
+      }
 
       if (updateData.productsDetails?.length) {
         let total = 0;
@@ -485,7 +519,47 @@ export class OrderService {
 
       const updatedOrder = await queryRunner.manager.save(order);
 
+      // Recargar la orden y la mesa con todas las relaciones para obtener el estado final completo
+      const finalOrder = await queryRunner.manager.findOne(Order, {
+        where: { id: updatedOrder.id },
+        relations: ['table', 'payments'],
+      });
+
+      // Recargar la mesa actualizada para obtener su estado final
+      const mesaActualizada = finalOrder?.table
+        ? await queryRunner.manager.findOne(Table, {
+            where: { id: finalOrder.table.id },
+          })
+        : null;
+
       await queryRunner.commitTransaction();
+
+      // 📋 LOG: Estado final de la orden y mesa después del update
+      const mesaIdFinal =
+        mesaActualizada?.id ||
+        finalOrder?.table?.id ||
+        updatedOrder.table?.id ||
+        'sin-mesa';
+      const estadoOrdenFinal = finalOrder?.state || updatedOrder.state;
+      const estadoMesaFinal =
+        mesaActualizada?.state ||
+        finalOrder?.table?.state ||
+        updatedOrder.table?.state ||
+        'sin-estado';
+      const tienePagosFinal =
+        finalOrder?.payments && finalOrder.payments.length > 0;
+      const montoTotalPagosFinal =
+        finalOrder?.payments?.reduce((acc, p) => acc + Number(p.amount), 0) ||
+        0;
+      const estaPagada =
+        estadoOrdenFinal === OrderState.CLOSED && tienePagosFinal;
+
+      this.logger.log(
+        `✅ [updateOrder] Estado final - Mesa ID: ${mesaIdFinal}, Estado orden: ${estadoOrdenFinal}, Estado mesa: ${estadoMesaFinal}, Tiene pagos: ${tienePagosFinal}, Monto total pagos: ${montoTotalPagosFinal}, Está pagada: ${estaPagada}`,
+      );
+      this.logger.log(
+        `✅ [updateOrder] log: estado de ${mesaIdFinal} - Orden: ${estadoOrdenFinal}, Mesa: ${estadoMesaFinal}, Pagado: ${estaPagada ? 'Sí' : 'No'}`,
+      );
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 

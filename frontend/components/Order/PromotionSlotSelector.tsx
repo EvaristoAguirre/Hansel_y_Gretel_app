@@ -44,6 +44,18 @@ interface Slot {
   options: SlotOption[];
 }
 
+// Interfaz para una instancia individual de slot (cuando quantity > 1)
+interface SlotInstance {
+  instanceId: string; // ID único para esta instancia (instance-globalIndex)
+  slotId: string; // ID original del slot
+  name: string;
+  description: string;
+  isOptional: boolean;
+  options: SlotOption[];
+  instanceIndex: number; // Índice de la instancia (1, 2, 3...)
+  totalInstances: number; // Total de instancias de este slot
+}
+
 interface PromotionSlotSelectorProps {
   open: boolean;
   promotion: {
@@ -71,28 +83,29 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
 }) => {
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
-  const [slots, setSlots] = useState<Slot[]>([]);
-  console.log("slots", slots);
+  // Usar SlotInstance[] para manejar slots repetidos como instancias separadas
+  const [slotInstances, setSlotInstances] = useState<SlotInstance[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selections, setSelections] = useState<{ [slotId: string]: string }>(
-    {}
-  );
+  // Usar instanceId como clave para las selecciones
+  const [selections, setSelections] = useState<{
+    [instanceId: string]: string;
+  }>({});
   // Guardar información completa de productos seleccionados (para obtener availableToppingGroups)
   const [selectedProductsInfo, setSelectedProductsInfo] = useState<{
-    [slotId: string]: {
+    [instanceId: string]: {
       productId: string;
       availableToppingGroups?: IProductToppingsGroupResponse[];
     };
   }>({});
-  // Guardar toppings seleccionados por slot: { [slotId]: { [groupId]: string[] } }
+  // Guardar toppings seleccionados por instancia: { [instanceId]: { [groupId]: string[] } }
   const [toppingsBySlot, setToppingsBySlot] = useState<{
-    [slotId: string]: { [groupId: string]: string[] };
+    [instanceId: string]: { [groupId: string]: string[] };
   }>({});
   // Guardar toppings cargados por grupo: { [groupId]: ITopping[] }
   const [loadedToppings, setLoadedToppings] = useState<{
     [groupId: string]: ITopping[];
   }>({});
-  // Controlar visibilidad de grupos de toppings: { [slotId-groupId]: boolean }
+  // Controlar visibilidad de grupos de toppings: { [instanceId-groupId]: boolean }
   const [visibleToppingGroups, setVisibleToppingGroups] = useState<{
     [key: string]: boolean;
   }>({});
@@ -114,13 +127,56 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
     try {
       const result = await getSlotsByPromotionId(promotion.id, token!);
       if (result.ok && result.data) {
-        setSlots(result.data);
-        // Inicializar selecciones vacías
-        const initialSelections: { [slotId: string]: string } = {};
+        // Expandir slots según su quantity en instancias separadas
+        // Usar un índice global para evitar keys duplicadas
+        const expandedInstances: SlotInstance[] = [];
+        let globalIndex = 0;
+
+        // Agrupar slots por ID para calcular totalInstances correctamente
+        const slotCounts: { [slotId: string]: number } = {};
         result.data.forEach((slot: Slot) => {
-          if (slot.options && slot.options.length > 0 && !slot.isOptional) {
+          const qty = slot.quantity || 1;
+          slotCounts[slot.id] = (slotCounts[slot.id] || 0) + qty;
+        });
+
+        // Contador por slotId para el instanceIndex
+        const slotInstanceCounters: { [slotId: string]: number } = {};
+
+        result.data.forEach((slot: Slot) => {
+          const qty = slot.quantity || 1;
+          for (let i = 0; i < qty; i++) {
+            // Inicializar contador si no existe
+            if (slotInstanceCounters[slot.id] === undefined) {
+              slotInstanceCounters[slot.id] = 0;
+            }
+            slotInstanceCounters[slot.id]++;
+
+            expandedInstances.push({
+              instanceId: `instance-${globalIndex}`, // ID único global
+              slotId: slot.id,
+              name: slot.name,
+              description: slot.description,
+              isOptional: slot.isOptional,
+              options: slot.options,
+              instanceIndex: slotInstanceCounters[slot.id],
+              totalInstances: slotCounts[slot.id],
+            });
+            globalIndex++;
+          }
+        });
+        setSlotInstances(expandedInstances);
+
+        // Inicializar selecciones vacías usando instanceId
+        const initialSelections: { [instanceId: string]: string } = {};
+        expandedInstances.forEach((instance) => {
+          if (
+            instance.options &&
+            instance.options.length > 0 &&
+            !instance.isOptional
+          ) {
             // Seleccionar primera opción por defecto si no es opcional
-            initialSelections[slot.id] = slot.options[0].productId;
+            initialSelections[instance.instanceId] =
+              instance.options[0].productId;
           }
         });
         setSelections(initialSelections);
@@ -132,16 +188,19 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
     }
   };
 
-  const handleSelectionChange = async (slotId: string, productId: string) => {
+  const handleSelectionChange = async (
+    instanceId: string,
+    productId: string
+  ) => {
     setSelections((prev) => ({
       ...prev,
-      [slotId]: productId,
+      [instanceId]: productId,
     }));
 
-    // Limpiar toppings del slot anterior
+    // Limpiar toppings de la instancia anterior
     setToppingsBySlot((prev) => {
       const newState = { ...prev };
-      delete newState[slotId];
+      delete newState[instanceId];
       return newState;
     });
 
@@ -153,7 +212,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           const product = productResult.data;
           setSelectedProductsInfo((prev) => ({
             ...prev,
-            [slotId]: {
+            [instanceId]: {
               productId: product.id,
               availableToppingGroups: product.availableToppingGroups || [],
             },
@@ -165,8 +224,11 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
     }
   };
 
-  const handleToggleToppingGroup = async (slotId: string, groupId: string) => {
-    const key = `${slotId}-${groupId}`;
+  const handleToggleToppingGroup = async (
+    instanceId: string,
+    groupId: string
+  ) => {
+    const key = `${instanceId}-${groupId}`;
     setVisibleToppingGroups((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -189,15 +251,15 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
   };
 
   const handleToppingChange = (
-    slotId: string,
+    instanceId: string,
     groupId: string,
     toppingId: string,
     checked: boolean,
     maxSelection: number
   ) => {
     setToppingsBySlot((prev) => {
-      const slotToppings = prev[slotId] || {};
-      const groupToppings = slotToppings[groupId] || [];
+      const instanceToppings = prev[instanceId] || {};
+      const groupToppings = instanceToppings[groupId] || [];
 
       let newGroupToppings: string[];
       if (checked) {
@@ -211,8 +273,8 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
 
       return {
         ...prev,
-        [slotId]: {
-          ...slotToppings,
+        [instanceId]: {
+          ...instanceToppings,
           [groupId]: newGroupToppings,
         },
       };
@@ -220,25 +282,36 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
   };
 
   const handleConfirm = () => {
-    // Validar que todos los slots obligatorios tengan selección
-    const requiredSlots = slots.filter((slot) => !slot.isOptional);
-    const missingSlots = requiredSlots.filter((slot) => !selections[slot.id]);
+    // Validar que todas las instancias obligatorias tengan selección
+    const requiredInstances = slotInstances.filter(
+      (instance) => !instance.isOptional
+    );
+    const missingInstances = requiredInstances.filter(
+      (instance) => !selections[instance.instanceId]
+    );
 
-    if (missingSlots.length > 0) {
+    if (missingInstances.length > 0) {
       alert(
-        `Por favor selecciona productos para: ${missingSlots
-          .map((s) => s.name)
+        `Por favor selecciona productos para: ${missingInstances
+          .map((s) =>
+            s.totalInstances > 1 ? `${s.name} (${s.instanceIndex})` : s.name
+          )
           .join(", ")}`
       );
       return;
     }
 
     // Convertir selecciones a formato de array, incluyendo toppings
+    // Usar el slotId original (no el instanceId) para el resultado
     const selectionsArray = Object.entries(selections).map(
-      ([slotId, selectedProductId]) => {
-        const slotToppings = toppingsBySlot[slotId] || {};
+      ([instanceId, selectedProductId]) => {
+        const instanceToppings = toppingsBySlot[instanceId] || {};
         // Convertir toppings de formato { [groupId]: string[] } a string[] (flat)
-        const toppingsPerUnit = Object.values(slotToppings).flat();
+        const toppingsPerUnit = Object.values(instanceToppings).flat();
+
+        // Buscar la instancia para obtener el slotId original
+        const instance = slotInstances.find((i) => i.instanceId === instanceId);
+        const slotId = instance?.slotId || "";
 
         return {
           slotId,
@@ -272,10 +345,15 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           py: 1.5,
         }}
       >
-        <Typography variant="subtitle1" fontWeight="bold">
+        <Typography
+          component="span"
+          variant="subtitle1"
+          fontWeight="bold"
+          display="block"
+        >
           {capitalizeFirstLetter(promotion.name)} - Seleccionar Opciones
         </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.9 }}>
+        <Typography component="span" variant="caption" sx={{ opacity: 0.9 }}>
           Cantidad: {quantity}
         </Typography>
       </DialogTitle>
@@ -292,19 +370,27 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           >
             <CircularProgress size={32} />
           </Box>
-        ) : slots.length === 0 ? (
+        ) : slotInstances.length === 0 ? (
           <Typography sx={{ textAlign: "center", py: 2, color: "gray" }}>
             No hay slots disponibles para esta promoción
           </Typography>
         ) : (
-          slots.map((slot, index) => (
-            <Box key={slot.id} sx={{ mb: 2 }}>
+          slotInstances.map((instance, index) => (
+            <Box key={instance.instanceId} sx={{ mb: 2 }}>
               <Typography
                 variant="body1"
                 sx={{ fontWeight: "bold", color: "#856D5E", mb: 0.5 }}
               >
-                {capitalizeFirstLetter(slot.name)}
-                {slot.isOptional && (
+                {capitalizeFirstLetter(instance.name)}
+                {instance.totalInstances > 1 && (
+                  <Typography
+                    component="span"
+                    sx={{ ml: 1, fontSize: "0.8rem", color: "#856D5E" }}
+                  >
+                    ({instance.instanceIndex}/{instance.totalInstances})
+                  </Typography>
+                )}
+                {instance.isOptional && (
                   <Typography
                     component="span"
                     sx={{ ml: 1, fontSize: "0.75rem", color: "gray" }}
@@ -313,24 +399,27 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                   </Typography>
                 )}
               </Typography>
-              {slot.description && (
+              {instance.description && (
                 <Typography
                   variant="caption"
                   sx={{ color: "gray", display: "block", mb: 0.5 }}
                 >
-                  {slot.description}
+                  {instance.description}
                 </Typography>
               )}
               <RadioGroup
-                value={selections[slot.id] || ""}
-                onChange={(e) => handleSelectionChange(slot.id, e.target.value)}
+                name={`slot-radio-group-${instance.instanceId}`}
+                value={selections[instance.instanceId] || ""}
+                onChange={(e) =>
+                  handleSelectionChange(instance.instanceId, e.target.value)
+                }
                 sx={{ gap: 0 }}
               >
-                {slot.options
+                {instance.options
                   ?.filter((option) => option.isActive)
                   .map((option) => (
                     <FormControlLabel
-                      key={option.id}
+                      key={`${instance.instanceId}-${option.id}`}
                       value={option.productId}
                       sx={{ my: -0.25 }}
                       control={
@@ -368,10 +457,11 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
               </RadioGroup>
 
               {/* Selector de toppings para el producto seleccionado */}
-              {selections[slot.id] &&
-                selectedProductsInfo[slot.id]?.availableToppingGroups &&
-                selectedProductsInfo[slot.id].availableToppingGroups!.length >
-                  0 && (
+              {selections[instance.instanceId] &&
+                selectedProductsInfo[instance.instanceId]
+                  ?.availableToppingGroups &&
+                selectedProductsInfo[instance.instanceId]
+                  .availableToppingGroups!.length > 0 && (
                   <Box sx={{ mt: 1, pl: 1.5, borderLeft: "2px solid #d4c0b3" }}>
                     <Typography
                       variant="caption"
@@ -388,14 +478,15 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                       }}
                     >
                       {selectedProductsInfo[
-                        slot.id
+                        instance.instanceId
                       ].availableToppingGroups!.map((group) => {
-                        const groupKey = `${slot.id}-${group.id}`;
+                        const groupKey = `${instance.instanceId}-${group.id}`;
                         const isVisible =
                           visibleToppingGroups[groupKey] || false;
-                        const slotToppings = toppingsBySlot[slot.id] || {};
+                        const instanceToppings =
+                          toppingsBySlot[instance.instanceId] || {};
                         const selectedGroupToppings =
-                          slotToppings[group.id] || [];
+                          instanceToppings[group.id] || [];
                         const groupToppings = loadedToppings[group.id] || [];
 
                         return (
@@ -413,7 +504,10 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                               label={capitalizeFirstLetter(group.name)}
                               size="small"
                               onClick={() =>
-                                handleToggleToppingGroup(slot.id, group.id)
+                                handleToggleToppingGroup(
+                                  instance.instanceId,
+                                  group.id
+                                )
                               }
                               sx={{
                                 marginBottom: "0.25rem",
@@ -449,7 +543,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                                           checked={isChecked}
                                           onChange={(e) =>
                                             handleToppingChange(
-                                              slot.id,
+                                              instance.instanceId,
                                               group.id,
                                               topping.id,
                                               e.target.checked,
@@ -503,7 +597,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                   </Box>
                 )}
 
-              {index < slots.length - 1 && (
+              {index < slotInstances.length - 1 && (
                 <Divider sx={{ mt: 1.5, borderColor: "#d4c0b3" }} />
               )}
             </Box>
@@ -536,7 +630,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
               filter: "brightness(90%)",
             },
           }}
-          disabled={loading || slots.length === 0}
+          disabled={loading || slotInstances.length === 0}
         >
           Confirmar
         </Button>
