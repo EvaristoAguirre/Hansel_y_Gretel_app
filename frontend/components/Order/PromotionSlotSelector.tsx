@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -14,14 +14,14 @@ import {
   CircularProgress,
   Checkbox,
   Chip,
-} from "@mui/material";
-import { useAuth } from "@/app/context/authContext";
-import { getSlotsByPromotionId } from "@/api/promotionSlot";
-import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
-import { getProductById } from "@/api/products";
-import { fetchToppingsGroupById } from "@/api/topping";
-import { IProductToppingsGroupResponse } from "../Interfaces/IProducts";
-import { ITopping } from "../Interfaces/IToppings";
+} from '@mui/material';
+import { useAuth } from '@/app/context/authContext';
+import { getSlotsByPromotionId } from '@/api/promotionSlot';
+import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
+import { getProductById } from '@/api/products';
+import { fetchToppingsGroupById } from '@/api/topping';
+import { IProductToppingsGroupResponse } from '../Interfaces/IProducts';
+import { ITopping } from '../Interfaces/IToppings';
 
 interface SlotOption {
   id: string;
@@ -182,7 +182,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         setSelections(initialSelections);
       }
     } catch (error) {
-      console.error("Error al obtener slots:", error);
+      console.error('Error al obtener slots:', error);
     } finally {
       setLoading(false);
     }
@@ -217,9 +217,45 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
               availableToppingGroups: product.availableToppingGroups || [],
             },
           }));
+          // 🔧 SOLUCIÓN: Inicializar loadedToppings con los toppings que vienen del producto
+          if (
+            product.availableToppingGroups &&
+            product.availableToppingGroups.length > 0
+          ) {
+            const initialLoadedToppings: { [groupId: string]: ITopping[] } = {};
+            product.availableToppingGroups.forEach(
+              (group: IProductToppingsGroupResponse) => {
+                if (group.id && group.toppings && group.toppings.length > 0) {
+                  // Mapear los toppings del producto a objetos compatibles con ITopping
+                  initialLoadedToppings[group.id] = group.toppings.map(
+                    (topping: any) => ({
+                      id: topping.id,
+                      name: topping.name,
+                      isActive: topping.isActive ?? true,
+                      description: topping.description || '',
+                      cost: topping.cost || '0',
+                      type: topping.type || 'unidad',
+                      isTopping: topping.isTopping ?? true,
+                      extraCost: topping.extraCost ?? null,
+                      unitOfMeasure: topping.unitOfMeasure || {
+                        id: '',
+                        name: '',
+                        abbreviation: '',
+                      },
+                      stock: topping.stock ?? null,
+                    })
+                  );
+                }
+              }
+            );
+            setLoadedToppings((prev) => ({
+              ...prev,
+              ...initialLoadedToppings,
+            }));
+          }
         }
       } catch (error) {
-        console.error("Error al obtener información del producto:", error);
+        console.error('Error al obtener información del producto:', error);
       }
     }
   };
@@ -234,18 +270,53 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
       [key]: !prev[key],
     }));
 
-    // Cargar toppings del grupo si no están cargados
+    // 🔧 SOLUCIÓN: Solo cargar toppings del grupo si no están ya cargados
+    // y si no están disponibles en el grupo del producto
+    const productInfo = selectedProductsInfo[instanceId];
+    const groupFromProduct = productInfo?.availableToppingGroups?.find(
+      (g) => g.id === groupId
+    );
+
     if (!loadedToppings[groupId] && token) {
-      try {
-        const groupData = await fetchToppingsGroupById(token, groupId);
-        if (groupData?.toppings) {
-          setLoadedToppings((prev) => ({
-            ...prev,
-            [groupId]: groupData.toppings,
-          }));
+      // Si el grupo tiene toppings del producto, usarlos
+      if (groupFromProduct?.toppings && groupFromProduct.toppings.length > 0) {
+        // Mapear los toppings del producto a objetos compatibles con ITopping
+        const mappedToppings: ITopping[] = groupFromProduct.toppings.map(
+          (topping: any) => ({
+            id: topping.id,
+            name: topping.name,
+            isActive: topping.isActive ?? true,
+            description: topping.description || '',
+            cost: topping.cost || '0',
+            type: topping.type || 'unidad',
+            isTopping: topping.isTopping ?? true,
+            extraCost: topping.extraCost ?? null,
+            unitOfMeasure: topping.unitOfMeasure || {
+              id: '',
+              name: '',
+              abbreviation: '',
+            },
+            stock: topping.stock ?? null,
+          })
+        );
+
+        setLoadedToppings((prev) => ({
+          ...prev,
+          [groupId]: mappedToppings,
+        }));
+      } else {
+        // Solo hacer la llamada al backend si no tenemos los toppings
+        try {
+          const groupData = await fetchToppingsGroupById(token, groupId);
+          if (groupData?.toppings) {
+            setLoadedToppings((prev) => ({
+              ...prev,
+              [groupId]: groupData.toppings,
+            }));
+          }
+        } catch (error) {
+          console.error('Error al cargar toppings del grupo:', error);
         }
-      } catch (error) {
-        console.error("Error al cargar toppings del grupo:", error);
       }
     }
   };
@@ -296,7 +367,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           .map((s) =>
             s.totalInstances > 1 ? `${s.name} (${s.instanceIndex})` : s.name
           )
-          .join(", ")}`
+          .join(', ')}`
       );
       return;
     }
@@ -311,7 +382,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
 
         // Buscar la instancia para obtener el slotId original
         const instance = slotInstances.find((i) => i.instanceId === instanceId);
-        const slotId = instance?.slotId || "";
+        const slotId = instance?.slotId || '';
 
         return {
           slotId,
@@ -333,15 +404,15 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "8px",
+          borderRadius: '8px',
         },
       }}
     >
       <DialogTitle
         sx={{
-          backgroundColor: "#856D5E",
-          color: "#ffffff",
-          textAlign: "center",
+          backgroundColor: '#856D5E',
+          color: '#ffffff',
+          textAlign: 'center',
           py: 1.5,
         }}
       >
@@ -362,16 +433,16 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         {loading ? (
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               py: 4,
             }}
           >
             <CircularProgress size={32} />
           </Box>
         ) : slotInstances.length === 0 ? (
-          <Typography sx={{ textAlign: "center", py: 2, color: "gray" }}>
+          <Typography sx={{ textAlign: 'center', py: 2, color: 'gray' }}>
             No hay slots disponibles para esta promoción
           </Typography>
         ) : (
@@ -379,13 +450,13 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
             <Box key={instance.instanceId} sx={{ mb: 2 }}>
               <Typography
                 variant="body1"
-                sx={{ fontWeight: "bold", color: "#856D5E", mb: 0.5 }}
+                sx={{ fontWeight: 'bold', color: '#856D5E', mb: 0.5 }}
               >
                 {capitalizeFirstLetter(instance.name)}
                 {instance.totalInstances > 1 && (
                   <Typography
                     component="span"
-                    sx={{ ml: 1, fontSize: "0.8rem", color: "#856D5E" }}
+                    sx={{ ml: 1, fontSize: '0.8rem', color: '#856D5E' }}
                   >
                     ({instance.instanceIndex}/{instance.totalInstances})
                   </Typography>
@@ -393,7 +464,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                 {instance.isOptional && (
                   <Typography
                     component="span"
-                    sx={{ ml: 1, fontSize: "0.75rem", color: "gray" }}
+                    sx={{ ml: 1, fontSize: '0.75rem', color: 'gray' }}
                   >
                     (Opcional)
                   </Typography>
@@ -402,14 +473,14 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
               {instance.description && (
                 <Typography
                   variant="caption"
-                  sx={{ color: "gray", display: "block", mb: 0.5 }}
+                  sx={{ color: 'gray', display: 'block', mb: 0.5 }}
                 >
                   {instance.description}
                 </Typography>
               )}
               <RadioGroup
                 name={`slot-radio-group-${instance.instanceId}`}
-                value={selections[instance.instanceId] || ""}
+                value={selections[instance.instanceId] || ''}
                 onChange={(e) =>
                   handleSelectionChange(instance.instanceId, e.target.value)
                 }
@@ -426,15 +497,15 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                         <Radio
                           size="small"
                           sx={{
-                            color: "#856D5E",
-                            "&.Mui-checked": {
-                              color: "#856D5E",
+                            color: '#856D5E',
+                            '&.Mui-checked': {
+                              color: '#856D5E',
                             },
                           }}
                         />
                       }
                       label={
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Typography variant="body2">
                             {capitalizeFirstLetter(option.product.name)}
                           </Typography>
@@ -443,8 +514,8 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                               variant="body2"
                               sx={{
                                 ml: 1,
-                                color: "#856D5E",
-                                fontWeight: "bold",
+                                color: '#856D5E',
+                                fontWeight: 'bold',
                               }}
                             >
                               (+${option.extraCost.toFixed(2)})
@@ -462,17 +533,17 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                   ?.availableToppingGroups &&
                 selectedProductsInfo[instance.instanceId]
                   .availableToppingGroups!.length > 0 && (
-                  <Box sx={{ mt: 1, pl: 1.5, borderLeft: "2px solid #d4c0b3" }}>
+                  <Box sx={{ mt: 1, pl: 1.5, borderLeft: '2px solid #d4c0b3' }}>
                     <Typography
                       variant="caption"
-                      sx={{ fontWeight: 600, color: "#856D5E" }}
+                      sx={{ fontWeight: 600, color: '#856D5E' }}
                     >
                       Agregados disponibles:
                     </Typography>
                     <Box
                       sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
+                        display: 'flex',
+                        flexWrap: 'wrap',
                         gap: 0.5,
                         mt: 0.5,
                       }}
@@ -487,17 +558,18 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                           toppingsBySlot[instance.instanceId] || {};
                         const selectedGroupToppings =
                           instanceToppings[group.id] || [];
-                        const groupToppings = loadedToppings[group.id] || [];
+                        const groupToppings =
+                          loadedToppings[group.id] || group.toppings || [];
 
                         return (
                           <Box
                             key={group.id}
                             sx={{
-                              flex: "1 1 calc(50% - 0.25rem)",
-                              backgroundColor: "#856d5e52",
-                              borderRadius: "6px",
-                              padding: "0.5rem",
-                              border: "1px solid #856D5E",
+                              flex: '1 1 calc(50% - 0.25rem)',
+                              backgroundColor: '#856d5e52',
+                              borderRadius: '6px',
+                              padding: '0.5rem',
+                              border: '1px solid #856D5E',
                             }}
                           >
                             <Chip
@@ -510,13 +582,13 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                                 )
                               }
                               sx={{
-                                marginBottom: "0.25rem",
-                                border: "1px solid #856D5E",
+                                marginBottom: '0.25rem',
+                                border: '1px solid #856D5E',
                                 fontWeight: 500,
-                                cursor: "pointer",
-                                backgroundColor: "#ffffffa8",
-                                "&:hover": {
-                                  backgroundColor: "#ffffff",
+                                cursor: 'pointer',
+                                backgroundColor: '#ffffffa8',
+                                '&:hover': {
+                                  backgroundColor: '#ffffff',
                                 },
                               }}
                             />
@@ -525,7 +597,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                               <Box sx={{ pl: 0.5 }}>
                                 <Typography
                                   variant="caption"
-                                  sx={{ color: "gray", fontSize: "0.7rem" }}
+                                  sx={{ color: 'gray', fontSize: '0.7rem' }}
                                 >
                                   Máx: {group.settings.maxSelection}
                                 </Typography>
@@ -537,7 +609,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                                   return (
                                     <FormControlLabel
                                       key={topping.id}
-                                      sx={{ my: -0.5, display: "flex" }}
+                                      sx={{ my: -0.5, display: 'flex' }}
                                       control={
                                         <Checkbox
                                           checked={isChecked}
@@ -552,10 +624,10 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                                           }
                                           size="small"
                                           sx={{
-                                            color: "#856D5E",
+                                            color: '#856D5E',
                                             p: 0.5,
-                                            "&.Mui-checked": {
-                                              color: "#856D5E",
+                                            '&.Mui-checked': {
+                                              color: '#856D5E',
                                             },
                                           }}
                                         />
@@ -572,7 +644,7 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                                                 component="span"
                                                 variant="caption"
                                                 sx={{
-                                                  color: "#9e0404",
+                                                  color: '#9e0404',
                                                   ml: 0.5,
                                                 }}
                                               >
@@ -598,21 +670,21 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
                 )}
 
               {index < slotInstances.length - 1 && (
-                <Divider sx={{ mt: 1.5, borderColor: "#d4c0b3" }} />
+                <Divider sx={{ mt: 1.5, borderColor: '#d4c0b3' }} />
               )}
             </Box>
           ))
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 2, py: 1.5, borderTop: "1px solid #d4c0b3" }}>
+      <DialogActions sx={{ px: 2, py: 1.5, borderTop: '1px solid #d4c0b3' }}>
         <Button
           onClick={onCancel}
           size="small"
           sx={{
-            color: "#856D5E",
-            "&:hover": {
-              backgroundColor: "#f5f5f5",
+            color: '#856D5E',
+            '&:hover': {
+              backgroundColor: '#f5f5f5',
             },
           }}
         >
@@ -623,11 +695,11 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           variant="contained"
           size="small"
           sx={{
-            backgroundColor: "#f9b32d",
-            color: "black",
-            "&:hover": {
-              backgroundColor: "#f9b32d",
-              filter: "brightness(90%)",
+            backgroundColor: '#f9b32d',
+            color: 'black',
+            '&:hover': {
+              backgroundColor: '#f9b32d',
+              filter: 'brightness(90%)',
             },
           }}
           disabled={loading || slotInstances.length === 0}
