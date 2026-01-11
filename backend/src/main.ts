@@ -108,8 +108,8 @@ async function bootstrap() {
 
   // Rate limiting global
   const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 500,
+    windowMs: 5 * 60 * 1000,
+    max: process.env.NODE_ENV === 'production' ? 1000 : 10000,
     message: 'Demasiadas peticiones, intenta más tarde',
     standardHeaders: true,
     legacyHeaders: false,
@@ -119,7 +119,7 @@ async function bootstrap() {
   // Rate limiting estricto para login
   const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 10,
     message: 'Demasiados intentos de login',
     skipSuccessfulRequests: true, // Solo cuenta intentos fallidos
   });

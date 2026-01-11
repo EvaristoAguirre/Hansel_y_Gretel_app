@@ -42,9 +42,9 @@ export const StepperTable: React.FC<Props> = ({
   const {
     confirmedProducts,
     selectedOrderByTable,
-    setSelectedOrderByTable,
     fetchOrderBySelectedTable,
     handleCancelOrder,
+    handleResetSelectedOrder,
   } = useOrderContext();
   const { setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
@@ -86,6 +86,7 @@ export const StepperTable: React.FC<Props> = ({
   const handleComplete = () => {
     setCompleted({ ...completed, [activeStep]: true });
     handleReset();
+    handleResetSelectedOrder();
   };
 
   const handleReset = () => {
@@ -95,7 +96,6 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const imprimirComanda = () => {
-    console.log("Imprimiendo comanda:", confirmedProducts);
     // función de impresión
   };
 
@@ -105,10 +105,12 @@ export const StepperTable: React.FC<Props> = ({
       token
     );
     if (tableEdited) {
+      console.log("🈯🈯🈯🈯🈯🈯");
       setSelectedTable(tableEdited);
       updateTable(tableEdited);
-      setSelectedOrderByTable(null);
-      fetchOrderBySelectedTable();
+
+      // RESETEAR TODOS LOS ESTADOS DE LA ORDEN
+      handleResetSelectedOrder();
     }
     handleComplete();
   };

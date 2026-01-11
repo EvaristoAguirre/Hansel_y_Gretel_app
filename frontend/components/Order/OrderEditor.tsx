@@ -93,7 +93,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     selectedToppingsByProduct,
     toppingsByProductGroup,
   } = useOrderContext();
-  
+console.log(confirmedProducts);
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);

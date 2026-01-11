@@ -16,14 +16,21 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
   onSearch,
   onSelect,
   label = "Buscar productos por nombre o código",
-  sx = { flexGrow: 1, width: "100%", marginRight: 2 }
-
+  sx = { flexGrow: 1, width: "100%", marginRight: 2 },
 }) => {
+  // Filtrar solo productos con stock disponible
+  const availableOptions = options.filter((product) => {
+    const stockQuantity = parseFloat(product.stock?.quantityInStock || "0");
+    return stockQuantity > 0;
+  });
+
   return (
     <Autocomplete
       sx={sx}
-      options={options}
-      getOptionLabel={(product) => `${product.name} - (Código: ${product.code})`}
+      options={availableOptions}
+      getOptionLabel={(product) =>
+        `${product.name} - (Código: ${product.code})`
+      }
       onInputChange={(event, value) => onSearch(value)}
       onChange={(event, selectedProduct) => {
         if (selectedProduct) {
@@ -35,7 +42,9 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
       )}
       renderOption={(props, product) => (
         <li {...props} key={String(product.id)}>
-          {`${capitalizeFirstLetter(product.name)}  - (Código: ${product.code})`}
+          {`${capitalizeFirstLetter(product.name)}  - (Código: ${
+            product.code
+          })`}
         </li>
       )}
     />
