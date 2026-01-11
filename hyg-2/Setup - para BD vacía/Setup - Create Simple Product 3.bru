@@ -1,0 +1,42 @@
+meta {
+  name: Setup - Create Simple Product 3 (Torta de Chocolate)
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:3000/product
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "Torta de Chocolate",
+    "code": 201,
+    "description": "Torta de chocolate tradicional",
+    "price": 3000,
+    "baseCost": 1200,
+    "type": "product"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("productId3", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

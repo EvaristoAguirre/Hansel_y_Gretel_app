@@ -3,7 +3,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,34 +13,15 @@ import { CreateIngredientDto } from 'src/DTOs/create-ingredient.dto';
 import { UnitOfMeasureService } from 'src/UnitOfMeasure/unitOfMeasure.service';
 import { ToppingResponseDto } from 'src/DTOs/toppingSummaryResponse.dto';
 import { UpdateToppingDto } from 'src/DTOs/update-topping.dto';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class IngredientRepository {
+  private readonly logger = new Logger(IngredientRepository.name);
   constructor(
     @InjectRepository(Ingredient)
     private readonly ingredientRepository: Repository<Ingredient>,
     private readonly unitOfMeasureService: UnitOfMeasureService,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'IngredientRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   async getIngredientByName(name: string): Promise<Ingredient> {
     const ingredient = await this.ingredientRepository.findOne({
@@ -110,7 +91,7 @@ export class IngredientRepository {
       if (error instanceof HttpException) {
         throw error;
       }
-      this.logError('createIngredient', { name, unitOfMeasureId }, error);
+      this.logger.error('createIngredient', error);
       throw error;
     }
   }
@@ -142,7 +123,7 @@ export class IngredientRepository {
       return this.adaptToppingResponse(topping);
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      this.logError('getToppingByName', { name: trimmedName }, error);
+      this.logger.error('getToppingByName', error);
       throw error;
     }
   }
@@ -197,7 +178,7 @@ export class IngredientRepository {
       if (error.code === '23505') {
         throw new ConflictException('Topping name must be unique');
       }
-      this.logError('updateTopping', { id, updateToppingDto }, error);
+      this.logger.error('updateTopping', error);
       throw error;
     }
   }

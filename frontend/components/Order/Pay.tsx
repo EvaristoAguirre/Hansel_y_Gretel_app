@@ -1,8 +1,8 @@
-import { orderToClosed } from '@/api/order';
-import { editTable } from '@/api/tables';
-import { useAuth } from '@/app/context/authContext';
-import { useRoomContext } from '@/app/context/room.context';
-import { Payment } from '@mui/icons-material';
+import { orderToClosed } from "@/api/order";
+import { editTable } from "@/api/tables";
+import { useAuth } from "@/app/context/authContext";
+import { useRoomContext } from "@/app/context/room.context";
+import { Payment } from "@mui/icons-material";
 import {
   Button,
   FormControl,
@@ -24,23 +24,23 @@ import {
   Box,
   Switch,
   Tooltip,
-} from '@mui/material';
-import InputAdornment from '@mui/material/InputAdornment';
-import { useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import { useOrderContext } from '../../app/context/order.context';
-import { useTableStore } from '../Table/useTableStore';
-import { useOrderStore } from './useOrderStore';
-import { paymentMethod } from '../Enums/dailyCash';
-import { TableState } from '../Enums/table';
-import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
-import { OrderState } from '../Enums/order';
-import { formatNumber } from '../Utils/FormatNumber';
+} from "@mui/material";
+import InputAdornment from "@mui/material/InputAdornment";
+import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import { useOrderContext } from "../../app/context/order.context";
+import { useTableStore } from "../Table/useTableStore";
+import { useOrderStore } from "./useOrderStore";
+import { paymentMethod } from "../Enums/dailyCash";
+import { TableState } from "../Enums/table";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
+import { OrderState } from "../Enums/order";
+import { formatNumber } from "../Utils/FormatNumber";
 
 interface DraftPayment {
   productIds: string[];
-  method: paymentMethod | '';
-  tipType: 'none' | '10' | 'custom';
+  method: paymentMethod | "";
+  tipType: "none" | "10" | "custom";
   customTip: number;
 }
 
@@ -61,6 +61,7 @@ const TipInputs: React.FC<TipInputsProps> = ({
   customTip,
   onChangeCustomTip,
 }) => {
+  console.log(OrderState);
   const computedTotal = baseAmount + (customTip || 0);
   const [propinaInput, setPropinaInput] = useState<string>(
     formatNumber(customTip || 0)
@@ -78,8 +79,8 @@ const TipInputs: React.FC<TipInputsProps> = ({
     <Box
       sx={{
         mt: 1,
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
         gap: 1,
       }}
     >
@@ -89,15 +90,15 @@ const TipInputs: React.FC<TipInputsProps> = ({
         placeholder="Ingresá el monto de propina"
         value={propinaInput}
         onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, '');
+          const digits = e.target.value.replace(/\D/g, "");
           setPropinaInput(digits);
-          const nextTip = parseInt(digits || '0', 10);
+          const nextTip = parseInt(digits || "0", 10);
           const safeTip = isNaN(nextTip) ? 0 : Math.max(0, nextTip);
           onChangeCustomTip(safeTip);
         }}
         onBlur={() => setPropinaInput(formatNumber(customTip || 0))}
         fullWidth
-        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
@@ -109,9 +110,9 @@ const TipInputs: React.FC<TipInputsProps> = ({
         placeholder="Ingresá el total a pagar"
         value={totalInput}
         onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, '');
+          const digits = e.target.value.replace(/\D/g, "");
           setTotalInput(digits);
-          const nextTotal = parseInt(digits || '0', 10);
+          const nextTotal = parseInt(digits || "0", 10);
           const safeTotal = isNaN(nextTotal) ? 0 : Math.max(0, nextTotal);
           const computedTip = Math.max(0, safeTotal - baseAmount);
           onChangeCustomTip(computedTip);
@@ -120,7 +121,7 @@ const TipInputs: React.FC<TipInputsProps> = ({
           setTotalInput(formatNumber(baseAmount + (customTip || 0)))
         }
         fullWidth
-        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
@@ -135,8 +136,13 @@ export interface PayOrderProps {
 }
 
 const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
-  const { selectedOrderByTable, setSelectedOrderByTable, confirmedProducts } =
-    useOrderContext();
+  const {
+    selectedOrderByTable,
+    setSelectedOrderByTable,
+    confirmedProducts,
+    setConfirmedProducts,
+    clearSelectedProducts,
+  } = useOrderContext();
   const { selectedTable, setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
@@ -147,8 +153,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const [fullPaymentMode, setFullPaymentMode] = useState(false);
   const [draftPayment, setDraftPayment] = useState<DraftPayment>({
     productIds: [],
-    method: '',
-    tipType: 'none',
+    method: "",
+    tipType: "none",
     customTip: 0,
   });
   const [confirmedPayments, setConfirmedPayments] = useState<
@@ -159,8 +165,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     setFullPaymentMode(false);
     setDraftPayment({
       productIds: [],
-      method: '',
-      tipType: 'none',
+      method: "",
+      tipType: "none",
       customTip: 0,
     });
     setConfirmedPayments([]);
@@ -203,12 +209,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const handleAddDraftAsConfirmed = () => {
     const { productIds, method, tipType, customTip } = draftPayment;
     if (!productIds.length || !method) {
-      Swal.fire('Selecciona productos y método de pago', '', 'warning');
+      Swal.fire("Selecciona productos y método de pago", "", "warning");
       return;
     }
     const used = confirmedPayments.flatMap((cp) => cp.productIds);
     if (productIds.some((id) => used.includes(id))) {
-      Swal.fire('Producto ya asignado a otro pago', '', 'error');
+      Swal.fire("Producto ya asignado a otro pago", "", "error");
       return;
     }
     const base = productIds.reduce(
@@ -220,9 +226,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       0
     );
     const amount =
-      tipType === '10'
+      tipType === "10"
         ? base * 1.1
-        : tipType === 'custom'
+        : tipType === "custom"
         ? base + customTip
         : base;
     setConfirmedPayments((prev) => [
@@ -231,8 +237,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     ]);
     setDraftPayment({
       productIds: [],
-      method: '',
-      tipType: 'none',
+      method: "",
+      tipType: "none",
       customTip: 0,
     });
   };
@@ -242,7 +248,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     const allIds = confirmedProducts.map((p) => p.internalId!);
     const paidIds = confirmedPayments.flatMap((cp) => cp.productIds);
     if (allIds.some((id) => !paidIds.includes(id))) {
-      Swal.fire('Faltan productos por pagar', '', 'warning');
+      Swal.fire("Faltan productos por pagar", "", "warning");
       return;
     }
     try {
@@ -255,7 +261,13 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         token,
         payments
       );
-      if (paidOrder) Swal.fire('Orden cerrada con éxito', '', 'success');
+      if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+
+      // Limpiar confirmedProducts y selectedProducts ANTES de cambiar el estado de la mesa
+      // Esto garantiza que los productos se limpien de forma definitiva al pagar
+      setConfirmedProducts([]);
+      clearSelectedProducts();
+
       const closedTable = await editTable(
         { ...selectedTable, state: TableState.CLOSED },
         token
@@ -272,9 +284,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     } catch (e: any) {
       console.error(e);
       Swal.fire(
-        e.statusCode === 409 ? 'No hay caja abierta' : 'Error',
-        e.message || 'No se pudo cerrar.',
-        'error'
+        e.statusCode === 409 ? "No hay caja abierta" : "Error",
+        e.message || "No se pudo cerrar.",
+        "error"
       );
     }
   };
@@ -300,9 +312,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   useEffect(() => {
     if (isBulkPaid) {
       const amount =
-        draftPayment.tipType === '10'
+        draftPayment.tipType === "10"
           ? baseAmount * 1.1
-          : draftPayment.tipType === 'custom'
+          : draftPayment.tipType === "custom"
           ? baseAmount + draftPayment.customTip
           : baseAmount;
       setConfirmedPayments([
@@ -316,16 +328,16 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   }, [isBulkPaid]);
 
   const orderStates = {
-    pending_payment: 'PENDIENTE DE PAGO',
-    open: 'ORDEN ABIERTA',
-    cancelled: 'ORDEN CANCELADA',
-    closed: 'ORDEN PAGADA/CERRADA',
+    pending_payment: "PENDIENTE DE PAGO",
+    open: "ORDEN ABIERTA",
+    cancelled: "ORDEN CANCELADA",
+    closed: "ORDEN PAGADA/CERRADA",
   };
   const orderStyles = {
-    pending_payment: 'text-red-500',
-    open: 'text-orange-500',
-    cancelled: 'text-gray-500',
-    closed: 'text-green-500',
+    pending_payment: "text-red-500",
+    open: "text-orange-500",
+    cancelled: "text-gray-500",
+    closed: "text-green-500",
   };
   const total = selectedOrderByTable?.total || 0;
 
@@ -341,10 +353,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       <Typography
         variant="h6"
         sx={{
-          backgroundColor: '#7e9d8a',
-          color: 'white',
+          backgroundColor: "#7e9d8a",
+          color: "white",
           p: 1,
-          textAlign: 'center',
+          textAlign: "center",
           borderRadius: 1,
           mb: 2,
         }}
@@ -388,8 +400,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               <Tooltip
                 title={
                   confirmedPayments.length > 0
-                    ? 'No puedes cambiar al pago total con pagos parciales'
-                    : ''
+                    ? "No puedes cambiar al pago total con pagos parciales"
+                    : ""
                 }
               >
                 <span>
@@ -404,8 +416,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             label="PAGA EL TOTAL DE LA ORDEN"
             sx={{
               mt: 1,
-              fontWeight: 'bold',
-              color: fullPaymentMode ? 'red' : 'black',
+              fontWeight: "bold",
+              color: fullPaymentMode ? "red" : "black",
             }}
           />
 
@@ -421,16 +433,16 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     overflow="auto"
                     sx={{
                       maxHeight: 300,
-                      '&::-webkit-scrollbar': {
+                      "&::-webkit-scrollbar": {
                         width: 8,
-                        backgroundColor: '#d9ccbc',
+                        backgroundColor: "#d9ccbc",
                       },
-                      '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: '#7e9d8a',
+                      "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: "#7e9d8a",
                         borderRadius: 4,
                       },
-                      '&::-webkit-scrollbar-thumb:hover': {
-                        backgroundColor: '#555',
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        backgroundColor: "#555",
                       },
                     }}
                   >
@@ -449,8 +461,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                             sx={{
                               py: 0,
                               color: disabled
-                                ? 'text.secondary'
-                                : 'text.primary',
+                                ? "text.secondary"
+                                : "text.primary",
                             }}
                           >
                             <ListItemIcon sx={{ minWidth: 32, mr: 1 }}>
@@ -471,8 +483,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                               primaryTypographyProps={{
                                 sx: {
                                   color: disabled
-                                    ? 'text.disabled'
-                                    : 'text.primary',
+                                    ? "text.disabled"
+                                    : "text.primary",
                                 },
                               }}
                             />
@@ -493,27 +505,27 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     mt={1}
                   >
                     <Radio
-                      checked={draftPayment.tipType === 'none'}
+                      checked={draftPayment.tipType === "none"}
                       onChange={() =>
-                        setDraftPayment({ ...draftPayment, tipType: 'none' })
+                        setDraftPayment({ ...draftPayment, tipType: "none" })
                       }
                     />
                     <Typography>Total sin propina</Typography>
                     <Typography>${formatNumber(baseAmount)}</Typography>
 
                     <Radio
-                      checked={draftPayment.tipType === '10'}
+                      checked={draftPayment.tipType === "10"}
                       onChange={() =>
-                        setDraftPayment({ ...draftPayment, tipType: '10' })
+                        setDraftPayment({ ...draftPayment, tipType: "10" })
                       }
                     />
                     <Typography>Total + 10% propina</Typography>
                     <Typography>${formatNumber(Number(total10))}</Typography>
 
                     <Radio
-                      checked={draftPayment.tipType === 'custom'}
+                      checked={draftPayment.tipType === "custom"}
                       onChange={() =>
-                        setDraftPayment({ ...draftPayment, tipType: 'custom' })
+                        setDraftPayment({ ...draftPayment, tipType: "custom" })
                       }
                     />
                     <Typography>Total + propina personalizada</Typography>
@@ -521,7 +533,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                       ${formatNumber(Number(totalCustom))}
                     </Typography>
                   </Box>
-                  {draftPayment.tipType === 'custom' && (
+                  {draftPayment.tipType === "custom" && (
                     <TipInputs
                       baseAmount={baseAmount}
                       customTip={draftPayment.customTip}
@@ -605,33 +617,33 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 mt={1}
               >
                 <Radio
-                  checked={draftPayment.tipType === 'none'}
+                  checked={draftPayment.tipType === "none"}
                   onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: 'none' })
+                    setDraftPayment({ ...draftPayment, tipType: "none" })
                   }
                 />
                 <Typography>Total sin propina</Typography>
                 <Typography>${formatNumber(baseAmount)}</Typography>
 
                 <Radio
-                  checked={draftPayment.tipType === '10'}
+                  checked={draftPayment.tipType === "10"}
                   onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: '10' })
+                    setDraftPayment({ ...draftPayment, tipType: "10" })
                   }
                 />
                 <Typography>Total + 10% propina</Typography>
                 <Typography>${formatNumber(Number(total10))}</Typography>
 
                 <Radio
-                  checked={draftPayment.tipType === 'custom'}
+                  checked={draftPayment.tipType === "custom"}
                   onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: 'custom' })
+                    setDraftPayment({ ...draftPayment, tipType: "custom" })
                   }
                 />
                 <Typography>Total + propina personalizada</Typography>
                 <Typography>${formatNumber(Number(totalCustom))}</Typography>
               </Box>
-              {draftPayment.tipType === 'custom' && (
+              {draftPayment.tipType === "custom" && (
                 <TipInputs
                   baseAmount={baseAmount}
                   customTip={draftPayment.customTip}
@@ -671,7 +683,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     Total: ${formatNumber(confirmedPayments[0].amount)}
                   </Typography>
                   <Typography>
-                    Método:{' '}
+                    Método:{" "}
                     {capitalizeFirstLetter(
                       confirmedPayments[0].methodOfPayment
                     )}
@@ -681,7 +693,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             </>
           )}
 
-          {selectedOrderByTable?.state === 'pending_payment' &&
+          {selectedOrderByTable?.state === OrderState.PENDING_PAYMENT &&
             confirmedPayments.flatMap((cp) => cp.productIds).length ===
               confirmedProducts.length && (
               <Button
@@ -689,8 +701,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 variant="contained"
                 sx={{
                   mt: 3,
-                  backgroundColor: '#7e9d8a',
-                  '&:hover': { backgroundColor: '#f9b32d', color: 'black' },
+                  backgroundColor: "#7e9d8a",
+                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
                 }}
                 onClick={handlePayOrder}
               >

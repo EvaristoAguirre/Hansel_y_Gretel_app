@@ -55,6 +55,9 @@ export class TableService {
 
   async updateTableState(tableId: string, state: TableState) {
     await this.tableRepository.updateTableState(tableId, state);
+    // Obtener la mesa actualizada y emitir evento
+    const updatedTable = await this.tableRepository.getTableById(tableId);
+    this.eventEmitter.emit('table.updated', { table: updatedTable });
   }
 
   async getTablesByRoom(roomId: string): Promise<Table[]> {

@@ -1,0 +1,24 @@
+meta {
+  name: Get Categories
+  type: http
+  seq: 9
+}
+
+get {
+  url: http://localhost:3000/category?page=1&limit=100
+  body: none
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

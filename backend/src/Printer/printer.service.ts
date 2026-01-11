@@ -7,7 +7,7 @@ import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
@@ -26,24 +26,6 @@ export class PrinterService {
     this.initializeCounter();
   }
 
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este servicio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      service: 'PrinterService',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
-
   private initializeCounter(): void {
     try {
       if (fs.existsSync(this.counterFilePath)) {
@@ -51,12 +33,9 @@ export class PrinterService {
         this.counter = JSON.parse(data).counter || 0;
       }
     } catch (error) {
-      this.logError(
-        'initializeCounter',
-        { counterFilePath: this.counterFilePath },
-        error,
-      );
+      this.logger.error('initializeCounter', error);
       this.counter = 0;
+      throw error;
     }
   }
 
@@ -70,7 +49,8 @@ export class PrinterService {
         }),
       );
     } catch (error) {
-      this.logError('saveCounter', { counter: this.counter }, error);
+      this.logger.error('saveCounter', error);
+      throw error;
     }
   }
 
@@ -93,7 +73,7 @@ export class PrinterService {
         socket.write(command, 'binary', (err) => {
           socket.end();
           if (err) {
-            this.logError(
+            this.logger.error(
               'sendRawCommand',
               { event: 'write', printerConfig: this.printerConfig },
               err,
@@ -106,7 +86,7 @@ export class PrinterService {
       });
 
       socket.on('error', (err) => {
-        this.logError(
+        this.logger.error(
           'sendRawCommand',
           { event: 'connection_error', printerConfig: this.printerConfig },
           err,
@@ -115,7 +95,7 @@ export class PrinterService {
       });
 
       socket.on('timeout', () => {
-        this.logError(
+        this.logger.error(
           'sendRawCommand',
           { event: 'timeout', printerConfig: this.printerConfig },
           new Error('Connection timeout'),
@@ -215,7 +195,7 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      const secondPrintSuccess = await this.sendRawCommand(commands);
+      // const secondPrintSuccess = await this.sendRawCommand(commands);
 
       if (!firstPrintSuccess) {
         throw new Error('Print command failed');
@@ -223,16 +203,7 @@ export class PrinterService {
 
       return `Comanda impresa: ${orderCode}`;
     } catch (error) {
-      this.logError(
-        'printKitchenOrder',
-        {
-          table: orderData.table,
-          numberCustomers: orderData.numberCustomers,
-          productsCount: orderData.products?.length,
-          isPriority: orderData.isPriority,
-        },
-        error,
-      );
+      this.logger.error('printKitchenOrder', error);
       throw error;
     }
   }
@@ -273,7 +244,7 @@ export class PrinterService {
 
       const tableName = order.table.name;
       //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
-      const commandNumber = commandNumberToPrint || 'S/N';
+      // const commandNumber = commandNumberToPrint || 'S/N';
 
       const products = order.orderDetails
         .filter((detail) => detail.isActive)
@@ -378,15 +349,7 @@ export class PrinterService {
 
       return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
     } catch (error) {
-      this.logError(
-        'printTicketOrder',
-        {
-          orderId: order.id,
-          tableName: order.table?.name,
-          orderDetailsCount: order.orderDetails?.length,
-        },
-        error,
-      );
+      this.logger.error('printTicketOrder', error);
       throw error;
     }
   }
@@ -516,16 +479,8 @@ export class PrinterService {
       if (error instanceof ServiceUnavailableException) {
         throw error;
       }
-      this.logError(
-        'printerStock',
-        {
-          stockItemsCount: stockData?.length,
-        },
-        error,
-      );
-      throw new ServiceUnavailableException(
-        'No se pudo imprimir el reporte. Verificá la conexión con la impresora.',
-      );
+      this.logger.error('printerStock', error);
+      throw error;
     }
   }
 

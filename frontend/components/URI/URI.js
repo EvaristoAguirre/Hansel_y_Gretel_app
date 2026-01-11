@@ -4,7 +4,8 @@
 // POR 'API_URL'
 // y NEXT_PUBLIC_API_URL_DEV por NEXT_PUBLIC_API_URL
 
-const API_URL_DEV = process.env.NEXT_PUBLIC_API_URL;
+const API_URL_DEV =
+  process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_URL_DEV) {
   throw new Error('Falta la variable de entorno NEXT_PUBLIC_API_URL');
@@ -16,6 +17,10 @@ export const URI_CATEGORY = `${API_URL_DEV}/category`;
 // PRODUCTS
 export const URI_PRODUCT = `${API_URL_DEV}/product`;
 export const URI_PRODUCT_BY_CATEGORY = `${API_URL_DEV}/product/by-categories`;
+export const URI_PRODUCT_PROMO_WITH_SLOTS = `${API_URL_DEV}/product/promo-with-slots`;
+
+// PROMOTION SLOT
+export const URI_PROMOTION_SLOT = `${API_URL_DEV}/promotion-slot`;
 
 // INGREDIENTS
 export const URI_INGREDIENT = `${API_URL_DEV}/ingredient`;

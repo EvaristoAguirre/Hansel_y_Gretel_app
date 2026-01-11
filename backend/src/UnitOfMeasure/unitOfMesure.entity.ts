@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Stock } from 'src/Stock/stock.entity';
 import { UnitConversion } from './unitConversion.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ProductIngredient } from 'src/Ingredient/ingredientProduct.entity';
 import { ProductAvailableToppingGroup } from 'src/Ingredient/productAvailableToppingsGroup.entity';

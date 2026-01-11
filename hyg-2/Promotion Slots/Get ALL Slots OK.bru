@@ -1,0 +1,32 @@
+meta {
+  name: Get ALL Slots OK
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:3000/promotion-slot?page=1&limit=10&includeInactive=true
+  body: json
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+  includeInactive: true
+  ~promotionId: 1655ccc5-7399-4b61-93d0-ccdfac75b64f
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

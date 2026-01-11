@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import Navbar from "@/components/Navbar/Navbar";
-import { CssBaseline, ThemeProvider } from "@mui/material";
-import theme from "@/styles/theme";
-import { AuthProvider } from "./context/authContext";
-import Footer from "@/components/Footer/Footer";
+import type { Metadata } from 'next';
+import './globals.css';
+import Navbar from '@/components/Navbar/Navbar';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import theme from '@/styles/theme';
+import { AuthProvider } from './context/authContext';
 
 export const metadata: Metadata = {
-  title: "Hansel&Gretel App",
-  description: "Aplicación de gestión interna de mesas, ordenes, stock y roles de usuarios",
+  title: 'Hansel&Gretel App',
+  description:
+    'Aplicación de gestión interna de mesas, ordenes, stock y roles de usuarios',
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <div id="__next">
           <AuthProvider>
@@ -25,7 +25,6 @@ export default function RootLayout({
               <CssBaseline />
               <Navbar />
               <main>{children}</main>
-              <Footer />
             </ThemeProvider>
           </AuthProvider>
         </div>

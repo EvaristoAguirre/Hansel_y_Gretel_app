@@ -43,6 +43,7 @@ export const useProducts = () => {
     allowsToppings: false,
     toppingsSettings: null,
     availableToppingGroups: [],
+    slots: [],
   });
 
   // Llamada inicial para cargar productos
@@ -77,7 +78,6 @@ export const useProducts = () => {
     };
     if (form.ingredients.length === 0) {
       delete (preparedForm as any).ingredients;
-      delete (preparedForm as any).isActive;
     }
     try {
       if (!token) throw new Error('Token no disponible');
@@ -205,6 +205,7 @@ export const useProducts = () => {
       allowsToppings: false,
       toppingsSettings: null,
       availableToppingGroups: [],
+      slots: [],
     });
   };
 

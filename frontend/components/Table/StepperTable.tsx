@@ -1,25 +1,26 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepButton from '@mui/material/StepButton';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Order from '../Order/Order';
-import { useOrderContext } from '../../app/context/order.context';
-import PayOrder from '../Order/Pay';
-import TableEditor from './TableEditor';
-import OrderEditor from '../Order/OrderEditor';
-import { ITable } from '../Interfaces/ITable';
-import { TableState } from '../Enums/table';
-import { editTable } from '@/api/tables';
-import { useRoomContext } from '@/app/context/room.context';
-import { useTableStore } from './useTableStore';
-import { useOrderStore } from '../Order/useOrderStore';
-import { useAuth } from '@/app/context/authContext';
-import { TableBar } from '@mui/icons-material';
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepButton from "@mui/material/StepButton";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Order from "../Order/Order";
+import { useOrderContext } from "../../app/context/order.context";
+import PayOrder from "../Order/Pay";
+import TableEditor from "./TableEditor";
+import OrderEditor from "../Order/OrderEditor";
+import { ITable } from "../Interfaces/ITable";
+import { TableState } from "../Enums/table";
+import { editTable } from "@/api/tables";
+import { useRoomContext } from "@/app/context/room.context";
+import { useTableStore } from "./useTableStore";
+import { useOrderStore } from "../Order/useOrderStore";
+import { useAuth } from "@/app/context/authContext";
+import { TableBar } from "@mui/icons-material";
+import { UserRole } from "../Enums/user";
 
-const steps = ['Info Mesa', 'Editar Pedido', 'Productos Confirmados', 'Pago'];
+const steps = ["Info Mesa", "Editar Pedido", "Productos Confirmados", "Pago"];
 
 interface Props {
   selectedTable: ITable;
@@ -38,13 +39,19 @@ export const StepperTable: React.FC<Props> = ({
   const [completed, setCompleted] = React.useState<{ [k: number]: boolean }>(
     {}
   );
-  const { confirmedProducts, selectedOrderByTable, setSelectedOrderByTable, fetchOrderBySelectedTable } = useOrderContext();
+  const {
+    confirmedProducts,
+    selectedOrderByTable,
+    fetchOrderBySelectedTable,
+    handleCancelOrder,
+    handleResetSelectedOrder,
+  } = useOrderContext();
   const { setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
   const { updateOrder } = useOrderStore();
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, userRoleFromToken } = useAuth();
   const token = getAccessToken();
-
+  const userRole = userRoleFromToken();
 
   const totalSteps = () => steps.length;
   const completedSteps = () => Object.keys(completed).length;
@@ -52,7 +59,13 @@ export const StepperTable: React.FC<Props> = ({
   const allStepsCompleted = () => completedSteps() === totalSteps();
 
   const handleNextStep = () => {
-    setActiveStep(isLastStep() ? activeStep : activeStep + 1);
+    // Si el usuario es MOZO y está intentando avanzar al paso 4 (pago), no permitirlo
+    const nextStep = isLastStep() ? activeStep : activeStep + 1;
+    if (userRole === UserRole.MOZO && nextStep === 3) {
+      // El mozo no puede acceder al paso 4 (pago), se queda en el paso 3
+      return;
+    }
+    setActiveStep(nextStep);
   };
 
   const handleBack = () => {
@@ -60,6 +73,10 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const handleStep = (step: number) => () => {
+    // Si el usuario es MOZO, no permitir acceso al paso 4 (pago)
+    if (userRole === UserRole.MOZO && step === 3) {
+      return; // No permitir acceso al paso 4
+    }
     setActiveStep(step);
   };
 
@@ -69,6 +86,7 @@ export const StepperTable: React.FC<Props> = ({
   const handleComplete = () => {
     setCompleted({ ...completed, [activeStep]: true });
     handleReset();
+    handleResetSelectedOrder();
   };
 
   const handleReset = () => {
@@ -78,21 +96,24 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const imprimirComanda = () => {
-    console.log("Imprimiendo comanda:", confirmedProducts);
     // función de impresión
   };
 
   const handleTableAvailable = async (table: ITable, token: string) => {
-    const tableEdited = await editTable({ ...table, state: TableState.AVAILABLE }, token);
+    const tableEdited = await editTable(
+      { ...table, state: TableState.AVAILABLE },
+      token
+    );
     if (tableEdited) {
+      console.log("🈯🈯🈯🈯🈯🈯");
       setSelectedTable(tableEdited);
       updateTable(tableEdited);
-      setSelectedOrderByTable(null);
-      fetchOrderBySelectedTable();
+
+      // RESETEAR TODOS LOS ESTADOS DE LA ORDEN
+      handleResetSelectedOrder();
     }
     handleComplete();
   };
-
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -119,7 +140,6 @@ export const StepperTable: React.FC<Props> = ({
         return selectedTable.state === TableState.OPEN ? (
           <OrderEditor
             handleNextStep={handleNextStep}
-
             handleBackStep={handleBack}
             handleReset={handleReset}
             handleCompleteStep={handleCompleteStep}
@@ -130,7 +150,7 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         ) : selectedTable.state === TableState.CLOSED ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
-            La orden ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo
+            La orden ya pasó a "Pagada", pasar mesa a disponible e iniciar nuevo
             pedido.
           </div>
         ) : (
@@ -154,8 +174,19 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         );
       case 3:
-        return selectedOrderByTable ? <PayOrder handleComplete={handleComplete} /> :
-          (selectedTable?.state === TableState.CLOSED) && (
+        // El paso 4 (pago) solo es accesible para ENCARGADO y ADMIN, no para MOZO
+        if (userRole === UserRole.MOZO) {
+          return (
+            <div className="flex justify-center text-red-500 font-bold my-16">
+              El cobro debe ser realizado por el encargado. La orden está
+              pendiente de cobro.
+            </div>
+          );
+        }
+        return selectedOrderByTable ? (
+          <PayOrder handleComplete={handleComplete} />
+        ) : (
+          selectedTable?.state === TableState.CLOSED && (
             <>
               <div className="flex justify-center text-red-500 font-bold my-16">
                 Orden PAGADA. Finalizó el ciclo de la orden.
@@ -175,10 +206,25 @@ export const StepperTable: React.FC<Props> = ({
                 onClick={() => handleTableAvailable(selectedTable, token!)}
               >
                 <TableBar sx={{ mr: 1 }} />
-                Pasar Mesa a: <Box component="span" sx={{ color: "green", ml: 1 }}>Disponible</Box>
+                Pasar Mesa a:{" "}
+                <Box component="span" sx={{ color: "green", ml: 1 }}>
+                  Disponible
+                </Box>
               </Button>
             </>
           )
+        );
+    }
+  };
+
+  // agregado para CANCELAR LA ORDEN - Eva
+  const handleCancelOrderClick = async () => {
+    if (selectedOrderByTable?.id) {
+      await handleCancelOrder(selectedOrderByTable.id);
+      // Resetear el stepper después de cancelar
+      handleReset();
+      // Volver al primer paso
+      setActiveStep(0);
     }
   };
 
@@ -214,6 +260,16 @@ export const StepperTable: React.FC<Props> = ({
                 Atrás
               </Button>
               <Box sx={{ flex: "1 1 auto" }} />
+              {selectedOrderByTable?.id && (
+                <Button
+                  color="error"
+                  variant="outlined"
+                  onClick={handleCancelOrderClick}
+                  sx={{ mr: 1, ml: 1 }}
+                >
+                  Cancelar Orden
+                </Button>
+              )}
               <Button onClick={handleNextStep} sx={{}}>
                 Siguiente
               </Button>

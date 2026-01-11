@@ -1,45 +1,26 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Stock } from './stock.entity';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 import { UnitOfMeasure } from 'src/UnitOfMeasure/unitOfMesure.entity';
 import { isUUID } from 'class-validator';
 import { StockToExportResponseDTO } from 'src/DTOs/stockToExportResponse.dto';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class StockRepository {
+  private readonly logger = new Logger(StockRepository.name);
   constructor(
     @InjectRepository(Stock)
     private readonly stockRepository: Repository<Stock>,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'StockRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   async getAllStocks(
     page: number,
@@ -60,8 +41,7 @@ export class StockRepository {
 
       return this.adaptStocksResponse(stocks);
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logError('getAllStocks', { page, limit }, error);
+      this.logger.error('getAllStocks', error);
       throw error;
     }
   }
@@ -89,8 +69,7 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      this.logError('getStockByProductId', { productId }, error);
+      this.logger.error('getStockByProductId', error);
       throw error;
     }
   }
@@ -119,8 +98,7 @@ export class StockRepository {
 
       return this.adaptStockResponse(stock);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      this.logError('getStockByIngredientId', { ingredientId }, error);
+      this.logger.error('getStockByIngredientId', error);
       throw error;
     }
   }
@@ -147,8 +125,7 @@ export class StockRepository {
 
       return stock;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      this.logError('getStockByToppingId', { toppingId }, error);
+      this.logger.error('getStockByToppingId', error);
       throw error;
     }
   }

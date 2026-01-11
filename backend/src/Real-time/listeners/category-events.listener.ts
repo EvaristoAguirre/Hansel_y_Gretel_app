@@ -20,6 +20,6 @@ export class CategoryWSListener {
   @OnEvent('category.deleted')
   handleCategoryDeleted(event: { category: string }) {
     // Evento por WS
-    this.broadcastService.broadcast('categoryDeleted', event.category);
+    this.broadcastService.broadcast('categoryDeleted', { id: event.category });
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 
 @Injectable()
 export class OrderWSListener {
@@ -30,5 +30,10 @@ export class OrderWSListener {
   @OnEvent('order.updateClose')
   handleOrderUpdateClose(event: { order: Order }) {
     this.broadcastService.broadcast('orderUpdatedClose', event.order);
+  }
+
+  @OnEvent('order.ticketPrinted')
+  handleOrderTicketPrinted(event: { order: Order }) {
+    this.broadcastService.broadcast('orderTicketPrinted', event.order);
   }
 }

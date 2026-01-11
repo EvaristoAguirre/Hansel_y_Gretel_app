@@ -163,7 +163,7 @@ const CashTable = () => {
     },
   ];
 
-  const filteredCash = allDailyCash
+  const filteredCash = (Array.isArray(allDailyCash) ? allDailyCash : [])
     .filter((cash) => {
       if (!cash.date) return false;
       const date = new Date(cash.date);

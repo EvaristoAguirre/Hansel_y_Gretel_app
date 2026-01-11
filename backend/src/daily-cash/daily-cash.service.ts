@@ -1,9 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDailyCashDto } from '../DTOs/create-daily-cash.dto';
@@ -26,11 +25,12 @@ import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
 import { CashMovementDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
-import { Order } from 'src/Order/order.entity';
+import { Order } from 'src/Order/entities/order.entity';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class DailyCashService {
+  private readonly logger = new Logger(DailyCashService.name);
   constructor(
     @InjectRepository(DailyCash)
     private readonly dailyCashRepo: Repository<DailyCash>,
@@ -78,13 +78,8 @@ export class DailyCashService {
 
       return DailyCashMapper.toResponse(dailyCashOpened);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error openning the daily cash report. Please try again later.',
-        error.message,
-      );
+      this.logger.error('openDailyCash', error);
+      throw error;
     }
   }
 
@@ -99,16 +94,10 @@ export class DailyCashService {
         page,
         limit,
       );
-      return DailyCashMapper.toMany(allDailyCash);
+      return DailyCashMapper.toMany(allDailyCash || []);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Error updating the order. Please try again later.',
-        error.message,
-      );
+      this.logger.error('getAllDailyCash', error);
+      throw error;
     }
   }
 
@@ -128,13 +117,8 @@ export class DailyCashService {
       }
       return DailyCashMapper.toResponse(dailyCash);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Daily cash not found. Please try again later.',
-        error.message,
-      );
+      this.logger.error('getDailyCashById', error);
+      throw error;
     }
   }
 
@@ -162,13 +146,8 @@ export class DailyCashService {
 
       return DailyCashMapper.toResponse(updatedDailyCash);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Daily cash not found. Please try again later.',
-        error.message,
-      );
+      this.logger.error('updateDailyCash', error);
+      throw error;
     }
   }
 
@@ -267,13 +246,8 @@ export class DailyCashService {
 
       return DailyCashMapper.toResponse(dailyCashClosed);
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Error closing the daily cash report. Please try again later.',
-        error.message,
-      );
+      this.logger.error('closeDailyCash', error);
+      throw error;
     }
   }
 
@@ -332,11 +306,8 @@ export class DailyCashService {
       });
       return CashMovementMapper.toResponse(movement);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error registering the expense. Please try again later.',
-        error.message,
-      );
+      this.logger.error('registerExpense', error);
+      throw error;
     }
   }
 
@@ -392,11 +363,8 @@ export class DailyCashService {
 
       return CashMovementMapper.toResponse(movement);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error registering the expense. Please try again later.',
-        error.message,
-      );
+      this.logger.error('registerMovement', error);
+      throw error;
     }
   }
 
@@ -404,11 +372,8 @@ export class DailyCashService {
     try {
       return await this.dailyCashRepository.isAnyDailyCashOpen();
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error checking if any daily cash is open. Please try again later.',
-        error.message,
-      );
+      this.logger.error('isAnyDailyCashOpen', error);
+      throw error;
     }
   }
 
@@ -430,11 +395,8 @@ export class DailyCashService {
       });
       return incomes.map(CashMovementMapper.toResponse);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching incomes by daily cash ID. Please try again later.',
-        error.message,
-      );
+      this.logger.error('getIncomesByDailyCashId', error);
+      throw error;
     }
   }
 
@@ -456,11 +418,8 @@ export class DailyCashService {
       });
       return expenses.map(CashMovementMapper.toResponse);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error fetching incomes by daily cash ID. Please try again later.',
-        error.message,
-      );
+      this.logger.error('getExpensesByDailyCashId', error);
+      throw error;
     }
   }
 
@@ -560,13 +519,8 @@ export class DailyCashService {
         return { result: 'No hay resumen disponible' };
       }
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'An error occurred while trying to generate the daily cash summary. Please try again later.',
-        error.message,
-      );
+      this.logger.error('summaryAtMoment', error);
+      throw error;
     }
   }
 
@@ -616,10 +570,8 @@ export class DailyCashService {
 
       return result;
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Error al obtener el movimiento de caja',
-      );
+      this.logger.error('detailsMovementById', error);
+      throw error;
     }
   }
 

@@ -18,6 +18,7 @@ const DataGridComponent: React.FC<DataGridComponentProps> = ({
   capitalize = [],
   bgColor = '#fff',
 }) => {
+  console.log(rows);
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
       <DataGrid

@@ -1,0 +1,44 @@
+meta {
+  name: Create Slot OK
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/promotion-slot
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Authorization: Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiaWF0IjoxNzY1NzQxNzQ0LCJleHAiOjE3NjU3NDg5NDR9.AKaanuniQ_Znki3oNkTCySpmvfgTaVUYemL-rbeSka8
+  ~Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+  //   "promotionId": "{{promotionId}}",
+    "name": "Panificados 3",
+    "description": "Selecciona tu panificado", 
+    "productIds": [
+      "a54f95fa-8c36-4cd6-91e3-bf30f0ad55d4", 
+      "6bc1aae7-4e65-438f-a9f2-1f70700a6d7d"
+    ]
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("slotId", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

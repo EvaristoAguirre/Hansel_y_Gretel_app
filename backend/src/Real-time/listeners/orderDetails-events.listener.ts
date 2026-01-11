@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
 import { OnEvent } from '@nestjs/event-emitter';
-import { OrderDetails } from 'src/Order/order_details.entity';
+import { OrderDetails } from 'src/Order/entities/order_details.entity';
 
 @Injectable()
 export class OrderDetailsWSListener {

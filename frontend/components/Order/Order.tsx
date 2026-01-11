@@ -21,6 +21,7 @@ import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
 import { normalizeNumber } from "../Utils/NormalizeNumber";
 import { formatNumber } from "../Utils/FormatNumber";
+import { UserRole } from "../Enums/user";
 
 export interface OrderProps {
   imprimirComanda: any;
@@ -42,12 +43,13 @@ const Order: React.FC<OrderProps> = ({
     confirmedProducts,
     setConfirmedProducts,
     handleCancelOrder,
+    fetchOrderBySelectedTable,
   } = useOrderContext();
   const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
   const { tables, updateTable } = useTableStore();
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, userRoleFromToken } = useAuth();
 
   useEffect(() => {
     const calcularTotal = () => {
@@ -75,7 +77,27 @@ const Order: React.FC<OrderProps> = ({
       setSelectedOrderByTable(ordenPendingPay);
       setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
-      // updateOrder(ordenPendingPay);
+
+      // Actualizar confirmedProducts con los productos de la orden actualizada
+      if (ordenPendingPay.products) {
+        const expandedProducts: SelectedProductsI[] = [];
+        let internalCounter = 0;
+
+        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
+          const quantity = product.quantity || 1;
+
+          for (let i = 0; i < quantity; i++) {
+            expandedProducts.push({
+              ...product,
+              internalId: `${product.productId}-${internalCounter}`,
+              quantity: 1,
+            });
+            internalCounter++;
+          }
+        });
+
+        setConfirmedProducts(expandedProducts);
+      }
     }
 
     const tableEdited = await editTable(
@@ -87,7 +109,14 @@ const Order: React.FC<OrderProps> = ({
       updateTable(tableEdited);
     }
     handleCompleteStep();
-    handleNextStep();
+
+    // Solo avanzar al paso 4 (pago) si el usuario NO es MOZO
+    // El mozo solo puede ver hasta el paso 3 (imprimir ticket)
+    const userRole = userRoleFromToken();
+    if (userRole !== UserRole.MOZO) {
+      handleNextStep();
+    }
+    // Si es MOZO, se queda en el paso 3 (no avanza al paso 4)
   };
 
   const handleReprintOrder = async (selectedTable: ITable) => {
@@ -103,6 +132,27 @@ const Order: React.FC<OrderProps> = ({
       setSelectedOrderByTable(ordenPendingPay);
       setOrderSelectedTable(ordenPendingPay.id);
       addOrder(ordenPendingPay);
+
+      // Actualizar confirmedProducts con los productos de la orden actualizada
+      if (ordenPendingPay.products) {
+        const expandedProducts: SelectedProductsI[] = [];
+        let internalCounter = 0;
+
+        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
+          const quantity = product.quantity || 1;
+
+          for (let i = 0; i < quantity; i++) {
+            expandedProducts.push({
+              ...product,
+              internalId: `${product.productId}-${internalCounter}`,
+              quantity: 1,
+            });
+            internalCounter++;
+          }
+        });
+
+        setConfirmedProducts(expandedProducts);
+      }
     }
 
     const tableEdited = await editTable(
@@ -119,9 +169,10 @@ const Order: React.FC<OrderProps> = ({
   const cancelOrder = async (orderId: string) => {
     const token = getAccessToken();
     if (!token) return;
-    const deletedOrder = await handleCancelOrder(orderId);
-    setSelectedOrderByTable(null);
-    setConfirmedProducts([]);
+
+    // handleCancelOrder ya maneja toda la limpieza y actualización
+    // Solo necesitamos resetear el stepper
+    await handleCancelOrder(orderId);
     handleReset();
   }
 

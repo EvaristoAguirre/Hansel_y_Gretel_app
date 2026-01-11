@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
-import { Product } from 'src/Product/product.entity';
+import { Product } from 'src/Product/entities/product.entity';
 import { OnEvent } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -19,6 +19,6 @@ export class ProductWSListener {
 
   @OnEvent('product.deleted')
   handleProductDeleted(event: { product: string }) {
-    this.broadcastService.broadcast('productDeleted', event.product);
+    this.broadcastService.broadcast('productDeleted', { id: event.product });
   }
 }

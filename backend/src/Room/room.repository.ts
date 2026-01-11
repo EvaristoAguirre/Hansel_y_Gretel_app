@@ -2,7 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,33 +11,14 @@ import { Room } from './room.entity';
 import { CreateRoomDto } from 'src/DTOs/create-room.dto';
 import { UpdateRoomDto } from 'src/DTOs/update-room.dto';
 import { isUUID } from 'class-validator';
-import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 
 @Injectable()
 export class RoomRepository {
+  private readonly logger = new Logger(RoomRepository.name);
   constructor(
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-    private readonly loggerService: LoggerService,
   ) {}
-
-  /**
-   * Método auxiliar para loguear errores con información estructurada
-   * Centraliza el formato de logs para este repositorio
-   */
-  private logError(
-    operation: string,
-    context: Record<string, any>,
-    error: any,
-  ) {
-    const errorInfo = {
-      operation,
-      repository: 'RoomRepository',
-      context,
-      timestamp: new Date().toISOString(),
-    };
-    this.loggerService.error(errorInfo, error);
-  }
 
   async createRoom(room: CreateRoomDto): Promise<Room> {
     const existingRoomByName = await this.roomRepository.findOne({
@@ -49,10 +30,7 @@ export class RoomRepository {
     try {
       return await this.roomRepository.save(room);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-      this.logError('createRoom', { roomName: room.name }, error);
+      this.logger.error('createRoom', error);
       throw error;
     }
   }
@@ -76,13 +54,7 @@ export class RoomRepository {
       Object.assign(room, updateData);
       return await this.roomRepository.save(room);
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      this.logError('updateRoom', { id, updateData }, error);
+      this.logger.error('updateRoom', error);
       throw error;
     }
   }
@@ -103,10 +75,7 @@ export class RoomRepository {
       }
       return 'Room successfully deleted';
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      this.logError('deleteRoom', { id }, error);
+      this.logger.error('deleteRoom', error);
       throw error;
     }
   }
@@ -115,7 +84,7 @@ export class RoomRepository {
     try {
       return await this.roomRepository.find({ where: { isActive: true } });
     } catch (error) {
-      this.logError('getAllRooms', {}, error);
+      this.logger.error('getAllRooms', error);
       throw error;
     }
   }
@@ -138,13 +107,7 @@ export class RoomRepository {
       }
       return room;
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      this.logError('getRoomById', { id }, error);
+      this.logger.error('getRoomById', error);
       throw error;
     }
   }

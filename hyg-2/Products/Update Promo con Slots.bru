@@ -1,0 +1,55 @@
+meta {
+  name: Update Promo con Slots
+  type: http
+  seq: 2
+}
+
+put {
+  url: http://localhost:3000/product/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: ea263d91-1504-4c25-a562-7ad7f59a71f8
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{authToken}}
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "type": "promotion",
+    "price": 2000000,
+    "description": "Combo",
+    "code": 2037,
+    "categories": ["{{categoryId}}"]
+  }
+}
+
+vars:pre-request {
+  cafeAmericanoId: cc6c3661-34ab-4ddd-be14-d4bd1fd844fe
+  cafeConLecheId: 7f5f3c83-60f2-450b-b8ff-3d4f80d17a71
+  tortaChocolateId: 75e0adb5-4bf4-497a-a6ea-d3af481dd68d
+  tortaFrutillaId: f1773ffd-208f-47e6-9503-d5f6e0275843
+  categoryId: 75c3a17a-a9bf-4b2a-a973-ef0a13dbdb0f
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response && response.id) {
+    bru.setVar("promotionId", response.id);
+    console.log("Promotion created with ID:", response.id);
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

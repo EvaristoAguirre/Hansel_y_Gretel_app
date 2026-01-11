@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { io } from "socket.io-client";
 import { ITable } from "../Interfaces/ITable";
 import { getTableByRoom } from "@/api/tables";
+import { webSocketService } from "@/services/websocket.service";
 
 interface TableStateZustand {
   tables: ITable[];
@@ -14,18 +14,18 @@ interface TableStateZustand {
 }
 
 export const useTableStore = create<TableStateZustand>((set) => {
-  // const socket = io("http://192.168.0.50:3000"); // Usa la IP de tu backend
-  const socket = io("http://gestion.hyg.local:3000"); // Usa la IP de tu backend
+  // Conectar al servicio centralizado de WebSocket
+  const socket = webSocketService.connect();
 
   socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket");
+    console.log("✅ Conectado a WebSocket - Mesas");
   });
 
-  socket.on("tableCreated", (data) => {
+  webSocketService.on("tableCreated", (data) => {
     set((state) => ({ tables: [...state.tables, data] }));
   });
 
-  socket.on("tableUpdated", (data) => {
+  webSocketService.on("tableUpdated", (data) => {
     set((state) => ({
       tables: state.tables.map((table) =>
         table.id === data.id ? data : table
@@ -33,14 +33,14 @@ export const useTableStore = create<TableStateZustand>((set) => {
     }));
   });
 
-  socket.on("tableDeleted", (data) => {
+  webSocketService.on("tableDeleted", (data) => {
     set((state) => ({
       tables: state.tables.filter((table) => table.id !== data.id),
     }));
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket");
+    console.log("❌ Desconectado del servidor WebSocket - Mesas");
   });
 
   const updateTablesByRoom = async (salaId: string, token: string) => {
@@ -60,7 +60,10 @@ export const useTableStore = create<TableStateZustand>((set) => {
           t.id === updatedTable.id ? updatedTable : t
         ),
       })),
-    connectWebSocket: () => { }, // La conexión se establece al cargar el store
+    connectWebSocket: () => {
+      // La conexión se establece automáticamente al cargar el store
+      webSocketService.connect();
+    },
     updateTablesByRoom,
   };
 });
