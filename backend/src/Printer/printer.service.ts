@@ -109,6 +109,16 @@ export class PrinterService {
   }
 
   async printKitchenOrder(orderData: PrintComandaDTO): Promise<string> {
+    this.logger.log(
+      `[printKitchenOrder] 🖨️ Iniciando impresión de comanda para mesa: ${orderData.table}`,
+    );
+    this.logger.log(
+      `[printKitchenOrder] 🖨️ Número de productos a imprimir: ${orderData?.products?.length || 0}`,
+    );
+    this.logger.log(
+      `[printKitchenOrder] 🖨️ Datos completos recibidos: ${JSON.stringify(orderData, null, 2)}`,
+    );
+
     if (!orderData?.products?.length) {
       throw new Error('No products to print');
     }
@@ -120,6 +130,10 @@ export class PrinterService {
     try {
       const now = new Date();
       const orderCode = this.generateOrderCode();
+      
+      this.logger.log(
+        `[printKitchenOrder] 🖨️ Código de orden generado: ${orderCode}`,
+      );
 
       const commands = [
         '\x1B\x40', // Inicializar impresora
@@ -145,7 +159,19 @@ export class PrinterService {
         '----------------------------------------\n',
         '\x1D\x21\x00', // Tamaño normal para productos
         '\x1B\x4D\x00', // Tipografía estándar
-        ...orderData.products.flatMap((p) => {
+        ...orderData.products.flatMap((p, index) => {
+          this.logger.log(
+            `[printKitchenOrder] 🖨️ Procesando producto ${index + 1}/${orderData.products.length}: ${p.name}`,
+          );
+          this.logger.log(
+            `[printKitchenOrder] 🖨️ Detalles del producto - Cantidad: ${p.quantity}, Toppings: ${p.toppings?.length || 0}, Comentario: ${p.commentOfProduct || 'N/A'}`,
+          );
+          if (p.toppings && p.toppings.length > 0) {
+            this.logger.log(
+              `[printKitchenOrder] 🖨️ Toppings del producto: ${JSON.stringify(p.toppings)}`,
+            );
+          }
+          
           const name = this.normalizeText(p.name.toLocaleUpperCase());
           const toppings = (p.toppings || []).map(
             (t) => `+ ${this.normalizeText(t)}\n`,
@@ -154,6 +180,10 @@ export class PrinterService {
           const quantityText = `x${p.quantity.toString().padStart(2)}`;
           const maxLineLength = 48;
           const lines: string[] = [];
+          
+          this.logger.log(
+            `[printKitchenOrder] 🖨️ Nombre normalizado: "${name}", Cantidad texto: "${quantityText}"`,
+          );
 
           lines.push('\x1B\x45\x01'); // Negrita ON
 
@@ -185,6 +215,10 @@ export class PrinterService {
 
           lines.push(''); // espacio entre productos
 
+          this.logger.log(
+            `[printKitchenOrder] 🖨️ Líneas generadas para "${name}": ${lines.length} líneas`,
+          );
+
           return lines;
         }),
         '\x1B\x61\x01', // Centrar
@@ -194,12 +228,26 @@ export class PrinterService {
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');
 
+      this.logger.log(
+        `[printKitchenOrder] 🖨️ Comandos de impresión generados, longitud total: ${commands.length} caracteres`,
+      );
+      this.logger.debug(
+        `[printKitchenOrder] 🖨️ Primeros 500 caracteres de comandos: ${commands.substring(0, 500)}`,
+      );
+
       const firstPrintSuccess = await this.sendRawCommand(commands);
       // const secondPrintSuccess = await this.sendRawCommand(commands);
 
       if (!firstPrintSuccess) {
+        this.logger.error(
+          `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
+        );
         throw new Error('Print command failed');
       }
+
+      this.logger.log(
+        `[printKitchenOrder] 🖨️ ✅ Comanda impresa exitosamente con código: ${orderCode}`,
+      );
 
       return `Comanda impresa: ${orderCode}`;
     } catch (error) {

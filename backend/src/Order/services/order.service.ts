@@ -31,6 +31,7 @@ import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { OrderPromotionSelection } from '../entities/order-promotion-selection.entity';
 import { OrderReaderService } from './order-reader.service';
+import { Ingredient } from 'src/Ingredient/ingredient.entity';
 
 @Injectable()
 export class OrderService {
@@ -424,9 +425,32 @@ export class OrderService {
           total += Number(subtotal);
 
           // 🖨️ Construir datos de impresión para este producto específico
-          this.logger.debug(
-            `[updateOrder] Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}`,
+          this.logger.log(
+            `[updateOrder] 🖨️ Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}, tipo: ${product.type}`,
           );
+          
+          // Log para promociones con slots
+          if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            this.logger.log(
+              `[updateOrder] 🖨️ PROMOCIÓN CON SLOTS - Número de selecciones: ${pd.promotionSelections.length}`,
+            );
+            pd.promotionSelections.forEach((selection, selIndex) => {
+              this.logger.log(
+                `[updateOrder] 🖨️ Selección ${selIndex + 1} - Slot ID: ${selection.slotId}, Productos seleccionados: ${selection.selectedProductIds?.length || 0}`,
+              );
+              if (selection.selectedProductIds?.length > 0) {
+                this.logger.log(
+                  `[updateOrder] 🖨️ IDs de productos seleccionados: ${JSON.stringify(selection.selectedProductIds)}`,
+                );
+              }
+              if (selection.toppingsPerUnit?.length > 0) {
+                this.logger.log(
+                  `[updateOrder] 🖨️ Toppings por unidad en selección ${selIndex + 1}: ${JSON.stringify(selection.toppingsPerUnit)}`,
+                );
+              }
+            });
+          }
+
           console.log(
             `🔍 [DEBUG] toppingDetails disponibles:`,
             toppingDetails.map((t) => ({
@@ -435,23 +459,128 @@ export class OrderService {
             })),
           );
 
-          for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
-            const toppingsForThisUnit = toppingDetails
-              .filter((t) => t.unitIndex === unitIndex)
-              .map((t) => t.topping.name);
-
-            console.log(
-              `🔍 [DEBUG] Unidad ${unitIndex} - toppings filtrados:`,
-              toppingsForThisUnit,
+          // Si es una promoción con slots, incluir los productos seleccionados
+          if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            this.logger.log(
+              `[updateOrder] 🖨️ Procesando promoción con slots para impresión`,
             );
+            
+            for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+              // Agregar la promoción principal (sin toppings, los toppings van en los productos del slot)
+              printProducts.push({
+                name: product.name,
+                quantity: 1,
+                commentOfProduct:
+                  unitIndex === 0 ? detail.commentOfProduct : undefined,
+                toppings: [], // Los toppings de la promoción principal no se muestran aquí
+              });
 
-            printProducts.push({
-              name: product.name,
-              quantity: 1,
-              commentOfProduct:
-                unitIndex === 0 ? detail.commentOfProduct : undefined,
-              toppings: toppingsForThisUnit,
-            });
+              // Agregar los productos seleccionados de cada slot
+              for (const selection of pd.promotionSelections) {
+                this.logger.log(
+                  `[updateOrder] 🖨️ Procesando slot ${selection.slotId} para unidad ${unitIndex}`,
+                );
+                
+                // Obtener el slot para obtener su nombre
+                const slot = await queryRunner.manager.findOne(PromotionSlot, {
+                  where: { id: selection.slotId, isActive: true },
+                });
+
+                const slotName = slot?.name || `Slot ${selection.slotId}`;
+                this.logger.log(
+                  `[updateOrder] 🖨️ Nombre del slot: ${slotName}`,
+                );
+
+                // Obtener los productos seleccionados para este slot
+                if (selection.selectedProductIds?.length > 0) {
+                  for (let prodIndex = 0; prodIndex < selection.selectedProductIds.length; prodIndex++) {
+                    const selectedProductId = selection.selectedProductIds[prodIndex];
+                    
+                    // Obtener el producto seleccionado
+                    const selectedProduct = await queryRunner.manager.findOne(Product, {
+                      where: { id: selectedProductId, isActive: true },
+                    });
+
+                    if (selectedProduct) {
+                      this.logger.log(
+                        `[updateOrder] 🖨️ Agregando producto seleccionado: ${selectedProduct.name} (ID: ${selectedProductId}) del slot ${slotName}`,
+                      );
+
+                      // Obtener toppings para este producto específico en este slot
+                      const toppingsForThisProduct = selection.toppingsPerUnit?.[prodIndex] || [];
+                      let toppingNames: string[] = [];
+                      
+                      if (toppingsForThisProduct.length > 0) {
+                        this.logger.log(
+                          `[updateOrder] 🖨️ Producto ${selectedProduct.name} tiene ${toppingsForThisProduct.length} toppings: ${JSON.stringify(toppingsForThisProduct)}`,
+                        );
+                        
+                        // Obtener los nombres de los toppings (son Ingredient, no Product)
+                        for (const toppingId of toppingsForThisProduct) {
+                          const topping = await queryRunner.manager.findOne(Ingredient, {
+                            where: { id: toppingId, isActive: true },
+                          });
+                          if (topping) {
+                            toppingNames.push(topping.name);
+                            this.logger.log(
+                              `[updateOrder] 🖨️ Topping encontrado: ${topping.name} (ID: ${toppingId})`,
+                            );
+                          } else {
+                            this.logger.warn(
+                              `[updateOrder] 🖨️ ⚠️ Topping no encontrado: ${toppingId}`,
+                            );
+                          }
+                        }
+                        this.logger.log(
+                          `[updateOrder] 🖨️ Nombres de toppings obtenidos: ${JSON.stringify(toppingNames)}`,
+                        );
+                      } else {
+                        this.logger.log(
+                          `[updateOrder] 🖨️ Producto ${selectedProduct.name} no tiene toppings`,
+                        );
+                      }
+
+                      // Agregar el producto seleccionado con formato: "Slot: Nombre del Producto"
+                      // Usar un prefijo especial para indicar que es un subproducto de la promoción
+                      printProducts.push({
+                        name: `  - ${selectedProduct.name}`, // Prefijo con guión para indicar subproducto
+                        quantity: 1,
+                        commentOfProduct: undefined,
+                        toppings: toppingNames,
+                      });
+                    } else {
+                      this.logger.warn(
+                        `[updateOrder] 🖨️ ⚠️ Producto seleccionado no encontrado: ${selectedProductId}`,
+                      );
+                    }
+                  }
+                } else {
+                  this.logger.warn(
+                    `[updateOrder] 🖨️ ⚠️ Slot ${selection.slotId} no tiene productos seleccionados`,
+                  );
+                }
+              }
+            }
+          } else {
+            // Producto normal (no promoción con slots)
+            for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+              const toppingsForThisUnit = toppingDetails
+                .filter((t) => t.unitIndex === unitIndex)
+                .map((t) => t.topping.name);
+
+              console.log(
+                `🔍 [DEBUG] Unidad ${unitIndex} - toppings filtrados:`,
+                toppingsForThisUnit,
+              );
+
+              printProducts.push({
+                name: product.name,
+                quantity: 1,
+                commentOfProduct:
+                  unitIndex === 0 ? detail.commentOfProduct : undefined,
+                toppings: toppingsForThisUnit,
+              });
+            }
           }
         }
 
@@ -463,6 +592,23 @@ export class OrderService {
           isPriority: updateData.isPriority,
         };
 
+        this.logger.log(
+          `[updateOrder] 🖨️ 📋 printData completo para impresión - Mesa: ${printData.table}, Productos: ${printData.products.length}, Prioridad: ${printData.isPriority}`,
+        );
+        this.logger.log(
+          `[updateOrder] 🖨️ 📋 Detalle de printProducts:`,
+        );
+        printProducts.forEach((p, idx) => {
+          this.logger.log(
+            `[updateOrder] 🖨️ 📋 Producto ${idx + 1}: "${p.name}", Cantidad: ${p.quantity}, Toppings: ${p.toppings?.length || 0}, Comentario: ${p.commentOfProduct || 'N/A'}`,
+          );
+          if (p.toppings && p.toppings.length > 0) {
+            this.logger.log(
+              `[updateOrder] 🖨️ 📋   Toppings: ${JSON.stringify(p.toppings)}`,
+            );
+          }
+        });
+        
         console.log(
           '🔍 [DEBUG] printData completo para impresión:',
           JSON.stringify(printData, null, 2),

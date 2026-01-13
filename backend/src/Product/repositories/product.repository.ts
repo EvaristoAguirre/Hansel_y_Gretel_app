@@ -64,6 +64,7 @@ export class ProductRepository {
       where: { isActive: true },
       skip: (page - 1) * limit,
       take: limit,
+      order: { name: 'ASC' },
       relations: [
         'categories',
         'productIngredients',
@@ -96,6 +97,7 @@ export class ProductRepository {
         const product = await this.productRepository.findOne({
           where: { code: code },
           relations: ['categories'],
+          order: { name: 'ASC' },
         });
         if (!product) {
           throw new NotFoundException(`Product not found`);
@@ -135,6 +137,7 @@ export class ProductRepository {
   async getProductByIdToAnotherService(id: string): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
+      order: { name: 'ASC' },
       relations: [
         'stock',
         'stock.unitOfMeasure',
@@ -206,6 +209,7 @@ export class ProductRepository {
           'promotionSlotAssignments',
         )
         .leftJoinAndSelect('promotionSlotAssignments.slot', 'slot')
+        .orderBy('product.name', 'ASC')
         .where((qb) => {
           const subQuery = qb
             .subQuery()
@@ -1090,6 +1094,7 @@ export class ProductRepository {
         ],
         skip: offset,
         take: limit,
+        order: { name: 'ASC' },
       });
 
       // Manejar caso sin resultados
@@ -1147,6 +1152,7 @@ export class ProductRepository {
         relations: ['stock', 'stock.unitOfMeasure'],
         skip: offset,
         take: limit,
+        order: { name: 'ASC' },
       });
 
       if (products.length === 0) {
@@ -1175,6 +1181,7 @@ export class ProductRepository {
         },
         skip: (page - 1) * limit,
         take: limit,
+        order: { name: 'ASC' },
         relations: ['stock', 'stock.unitOfMeasure'],
       });
     } catch (error) {
@@ -1300,6 +1307,7 @@ export class ProductRepository {
   async getProductWithRelationsToService(id: string): Promise<Product> {
     return this.productRepository.findOne({
       where: { id, isActive: true },
+      order: { name: 'ASC' },
       relations: [
         'product',
         'productIngredients',
@@ -1319,6 +1327,7 @@ export class ProductRepository {
   async getPromotionProductsToAnotherService(promotionId: string) {
     const promotionProducts = await this.promotionProductRepository.find({
       where: { promotion: { id: promotionId } },
+      order: { product: { name: 'ASC' } },
       relations: [
         'product',
         'product.productIngredients',
