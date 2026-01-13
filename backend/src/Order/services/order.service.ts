@@ -117,49 +117,18 @@ export class OrderService {
         throw new ConflictException('Only "OPEN" orders can be modified');
       }
 
-      // 📋 LOG: Estado inicial de la orden y mesa
-      let mesaId = order.table?.id || 'sin-mesa';
-      const estadoOrdenInicial = order.state;
-      const estadoMesaInicial = order.table?.state || 'sin-estado';
-      const tienePagosInicial = order.payments && order.payments.length > 0;
-      const montoTotalPagosInicial =
-        order.payments?.reduce((acc, p) => acc + Number(p.amount), 0) || 0;
-
-      this.logger.log(
-        `📋 [updateOrder] Estado inicial - Mesa ID: ${mesaId}, Estado orden: ${estadoOrdenInicial}, Estado mesa: ${estadoMesaInicial}, Tiene pagos: ${tienePagosInicial}, Monto total pagos: ${montoTotalPagosInicial}`,
-      );
-      this.logger.log(
-        `📋 [updateOrder] log: estado de ${mesaId} - Orden: ${estadoOrdenInicial}, Mesa: ${estadoMesaInicial}, Pagado: ${tienePagosInicial ? 'Sí' : 'No'}`,
-      );
-
       if (updateData.tableId) {
-        const mesaIdAnterior = order.table?.id || 'sin-mesa';
-        const estadoMesaAnterior = order.table?.state || 'sin-estado';
         const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
         });
         if (!table) throw new NotFoundException('Table not found');
         order.table = table;
-        mesaId = table.id; // Actualizar la variable para los logs siguientes
-        this.logger.log(
-          `🔄 [updateOrder] Cambio de mesa - Mesa anterior ID: ${mesaIdAnterior}, Mesa nueva ID: ${table.id}, Estado mesa anterior: ${estadoMesaAnterior}, Estado mesa nueva: ${table.state}`,
-        );
-        this.logger.log(
-          `🔄 [updateOrder] log: estado de ${table.id} - Cambio de mesa: ${mesaIdAnterior} → ${table.id}, Estado mesa: ${table.state}`,
-        );
       }
 
       if (updateData.numberCustomers)
         order.numberCustomers = updateData.numberCustomers;
       if (updateData.state) {
-        const estadoOrdenAnterior = order.state;
         order.state = updateData.state;
-        this.logger.log(
-          `🔄 [updateOrder] Cambio de estado de orden - Mesa ID: ${mesaId}, Estado anterior: ${estadoOrdenAnterior}, Estado nuevo: ${updateData.state}`,
-        );
-        this.logger.log(
-          `🔄 [updateOrder] log: estado de ${mesaId} - Cambio estado orden: ${estadoOrdenAnterior} → ${updateData.state}`,
-        );
       }
 
       if (updateData.productsDetails?.length) {
@@ -168,17 +137,7 @@ export class OrderService {
         const toppingsToSave: OrderDetailToppings[] = [];
         const printProducts: any[] = [];
 
-        this.logger.log(
-          `[updateOrder] Total de productos recibidos: ${updateData.productsDetails.length}`,
-        );
-        this.logger.debug(
-          `[updateOrder] Payload completo: ${JSON.stringify(updateData.productsDetails, null, 2)}`,
-        );
-
         for (const pd of updateData.productsDetails) {
-          this.logger.log(
-            `[updateOrder] Procesando producto ID: ${pd.productId}, Cantidad: ${pd.quantity}`,
-          );
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: pd.productId, isActive: true },
           });
@@ -188,30 +147,8 @@ export class OrderService {
           let extraCost = 0;
 
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            this.logger.log(
-              `[updateOrder] Promoción detectada: ${product.name} (ID: ${product.id})`,
-            );
-            this.logger.log(
-              `[updateOrder] Número de selecciones de slots: ${pd.promotionSelections.length}`,
-            );
-            this.logger.debug(
-              `[updateOrder] promotionSelections completo: ${JSON.stringify(pd.promotionSelections, null, 2)}`,
-            );
-
             // Calcular costos para las selecciones premium
             for (const selection of pd.promotionSelections) {
-              this.logger.log(
-                `[updateOrder] Procesando selección de slot ID: ${selection.slotId}`,
-              );
-              this.logger.log(
-                `[updateOrder] Productos seleccionados en slot: ${selection.selectedProductIds?.length || 0}`,
-              );
-              this.logger.debug(
-                `[updateOrder] selectedProductIds: ${JSON.stringify(selection.selectedProductIds)}`,
-              );
-              this.logger.debug(
-                `[updateOrder] toppingsPerUnit en selección: ${JSON.stringify(selection.toppingsPerUnit)}`,
-              );
               // Obtener la asignación del slot para esta promoción (para obtener quantity)
               const assignment = await queryRunner.manager.findOne(
                 PromotionSlotAssignment,
@@ -283,30 +220,7 @@ export class OrderService {
 
           // Guardar selecciones de promoción (crear un registro por cada producto seleccionado)
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            this.logger.log(
-              `[updateOrder] Guardando selecciones de promoción para producto: ${product.name}`,
-            );
             for (const selection of pd.promotionSelections) {
-              this.logger.log(
-                `[updateOrder] Guardando selección - Slot ID: ${selection.slotId}, Productos: ${selection.selectedProductIds?.length || 0}`,
-              );
-              if (
-                selection.toppingsPerUnit &&
-                selection.toppingsPerUnit.length > 0
-              ) {
-                this.logger.log(
-                  `[updateOrder] Toppings encontrados en selección - Total de arrays: ${selection.toppingsPerUnit.length}`,
-                );
-                selection.toppingsPerUnit.forEach((toppings, index) => {
-                  this.logger.debug(
-                    `[updateOrder] Toppings para producto índice ${index} en slot ${selection.slotId}: ${JSON.stringify(toppings)}`,
-                  );
-                });
-              } else {
-                this.logger.debug(
-                  `[updateOrder] No hay toppings en esta selección del slot ${selection.slotId}`,
-                );
-              }
               // Obtener la asignación del slot para esta promoción
               const assignment = await queryRunner.manager.findOne(
                 PromotionSlotAssignment,
@@ -358,16 +272,6 @@ export class OrderService {
                     `Product ${selectedProductId} is not a valid option for slot ${selection.slotId}`,
                   );
                 }
-
-                // Obtener toppings para este producto específico (si existen)
-                const toppingsForThisProduct =
-                  selection.toppingsPerUnit?.[i] || [];
-                if (toppingsForThisProduct.length > 0) {
-                  this.logger.log(
-                    `[updateOrder] Producto ${selectedProductId} (índice ${i}) tiene ${toppingsForThisProduct.length} toppings: ${JSON.stringify(toppingsForThisProduct)}`,
-                  );
-                }
-
                 const promotionSelection = queryRunner.manager.create(
                   OrderPromotionSelection,
                   {
@@ -378,27 +282,11 @@ export class OrderService {
                   },
                 );
                 await queryRunner.manager.save(promotionSelection);
-                this.logger.debug(
-                  `[updateOrder] OrderPromotionSelection guardada - Slot: ${selection.slotId}, Producto: ${selectedProductId}, ExtraCost: ${option.extraCost || 0}`,
-                );
               }
             }
           }
 
           //------------------- Deducción de stock con soporte para promociones con slots
-          this.logger.log(
-            `[updateOrder] Iniciando deducción de stock para producto: ${product.name}`,
-          );
-          if (pd.toppingsPerUnit && pd.toppingsPerUnit.length > 0) {
-            this.logger.debug(
-              `[updateOrder] Toppings del producto (pd.toppingsPerUnit): ${JSON.stringify(pd.toppingsPerUnit)}`,
-            );
-          }
-          if (pd.promotionSelections && pd.promotionSelections.length > 0) {
-            this.logger.debug(
-              `[updateOrder] Selecciones de promoción enviadas a deductStock: ${JSON.stringify(pd.promotionSelections)}`,
-            );
-          }
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
@@ -406,9 +294,6 @@ export class OrderService {
             pd.promotionSelections, // Pasar selecciones de promoción si aplica
           );
 
-          this.logger.log(
-            `[updateOrder] Construyendo OrderDetail con toppings para: ${product.name}`,
-          );
           const { detail, toppingDetails, subtotal } =
             await this.orderRepository.buildOrderDetailWithToppings(
               order,
@@ -417,54 +302,13 @@ export class OrderService {
               queryRunner,
             );
           detail.commentOfProduct = pd.commentOfProduct;
-          this.logger.log(
-            `[updateOrder] OrderDetail creado - ID: ${detail.id}, Subtotal: ${subtotal}, Toppings guardados: ${toppingDetails.length}`,
-          );
+
           detailsToSave.push(detail);
           toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
 
-          // 🖨️ Construir datos de impresión para este producto específico
-          this.logger.log(
-            `[updateOrder] 🖨️ Construyendo printProducts para ${product.name}, cantidad: ${detail.quantity}, tipo: ${product.type}`,
-          );
-          
-          // Log para promociones con slots
-          if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            this.logger.log(
-              `[updateOrder] 🖨️ PROMOCIÓN CON SLOTS - Número de selecciones: ${pd.promotionSelections.length}`,
-            );
-            pd.promotionSelections.forEach((selection, selIndex) => {
-              this.logger.log(
-                `[updateOrder] 🖨️ Selección ${selIndex + 1} - Slot ID: ${selection.slotId}, Productos seleccionados: ${selection.selectedProductIds?.length || 0}`,
-              );
-              if (selection.selectedProductIds?.length > 0) {
-                this.logger.log(
-                  `[updateOrder] 🖨️ IDs de productos seleccionados: ${JSON.stringify(selection.selectedProductIds)}`,
-                );
-              }
-              if (selection.toppingsPerUnit?.length > 0) {
-                this.logger.log(
-                  `[updateOrder] 🖨️ Toppings por unidad en selección ${selIndex + 1}: ${JSON.stringify(selection.toppingsPerUnit)}`,
-                );
-              }
-            });
-          }
-
-          console.log(
-            `🔍 [DEBUG] toppingDetails disponibles:`,
-            toppingDetails.map((t) => ({
-              name: t.topping.name,
-              unitIndex: t.unitIndex,
-            })),
-          );
-
           // Si es una promoción con slots, incluir los productos seleccionados
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            this.logger.log(
-              `[updateOrder] 🖨️ Procesando promoción con slots para impresión`,
-            );
-            
             for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
               // Agregar la promoción principal (sin toppings, los toppings van en los productos del slot)
               printProducts.push({
@@ -477,29 +321,30 @@ export class OrderService {
 
               // Agregar los productos seleccionados de cada slot
               for (const selection of pd.promotionSelections) {
-                this.logger.log(
-                  `[updateOrder] 🖨️ Procesando slot ${selection.slotId} para unidad ${unitIndex}`,
-                );
-                
                 // Obtener el slot para obtener su nombre
                 const slot = await queryRunner.manager.findOne(PromotionSlot, {
                   where: { id: selection.slotId, isActive: true },
                 });
 
                 const slotName = slot?.name || `Slot ${selection.slotId}`;
-                this.logger.log(
-                  `[updateOrder] 🖨️ Nombre del slot: ${slotName}`,
-                );
 
                 // Obtener los productos seleccionados para este slot
                 if (selection.selectedProductIds?.length > 0) {
-                  for (let prodIndex = 0; prodIndex < selection.selectedProductIds.length; prodIndex++) {
-                    const selectedProductId = selection.selectedProductIds[prodIndex];
-                    
+                  for (
+                    let prodIndex = 0;
+                    prodIndex < selection.selectedProductIds.length;
+                    prodIndex++
+                  ) {
+                    const selectedProductId =
+                      selection.selectedProductIds[prodIndex];
+
                     // Obtener el producto seleccionado
-                    const selectedProduct = await queryRunner.manager.findOne(Product, {
-                      where: { id: selectedProductId, isActive: true },
-                    });
+                    const selectedProduct = await queryRunner.manager.findOne(
+                      Product,
+                      {
+                        where: { id: selectedProductId, isActive: true },
+                      },
+                    );
 
                     if (selectedProduct) {
                       this.logger.log(
@@ -507,19 +352,19 @@ export class OrderService {
                       );
 
                       // Obtener toppings para este producto específico en este slot
-                      const toppingsForThisProduct = selection.toppingsPerUnit?.[prodIndex] || [];
-                      let toppingNames: string[] = [];
-                      
+                      const toppingsForThisProduct =
+                        selection.toppingsPerUnit?.[prodIndex] || [];
+                      const toppingNames: string[] = [];
+
                       if (toppingsForThisProduct.length > 0) {
-                        this.logger.log(
-                          `[updateOrder] 🖨️ Producto ${selectedProduct.name} tiene ${toppingsForThisProduct.length} toppings: ${JSON.stringify(toppingsForThisProduct)}`,
-                        );
-                        
                         // Obtener los nombres de los toppings (son Ingredient, no Product)
                         for (const toppingId of toppingsForThisProduct) {
-                          const topping = await queryRunner.manager.findOne(Ingredient, {
-                            where: { id: toppingId, isActive: true },
-                          });
+                          const topping = await queryRunner.manager.findOne(
+                            Ingredient,
+                            {
+                              where: { id: toppingId, isActive: true },
+                            },
+                          );
                           if (topping) {
                             toppingNames.push(topping.name);
                             this.logger.log(
@@ -568,11 +413,6 @@ export class OrderService {
                 .filter((t) => t.unitIndex === unitIndex)
                 .map((t) => t.topping.name);
 
-              console.log(
-                `🔍 [DEBUG] Unidad ${unitIndex} - toppings filtrados:`,
-                toppingsForThisUnit,
-              );
-
               printProducts.push({
                 name: product.name,
                 quantity: 1,
@@ -592,49 +432,13 @@ export class OrderService {
           isPriority: updateData.isPriority,
         };
 
-        this.logger.log(
-          `[updateOrder] 🖨️ 📋 printData completo para impresión - Mesa: ${printData.table}, Productos: ${printData.products.length}, Prioridad: ${printData.isPriority}`,
-        );
-        this.logger.log(
-          `[updateOrder] 🖨️ 📋 Detalle de printProducts:`,
-        );
-        printProducts.forEach((p, idx) => {
-          this.logger.log(
-            `[updateOrder] 🖨️ 📋 Producto ${idx + 1}: "${p.name}", Cantidad: ${p.quantity}, Toppings: ${p.toppings?.length || 0}, Comentario: ${p.commentOfProduct || 'N/A'}`,
-          );
-          if (p.toppings && p.toppings.length > 0) {
-            this.logger.log(
-              `[updateOrder] 🖨️ 📋   Toppings: ${JSON.stringify(p.toppings)}`,
-            );
-          }
-        });
-        
-        console.log(
-          '🔍 [DEBUG] printData completo para impresión:',
-          JSON.stringify(printData, null, 2),
-        );
-        console.log(
-          '🔍 [DEBUG] printProducts detallado:',
-          printProducts.map((p) => ({
-            name: p.name,
-            quantity: p.quantity,
-            commentOfProduct: p.commentOfProduct,
-            toppings: p.toppings,
-          })),
-        );
-
         let commandNumber: string | null = null;
 
         try {
-          console.log(
-            `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-          );
-          console.log('info enviada a imprimir.......', printData);
+          commandNumber =
+            await this.printerService.printKitchenOrder(printData);
 
-          // commandNumber =
-          //   await this.printerService.printKitchenOrder(printData);
-
-          commandNumber = 'grabandoTextFijo - 1111111111';
+          // commandNumber = 'grabandoTextFijo - 1111111111';
           this.printerService.logger.log(
             `✅ Comanda impresa, número: ${commandNumber}`,
           );
@@ -665,47 +469,7 @@ export class OrderService {
 
       const updatedOrder = await queryRunner.manager.save(order);
 
-      // Recargar la orden y la mesa con todas las relaciones para obtener el estado final completo
-      const finalOrder = await queryRunner.manager.findOne(Order, {
-        where: { id: updatedOrder.id },
-        relations: ['table', 'payments'],
-      });
-
-      // Recargar la mesa actualizada para obtener su estado final
-      const mesaActualizada = finalOrder?.table
-        ? await queryRunner.manager.findOne(Table, {
-            where: { id: finalOrder.table.id },
-          })
-        : null;
-
       await queryRunner.commitTransaction();
-
-      // 📋 LOG: Estado final de la orden y mesa después del update
-      const mesaIdFinal =
-        mesaActualizada?.id ||
-        finalOrder?.table?.id ||
-        updatedOrder.table?.id ||
-        'sin-mesa';
-      const estadoOrdenFinal = finalOrder?.state || updatedOrder.state;
-      const estadoMesaFinal =
-        mesaActualizada?.state ||
-        finalOrder?.table?.state ||
-        updatedOrder.table?.state ||
-        'sin-estado';
-      const tienePagosFinal =
-        finalOrder?.payments && finalOrder.payments.length > 0;
-      const montoTotalPagosFinal =
-        finalOrder?.payments?.reduce((acc, p) => acc + Number(p.amount), 0) ||
-        0;
-      const estaPagada =
-        estadoOrdenFinal === OrderState.CLOSED && tienePagosFinal;
-
-      this.logger.log(
-        `✅ [updateOrder] Estado final - Mesa ID: ${mesaIdFinal}, Estado orden: ${estadoOrdenFinal}, Estado mesa: ${estadoMesaFinal}, Tiene pagos: ${tienePagosFinal}, Monto total pagos: ${montoTotalPagosFinal}, Está pagada: ${estaPagada}`,
-      );
-      this.logger.log(
-        `✅ [updateOrder] log: estado de ${mesaIdFinal} - Orden: ${estadoOrdenFinal}, Mesa: ${estadoMesaFinal}, Pagado: ${estaPagada ? 'Sí' : 'No'}`,
-      );
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
