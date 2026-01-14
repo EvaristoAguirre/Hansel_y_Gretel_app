@@ -198,6 +198,9 @@ export class PrinterService {
       // const secondPrintSuccess = await this.sendRawCommand(commands);
 
       if (!firstPrintSuccess) {
+        this.logger.error(
+          `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
+        );
         throw new Error('Print command failed');
       }
 
@@ -358,76 +361,76 @@ export class PrinterService {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  private splitCommentWithPrefix(
-    comment: string,
-    maxLineLength: number,
-    prefix: string,
-  ): string[] {
-    const prefixLength = prefix.length;
-    const remainingLineLength = maxLineLength - prefixLength;
-    const normalizedComment = this.normalizeText(comment);
+  // private splitCommentWithPrefix(
+  //   comment: string,
+  //   maxLineLength: number,
+  //   prefix: string,
+  // ): string[] {
+  //   const prefixLength = prefix.length;
+  //   const remainingLineLength = maxLineLength - prefixLength;
+  //   const normalizedComment = this.normalizeText(comment);
 
-    if (!normalizedComment) return [prefix];
+  //   if (!normalizedComment) return [prefix];
 
-    const lines: string[] = [];
-    let firstLineContent = '';
-    const words = normalizedComment.split(/(\s+)/);
+  //   const lines: string[] = [];
+  //   let firstLineContent = '';
+  //   const words = normalizedComment.split(/(\s+)/);
 
-    for (const word of words) {
-      if ((firstLineContent + word).length <= remainingLineLength) {
-        firstLineContent += word;
-      } else {
-        break;
-      }
-    }
+  //   for (const word of words) {
+  //     if ((firstLineContent + word).length <= remainingLineLength) {
+  //       firstLineContent += word;
+  //     } else {
+  //       break;
+  //     }
+  //   }
 
-    lines.push(`${prefix}${firstLineContent.trim()}`);
+  //   lines.push(`${prefix}${firstLineContent.trim()}`);
 
-    const remainingText = normalizedComment
-      .substring(firstLineContent.length)
-      .trim();
-    if (remainingText) {
-      const remainingLines = this.splitTextIntoLines(
-        remainingText,
-        maxLineLength,
-      );
-      lines.push(...remainingLines);
-    }
+  //   const remainingText = normalizedComment
+  //     .substring(firstLineContent.length)
+  //     .trim();
+  //   if (remainingText) {
+  //     const remainingLines = this.splitTextIntoLines(
+  //       remainingText,
+  //       maxLineLength,
+  //     );
+  //     lines.push(...remainingLines);
+  //   }
 
-    return lines;
-  }
+  //   return lines;
+  // }
 
-  private splitTextIntoLines(
-    text: string,
-    maxLength: number,
-    prefix: string = '',
-  ): string[] {
-    const words = this.normalizeText(text).split(/(\s+)/);
-    let currentLine = prefix;
-    const lines = [];
+  // private splitTextIntoLines(
+  //   text: string,
+  //   maxLength: number,
+  //   prefix: string = '',
+  // ): string[] {
+  //   const words = this.normalizeText(text).split(/(\s+)/);
+  //   let currentLine = prefix;
+  //   const lines = [];
 
-    for (let word of words) {
-      if ((currentLine + word).length > maxLength) {
-        if (currentLine === prefix) {
-          while (word.length > 0) {
-            const chunk = word.substring(0, maxLength - prefix.length);
-            lines.push(prefix + chunk);
-            word = word.substring(maxLength - prefix.length);
-          }
-          continue;
-        }
-        lines.push(currentLine.trim());
-        currentLine = prefix;
-      }
-      currentLine += word;
-    }
+  //   for (let word of words) {
+  //     if ((currentLine + word).length > maxLength) {
+  //       if (currentLine === prefix) {
+  //         while (word.length > 0) {
+  //           const chunk = word.substring(0, maxLength - prefix.length);
+  //           lines.push(prefix + chunk);
+  //           word = word.substring(maxLength - prefix.length);
+  //         }
+  //         continue;
+  //       }
+  //       lines.push(currentLine.trim());
+  //       currentLine = prefix;
+  //     }
+  //     currentLine += word;
+  //   }
 
-    if (currentLine !== prefix) {
-      lines.push(currentLine.trim());
-    }
+  //   if (currentLine !== prefix) {
+  //     lines.push(currentLine.trim());
+  //   }
 
-    return lines;
-  }
+  //   return lines;
+  // }
 
   async printerStock(stockData: ProductsToExportDto[]) {
     try {
