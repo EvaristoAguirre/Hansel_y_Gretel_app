@@ -143,83 +143,28 @@ export class OrderService {
           });
           if (!product) throw new NotFoundException('Product not found');
 
-          let finalPrice = product.price;
-          let extraCost = 0;
+          //------------------- Deducción de stock con soporte para promociones con slots
+          await this.stockService.deductStock(
+            product.id,
+            pd.quantity,
+            pd.toppingsPerUnit,
+            pd.promotionSelections, // Pasar selecciones de promoción si aplica
+          );
 
-          if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            // Calcular costos para las selecciones premium
-            for (const selection of pd.promotionSelections) {
-              // Obtener la asignación del slot para esta promoción (para obtener quantity)
-              const assignment = await queryRunner.manager.findOne(
-                PromotionSlotAssignment,
-                {
-                  where: {
-                    promotionId: product.id,
-                    slotId: selection.slotId,
-                  },
-                },
-              );
-
-              if (!assignment) {
-                throw new BadRequestException(
-                  `Slot ${selection.slotId} is not assigned to promotion ${product.id}`,
-                );
-              }
-
-              // Validar que la cantidad de productos seleccionados coincida con quantity
-              if (
-                !selection.selectedProductIds ||
-                selection.selectedProductIds.length !== assignment.quantity
-              ) {
-                throw new BadRequestException(
-                  `Slot "${selection.slotId}" requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
-                );
-              }
-
-              // Obtener el slot con sus opciones
-              const slot = await queryRunner.manager.findOne(PromotionSlot, {
-                where: { id: selection.slotId, isActive: true },
-                relations: ['options'],
-              });
-
-              if (!slot) {
-                throw new NotFoundException(
-                  `Slot with ID ${selection.slotId} not found`,
-                );
-              }
-
-              // Calcular costo extra por cada producto seleccionado
-              for (const selectedProductId of selection.selectedProductIds) {
-                const option = slot.options.find(
-                  (o) => o.productId === selectedProductId && o.isActive,
-                );
-
-                if (!option) {
-                  throw new BadRequestException(
-                    `Product ${selectedProductId} is not a valid option for slot ${selection.slotId}`,
-                  );
-                }
-
-                if (option.extraCost > 0) {
-                  extraCost += option.extraCost;
-                }
-              }
-            }
-            finalPrice += extraCost;
-          }
-
-          //crear OrderDetail
-          const orderDetail = queryRunner.manager.create(OrderDetails, {
-            product,
-            quantity: pd.quantity,
-            unitaryPrice: finalPrice,
-            subtotal: finalPrice * pd.quantity,
-            // ... otros campos
-          });
-          const savedOrderDetail = await queryRunner.manager.save(orderDetail);
+          const { detail, toppingDetails, subtotal } =
+            await this.orderRepository.buildOrderDetailWithToppings(
+              order,
+              product,
+              pd,
+              queryRunner,
+            );
+          detail.commentOfProduct = pd.commentOfProduct;
 
           // Guardar selecciones de promoción (crear un registro por cada producto seleccionado)
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
+            // Guardar temporalmente el detail para obtener su ID antes de crear las selecciones
+            const savedDetail = await queryRunner.manager.save(detail);
+
             for (const selection of pd.promotionSelections) {
               // Obtener la asignación del slot para esta promoción
               const assignment = await queryRunner.manager.findOne(
@@ -275,7 +220,7 @@ export class OrderService {
                 const promotionSelection = queryRunner.manager.create(
                   OrderPromotionSelection,
                   {
-                    orderDetail: savedOrderDetail,
+                    orderDetail: savedDetail,
                     slotId: selection.slotId,
                     selectedProductId: selectedProductId,
                     extraCostApplied: option.extraCost || 0,
@@ -284,26 +229,13 @@ export class OrderService {
                 await queryRunner.manager.save(promotionSelection);
               }
             }
+
+            // Usar el detail guardado para agregarlo a detailsToSave
+            detailsToSave.push(savedDetail);
+          } else {
+            detailsToSave.push(detail);
           }
 
-          //------------------- Deducción de stock con soporte para promociones con slots
-          await this.stockService.deductStock(
-            product.id,
-            pd.quantity,
-            pd.toppingsPerUnit,
-            pd.promotionSelections, // Pasar selecciones de promoción si aplica
-          );
-
-          const { detail, toppingDetails, subtotal } =
-            await this.orderRepository.buildOrderDetailWithToppings(
-              order,
-              product,
-              pd,
-              queryRunner,
-            );
-          detail.commentOfProduct = pd.commentOfProduct;
-
-          detailsToSave.push(detail);
           toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
 
