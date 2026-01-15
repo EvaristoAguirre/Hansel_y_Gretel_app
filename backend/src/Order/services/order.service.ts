@@ -278,7 +278,7 @@ export class OrderService {
                 const promotionSelection = queryRunner.manager.create(
                   OrderPromotionSelection,
                   {
-                    orderDetail: savedDetail,
+                    orderDetail: savedOrderDetail,
                     slotId: selection.slotId,
                     selectedProductId: selectedProductId,
                     extraCostApplied: option.extraCost || 0,
