@@ -1,8 +1,8 @@
-import React from "react";
-import Autocomplete from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
-import { ProductResponse } from "../Interfaces/IProducts";
-import { capitalizeFirstLetter } from "./CapitalizeFirstLetter";
+import React from 'react';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
+import { ProductResponse } from '../Interfaces/IProducts';
+import { capitalizeFirstLetter } from './CapitalizeFirstLetter';
 
 interface AutoCompleteProductProps {
   options: ProductResponse[];
@@ -15,19 +15,19 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
   options,
   onSearch,
   onSelect,
-  label = "Buscar productos por nombre o código",
-  sx = { flexGrow: 1, width: "100%", marginRight: 2 },
+  label = 'Buscar productos por nombre o código',
+  sx = { flexGrow: 1, width: '100%', marginRight: 2 },
 }) => {
   // Filtrar solo productos con stock disponible
-  const availableOptions = options.filter((product) => {
-    const stockQuantity = parseFloat(product.stock?.quantityInStock || "0");
-    return stockQuantity > 0;
-  });
+  // const availableOptions = options.filter((product) => {
+  //   const stockQuantity = parseFloat(product.stock?.quantityInStock || "0");
+  //   return stockQuantity > 0;
+  // });
 
   return (
     <Autocomplete
       sx={sx}
-      options={availableOptions}
+      options={options}
       getOptionLabel={(product) =>
         `${product.name} - (Código: ${product.code})`
       }
