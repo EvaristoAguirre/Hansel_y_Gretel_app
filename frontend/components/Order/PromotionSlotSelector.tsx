@@ -68,6 +68,7 @@ interface PromotionSlotSelectorProps {
     selections: {
       slotId: string;
       selectedProductId: string;
+      selectedProductName?: string;
       toppingsPerUnit?: string[];
     }[]
   ) => void;
@@ -380,13 +381,20 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         // Convertir toppings de formato { [groupId]: string[] } a string[] (flat)
         const toppingsPerUnit = Object.values(instanceToppings).flat();
 
-        // Buscar la instancia para obtener el slotId original
+        // Buscar la instancia para obtener el slotId original y el nombre del producto
         const instance = slotInstances.find((i) => i.instanceId === instanceId);
         const slotId = instance?.slotId || '';
+        
+        // Buscar el nombre del producto seleccionado en las opciones
+        const selectedOption = instance?.options.find(
+          (opt) => opt.productId === selectedProductId
+        );
+        const selectedProductName = selectedOption?.product?.name || '';
 
         return {
           slotId,
           selectedProductId,
+          selectedProductName,
           toppingsPerUnit:
             toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
         };
