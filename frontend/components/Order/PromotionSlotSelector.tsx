@@ -70,6 +70,7 @@ interface PromotionSlotSelectorProps {
       selectedProductId: string;
       selectedProductName?: string;
       toppingsPerUnit?: string[];
+      toppingNames?: string[];
     }[]
   ) => void;
   onCancel: () => void;
@@ -391,12 +392,26 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         );
         const selectedProductName = selectedOption?.product?.name || '';
 
+        // Obtener los nombres de los toppings seleccionados
+        const toppingNames: string[] = [];
+        toppingsPerUnit.forEach((toppingId) => {
+          // Buscar el topping en todos los grupos cargados
+          for (const groupToppings of Object.values(loadedToppings)) {
+            const topping = groupToppings.find((t) => t.id === toppingId);
+            if (topping) {
+              toppingNames.push(topping.name);
+              break;
+            }
+          }
+        });
+
         return {
           slotId,
           selectedProductId,
           selectedProductName,
           toppingsPerUnit:
             toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
+          toppingNames: toppingNames.length > 0 ? toppingNames : undefined,
         };
       }
     );

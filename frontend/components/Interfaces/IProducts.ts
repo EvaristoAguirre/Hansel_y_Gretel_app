@@ -179,6 +179,7 @@ export interface SelectedProductsI {
     selectedProductId: string;
     selectedProductName?: string;
     toppingsPerUnit?: string[];
+    toppingNames?: string[];
   }[]; // Selecciones de slots para promociones (incluye toppings del producto seleccionado)
 }
 
