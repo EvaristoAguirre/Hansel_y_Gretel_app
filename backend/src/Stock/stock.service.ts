@@ -423,13 +423,7 @@ export class StockService {
     selections: PromotionSelectionDto[],
   ) {
     this.logger.log(
-      `[deductPromotionStockWithSelections] Iniciando deducción de stock para promoción: ${promotion.name} (ID: ${promotion.id})`,
-    );
-    this.logger.log(
-      `[deductPromotionStockWithSelections] Cantidad de promociones (quantity): ${quantity}`,
-    );
-    this.logger.debug(
-      `[deductPromotionStockWithSelections] Selecciones recibidas (total: ${selections?.length || 0}): ${JSON.stringify(selections, null, 2)}`,
+      `[deductPromotionStockWithSelections] Deducción de stock para promoción: ${promotion.name}, Cantidad: ${quantity}`,
     );
 
     // Cargar asignaciones de slots de la promoción
@@ -441,15 +435,6 @@ export class StockService {
       },
     );
 
-    this.logger.log(
-      `[deductPromotionStockWithSelections] Asignaciones de slots encontradas: ${assignments.length}`,
-    );
-    assignments.forEach((assignment, index) => {
-      this.logger.debug(
-        `[deductPromotionStockWithSelections] Assignment ${index + 1}: Slot "${assignment.slot.name}" (ID: ${assignment.slotId}), quantity: ${assignment.quantity}, isOptional: ${assignment.isOptional}`,
-      );
-    });
-
     // Validar que existan asignaciones
     if (!assignments || assignments.length === 0) {
       throw new BadRequestException(
@@ -457,8 +442,15 @@ export class StockService {
       );
     }
 
-    // Rastrear qué selecciones ya se han usado para evitar procesarlas dos veces
-    const usedSelectionIndices = new Set<number>();
+    // Agrupar selecciones por slotId
+    const selectionsBySlot = new Map<string, PromotionSelectionDto[]>();
+    for (const selection of selections || []) {
+      const slotId = selection.slotId;
+      if (!selectionsBySlot.has(slotId)) {
+        selectionsBySlot.set(slotId, []);
+      }
+      selectionsBySlot.get(slotId)!.push(selection);
+    }
 
     // Por cada asignación de slot
     for (let assignmentIndex = 0; assignmentIndex < assignments.length; assignmentIndex++) {
@@ -466,79 +458,40 @@ export class StockService {
       const slot = assignment.slot;
 
       this.logger.log(
-        `[deductPromotionStockWithSelections] Procesando assignment ${assignmentIndex + 1}/${assignments.length}: Slot "${slot.name}" (ID: ${slot.id})`,
-      );
-      this.logger.debug(
-        `[deductPromotionStockWithSelections] Assignment requiere ${assignment.quantity} producto(s) por promoción, isOptional: ${assignment.isOptional}`,
+        `[deductPromotionStockWithSelections] Procesando slot "${slot.name}" (${assignmentIndex + 1}/${assignments.length})`,
       );
 
-      // Buscar selecciones disponibles para este slot que no hayan sido usadas
-      const availableSelections = selections
-        ?.map((s, index) => ({ selection: s, originalIndex: index }))
-        .filter(
-          ({ selection, originalIndex }) =>
-            selection.slotId === slot.id && !usedSelectionIndices.has(originalIndex),
-        ) || [];
-
-      this.logger.log(
-        `[deductPromotionStockWithSelections] Selecciones disponibles para assignment ${assignmentIndex + 1} del slot "${slot.name}": ${availableSelections.length}`,
-      );
+      // Obtener todas las selecciones para este slot
+      const slotSelections = selectionsBySlot.get(slot.id) || [];
 
       // Si el slot es obligatorio y no tiene selecciones disponibles, error
-      if (availableSelections.length === 0 && !assignment.isOptional) {
+      if (slotSelections.length === 0 && !assignment.isOptional) {
         throw new BadRequestException(
-          `Slot "${slot.name}" is required and has no available selection for assignment ${assignmentIndex + 1}`,
+          `Slot "${slot.name}" is required and has no available selections`,
         );
       }
 
-      // Si hay selecciones disponibles, tomar la primera que coincida con los requisitos
-      if (availableSelections.length > 0) {
-        // Buscar una selección que tenga exactamente la cantidad requerida de productos
-        let selectedSelection = availableSelections.find(
-          ({ selection }) =>
-            selection.selectedProductIds?.length === assignment.quantity,
+      // Contar el total de productos seleccionados para este slot
+      const totalProductsSelected = slotSelections.reduce(
+        (sum, sel) => sum + (sel.selectedProductIds?.length || 0),
+        0
+      );
+
+      // Validar que la cantidad total coincida
+      if (totalProductsSelected !== assignment.quantity) {
+        this.logger.error(
+          `[deductPromotionStockWithSelections] ERROR: Slot "${slot.name}" requiere ${assignment.quantity} producto(s) pero se proporcionaron ${totalProductsSelected}`,
         );
-
-        // Si no hay una que coincida exactamente, tomar la primera disponible
-        if (!selectedSelection) {
-          selectedSelection = availableSelections[0];
-        }
-
-        const selection = selectedSelection.selection;
-        const selectionIndex = selectedSelection.originalIndex;
-
-        this.logger.debug(
-          `[deductPromotionStockWithSelections] Usando selección índice ${selectionIndex} para assignment ${assignmentIndex + 1}: ${selection.selectedProductIds?.length || 0} producto(s) - IDs: ${JSON.stringify(selection.selectedProductIds)}`,
+        throw new BadRequestException(
+          `Slot "${slot.name}" requires ${assignment.quantity} product(s), but ${totalProductsSelected} were provided`,
         );
+      }
 
-        // Validar que la cantidad de productos seleccionados coincida con la cantidad requerida
-        if (
-          !selection.selectedProductIds ||
-          selection.selectedProductIds.length !== assignment.quantity
-        ) {
-          this.logger.error(
-            `[deductPromotionStockWithSelections] ERROR: Assignment ${assignmentIndex + 1} del slot "${slot.name}" requiere ${assignment.quantity} producto(s) pero la selección tiene ${selection.selectedProductIds?.length || 0}`,
-          );
-          throw new BadRequestException(
-            `Slot "${slot.name}" assignment ${assignmentIndex + 1} requires ${assignment.quantity} product(s), but ${selection.selectedProductIds?.length || 0} were provided`,
-          );
-        }
-
-        // Marcar esta selección como usada
-        usedSelectionIndices.add(selectionIndex);
-
-        // Procesar cada producto de esta selección
-        // Para cada promoción (quantity), se descuenta cada producto de la selección
-        this.logger.log(
-          `[deductPromotionStockWithSelections] Procesando ${selection.selectedProductIds.length} producto(s) para assignment ${assignmentIndex + 1} del slot "${slot.name}"`,
-        );
-
-        for (let i = 0; i < selection.selectedProductIds.length; i++) {
+      // Procesar cada selección individual
+      for (const selection of slotSelections) {
+        // Cada selección puede tener 1 o más productos
+        for (let i = 0; i < (selection.selectedProductIds || []).length; i++) {
           const selectedProductId = selection.selectedProductIds[i];
-
-          this.logger.debug(
-            `[deductPromotionStockWithSelections] Procesando producto ${i + 1}/${selection.selectedProductIds.length}: ID ${selectedProductId}`,
-          );
 
           // Validar que el producto seleccionado sea una opción válida del slot
           const validOption = slot.options?.find(
@@ -546,9 +499,6 @@ export class StockService {
           );
 
           if (!validOption) {
-            this.logger.error(
-              `[deductPromotionStockWithSelections] ERROR: Producto ${selectedProductId} no es una opción válida para el slot "${slot.name}"`,
-            );
             throw new BadRequestException(
               `Product ${selectedProductId} is not a valid option for slot "${slot.name}"`,
             );
@@ -556,31 +506,17 @@ export class StockService {
 
           // Obtener toppings para este producto específico (si hay)
           const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
-          if (toppingsForThisProduct.length > 0) {
-            this.logger.debug(
-              `[deductPromotionStockWithSelections] Toppings para producto ${selectedProductId}: ${JSON.stringify(toppingsForThisProduct)}`,
-            );
-          }
 
           // Deducir stock del producto seleccionado
-          // Se descuenta 'quantity' veces (una por cada promoción)
-          this.logger.log(
-            `[deductPromotionStockWithSelections] Descontando stock: Producto ${selectedProductId}, Cantidad: ${quantity} (por ${quantity} promoción(es))`,
-          );
           await this.deductStock(
             selectedProductId,
             quantity, // Cantidad de promociones
             [toppingsForThisProduct], // Toppings para este producto específico
           );
-          this.logger.debug(
-            `[deductPromotionStockWithSelections] Stock descontado exitosamente para producto ${selectedProductId}`,
-          );
         }
-        this.logger.log(
-          `[deductPromotionStockWithSelections] Deducción de stock completada para assignment ${assignmentIndex + 1} del slot "${slot.name}"`,
-        );
       }
     }
+
     this.logger.log(
       `[deductPromotionStockWithSelections] Deducción de stock completada para promoción: ${promotion.name}`,
     );
