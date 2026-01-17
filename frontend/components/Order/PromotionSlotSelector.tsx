@@ -68,7 +68,9 @@ interface PromotionSlotSelectorProps {
     selections: {
       slotId: string;
       selectedProductId: string;
+      selectedProductName?: string;
       toppingsPerUnit?: string[];
+      toppingNames?: string[];
     }[]
   ) => void;
   onCancel: () => void;
@@ -380,15 +382,36 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
         // Convertir toppings de formato { [groupId]: string[] } a string[] (flat)
         const toppingsPerUnit = Object.values(instanceToppings).flat();
 
-        // Buscar la instancia para obtener el slotId original
+        // Buscar la instancia para obtener el slotId original y el nombre del producto
         const instance = slotInstances.find((i) => i.instanceId === instanceId);
         const slotId = instance?.slotId || '';
+        
+        // Buscar el nombre del producto seleccionado en las opciones
+        const selectedOption = instance?.options.find(
+          (opt) => opt.productId === selectedProductId
+        );
+        const selectedProductName = selectedOption?.product?.name || '';
+
+        // Obtener los nombres de los toppings seleccionados
+        const toppingNames: string[] = [];
+        toppingsPerUnit.forEach((toppingId) => {
+          // Buscar el topping en todos los grupos cargados
+          for (const groupToppings of Object.values(loadedToppings)) {
+            const topping = groupToppings.find((t) => t.id === toppingId);
+            if (topping) {
+              toppingNames.push(topping.name);
+              break;
+            }
+          }
+        });
 
         return {
           slotId,
           selectedProductId,
+          selectedProductName,
           toppingsPerUnit:
             toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
+          toppingNames: toppingNames.length > 0 ? toppingNames : undefined,
         };
       }
     );

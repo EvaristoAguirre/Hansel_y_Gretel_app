@@ -12,6 +12,9 @@ export class ArchivedOrderDetails {
   @Column('decimal', { precision: 10, scale: 2 })
   unitaryPrice: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  toppingsExtraCost: number;
+
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
 
@@ -20,6 +23,22 @@ export class ArchivedOrderDetails {
 
   @Column({ type: 'varchar', length: 40, nullable: true })
   commandNumber: string;
+
+  @Column({ type: 'json', nullable: true })
+  toppings: {
+    toppingId: string;
+    toppingName: string;
+    unitOfMeasureName: string;
+    unitIndex: number;
+  }[];
+
+  @Column({ type: 'json', nullable: true })
+  promotionSelections: {
+    slotId: string;
+    selectedProductId: string;
+    selectedProductName: string;
+    extraCostApplied: number;
+  }[];
 
   @ManyToOne(() => ArchivedOrder, (archivedOrder) => archivedOrder.orderDetails)
   order: ArchivedOrder;

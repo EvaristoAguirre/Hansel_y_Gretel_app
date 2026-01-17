@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from "react";
 import {
   Button,
   List,
@@ -10,7 +10,11 @@ import {
   FormControlLabel,
   Switch,
   Divider,
-} from '@mui/material';
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import {
   Add,
   Remove,
@@ -18,29 +22,29 @@ import {
   Comment,
   AutoAwesome,
   SpaceBar,
-} from '@mui/icons-material';
-import { Box } from '@mui/system';
-import { useOrderContext } from '../../app/context/order.context';
-import '../../styles/pedidoEditor.css';
-import { useProducts } from '../Hooks/useProducts';
-import useOrder from '../Hooks/useOrder';
-import LoadingLottie from '../Loader/Loading';
-import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
-import AutoGrowTextarea from '../Utils/Textarea';
-import { fetchCategories } from '@/api/categories';
-import { ICategory } from '../Interfaces/ICategories';
-import { searchProducts } from '@/api/products';
-import AutoCompleteProduct from '../Utils/Autocomplete';
-import { CategorySelector } from './filterCategories';
-import { useAuth } from '@/app/context/authContext';
-import { fetchToppingsGroupById } from '@/api/topping';
-import ToppingsGroupsViewer from './ToppingsSection.tsx/ToppingsGroupsViewer';
-import { formatNumber } from '../Utils/FormatNumber';
-import { normalizeNumber } from '../Utils/NormalizeNumber';
-import { ProductResponse, SelectedProductsI } from '../Interfaces/IProducts';
-import { TypeProduct } from '../Enums/view-products';
-import { PromotionSlotSelector } from './PromotionSlotSelector';
-import { getSlotsByPromotionId } from '@/api/promotionSlot';
+} from "@mui/icons-material";
+import { Box } from "@mui/system";
+import { useOrderContext } from "../../app/context/order.context";
+import "../../styles/pedidoEditor.css";
+import { useProducts } from "../Hooks/useProducts";
+import useOrder from "../Hooks/useOrder";
+import LoadingLottie from "../Loader/Loading";
+import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
+import AutoGrowTextarea from "../Utils/Textarea";
+import { fetchCategories } from "@/api/categories";
+import { ICategory } from "../Interfaces/ICategories";
+import { searchProducts } from "@/api/products";
+import AutoCompleteProduct from "../Utils/Autocomplete";
+import { CategorySelector } from "./filterCategories";
+import { useAuth } from "@/app/context/authContext";
+import { fetchToppingsGroupById } from "@/api/topping";
+import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
+import { formatNumber } from "../Utils/FormatNumber";
+import { normalizeNumber } from "../Utils/NormalizeNumber";
+import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
+import { TypeProduct } from "../Enums/view-products";
+import { PromotionSlotSelector } from "./PromotionSlotSelector";
+import { getSlotsByPromotionId } from "@/api/promotionSlot";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -93,7 +97,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     selectedToppingsByProduct,
     toppingsByProductGroup,
   } = useOrderContext();
-console.log(confirmedProducts);
+
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -106,6 +110,7 @@ console.log(confirmedProducts);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     token &&
@@ -131,9 +136,8 @@ console.log(confirmedProducts);
           slotId: selection.slotId,
           selectedProductIds: [selection.selectedProductId],
           // toppingsPerUnit como array de arrays (un array por cada producto)
-          ...(selection.toppingsPerUnit && selection.toppingsPerUnit.length > 0
-            ? { toppingsPerUnit: [selection.toppingsPerUnit] }
-            : {}),
+          // Siempre enviar el array, incluso si está vacío
+          toppingsPerUnit: [selection.toppingsPerUnit || []],
         }));
 
         baseDetail.promotionSelections = promotionSelections;
@@ -269,13 +273,13 @@ console.log(confirmedProducts);
    * Fracción de código para buscar productos en base a nombre,
    * código o categorías seleccionadas.
    */
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
     const results =
-      token && (await searchProducts(trimmedTerm, token, categories.join(',')));
+      token && (await searchProducts(trimmedTerm, token, categories.join(",")));
     if (results) setProductosDisponibles(results);
   };
 
@@ -297,6 +301,36 @@ console.log(confirmedProducts);
       ...prev,
       [productId]: !prev[productId],
     }));
+  };
+
+  // Función auxiliar para obtener los nombres de los toppings seleccionados de un producto normal
+  const getToppingNamesForProduct = (item: SelectedProductsI): string[] => {
+    const productToppings = toppingsByProductGroup[item.productId];
+    if (!productToppings || !item.availableToppingGroups) return [];
+
+    const toppingNames: string[] = [];
+
+    // Recorrer cada unidad del producto
+    productToppings.forEach((unitToppings) => {
+      // Recorrer cada grupo de toppings
+      Object.entries(unitToppings).forEach(([groupId, toppingIds]) => {
+        // Buscar el grupo en availableToppingGroups
+        const group = item.availableToppingGroups?.find(
+          (g) => g.id === groupId
+        );
+        if (group && group.toppings) {
+          // Buscar cada topping seleccionado
+          (toppingIds as string[]).forEach((toppingId) => {
+            const topping = group.toppings.find((t: any) => t.id === toppingId);
+            if (topping && !toppingNames.includes(topping.name)) {
+              toppingNames.push(topping.name);
+            }
+          });
+        }
+      });
+    });
+
+    return toppingNames;
   };
 
   // Función para manejar la selección de productos, detectando promociones con slots
@@ -321,7 +355,7 @@ console.log(confirmedProducts);
             return;
           }
         } catch (error) {
-          console.error('Error al verificar slots de promoción:', error);
+          console.error("Error al verificar slots de promoción:", error);
           // Si hay error, continuar con el flujo normal
         }
       }
@@ -336,7 +370,9 @@ console.log(confirmedProducts);
     selections: {
       slotId: string;
       selectedProductId: string;
+      selectedProductName?: string;
       toppingsPerUnit?: string[];
+      toppingNames?: string[];
     }[]
   ) => {
     if (!promotionSlotModal.promotion) return;
@@ -363,40 +399,40 @@ console.log(confirmedProducts);
   return loading ? (
     <LoadingLottie />
   ) : (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
       <div
         style={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'row',
-          gap: '2rem',
+          width: "100%",
+          display: "flex",
+          flexDirection: "row",
+          gap: "2rem",
         }}
       >
         <div
           style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            border: '1px solid #d4c0b3',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            padding: '1rem',
-            justifyContent: 'space-between',
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            border: "1px solid #d4c0b3",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "1rem",
+            justifyContent: "space-between",
           }}
         >
           <div
             style={{
-              height: '2rem',
-              backgroundColor: '#856D5E',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: '#ffffff',
-              marginBottom: '1rem',
+              height: "2rem",
+              backgroundColor: "#856D5E",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              color: "#ffffff",
+              marginBottom: "1rem",
             }}
           >
             <h2>Seleccionar productos</h2>
           </div>
-          <Box sx={{ borderRadius: '5px' }}>
+          <Box sx={{ borderRadius: "5px" }}>
             <CategorySelector
               categories={categories}
               selected={selectedCats}
@@ -414,13 +450,13 @@ console.log(confirmedProducts);
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: '16rem',
-                  overflowY: 'auto',
-                  border: '2px solid #856D5E',
-                  borderRadius: '5px',
-                  marginTop: '0.5rem',
-                  fontSize: '0.8rem',
-                  padding: '0.5rem',
+                  maxHeight: "16rem",
+                  overflowY: "auto",
+                  border: "2px solid #856D5E",
+                  borderRadius: "5px",
+                  marginTop: "0.5rem",
+                  fontSize: "0.8rem",
+                  padding: "0.5rem",
                 }}
               >
                 <div className="w-full flex items-center justify-start mb-2 text-[#856D5E]">
@@ -431,45 +467,45 @@ console.log(confirmedProducts);
                   <ListItem
                     key={index}
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'stretch',
-                      width: '100%',
-                      padding: '3px',
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                      width: "100%",
+                      padding: "3px",
                     }}
                   >
                     {/* Línea principal de datos del producto */}
                     <div
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        color: '#ffffff',
-                        justifyContent: 'space-between',
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        color: "#ffffff",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
                         <IconButton
                           size="small"
-                          sx={{ padding: '4px' }}
+                          sx={{ padding: "4px" }}
                           onClick={() => decreaseProductNumber(item.productId)}
                         >
                           <Remove fontSize="small" color="error" />
                         </IconButton>
                         <Typography
                           sx={{
-                            border: '1px solid #856D5E',
-                            color: '#856D5E',
-                            width: '1.5rem',
-                            textAlign: 'center',
-                            borderRadius: '5px',
+                            border: "1px solid #856D5E",
+                            color: "#856D5E",
+                            width: "1.5rem",
+                            textAlign: "center",
+                            borderRadius: "5px",
                           }}
                         >
                           {item.quantity}
                         </Typography>
                         <IconButton
                           size="small"
-                          sx={{ padding: '4px' }}
+                          sx={{ padding: "4px" }}
                           onClick={() => increaseProductNumber(item)}
                         >
                           <Add fontSize="small" color="success" />
@@ -479,20 +515,20 @@ console.log(confirmedProducts);
                       <Tooltip title={item.productName} arrow>
                         <ListItemText
                           style={{
-                            color: 'black',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
+                            color: "black",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
                             WebkitLineClamp: 1,
-                            overflow: 'hidden',
-                            maxWidth: '15rem',
+                            overflow: "hidden",
+                            maxWidth: "15rem",
                           }}
                           primary={capitalizeFirstLetter(
-                            item.productName ?? ''
+                            item.productName ?? ""
                           )}
                         />
                       </Tooltip>
 
-                      <Typography style={{ color: 'black' }}>
+                      <Typography style={{ color: "black" }}>
                         $
                         {calcularPrecioConToppings(
                           item,
@@ -502,7 +538,7 @@ console.log(confirmedProducts);
                       </Typography>
 
                       {/* ICON DE AGREGADOS */}
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div style={{ display: "flex", alignItems: "center" }}>
                         {item.allowsToppings && (
                           <Tooltip title="Agregados" arrow>
                             <IconButton
@@ -512,18 +548,18 @@ console.log(confirmedProducts);
                                 removeHighlightedProduct(item.productId);
                               }}
                               sx={{
-                                '@keyframes heartbeat': {
-                                  '0%': { transform: 'scale(1)' },
-                                  '14%': { transform: 'scale(1.3)' },
-                                  '28%': { transform: 'scale(1)' },
-                                  '42%': { transform: 'scale(1.3)' },
-                                  '70%': { transform: 'scale(1)' },
+                                "@keyframes heartbeat": {
+                                  "0%": { transform: "scale(1)" },
+                                  "14%": { transform: "scale(1.3)" },
+                                  "28%": { transform: "scale(1)" },
+                                  "42%": { transform: "scale(1.3)" },
+                                  "70%": { transform: "scale(1)" },
                                 },
                                 animation: highlightedProducts.has(
                                   item.productId
                                 )
-                                  ? 'heartbeat 2.2s infinite ease-in-out'
-                                  : 'none',
+                                  ? "heartbeat 2.2s infinite ease-in-out"
+                                  : "none",
                               }}
                             >
                               <AutoAwesome />
@@ -534,7 +570,7 @@ console.log(confirmedProducts);
                           <IconButton
                             onClick={() => toggleCommentInput(item.productId)}
                           >
-                            <Comment style={{ color: '#856D5E' }} />
+                            <Comment style={{ color: "#856D5E" }} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Eliminar" arrow>
@@ -551,12 +587,12 @@ console.log(confirmedProducts);
 
                     {/* Comentario */}
                     {visibleCommentInputs[item.productId] && (
-                      <div style={{ marginTop: '0.5rem', width: '100%' }}>
+                      <div style={{ marginTop: "0.5rem", width: "100%" }}>
                         <AutoGrowTextarea
                           value={
                             commentInputs[item.productId] !== undefined
                               ? commentInputs[item.productId]
-                              : item.commentOfProduct ?? ''
+                              : item.commentOfProduct ?? ""
                           }
                           placeholder="Comentario al producto"
                           onChange={(value) =>
@@ -568,7 +604,7 @@ console.log(confirmedProducts);
                           onBlur={() =>
                             productComment(
                               item.productId,
-                              commentInputs[item.productId] || ''
+                              commentInputs[item.productId] || ""
                             )
                           }
                         />
@@ -585,17 +621,17 @@ console.log(confirmedProducts);
                         productId={item.productId}
                       />
                     )}
-                    <Divider color="#856D5E" sx={{ marginTop: '10px' }} />
+                    <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
                   </ListItem>
                 ))}
               </List>
             ) : (
               <Typography
                 style={{
-                  margin: '1rem 0',
-                  color: 'gray',
-                  fontSize: '0.8rem',
-                  width: '100%',
+                  margin: "1rem 0",
+                  color: "gray",
+                  fontSize: "0.8rem",
+                  width: "100%",
                 }}
               >
                 No hay productos pre-seleccionados.
@@ -604,17 +640,17 @@ console.log(confirmedProducts);
 
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
+                display: "flex",
+                justifyContent: "space-between",
+                flexDirection: "row",
               }}
             >
               <Typography
                 style={{
-                  width: '50%',
-                  margin: '1rem 0',
-                  color: 'black',
-                  fontWeight: 'bold',
+                  width: "50%",
+                  margin: "1rem 0",
+                  color: "black",
+                  fontWeight: "bold",
                 }}
               >
                 Subtotal: ${formatNumber(subtotal)}
@@ -628,9 +664,9 @@ console.log(confirmedProducts);
                 }
                 label="Orden Prioritaria"
                 style={{
-                  fontSize: '0.8rem',
-                  color: `${isPriority ? 'red' : 'gray'}`,
-                  fontWeight: 'bold',
+                  fontSize: "0.8rem",
+                  color: `${isPriority ? "red" : "gray"}`,
+                  fontWeight: "bold",
                 }}
               />
             </div>
@@ -639,12 +675,13 @@ console.log(confirmedProducts);
                 fullWidth
                 variant="contained"
                 sx={{
-                  backgroundColor: '#f9b32d',
-                  filter: 'brightness(90%)',
-                  color: 'black',
-                  '&:hover': { filter: 'none', color: 'black' },
+                  backgroundColor: "#f9b32d",
+                  filter: "brightness(90%)",
+                  color: "black",
+                  "&:hover": { filter: "none", color: "black" },
                 }}
-                onClick={confirmarPedido}
+                onClick={() => setConfirmModalOpen(true)}
+                disabled={selectedProducts.length === 0}
               >
                 CONFIRMAR PRODUCTOS A COMANDA
               </Button>
@@ -656,11 +693,11 @@ console.log(confirmedProducts);
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: '12rem',
-                  overflowY: 'auto',
-                  border: '2px solid #856D5E',
-                  borderRadius: '5px',
-                  marginTop: '0.5rem',
+                  maxHeight: "12rem",
+                  overflowY: "auto",
+                  border: "2px solid #856D5E",
+                  borderRadius: "5px",
+                  marginTop: "0.5rem",
                 }}
               >
                 <div
@@ -673,25 +710,25 @@ console.log(confirmedProducts);
                   <ListItem
                     key={index}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      height: '2.3rem',
-                      margin: '0.3rem 0',
-                      color: '#ffffff',
-                      borderBottom: '1px solid #856D5E',
-                      justifyContent: 'space-between',
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      height: "2.3rem",
+                      margin: "0.3rem 0",
+                      color: "#ffffff",
+                      borderBottom: "1px solid #856D5E",
+                      justifyContent: "space-between",
                     }}
                   >
                     <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
-                          color: 'black',
-                          display: '-webkit-box',
-                          WebkitBoxOrient: 'vertical',
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
                           WebkitLineClamp: 1,
-                          overflow: 'hidden',
-                          maxWidth: '5rem',
+                          overflow: "hidden",
+                          maxWidth: "5rem",
                         }}
                         primary={item.quantity}
                       />
@@ -699,16 +736,16 @@ console.log(confirmedProducts);
                     <Tooltip title={item.productName} arrow>
                       <ListItemText
                         style={{
-                          color: 'black',
-                          display: '-webkit-box',
-                          WebkitBoxOrient: 'vertical',
+                          color: "black",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
                           WebkitLineClamp: 1,
-                          overflow: 'hidden',
+                          overflow: "hidden",
                         }}
                         primary={item.productName}
                       />
                     </Tooltip>
-                    <Typography style={{ color: 'black' }}>
+                    <Typography style={{ color: "black" }}>
                       $
                       {formatNumber(
                         normalizeNumber(item.unitaryPrice) * item.quantity
@@ -720,10 +757,10 @@ console.log(confirmedProducts);
             ) : (
               <Typography
                 style={{
-                  margin: '1rem 0',
-                  color: 'gray',
-                  fontSize: '0.8rem',
-                  width: '100%',
+                  margin: "1rem 0",
+                  color: "gray",
+                  fontSize: "0.8rem",
+                  width: "100%",
                 }}
               >
                 No hay productos confirmados.
@@ -731,10 +768,10 @@ console.log(confirmedProducts);
             )}
             <Typography
               style={{
-                width: '50%',
-                margin: '1rem 0',
-                color: 'black',
-                fontWeight: 'bold',
+                width: "50%",
+                margin: "1rem 0",
+                color: "black",
+                fontWeight: "bold",
               }}
             >
               Total: ${formatNumber(total)}
@@ -753,7 +790,7 @@ console.log(confirmedProducts);
                 name: promotionSlotModal.promotion.name,
                 price: parseFloat(promotionSlotModal.promotion.price),
               }
-            : { id: '', name: '', price: 0 }
+            : { id: "", name: "", price: 0 }
         }
         quantity={promotionSlotModal.quantity}
         onConfirm={handleConfirmSlotSelection}
@@ -761,6 +798,410 @@ console.log(confirmedProducts);
           setPromotionSlotModal({ open: false, promotion: null, quantity: 1 })
         }
       />
+
+      {/* Modal de confirmación del pedido */}
+      <Dialog
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "8px",
+            maxHeight: "85vh",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            backgroundColor: "#856D5E",
+            color: "#ffffff",
+            textAlign: "center",
+            py: 1.5,
+          }}
+        >
+          <Typography
+            component="span"
+            variant="h6"
+            fontWeight="bold"
+            display="block"
+          >
+            Resumen del Pedido
+          </Typography>
+          {selectedOrderByTable?.table?.name && (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{ opacity: 0.9 }}
+            >
+              Mesa: {selectedOrderByTable.table.name}
+            </Typography>
+          )}
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 2, pb: 1 }}>
+          {/* Productos a agregar (sin confirmar) */}
+          {selectedProducts.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#856D5E",
+                  mb: 1,
+                  borderBottom: "2px solid #f9b32d",
+                  pb: 0.5,
+                }}
+              >
+                Productos a agregar ({selectedProducts.length})
+              </Typography>
+              <List dense sx={{ py: 0 }}>
+                {selectedProducts.map((item, index) => (
+                  <ListItem
+                    key={index}
+                    sx={{
+                      py: 0.5,
+                      px: 1,
+                      backgroundColor:
+                        index % 2 === 0 ? "#f9f6f3" : "transparent",
+                      borderRadius: "4px",
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Typography
+                          sx={{
+                            backgroundColor: "#856D5E",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            width: "24px",
+                            height: "24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.75rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item.quantity}
+                        </Typography>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {capitalizeFirstLetter(item.productName ?? "")}
+                            {/* Mostrar toppings de productos normales */}
+                            {!item.slotSelections &&
+                              getToppingNamesForProduct(item).length > 0 && (
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: "#856D5E",
+                                    fontSize: "0.7rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  {" "}
+                                  +{" "}
+                                  {getToppingNamesForProduct(item)
+                                    .map((name) => capitalizeFirstLetter(name))
+                                    .join(" + ")}
+                                </Typography>
+                              )}
+                          </Typography>
+                          {item.slotSelections &&
+                            item.slotSelections.length > 0 && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "#f9b32d",
+                                  fontWeight: "bold",
+                                  fontSize: "0.65rem",
+                                }}
+                              >
+                                PROMO
+                              </Typography>
+                            )}
+                        </Box>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "bold", color: "#856D5E" }}
+                      >
+                        $
+                        {calcularPrecioConToppings(
+                          item,
+                          item.quantity,
+                          toppingsByProductGroup[item.productId] ?? []
+                        )}
+                      </Typography>
+                    </Box>
+                    {/* Mostrar productos de la promoción */}
+                    {item.slotSelections && item.slotSelections.length > 0 && (
+                      <Box
+                        sx={{
+                          mt: 0.5,
+                          ml: 4,
+                          pl: 1,
+                          borderLeft: "2px solid #f9b32d",
+                        }}
+                      >
+                        {item.slotSelections.map((selection, selIndex) => (
+                          <Typography
+                            key={selIndex}
+                            variant="caption"
+                            sx={{
+                              display: "block",
+                              color: "#5a4a40",
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            •{" "}
+                            {capitalizeFirstLetter(
+                              selection.selectedProductName || "Producto"
+                            )}
+                            {selection.toppingNames &&
+                              selection.toppingNames.length > 0 && (
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: "#856D5E",
+                                    fontSize: "0.65rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  {" "}
+                                  +{" "}
+                                  {selection.toppingNames
+                                    .map((name) => capitalizeFirstLetter(name))
+                                    .join(" + ")}
+                                </Typography>
+                              )}
+                          </Typography>
+                        ))}
+                      </Box>
+                    )}
+                  </ListItem>
+                ))}
+              </List>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mt: 1,
+                  pt: 1,
+                  borderTop: "1px dashed #d4c0b3",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                  Subtotal a agregar:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "bold", color: "#856D5E" }}
+                >
+                  ${formatNumber(subtotal)}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Productos ya confirmados */}
+          {confirmedProducts.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#856D5E",
+                  mb: 1,
+                  borderBottom: "2px solid #856D5E",
+                  pb: 0.5,
+                }}
+              >
+                Productos ya confirmados ({confirmedProducts.length})
+              </Typography>
+              <List
+                dense
+                sx={{
+                  py: 0,
+                  maxHeight: "150px",
+                  overflowY: "auto",
+                }}
+                className="custom-scrollbar"
+              >
+                {confirmedProducts.map((item, index) => (
+                  <ListItem
+                    key={index}
+                    sx={{
+                      py: 0.5,
+                      px: 1,
+                      backgroundColor:
+                        index % 2 === 0 ? "#f0ebe7" : "transparent",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Typography
+                          sx={{
+                            backgroundColor: "#d4c0b3",
+                            color: "#5a4a40",
+                            borderRadius: "50%",
+                            width: "24px",
+                            height: "24px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.75rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item.quantity}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#5a4a40" }}>
+                          {capitalizeFirstLetter(item.productName ?? "")}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "#856D5E" }}>
+                        $
+                        {formatNumber(
+                          normalizeNumber(item.unitaryPrice) * item.quantity
+                        )}
+                      </Typography>
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mt: 1,
+                  pt: 1,
+                  borderTop: "1px dashed #d4c0b3",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                  Total confirmado:
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#856D5E" }}>
+                  ${formatNumber(total)}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {/* Prioridad */}
+          {isPriority && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#fff3cd",
+                border: "1px solid #ffc107",
+                borderRadius: "4px",
+                p: 1,
+                mb: 2,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{ color: "#856404", fontWeight: "bold" }}
+              >
+                ORDEN PRIORITARIA
+              </Typography>
+            </Box>
+          )}
+
+          {/* Total General */}
+          <Divider
+            sx={{ my: 1.5, borderColor: "#856D5E", borderWidth: "2px" }}
+          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "#856D5E",
+              color: "#ffffff",
+              borderRadius: "6px",
+              p: 1.5,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              TOTAL GENERAL:
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              ${formatNumber(subtotal + total)}
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 2,
+            py: 1.5,
+            borderTop: "1px solid #d4c0b3",
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={() => setConfirmModalOpen(false)}
+            size="medium"
+            sx={{
+              color: "#856D5E",
+              borderColor: "#856D5E",
+              "&:hover": {
+                backgroundColor: "#f5f5f5",
+                borderColor: "#856D5E",
+              },
+            }}
+            variant="outlined"
+          >
+            Cerrar
+          </Button>
+          <Button
+            onClick={async () => {
+              setConfirmModalOpen(false);
+              await confirmarPedido();
+            }}
+            variant="contained"
+            size="medium"
+            sx={{
+              backgroundColor: "#f9b32d",
+              color: "black",
+              fontWeight: "bold",
+              px: 3,
+              "&:hover": {
+                backgroundColor: "#f9b32d",
+                filter: "brightness(90%)",
+              },
+            }}
+          >
+            CONFIRMAR PEDIDO
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

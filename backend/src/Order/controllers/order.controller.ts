@@ -185,9 +185,7 @@ export class OrderController {
   @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   async cancelOrder(@Param('id') id: string): Promise<Order> {
-    console.log(`📞 [OrderController] cancelOrder llamado con ID: ${id}`);
     const result = await this.orderService.cancelOrder(id);
-    console.log(`✅ [OrderController] cancelOrder completado para ID: ${id}`);
     return result;
   }
 
