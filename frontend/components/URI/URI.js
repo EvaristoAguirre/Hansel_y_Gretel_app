@@ -9,8 +9,8 @@
 // if (!API_URL_DEV) {
 //   throw new Error('Falta la variable de entorno NEXT_PUBLIC_API_URL');
 // }
-
-if(NODE_ENV === 'production') {
+let API_URL = '';
+if(process.env.NODE_ENV === 'production') {
   API_URL = process.env.NEXT_PUBLIC_API_URL;
 } else {
   API_URL = process.env.NEXT_PUBLIC_API_URL_DEV;
