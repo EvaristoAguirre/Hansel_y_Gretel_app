@@ -19,8 +19,8 @@ export class ArchiveService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  @Cron('10 21 * * 0')
-  // @Cron('35 17 * * *') // todos los dias para probarlo ahora
+  @Cron('10 21 * * 0') // cada domingo a las 21:10
+  // @Cron('*/5 * * * *') // Ejecutar cada 5 minutos (solo para pruebas)
   async archiveOrders() {
     const maxAttempts = 3;
     const delayBetweenAttempts = 60000;
@@ -205,6 +205,7 @@ export class ArchiveService {
 
     return { start, end };
   }
+
   // private getPreviousWeekRange(): { start: Date; end: Date } {
   //   const now = new Date();
   //   const start = new Date(now);
