@@ -548,13 +548,17 @@ export class OrderService {
       );
       const orderPending = await this.orderRepo.save(order);
 
-      // try {
-      //   await this.printerService.printTicketOrder(order);
-      // } catch (error) {
-      //   throw new ConflictException(error.message);
-      // }
-      console.log('simulando impresion de ticket');
-      console.log('orderPending to print ticket', orderPending);
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          await this.printerService.printTicketOrder(order);
+        } catch (error) {
+          this.logger.error('printTicketOrder', error);
+          throw error;
+        }
+      } else {
+        console.log('simulando impresion de ticket');
+        console.log('orderPending to print ticket', orderPending);
+      }
 
       // Emitir evento de ticket impreso (paso 3 completado)
       this.eventEmitter.emit('order.ticketPrinted', {

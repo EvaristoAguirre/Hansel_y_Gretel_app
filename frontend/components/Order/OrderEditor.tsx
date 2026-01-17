@@ -97,7 +97,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     selectedToppingsByProduct,
     toppingsByProductGroup,
   } = useOrderContext();
-  console.log(selectedProducts);
+
   const [subtotal, setSubtotal] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -304,6 +304,36 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     }));
   };
 
+  // Función auxiliar para obtener los nombres de los toppings seleccionados de un producto normal
+  const getToppingNamesForProduct = (item: SelectedProductsI): string[] => {
+    const productToppings = toppingsByProductGroup[item.productId];
+    if (!productToppings || !item.availableToppingGroups) return [];
+
+    const toppingNames: string[] = [];
+
+    // Recorrer cada unidad del producto
+    productToppings.forEach((unitToppings) => {
+      // Recorrer cada grupo de toppings
+      Object.entries(unitToppings).forEach(([groupId, toppingIds]) => {
+        // Buscar el grupo en availableToppingGroups
+        const group = item.availableToppingGroups?.find(
+          (g) => g.id === groupId
+        );
+        if (group && group.toppings) {
+          // Buscar cada topping seleccionado
+          (toppingIds as string[]).forEach((toppingId) => {
+            const topping = group.toppings.find((t: any) => t.id === toppingId);
+            if (topping && !toppingNames.includes(topping.name)) {
+              toppingNames.push(topping.name);
+            }
+          });
+        }
+      });
+    });
+
+    return toppingNames;
+  };
+
   // Función para manejar la selección de productos, detectando promociones con slots
   const handleProductSelection = async (product: ProductResponse) => {
     // Verificar si es una promoción
@@ -343,6 +373,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       selectedProductId: string;
       selectedProductName?: string;
       toppingsPerUnit?: string[];
+      toppingNames?: string[];
     }[]
   ) => {
     if (!promotionSlotModal.promotion) return;
@@ -869,6 +900,24 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {capitalizeFirstLetter(item.productName ?? "")}
+                            {/* Mostrar toppings de productos normales */}
+                            {!item.slotSelections &&
+                              getToppingNamesForProduct(item).length > 0 && (
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: "#856D5E",
+                                    fontSize: "0.7rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  {" "}
+                                  +{" "}
+                                  {getToppingNamesForProduct(item)
+                                    .map((name) => capitalizeFirstLetter(name))
+                                    .join(" + ")}
+                                </Typography>
+                              )}
                           </Typography>
                           {item.slotSelections &&
                             item.slotSelections.length > 0 && (
@@ -921,6 +970,23 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                             {capitalizeFirstLetter(
                               selection.selectedProductName || "Producto"
                             )}
+                            {selection.toppingNames &&
+                              selection.toppingNames.length > 0 && (
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    color: "#856D5E",
+                                    fontSize: "0.65rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  {" "}
+                                  +{" "}
+                                  {selection.toppingNames
+                                    .map((name) => capitalizeFirstLetter(name))
+                                    .join(" + ")}
+                                </Typography>
+                              )}
                           </Typography>
                         ))}
                       </Box>

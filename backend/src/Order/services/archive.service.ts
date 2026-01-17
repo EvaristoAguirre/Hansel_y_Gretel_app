@@ -29,9 +29,6 @@ export class ArchiveService {
     while (attempts < maxAttempts) {
       try {
         attempts++;
-        console.log(
-          `Intento ${attempts} de ${maxAttempts}, archivando órdenes...`,
-        );
         await this.dataSource.transaction(async (manager) => {
           const { start, end } = this.getPreviousWeekRange();
 

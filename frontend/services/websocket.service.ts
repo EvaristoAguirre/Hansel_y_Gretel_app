@@ -67,17 +67,18 @@ class WebSocketService {
 
   private getWebSocketUrl(): string | null {
     // Intentar obtener la URL de WebSocket desde variables de entorno
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
-    if (wsUrl) {
-      return wsUrl;
+    // Primero verificar si hay una URL específica de WebSocket según el entorno
+    const NODE_ENV = process.env.NODE_ENV;
+    let wsUrl: string | undefined;
+
+    if (NODE_ENV === 'production') {
+      wsUrl = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      wsUrl = process.env.NEXT_PUBLIC_WS_URL_DEV || process.env.NEXT_PUBLIC_API_URL_DEV;
     }
 
-    // Si no hay URL específica de WS, derivar de la URL de la API
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL;
-    if (apiUrl) {
-      // Convertir http://host:port a ws://host:port o mantener http para socket.io
-      return apiUrl;
+    if (wsUrl) {
+      return wsUrl;
     }
 
     return null;
