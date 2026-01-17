@@ -136,9 +136,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
           slotId: selection.slotId,
           selectedProductIds: [selection.selectedProductId],
           // toppingsPerUnit como array de arrays (un array por cada producto)
-          ...(selection.toppingsPerUnit && selection.toppingsPerUnit.length > 0
-            ? { toppingsPerUnit: [selection.toppingsPerUnit] }
-            : {}),
+          // Siempre enviar el array, incluso si está vacío
+          toppingsPerUnit: [selection.toppingsPerUnit || []],
         }));
 
         baseDetail.promotionSelections = promotionSelections;

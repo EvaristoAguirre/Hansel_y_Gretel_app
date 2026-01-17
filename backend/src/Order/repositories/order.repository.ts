@@ -267,35 +267,42 @@ export class OrderRepository {
       }
 
       // Procesar toppings de productos dentro de slots (promotionSelections)
-      if (detailData.promotionSelections && detailData.promotionSelections.length > 0) {
+      if (
+        detailData.promotionSelections &&
+        detailData.promotionSelections.length > 0
+      ) {
         this.logger.log(
           `[buildOrderDetailWithToppings] Procesando toppings de productos dentro de slots`,
         );
 
         // Iterar sobre cada unidad del producto principal (la promoción)
         for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
-          // Para cada selección de slot
+          // Para cada selección de slot (cada selección es un producto individual con sus toppings)
           for (const selection of detailData.promotionSelections) {
-            if (!selection.toppingsPerUnit || selection.toppingsPerUnit.length === 0) {
+            // Cada selección tiene 1 producto con sus toppings en toppingsPerUnit[0]
+            // Validar que tenga toppings antes de procesar
+            if (
+              !selection.toppingsPerUnit ||
+              selection.toppingsPerUnit.length === 0
+            ) {
               continue;
             }
 
-            this.logger.debug(
-              `[buildOrderDetailWithToppings] Procesando toppings del slot ${selection.slotId} para unidad ${unitIndex}`,
-            );
-
-            // Iterar sobre cada producto seleccionado en este slot
-            for (let productIndex = 0; productIndex < selection.selectedProductIds.length; productIndex++) {
-              const selectedProductId = selection.selectedProductIds[productIndex];
-              const toppingsForThisProduct = selection.toppingsPerUnit[productIndex] || [];
+            // Iterar sobre cada producto en la selección
+            // En la estructura del frontend, cada selección tiene 1 producto
+            for (
+              let productIndex = 0;
+              productIndex < selection.selectedProductIds.length;
+              productIndex++
+            ) {
+              const selectedProductId =
+                selection.selectedProductIds[productIndex];
+              const toppingsForThisProduct =
+                selection.toppingsPerUnit[productIndex] || [];
 
               if (toppingsForThisProduct.length === 0) {
                 continue;
               }
-
-              this.logger.debug(
-                `[buildOrderDetailWithToppings] Producto ${selectedProductId} (índice ${productIndex}) tiene ${toppingsForThisProduct.length} toppings en unidad ${unitIndex}`,
-              );
 
               // Obtener el producto seleccionado para obtener su configuración de toppings
               const selectedProduct = await qr.manager.findOne(Product, {
@@ -304,7 +311,7 @@ export class OrderRepository {
 
               if (!selectedProduct) {
                 this.logger.warn(
-                  `[buildOrderDetailWithToppings] Producto seleccionado ${selectedProductId} no encontrado, saltando toppings`,
+                  `[buildOrderDetailWithToppings] Producto seleccionado ${selectedProductId} no encontrado`,
                 );
                 continue;
               }
@@ -362,12 +369,9 @@ export class OrderRepository {
                   orderDetails: null,
                   unitOfMeasure: config.unitOfMeasure,
                   unitOfMeasureName: config.unitOfMeasure?.name,
-                  unitIndex: unitIndex, // unitIndex se refiere a la unidad del producto principal (promoción)
+                  unitIndex: unitIndex,
                 });
 
-                this.logger.debug(
-                  `[buildOrderDetailWithToppings] Topping de producto seleccionado creado - Nombre: ${topping.name}, Producto: ${selectedProduct.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
-                );
                 toppingDetails.push(td);
               }
             }
