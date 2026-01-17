@@ -1,5 +1,12 @@
 import { OrderState } from 'src/Enums/states.enum';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { ArchivedOrderDetails } from './archived_order_details.entity';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { ArchivedOrderPayment } from './archived_order_payments.entity';
@@ -18,6 +25,9 @@ export class ArchivedOrder {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  tip: number;
+
   @Column({ nullable: true })
   numberCustomers: number;
 
@@ -30,10 +40,10 @@ export class ArchivedOrder {
   @Column({ type: 'enum', enum: PaymentMethod, nullable: true })
   methodOfPayment: PaymentMethod;
 
-  @Column()
+  @Column({ nullable: true })
   tableId: string;
 
-  @Column()
+  @Column({ nullable: true })
   dailyCashId: string;
 
   @CreateDateColumn()
