@@ -535,16 +535,8 @@ export class ProductService {
             };
           }
 
-          console.log(
-            `[TOPPING CHECK] Stock actual de ${topping.name}: ${stock.quantityInStock} ${stock.unitOfMeasure?.name} (${stock.unitOfMeasure?.id})`,
-          );
-
           // Conversión de unidades si es necesario
           if (toppingGroup.unitOfMeasure?.id !== stock.unitOfMeasure?.id) {
-            console.log(
-              `[TOPPING CHECK] Necesita conversión de unidades: ${requiredQty} ${toppingGroup.unitOfMeasure.name} → ${stock.unitOfMeasure.name}`,
-            );
-
             requiredQty = await this.unitOfMeasureService.convertUnit(
               toppingGroup.unitOfMeasure.id,
               stock.unitOfMeasure.id,

@@ -32,7 +32,6 @@ export const fetchAllDailyCash = async (token: string) => {
 
       try {
         responseText = await response.text();
-        console.log('Response text (raw):', responseText); // ✅ Debug
         errorData = responseText ? JSON.parse(responseText) : {};
       } catch (parseError) {
         console.error('Error parsing error response:', parseError);
