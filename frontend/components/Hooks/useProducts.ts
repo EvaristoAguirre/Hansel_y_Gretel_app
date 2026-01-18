@@ -59,7 +59,7 @@ export const useProducts = () => {
 
     try {
       if (!token) return;
-      const fetchedProducts = await fetchProducts('1', '50', token);
+      const fetchedProducts = await fetchProducts('1', '500', token);
 
       setProducts(fetchedProducts);
     } catch (error) {

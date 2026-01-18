@@ -452,20 +452,45 @@ export class StockService {
       selectionsBySlot.get(slotId)!.push(selection);
     }
 
-    // Por cada asignación de slot
-    for (let assignmentIndex = 0; assignmentIndex < assignments.length; assignmentIndex++) {
-      const assignment = assignments[assignmentIndex];
-      const slot = assignment.slot;
+    // Agrupar assignments por slotId y sumar quantities
+    const assignmentsBySlot = new Map<string, { 
+      assignments: PromotionSlotAssignment[], 
+      totalQuantity: number,
+      slot: PromotionSlot 
+    }>();
+    
+    for (const assignment of assignments) {
+      const slotId = assignment.slot.id;
+      if (!assignmentsBySlot.has(slotId)) {
+        assignmentsBySlot.set(slotId, {
+          assignments: [],
+          totalQuantity: 0,
+          slot: assignment.slot
+        });
+      }
+      const group = assignmentsBySlot.get(slotId)!;
+      group.assignments.push(assignment);
+      group.totalQuantity += assignment.quantity;
+    }
 
+    // Procesar cada slot único
+    let slotIndex = 0;
+    for (const [slotId, group] of assignmentsBySlot.entries()) {
+      slotIndex++;
+      const slot = group.slot;
+      
       this.logger.log(
-        `[deductPromotionStockWithSelections] Procesando slot "${slot.name}" (${assignmentIndex + 1}/${assignments.length})`,
+        `[deductPromotionStockWithSelections] Procesando slot "${slot.name}" (${slotIndex}/${assignmentsBySlot.size})`,
       );
 
       // Obtener todas las selecciones para este slot
-      const slotSelections = selectionsBySlot.get(slot.id) || [];
+      const slotSelections = selectionsBySlot.get(slotId) || [];
 
+      // Verificar si el slot es obligatorio (si alguna asignación no es opcional)
+      const isRequired = group.assignments.some(a => !a.isOptional);
+      
       // Si el slot es obligatorio y no tiene selecciones disponibles, error
-      if (slotSelections.length === 0 && !assignment.isOptional) {
+      if (slotSelections.length === 0 && isRequired) {
         throw new BadRequestException(
           `Slot "${slot.name}" is required and has no available selections`,
         );
@@ -477,13 +502,13 @@ export class StockService {
         0
       );
 
-      // Validar que la cantidad total coincida
-      if (totalProductsSelected !== assignment.quantity) {
+      // Validar que la cantidad total coincida con la suma de quantities de todas las asignaciones
+      if (totalProductsSelected !== group.totalQuantity) {
         this.logger.error(
-          `[deductPromotionStockWithSelections] ERROR: Slot "${slot.name}" requiere ${assignment.quantity} producto(s) pero se proporcionaron ${totalProductsSelected}`,
+          `[deductPromotionStockWithSelections] ERROR: Slot "${slot.name}" requiere ${group.totalQuantity} producto(s) pero se proporcionaron ${totalProductsSelected}`,
         );
         throw new BadRequestException(
-          `Slot "${slot.name}" requires ${assignment.quantity} product(s), but ${totalProductsSelected} were provided`,
+          `Slot "${slot.name}" requires ${group.totalQuantity} product(s), but ${totalProductsSelected} were provided`,
         );
       }
 
