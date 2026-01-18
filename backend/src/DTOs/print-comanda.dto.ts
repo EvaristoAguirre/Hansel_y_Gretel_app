@@ -37,4 +37,8 @@ class Details {
   @IsString()
   @IsOptional()
   commentOfProduct?: string;
+
+  @IsString()
+  @IsOptional()
+  promotionGroup?: string;
 }

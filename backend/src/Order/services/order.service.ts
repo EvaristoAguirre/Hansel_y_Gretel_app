@@ -358,6 +358,9 @@ export class OrderService {
           // 🖨️ Construir datos de impresión para este producto específico
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
             // LÓGICA PARA PROMOCIONES CON SLOTS
+            // Generar un ID único para agrupar productos de esta promoción
+            const promotionGroupId = `promo-${Date.now()}-${Math.random()}`;
+            
             // Iterar sobre cada unidad de la promoción
             for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
               // Para cada selección de slot en esta unidad
@@ -434,6 +437,7 @@ export class OrderService {
                         ? detail.commentOfProduct
                         : undefined,
                     toppings: toppingNames,
+                    promotionGroup: promotionGroupId, // Agregar ID del grupo de promoción
                   };
 
                   printProducts.push(productToPrint);
