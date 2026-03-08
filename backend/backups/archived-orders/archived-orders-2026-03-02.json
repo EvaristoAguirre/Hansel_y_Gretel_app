@@ -1,0 +1,3986 @@
+{
+  "archivedAt": "2026-03-02T00:10:00.662Z",
+  "totalArchived": 60,
+  "orders": [
+    {
+      "id": "d142a344-d0c0-4b61-a1d3-200ca0827899",
+      "date": "2026-02-28T12:52:55.346Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-28T15:52:55.348Z",
+      "updatedAt": "2026-02-28T15:53:03.895Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "acf0caa8-e291-46e0-9202-d3673a4a76e4",
+      "date": "2026-02-22T22:37:19.897Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 1,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:37:19.898Z",
+      "updatedAt": "2026-02-23T01:40:08.365Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "3921a43f-c974-4fb3-9911-ed961fcc6972",
+      "date": "2026-02-28T14:12:47.372Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-28T17:12:47.373Z",
+      "updatedAt": "2026-02-28T17:13:38.188Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "e01899ee-c32a-440e-8924-85216250db08",
+      "date": "2026-02-22T20:59:39.363Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:59:39.364Z",
+      "updatedAt": "2026-02-23T00:02:40.080Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "5852b48c-a0fd-42b3-be76-597fff1152f6",
+      "date": "2026-02-22T20:42:57.925Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:42:57.927Z",
+      "updatedAt": "2026-02-22T23:48:49.581Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "dd35edca-92f4-4bf6-8ac7-82eab2635905",
+      "date": "2026-02-22T14:20:55.915Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:20:55.915Z",
+      "updatedAt": "2026-02-22T18:10:40.645Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "d08614da-067e-486b-bae6-f3d3d0de59f5",
+      "date": "2026-02-22T21:27:02.483Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 1,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:27:02.483Z",
+      "updatedAt": "2026-02-23T01:10:05.597Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "2a4f9c7f-fe23-4b5f-86e7-dd2bbca63bb7",
+      "date": "2026-02-22T21:02:48.495Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 6,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:02:48.496Z",
+      "updatedAt": "2026-02-23T00:05:07.871Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "09f2ac68-25cd-4eed-ae22-32ee10c55f6f",
+      "date": "2026-02-22T21:05:58.764Z",
+      "state": "closed",
+      "total": "78700.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "189a0306-98a0-4948-8c0f-b445f58941b9",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:05:58.765Z",
+      "updatedAt": "2026-02-23T01:03:30.450Z",
+      "closedAt": "2026-02-22T22:03:30.426Z",
+      "orderDetails": [
+        {
+          "id": "3ff4aab0-6813-414e-837d-3144be1e3c07",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "ac5c60f7-c711-4d07-9127-f7f76dab3d06",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "a86b5aa2-7e14-4524-b26f-0d28a1b9c909",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "6058a538-88b7-4cf9-8548-1eebdc3ee048",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2f5971cc-5fd2-4308-8552-36b87e23fde9",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "872f0161-8ce3-43bf-a768-e37c9d6516fe",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1a18ec5a-730f-426f-bb9f-b704120e8bfa",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "eaa372e9-2fa2-4593-9579-1a609a7f48c8",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0844e81d-f677-4505-b2bb-3c2e6a3cde0f",
+          "quantity": 1,
+          "unitaryPrice": "1800.00",
+          "toppingsExtraCost": "1700.00",
+          "subtotal": "1800.00",
+          "productId": "672ce4d8-db61-439f-99e1-880107d38d80",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "c14e56b1-874a-4f55-9733-ac6ec746c083",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3cf34ef5-bc07-497f-9872-5065f3c7ca18",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260222-0874",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "78700.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-23T01:03:30.427Z",
+          "id": "66c2c2ad-aeb5-4803-9d84-6d24d753128c"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "a18e5469-6f1e-4978-85d7-4f62d01e16d6",
+      "date": "2026-02-22T20:20:23.743Z",
+      "state": "closed",
+      "total": "54800.00",
+      "tip": "5480.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:20:23.744Z",
+      "updatedAt": "2026-02-23T00:22:54.241Z",
+      "closedAt": "2026-02-22T21:22:54.209Z",
+      "orderDetails": [
+        {
+          "id": "79148332-f282-4f54-8daf-18a1dd6bb3a1",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0865",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3e03254d-9387-4bfb-9e0c-10a2ec176a27",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0865",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d7912010-b656-4b9c-a5c1-ebecb997d1da",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260222-0865",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9b3f40c2-d001-4690-b31a-d4b4456a3099",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "be1aabe2-9d59-4c52-b79e-650fd51bfdd5",
+          "commandNumber": "Comanda impresa: 20260222-0865",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d302e5ab-bc71-4c3e-bb83-3ffde97c0b6b",
+          "quantity": 1,
+          "unitaryPrice": "8000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8000.00",
+          "productId": "51e50ba0-4251-43c0-9585-582b604a1647",
+          "commandNumber": "Comanda impresa: 20260222-0865",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "60280.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-23T00:22:54.210Z",
+          "id": "6e67e1de-0c01-4e4d-af01-393154db0ec0"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "8c5c4298-814a-4d6f-afec-9e30639f8fbe",
+      "date": "2026-02-22T22:23:52.528Z",
+      "state": "closed",
+      "total": "48000.00",
+      "tip": "2000.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:23:52.529Z",
+      "updatedAt": "2026-02-23T02:07:24.198Z",
+      "closedAt": "2026-02-22T23:07:24.180Z",
+      "orderDetails": [
+        {
+          "id": "e4a48313-df12-45b7-91b1-48076bbb1ef3",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0879",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d97c3968-6f2d-448a-959b-7b66a528d45d",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0879",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f6eea1c4-95cc-49bb-81e9-49f8300be394",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260222-0879",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "50000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-23T02:07:24.181Z",
+          "id": "2420063f-9bb5-41c8-b684-fefda6e17869"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "d196d66d-136d-4e59-91a8-39f2c5f73128",
+      "date": "2026-02-22T20:03:27.861Z",
+      "state": "closed",
+      "total": "68400.00",
+      "tip": "6840.00",
+      "numberCustomers": 6,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:03:27.863Z",
+      "updatedAt": "2026-02-22T23:38:52.029Z",
+      "closedAt": "2026-02-22T20:38:51.964Z",
+      "orderDetails": [
+        {
+          "id": "0f6b9c58-4a39-43fb-9d28-178c65f0a3ec",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "cff73d44-0dd8-48ab-82c3-d022870a8f3e",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "aed3bc54-9b64-4788-b53f-7f3bb115e588",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "97f6ac48-ce54-4f33-8390-8725971cd61d",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "cf8497d9-e886-4459-8a73-8c2a82611ea7",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "15ac0674-9262-4e08-95b8-8e8894e58aa6",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "17a760bf-6405-4c97-af0d-6d27bae9fd7d",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fd75fd44-4c70-4ca6-a122-0221b7755b60",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "df3dbbd6-8903-48cc-bd58-f09fe05bfc90",
+          "commandNumber": "Comanda impresa: 20260222-0864",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "75240.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-22T23:38:51.965Z",
+          "id": "4b904e65-2d26-4b85-9043-5ccd77eff2ae"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "d6a1cf0b-e457-4b2d-8f70-495143f2d188",
+      "date": "2026-02-22T13:58:36.094Z",
+      "state": "closed",
+      "total": "38300.00",
+      "tip": "3830.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T16:58:36.095Z",
+      "updatedAt": "2026-02-22T18:04:51.636Z",
+      "closedAt": "2026-02-22T15:04:51.603Z",
+      "orderDetails": [
+        {
+          "id": "5e89a89d-3edf-4e9c-9644-158c74748ba3",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+          "commandNumber": "Comanda impresa: 20260222-0855",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "db63ce8a-0eb4-4a10-a137-a5f5a0d7f0bf",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260222-0855",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "96f8e109-92e8-49d6-8361-94afc2a1fce2",
+          "quantity": 1,
+          "unitaryPrice": "8800.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8800.00",
+          "productId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+          "commandNumber": "Comanda impresa: 20260222-0855",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b9c38667-bde1-48a5-bb8d-9e1875b21004",
+          "quantity": 1,
+          "unitaryPrice": "7500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7500.00",
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20260222-0855",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "42130.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-22T18:04:51.605Z",
+          "id": "88daf712-cf34-4dde-bffe-407fbd2287c9"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "50d34016-630a-4bb7-8a04-63ad2b5b8d8f",
+      "date": "2026-02-22T20:49:14.769Z",
+      "state": "cancelled",
+      "total": "62800.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:49:14.770Z",
+      "updatedAt": "2026-02-23T00:13:03.723Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "003c65a1-8be0-4cdd-9ed5-7818f7277855",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0870",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "73a4d520-94a6-4120-8baf-50d37f0d1b33",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0870",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9d907e3b-4ead-400f-be36-8e63b2b73a60",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0870",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "87d49aaa-2729-4aad-bbd5-2b704cc8d8c8",
+          "quantity": 2,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4000.00",
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20260222-0870",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "24f0507b-cef7-4a10-9aff-9c38727a4c42",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "897d2a21-73b5-4f4b-908e-0d8aba4820a8",
+          "commandNumber": "Comanda impresa: 20260222-0870",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "6bb3d46f-cf74-4a95-8437-45bec9961384",
+      "date": "2026-02-28T19:39:31.854Z",
+      "state": "closed",
+      "total": "50300.00",
+      "tip": "5030.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "ca15928c-0e2a-4968-961a-a79e0e8f7dd2",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T22:39:31.859Z",
+      "updatedAt": "2026-02-28T23:26:50.111Z",
+      "closedAt": "2026-02-28T20:26:50.021Z",
+      "orderDetails": [
+        {
+          "id": "008d61d8-8918-4fba-bc08-9b135a6c9ddc",
+          "quantity": 1,
+          "unitaryPrice": "3500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3500.00",
+          "productId": "aff19a73-ecec-4a48-a6c0-d864b7ad51cf",
+          "commandNumber": "Comanda impresa: 20260228-0890",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "55425fb3-6afb-416c-80cd-525b1c2dc187",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260228-0889",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "a664bfc3-a1f1-4916-a459-ee64462c1ec6",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260228-0887",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4fd32a0a-754a-4ca5-9dcd-26066d26bba5",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0887",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "90b4b3ee-6741-4b6c-ba40-f0bbce0009a2",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "be1aabe2-9d59-4c52-b79e-650fd51bfdd5",
+          "commandNumber": "Comanda impresa: 20260228-0890",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "55330.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-28T23:26:50.024Z",
+          "id": "5bb43f9c-6835-4423-ab6f-1b0acdc3ac8d"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "2724d135-d8ab-43da-b3d5-3a3d5ffead28",
+      "date": "2026-02-28T22:03:29.260Z",
+      "state": "closed",
+      "total": "123300.00",
+      "tip": "12330.00",
+      "numberCustomers": 7,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:03:29.261Z",
+      "updatedAt": "2026-03-01T01:59:50.954Z",
+      "closedAt": "2026-02-28T22:59:50.934Z",
+      "orderDetails": [
+        {
+          "id": "4c9a1e0f-8305-4b23-9d4f-0f197bec23a6",
+          "quantity": 1,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "dabcdc68-b9ce-4ccd-907c-ce607521aa1d",
+          "quantity": 1,
+          "unitaryPrice": "14000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14000.00",
+          "productId": "d63199e8-325a-43e2-82b2-bf10a81093fb",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fdc55c0b-682d-4618-a7ec-085430de9064",
+          "quantity": 2,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1a11dad0-9b57-4b6b-be17-6c926e2298e6",
+          "quantity": 1,
+          "unitaryPrice": "4000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4000.00",
+          "productId": "6d682d9a-bfb5-4709-a51d-a205c64b12b7",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "aa93d18a-9328-43f7-9ecd-9e6ccd9b9fcb",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "e27bdbb7-cfc2-4075-9b36-2e3e3fce6d91",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fb2347b2-e726-4765-b036-993efe2bf6ca",
+          "quantity": 1,
+          "unitaryPrice": "3500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3500.00",
+          "productId": "7c6161c9-421b-43e6-a483-e1e88f33051f",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f00964a1-64c0-4e2d-a345-715b6443ba02",
+          "quantity": 2,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "30000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9460b5d5-316c-41b2-bee1-18b796ae1c6d",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260228-0906",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "824b8ede-6e1f-42ca-b5d2-df2a0227555a",
+          "quantity": 1,
+          "unitaryPrice": "8800.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8800.00",
+          "productId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "7e4495f9-6e58-43ec-8102-293290ea8ab9",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "314ead0f-7076-473a-97da-6791fbecdc21",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "d6e43eec-e398-42cb-a490-cb290e4b4a0a",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "7a70f1bf-1e55-452e-82a2-d10858d6edda",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "2afb60b5-22df-4a08-93d3-bc209b1ca878",
+          "commandNumber": "Comanda impresa: 20260228-0902",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "135630.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-03-01T01:59:50.936Z",
+          "id": "a0718929-36be-45cf-8693-41851edcb781"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "916deb59-c827-4283-8630-9c48291058ac",
+      "date": "2026-02-28T20:03:41.098Z",
+      "state": "closed",
+      "total": "64000.00",
+      "tip": "6400.00",
+      "numberCustomers": 5,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:03:41.100Z",
+      "updatedAt": "2026-02-28T23:54:54.223Z",
+      "closedAt": "2026-02-28T20:54:54.122Z",
+      "orderDetails": [
+        {
+          "id": "be1a48df-f6e8-4b61-9ec8-6665345e1e47",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260228-0891",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f7166ad7-6fe5-4936-afa3-cb192b42097f",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260228-0891",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "6232f09d-29e1-497b-91ff-fe8fd7bb8c2d",
+          "quantity": 1,
+          "unitaryPrice": "20000.00",
+          "toppingsExtraCost": "2000.00",
+          "subtotal": "20000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0891",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3a3668cf-e9ad-4dad-9750-d0759bb8275a",
+          "quantity": 2,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "5041f784-fd5c-4646-957a-68df7a27652d",
+          "commandNumber": "Comanda impresa: 20260228-0891",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "70400.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-28T23:54:54.129Z",
+          "id": "1410a004-78e1-4932-a279-30b7c3226f50"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "9e08c917-9b34-4d48-a55d-f5b9f969ec98",
+      "date": "2026-02-28T21:55:25.034Z",
+      "state": "closed",
+      "total": "33900.00",
+      "tip": "3390.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T00:55:25.035Z",
+      "updatedAt": "2026-03-01T01:39:51.816Z",
+      "closedAt": "2026-02-28T22:39:51.798Z",
+      "orderDetails": [
+        {
+          "id": "a5c783d1-be8c-4d0a-ba36-454e865c9577",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0901",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "ab2a05a8-2243-4957-9415-0fd3d43f4efc",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+          "commandNumber": "Comanda impresa: 20260228-0901",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d09f1c60-af36-4bc4-9f3f-9e0f01a9a745",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0901",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "37290.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-03-01T01:39:51.799Z",
+          "id": "e8490126-ef28-4cc9-b0c9-337ca25350ab"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "8b0b7836-197c-4708-b591-e2d2763de0ce",
+      "date": "2026-02-22T22:17:30.958Z",
+      "state": "closed",
+      "total": "34700.00",
+      "tip": "3470.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:17:30.959Z",
+      "updatedAt": "2026-02-23T02:01:50.341Z",
+      "closedAt": "2026-02-22T23:01:50.308Z",
+      "orderDetails": [
+        {
+          "id": "643d082c-a5fa-4e91-bf6d-4b352acd20a4",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0875",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "6f982fef-5fb0-40bd-9c00-bd4303c61da8",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260222-0875",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "38170.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-23T02:01:50.309Z",
+          "id": "c4e0af29-7c9c-41cd-8521-5b153273c7ae"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "96c7c500-3d01-4c20-83c2-8ad484b4d592",
+      "date": "2026-02-22T15:02:37.925Z",
+      "state": "closed",
+      "total": "35300.00",
+      "tip": "3530.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "4c23c89b-6cbb-4d6b-8e06-8e759be2792f",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T18:02:37.927Z",
+      "updatedAt": "2026-02-22T18:18:15.728Z",
+      "closedAt": "2026-02-22T15:18:15.699Z",
+      "orderDetails": [
+        {
+          "id": "8e7b9d11-e6f6-43fb-a710-7d4cbd426e78",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0861",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "10bc469a-bb5e-4365-aced-76eae2e3443f",
+          "quantity": 1,
+          "unitaryPrice": "8800.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8800.00",
+          "productId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+          "commandNumber": "Comanda impresa: 20260222-0861",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "cd6f6618-659d-4e68-a0a7-4bfbb3f36b3c",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "127e1a63-7a68-4cb4-8e43-224277f671d4",
+          "commandNumber": "Comanda impresa: 20260222-0861",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "a51f46cc-23b6-4441-a8c4-1c70c61b86e8",
+          "quantity": 2,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4000.00",
+          "productId": "fa4d665c-41f6-4ccb-b4d4-304cdcec9e01",
+          "commandNumber": "Comanda impresa: 20260222-0861",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "38830.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-22T18:18:15.700Z",
+          "id": "3fe394eb-9cbf-4ee3-9d40-1c97462c333d"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "73213078-f724-401e-bf37-a555fcf7fe39",
+      "date": "2026-02-22T19:36:38.725Z",
+      "state": "closed",
+      "total": "69200.00",
+      "tip": "6920.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T22:36:38.728Z",
+      "updatedAt": "2026-02-22T23:26:48.159Z",
+      "closedAt": "2026-02-22T20:26:48.114Z",
+      "orderDetails": [
+        {
+          "id": "84fb28fa-8feb-4823-b53b-04ade5f21dd8",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3e6734bc-5c8c-455b-a3cb-68b1ee680408",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "872f0161-8ce3-43bf-a768-e37c9d6516fe",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4ab2cf00-ad60-477f-b251-d873e84e9672",
+          "quantity": 1,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "096301bb-7018-4160-aa65-090f7a4da262",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2d19ee1b-648b-476e-9b4b-083acb338567",
+          "quantity": 1,
+          "unitaryPrice": "5200.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5200.00",
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "02e144f6-f9de-49c5-a6ab-b26817229f41",
+          "quantity": 2,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "17000.00",
+          "productId": "14762620-02e4-4882-af00-a319dafa1b90",
+          "commandNumber": "Comanda impresa: 20260222-0867",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "76120.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-22T23:26:48.116Z",
+          "id": "14b42e2f-4c41-4738-8213-3ecfe25c61be"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "3d7d7b01-81e9-41e9-9cf3-f81456b7ba78",
+      "date": "2026-02-28T20:19:25.218Z",
+      "state": "closed",
+      "total": "58800.00",
+      "tip": "5880.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:19:25.225Z",
+      "updatedAt": "2026-03-01T00:26:00.604Z",
+      "closedAt": "2026-02-28T21:26:00.581Z",
+      "orderDetails": [
+        {
+          "id": "cbcd0f4e-025a-48fd-b18c-3419bf13a22c",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260228-0898",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4d0cb6e4-339c-4db8-8fac-345b2b9389cc",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260228-0893",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4659b953-8271-40b2-9f64-cc07a8b3252d",
+          "quantity": 1,
+          "unitaryPrice": "8800.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8800.00",
+          "productId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+          "commandNumber": "Comanda impresa: 20260228-0893",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "70c01a67-c833-4328-a0ab-40f5c49844e5",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260228-0893",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "22e4e1b1-7c63-4a40-be72-b1c48ceaf596",
+          "quantity": 1,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "1900.00",
+          "subtotal": "2000.00",
+          "productId": "672ce4d8-db61-439f-99e1-880107d38d80",
+          "commandNumber": "Comanda impresa: 20260228-0898",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "64680.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-03-01T00:26:00.583Z",
+          "id": "5f3bda11-afb1-403d-bba0-950dfd23c75b"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "df4311ae-0e49-45a4-8581-ee9c88fd1375",
+      "date": "2026-02-28T22:09:40.133Z",
+      "state": "cancelled",
+      "total": "57700.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:09:40.134Z",
+      "updatedAt": "2026-03-01T01:58:19.164Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "b36f8e25-912c-49af-a7dd-6ab851bd2c89",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0905",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "dcef062e-db09-4f96-9583-60ced17390ea",
+          "quantity": 1,
+          "unitaryPrice": "3500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3500.00",
+          "productId": "8efa0574-52b3-4f91-8590-3cd116e1c18c",
+          "commandNumber": "Comanda impresa: 20260228-0903",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "82a1d891-8aae-49da-8338-0af348bc95cc",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0905",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "cb81a2c7-80fe-4d1a-a990-4b52433c2d5f",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260228-0905",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b9f35d4c-e22e-47b2-9fe5-df5bba58432f",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0905",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "d9437060-99a1-4444-9ba1-44fed561ce7e",
+      "date": "2026-02-22T12:44:36.389Z",
+      "state": "closed",
+      "total": "54000.00",
+      "tip": "0.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T15:44:36.391Z",
+      "updatedAt": "2026-02-22T16:52:48.340Z",
+      "closedAt": "2026-02-22T13:52:48.319Z",
+      "orderDetails": [
+        {
+          "id": "83469671-5b88-4d84-adbc-b0621937179a",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0850",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "7440f6d4-c266-4f74-a68d-80fb1e67e415",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0850",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0d29b614-72d0-47a8-adac-21910201be7a",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0850",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "54000.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-22T16:52:48.320Z",
+          "id": "51b68790-e7a3-469d-be22-fd9f691cce90"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "1359921e-b607-4204-b824-ee749176db9e",
+      "date": "2026-02-28T13:47:41.844Z",
+      "state": "closed",
+      "total": "76100.00",
+      "tip": "7610.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "e6503b0f-1efb-41d5-aa4d-9efb29793b8c",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T16:47:41.846Z",
+      "updatedAt": "2026-02-28T17:49:48.198Z",
+      "closedAt": "2026-02-28T14:49:48.165Z",
+      "orderDetails": [
+        {
+          "id": "14e35f3f-6d57-4192-a66e-d792114c6eb1",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0883",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "ec110a1d-8069-4fcf-97b1-ca23e1e456e5",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260228-0883",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3777664f-ff5b-4f21-8882-5134160133e7",
+          "quantity": 1,
+          "unitaryPrice": "20700.00",
+          "toppingsExtraCost": "1700.00",
+          "subtotal": "20700.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260228-0883",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "6388aac0-2e4f-449b-b715-71a8bfb85fad",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260228-0883",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "49caaf38-dab3-4a1e-988a-eed0905de6bd",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0886",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "83710.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-28T17:49:48.166Z",
+          "id": "909ce7b7-a98a-46be-b04f-421da87c6231"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "2bde05e5-8324-4b61-80c8-6cf687587d0e",
+      "date": "2026-02-28T22:11:23.509Z",
+      "state": "closed",
+      "total": "60000.00",
+      "tip": "6000.00",
+      "numberCustomers": 5,
+      "comment": "",
+      "tableId": "189a0306-98a0-4948-8c0f-b445f58941b9",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:11:23.515Z",
+      "updatedAt": "2026-03-01T02:13:28.529Z",
+      "closedAt": "2026-02-28T23:13:28.488Z",
+      "orderDetails": [
+        {
+          "id": "ce91bbc9-9726-4283-b8c9-cd2353429b3d",
+          "quantity": 1,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260228-0904",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b45bf8a1-6e8c-47e9-aea3-a2b8fcaea6a3",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260228-0904",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "ed4dd245-7a0a-47fd-b1cf-9fc6674a1d7a",
+          "quantity": 1,
+          "unitaryPrice": "9500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9500.00",
+          "productId": "0c74558c-72dd-49b6-a4f3-b50b208c6aff",
+          "commandNumber": "Comanda impresa: 20260228-0904",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "42e64e92-8717-4831-ad4a-0abc2ff2076b",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "d6e43eec-e398-42cb-a490-cb290e4b4a0a",
+          "commandNumber": "Comanda impresa: 20260228-0904",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "5ffef5d1-4250-4310-84a5-017fe315116a",
+          "quantity": 1,
+          "unitaryPrice": "20000.00",
+          "toppingsExtraCost": "2000.00",
+          "subtotal": "20000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0904",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "66000.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-03-01T02:13:28.490Z",
+          "id": "af86a940-8e4c-499b-86f4-795822ae5fbc"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "0edbf026-df90-4c44-9611-c15b68a19d0f",
+      "date": "2026-02-28T13:55:55.124Z",
+      "state": "closed",
+      "total": "35600.00",
+      "tip": "3560.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "e6503b0f-1efb-41d5-aa4d-9efb29793b8c",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T16:55:55.127Z",
+      "updatedAt": "2026-02-28T17:51:45.192Z",
+      "closedAt": "2026-02-28T14:51:45.173Z",
+      "orderDetails": [
+        {
+          "id": "5eb38cce-e765-4c6e-aff6-d9fd4b48795a",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260228-0884",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "56615d8a-93ab-4264-80b9-ddbadc64e75f",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260228-0884",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "62c9d6d7-99cc-4cd6-b165-a6b5cdbab7ea",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0884",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "39160.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-28T17:51:45.174Z",
+          "id": "07a2eaed-c40a-4c22-9417-91953e0c5dc5"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "ee6d3d8c-6f4a-4ada-9b8c-626ee1103640",
+      "date": "2026-02-28T22:37:48.775Z",
+      "state": "closed",
+      "total": "59000.00",
+      "tip": "5900.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:37:48.781Z",
+      "updatedAt": "2026-03-01T02:25:00.017Z",
+      "closedAt": "2026-02-28T23:24:59.995Z",
+      "orderDetails": [
+        {
+          "id": "563e5c8c-709e-4195-8602-caea8c310bfe",
+          "quantity": 1,
+          "unitaryPrice": "7500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7500.00",
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20260228-0907",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4c558099-3173-4222-bd40-e6d6082b0264",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260228-0907",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "658db7ba-31a6-4770-84fc-9b190a8947fc",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260228-0907",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b990c094-cdac-45a8-8b51-05e7af7e6d69",
+          "quantity": 1,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "1900.00",
+          "subtotal": "2000.00",
+          "productId": "672ce4d8-db61-439f-99e1-880107d38d80",
+          "commandNumber": "Comanda impresa: 20260228-0909",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "da042a8f-65c2-4cda-80ed-96b3c79aa28d",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "d924a260-1847-4056-a5b4-eb3ccf397b98",
+          "commandNumber": "Comanda impresa: 20260228-0911",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "cce0b915-6893-419d-a42b-764d48453240",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260228-0907",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "64900.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-03-01T02:24:59.998Z",
+          "id": "85246c27-5892-47d0-875d-d9dd4917f6c1"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "9ec0b4c5-1881-4a70-9fad-7c5baf60b5f8",
+      "date": "2026-02-28T20:47:28.802Z",
+      "state": "closed",
+      "total": "33400.00",
+      "tip": "3340.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:47:28.808Z",
+      "updatedAt": "2026-03-01T00:38:28.225Z",
+      "closedAt": "2026-02-28T21:38:28.202Z",
+      "orderDetails": [
+        {
+          "id": "39e4027b-ad19-46b0-b7cf-fb75900d92f3",
+          "quantity": 1,
+          "unitaryPrice": "13000.00",
+          "toppingsExtraCost": "2000.00",
+          "subtotal": "13000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260228-0897",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "26bcbac8-e4c0-40e0-a085-9d60f3601231",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "e27bdbb7-cfc2-4075-9b36-2e3e3fce6d91",
+          "commandNumber": "Comanda impresa: 20260228-0895",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d22cf2d6-624b-4d6b-a4b3-abc26d0ba873",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0895",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "59952e4a-9bd5-4fcc-9030-df0dfb0f3712",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "872f0161-8ce3-43bf-a768-e37c9d6516fe",
+          "commandNumber": "Comanda impresa: 20260228-0895",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "36740.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-03-01T00:38:28.206Z",
+          "id": "8d3d8322-127d-4136-bdb7-27891a65a3c3"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "978e6cc9-448b-42ea-b15b-f32db5c0dacc",
+      "date": "2026-02-22T20:25:53.724Z",
+      "state": "closed",
+      "total": "29200.00",
+      "tip": "2920.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:25:53.725Z",
+      "updatedAt": "2026-02-23T00:28:19.099Z",
+      "closedAt": "2026-02-22T21:28:19.068Z",
+      "orderDetails": [
+        {
+          "id": "68678424-b1ee-410f-921c-8e3b8bc43824",
+          "quantity": 1,
+          "unitaryPrice": "5200.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5200.00",
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20260222-0868",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fcf8658b-289f-4044-bbc7-2a440b2bb255",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0868",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4bf94341-2cb0-4b98-a6a2-5a2e33b8079d",
+          "quantity": 2,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260222-0868",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "32120.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-23T00:28:19.069Z",
+          "id": "610c168e-be63-486d-8cfb-2d48a779c4db"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "94c07ec0-2b50-4128-b5e4-d89a2eb9fce3",
+      "date": "2026-02-22T22:40:48.142Z",
+      "state": "cancelled",
+      "total": "39000.00",
+      "tip": "0.00",
+      "numberCustomers": 1,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:40:48.143Z",
+      "updatedAt": "2026-02-23T01:57:25.734Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "f7675ede-6646-400d-ad7b-f715527b61ae",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0880",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0f1520f4-7d13-48e4-8a37-ba5d4a4fc111",
+          "quantity": 1,
+          "unitaryPrice": "21000.00",
+          "toppingsExtraCost": "3000.00",
+          "subtotal": "21000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0880",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "462af11c-167b-41b5-87f9-fade289e2463",
+      "date": "2026-02-22T22:40:13.472Z",
+      "state": "closed",
+      "total": "46600.00",
+      "tip": "4660.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:40:13.473Z",
+      "updatedAt": "2026-02-23T02:26:35.774Z",
+      "closedAt": "2026-02-22T23:26:35.741Z",
+      "orderDetails": [
+        {
+          "id": "02e88e7f-1e40-42ef-bddb-f7332a5b70b9",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260222-0878",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2c709140-ade4-4c5e-a722-a5a21080e6e0",
+          "quantity": 1,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260222-0878",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "415d1bdb-dbfa-41d1-9d9b-1962e7ec4411",
+          "quantity": 1,
+          "unitaryPrice": "5200.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5200.00",
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20260222-0878",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "99167336-b343-473e-8e83-f35e311efbf1",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0878",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "e7437cdf-ac68-4ceb-8171-8ea2c11a44f2",
+          "quantity": 2,
+          "unitaryPrice": "2700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5400.00",
+          "productId": "688f36ff-8e35-4d57-9749-e67287f70fac",
+          "commandNumber": "Comanda impresa: 20260222-0878",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "51260.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-23T02:26:35.742Z",
+          "id": "eec3d212-90b7-4f42-b140-b7c85dce6a07"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "454b3a0d-7cac-498a-9cdd-6dd6834c1d4a",
+      "date": "2026-02-22T20:39:43.480Z",
+      "state": "cancelled",
+      "total": "70000.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-22T23:39:43.481Z",
+      "updatedAt": "2026-02-22T23:42:53.748Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "d443249d-41bd-4127-b4a0-8cf1c26529a9",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0869",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "39e967e9-6e02-4155-be35-f4c114ebc5d6",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0869",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "78ec0d52-a900-4894-80aa-fd94e723c4ee",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0869",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "a66f775c-f967-41ce-96d6-9810e6d16137",
+          "quantity": 2,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "17000.00",
+          "productId": "897d2a21-73b5-4f4b-908e-0d8aba4820a8",
+          "commandNumber": "Comanda impresa: 20260222-0869",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "abc82580-0435-4621-81be-eab8e7194d37",
+          "quantity": 1,
+          "unitaryPrice": "2700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "2700.00",
+          "productId": "688f36ff-8e35-4d57-9749-e67287f70fac",
+          "commandNumber": "Comanda impresa: 20260222-0869",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "9a37b5a0-be15-422c-b6e5-9faddfd623cc",
+      "date": "2026-02-22T13:30:39.693Z",
+      "state": "closed",
+      "total": "27800.00",
+      "tip": "2780.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T16:30:39.694Z",
+      "updatedAt": "2026-02-22T17:16:15.127Z",
+      "closedAt": "2026-02-22T14:16:15.104Z",
+      "orderDetails": [
+        {
+          "id": "757eb534-56d6-43c9-a8e6-b94d02c5028e",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260222-0851",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d4428211-018e-4d2e-94cb-c385b31fb61a",
+          "quantity": 1,
+          "unitaryPrice": "8300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8300.00",
+          "productId": "4e0af888-951a-459e-86f4-004a0a17c974",
+          "commandNumber": "Comanda impresa: 20260222-0851",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "45c2b03c-69c9-4256-9906-ec653a76b01e",
+          "quantity": 1,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "2000.00",
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20260222-0851",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "4f53abea-61bc-4855-93d9-88709da821a0",
+          "quantity": 1,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3000.00",
+          "productId": "9c2f67c6-29cd-4970-824f-c34bc5697cf1",
+          "commandNumber": "Comanda impresa: 20260222-0851",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "30580.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-22T17:16:15.105Z",
+          "id": "c1e1aac4-0475-4da9-8464-f2c8719194b1"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "5a2394dc-3bc3-4bf4-a171-4bc6aff5b9ad",
+      "date": "2026-02-28T19:46:19.636Z",
+      "state": "closed",
+      "total": "45500.00",
+      "tip": "4550.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T22:46:19.639Z",
+      "updatedAt": "2026-02-28T23:32:15.062Z",
+      "closedAt": "2026-02-28T20:32:15.025Z",
+      "orderDetails": [
+        {
+          "id": "a4662fd1-b7d6-47f6-854e-831c34b0f821",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260228-0888",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "64e990f3-dde1-4da6-9242-b2d66708dd65",
+          "quantity": 1,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260228-0888",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "72505f74-acc9-48e7-9782-16ded113592f",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "872f0161-8ce3-43bf-a768-e37c9d6516fe",
+          "commandNumber": "Comanda impresa: 20260228-0888",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "79eba8e9-bb51-47d7-bf0f-ac2a32f5d02f",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260228-0888",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "89c55ecb-3f6a-40f0-81c8-488672a0a7aa",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "e27bdbb7-cfc2-4075-9b36-2e3e3fce6d91",
+          "commandNumber": "Comanda impresa: 20260228-0888",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "50050.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-28T23:32:15.027Z",
+          "id": "20526bcf-107f-4d60-9643-3d21d6da1ce2"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "e7261c65-25c3-403e-aa73-a64cc0047750",
+      "date": "2026-02-22T22:20:04.611Z",
+      "state": "closed",
+      "total": "74000.00",
+      "tip": "7400.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:20:04.612Z",
+      "updatedAt": "2026-02-23T02:08:42.349Z",
+      "closedAt": "2026-02-22T23:08:42.322Z",
+      "orderDetails": [
+        {
+          "id": "63907650-b8ea-4698-a6f9-f3beeabe4e52",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d91fe174-cc15-4517-a39f-70db97f63ccf",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "14762620-02e4-4882-af00-a319dafa1b90",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "261fb52b-a344-4797-873b-bf64b2daf47e",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "2afb60b5-22df-4a08-93d3-bc209b1ca878",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "65c9e631-e3f4-4277-b37f-4c9a94a4120b",
+          "quantity": 1,
+          "unitaryPrice": "5000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5000.00",
+          "productId": "f99873a5-1ef2-41f4-9ede-155041c45097",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0aba0d99-53ff-41db-9fa5-849a6e7a2fd2",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "79c1fa48-c7f2-488d-b3d4-cefd73d3e00e",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260222-0876",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "81400.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-23T02:08:42.323Z",
+          "id": "ad43b583-a8c3-4a35-afc0-e7c13b46ee8c"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "6a8339c9-727a-4080-b10e-9eaec38e98d8",
+      "date": "2026-02-22T14:17:09.362Z",
+      "state": "closed",
+      "total": "75100.00",
+      "tip": "7510.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "189a0306-98a0-4948-8c0f-b445f58941b9",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:17:09.363Z",
+      "updatedAt": "2026-02-22T18:16:41.084Z",
+      "closedAt": "2026-02-22T15:16:41.067Z",
+      "orderDetails": [
+        {
+          "id": "a91ed3c2-5cb3-4173-bbec-4b94adbd51e2",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0862",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "642e629e-644e-48dc-b80a-9d6a7491c004",
+          "quantity": 3,
+          "unitaryPrice": "6600.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19800.00",
+          "productId": "dc2a6b8f-6d78-43eb-a555-1eac14f5422c",
+          "commandNumber": "Comanda impresa: 20260222-0862",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "738d536b-2281-463e-a431-8eff318164df",
+          "quantity": 3,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260222-0862",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "c4b3dc22-0e47-4f62-8d0f-a1147bcae931",
+          "quantity": 6,
+          "unitaryPrice": "5500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "33000.00",
+          "productId": "72100b0e-9e46-441e-9192-ab3ad637e8a4",
+          "commandNumber": "Comanda impresa: 20260222-0862",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "82610.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-22T18:16:41.068Z",
+          "id": "48e42df6-fabe-458a-8fc0-b6ac2c6c7b76"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "02695154-e806-407d-aa78-abe96ecf1396",
+      "date": "2026-02-22T22:32:57.363Z",
+      "state": "closed",
+      "total": "73500.00",
+      "tip": "6500.00",
+      "numberCustomers": 6,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T01:32:57.364Z",
+      "updatedAt": "2026-02-23T02:11:19.549Z",
+      "closedAt": "2026-02-22T23:11:19.480Z",
+      "orderDetails": [
+        {
+          "id": "340e075f-fe7a-4b61-b12b-fd18ad50f85d",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "648a4208-544e-4b87-9ee4-516cef348287",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "26ea80e7-be74-40b0-909f-4619160570a8",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "89985766-5deb-4bb9-9aa8-712e2eeebc22",
+          "quantity": 1,
+          "unitaryPrice": "8300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8300.00",
+          "productId": "4e0af888-951a-459e-86f4-004a0a17c974",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "925eb728-6a18-42de-ae8d-1423fc0e7c26",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "391bbc03-f9e0-476f-87e6-5fb2c13da9c6",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d077ffcf-7ddd-4e65-b80f-5a5c7aa67dd2",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0877",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "80000.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-23T02:11:19.481Z",
+          "id": "84f9839f-fb35-4645-9dae-ba8ae0b504a7"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "4a017c69-3cb9-4801-81b5-578e72488ae4",
+      "date": "2026-02-22T13:30:55.410Z",
+      "state": "closed",
+      "total": "68500.00",
+      "tip": "6850.00",
+      "numberCustomers": 6,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T16:30:55.411Z",
+      "updatedAt": "2026-02-22T17:46:51.483Z",
+      "closedAt": "2026-02-22T14:46:51.453Z",
+      "orderDetails": [
+        {
+          "id": "4382929e-032c-462b-9132-c3820b3c4ff0",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "08ab7ce9-90bf-4126-ae30-241ad41416b1",
+          "quantity": 2,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4000.00",
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "48698876-661d-48e9-9acc-8bdbcd0c773a",
+          "quantity": 1,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3000.00",
+          "productId": "9c2f67c6-29cd-4970-824f-c34bc5697cf1",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "036a46a1-3137-4eb4-b076-bbc151f3ea78",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "dad69fda-9ba8-43f3-94f5-accc17e9d260",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "596353ae-b008-4569-9d39-f3b7b9a8224d",
+          "quantity": 3,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3fc0ab18-fe89-401a-b450-ff9d4f7d7f55",
+          "quantity": 1,
+          "unitaryPrice": "6600.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6600.00",
+          "productId": "dc2a6b8f-6d78-43eb-a555-1eac14f5422c",
+          "commandNumber": "Comanda impresa: 20260222-0852",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "75350.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-22T17:46:51.453Z",
+          "id": "70ea83b8-cf78-4cc1-8fcf-6d1ba703e7cb"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "521ce23a-d9da-4342-a89e-957a33fc764f",
+      "date": "2026-02-22T21:13:07.715Z",
+      "state": "closed",
+      "total": "66900.00",
+      "tip": "6690.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:13:07.715Z",
+      "updatedAt": "2026-02-23T00:21:11.473Z",
+      "closedAt": "2026-02-22T21:21:11.437Z",
+      "orderDetails": [
+        {
+          "id": "108c0ee1-5e75-4f46-82d5-24e05b8196c6",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "897d2a21-73b5-4f4b-908e-0d8aba4820a8",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f584cdc9-5da0-45e9-8f5f-7127517a2057",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "26924fa1-432e-4b65-9372-71c90159ae12",
+          "quantity": 1,
+          "unitaryPrice": "19000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "19000.00",
+          "productId": "25a027db-3fcd-47ed-9288-dc7c449922be",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "bcc7e50c-50d0-4823-8736-b9e782e5fd32",
+          "quantity": 1,
+          "unitaryPrice": "100.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "100.00",
+          "productId": "672ce4d8-db61-439f-99e1-880107d38d80",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "cac29ee1-afab-40d5-9b05-e770c315742c",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "e7069418-a884-4720-a4c9-80567724c54b",
+          "quantity": 1,
+          "unitaryPrice": "8000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8000.00",
+          "productId": "51e50ba0-4251-43c0-9585-582b604a1647",
+          "commandNumber": "Comanda impresa: 20260222-0871",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "73590.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-23T00:21:11.439Z",
+          "id": "89b2564a-aad4-4afd-9130-dce221fa6607"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "c36aaf9a-9989-4d7a-ab7e-84b74367b186",
+      "date": "2026-02-22T14:59:29.939Z",
+      "state": "closed",
+      "total": "34400.00",
+      "tip": "3440.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "5795fc3e-94d7-48ef-b2ea-6225a0768548",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:59:29.941Z",
+      "updatedAt": "2026-02-22T18:12:54.181Z",
+      "closedAt": "2026-02-22T15:12:54.150Z",
+      "orderDetails": [
+        {
+          "id": "78c67213-c7fd-4915-88a0-b3973134c38f",
+          "quantity": 2,
+          "unitaryPrice": "2700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5400.00",
+          "productId": "688f36ff-8e35-4d57-9749-e67287f70fac",
+          "commandNumber": "Comanda impresa: 20260222-0860",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2c07a134-20e3-40c4-b875-7b69207faad6",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "ed9dd268-3fea-472c-a7d0-901265f006d0",
+          "commandNumber": "Comanda impresa: 20260222-0860",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "229ad99c-fb2c-416d-9900-5c347de210a5",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "ed9dd268-3fea-472c-a7d0-901265f006d0",
+          "commandNumber": "Comanda impresa: 20260222-0860",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "37840.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-22T18:12:54.152Z",
+          "id": "8fe85d8f-6817-43dd-9372-fa0e6515abd4"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "b097b079-fd3e-4071-9033-39eec721736a",
+      "date": "2026-02-22T14:19:37.080Z",
+      "state": "closed",
+      "total": "26600.00",
+      "tip": "2660.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "ca15928c-0e2a-4968-961a-a79e0e8f7dd2",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:19:37.081Z",
+      "updatedAt": "2026-02-22T18:19:08.657Z",
+      "closedAt": "2026-02-22T15:19:08.625Z",
+      "orderDetails": [
+        {
+          "id": "6471a9ae-9122-4e29-971b-f3a232fc49fa",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0857",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0daf7ea9-921a-4206-b254-36ab01208ade",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0857",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "29260.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-22T18:19:08.626Z",
+          "id": "b385ec68-6330-4305-bdcb-ff28ca713470"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "aa3d89ae-3aa5-48d7-8a65-5d92bd95b05c",
+      "date": "2026-02-28T22:58:23.512Z",
+      "state": "closed",
+      "total": "64700.00",
+      "tip": "6470.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:58:23.513Z",
+      "updatedAt": "2026-03-01T02:17:40.933Z",
+      "closedAt": "2026-02-28T23:17:40.910Z",
+      "orderDetails": [
+        {
+          "id": "5deb478d-ae74-4604-8a4b-d07974c3fd3f",
+          "quantity": 3,
+          "unitaryPrice": "3500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "10500.00",
+          "productId": "8efa0574-52b3-4f91-8590-3cd116e1c18c",
+          "commandNumber": "Comanda impresa: 20260228-0910",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f9b3a4de-4a23-47ea-93f1-bee1947a8be5",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "04035366-7636-41ea-985c-5540ce3a1178",
+          "commandNumber": "Comanda impresa: 20260228-0910",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1811d9c9-4d10-4866-b0e8-5cf6b7677b36",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260228-0910",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "02295cc9-792d-42eb-a827-c8a4db4cc47f",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0910",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "da858a3f-f1bb-4f00-9a8f-ce648d766695",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260228-0910",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "71170.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-03-01T02:17:40.911Z",
+          "id": "f8ba0532-1d55-4f0f-ad0d-8b5c7c96c91d"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "00b344d7-1b52-404b-a8f9-73ba24938233",
+      "date": "2026-02-22T13:44:28.268Z",
+      "state": "closed",
+      "total": "32000.00",
+      "tip": "3000.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "c62ced1a-19a5-435a-bc25-9d9a9af1d69b",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T16:44:28.269Z",
+      "updatedAt": "2026-02-22T17:45:59.893Z",
+      "closedAt": "2026-02-22T14:45:59.857Z",
+      "orderDetails": [
+        {
+          "id": "e2d71a72-5318-41a9-b098-017990ab2312",
+          "quantity": 2,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4000.00",
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20260222-0853",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "85e4a386-bd5e-490f-8aeb-02e2643f8f75",
+          "quantity": 2,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260222-0853",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "8c196fbc-f601-4941-9088-1a841bf55973",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260222-0853",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "78d53cc8-e202-4e93-8469-460bd2eaaa75",
+          "quantity": 1,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260222-0853",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "35000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-22T17:45:59.859Z",
+          "id": "fa80a63d-1764-4ba3-a958-a5f4824963a3"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "0c1df0af-c5eb-42c6-9891-ff3a0f12b7ec",
+      "date": "2026-02-22T13:57:10.214Z",
+      "state": "closed",
+      "total": "62300.00",
+      "tip": "3700.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "19850450-0571-4929-97b1-80ed0e343e76",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T16:57:10.216Z",
+      "updatedAt": "2026-02-22T17:57:43.451Z",
+      "closedAt": "2026-02-22T14:57:43.419Z",
+      "orderDetails": [
+        {
+          "id": "63282bdd-ff8e-40e7-b182-f83b5f76ca45",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "ed9dd268-3fea-472c-a7d0-901265f006d0",
+          "commandNumber": "Comanda impresa: 20260222-0854",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "5ac1877e-d583-459f-a294-cc80b979ec38",
+          "quantity": 1,
+          "unitaryPrice": "5500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5500.00",
+          "productId": "72100b0e-9e46-441e-9192-ab3ad637e8a4",
+          "commandNumber": "Comanda impresa: 20260222-0854",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "08d0b70c-e9d6-4d5f-a4ea-0f22ab38bc25",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260222-0854",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "6316bbd2-84b8-432d-bfaa-cf11f4467f20",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260222-0854",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "903d8150-8b39-4e44-b140-a51bc52fea49",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260222-0854",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "66000.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-22T17:57:43.420Z",
+          "id": "cd30ba60-6236-425f-8fc0-79e81fc730f9"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "6dd934b3-475b-46df-a56b-a522d5d6de7d",
+      "date": "2026-02-22T14:14:20.817Z",
+      "state": "closed",
+      "total": "33200.00",
+      "tip": "3320.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:14:20.818Z",
+      "updatedAt": "2026-02-22T18:16:24.596Z",
+      "closedAt": "2026-02-22T15:16:24.553Z",
+      "orderDetails": [
+        {
+          "id": "14467344-c917-4c82-8e8d-ff2377607f36",
+          "quantity": 1,
+          "unitaryPrice": "5000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5000.00",
+          "productId": "f99873a5-1ef2-41f4-9ede-155041c45097",
+          "commandNumber": "Comanda impresa: 20260222-0856",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "82f4ec3f-0164-423b-a704-6409cb0a9b6d",
+          "quantity": 1,
+          "unitaryPrice": "5500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5500.00",
+          "productId": "72100b0e-9e46-441e-9192-ab3ad637e8a4",
+          "commandNumber": "Comanda impresa: 20260222-0859",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1c6a6c5d-52a7-4302-b6bc-ff8e38f0c371",
+          "quantity": 1,
+          "unitaryPrice": "5200.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5200.00",
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20260222-0856",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "8d6bb724-6deb-464a-84df-87b435bf6831",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "14762620-02e4-4882-af00-a319dafa1b90",
+          "commandNumber": "Comanda impresa: 20260222-0856",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1ba2c87c-725a-4695-9661-773590dd435d",
+          "quantity": 1,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9000.00",
+          "productId": "5041f784-fd5c-4646-957a-68df7a27652d",
+          "commandNumber": "Comanda impresa: 20260222-0859",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "36520.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-22T18:16:24.554Z",
+          "id": "17c9eebe-cd47-4562-be4c-a0a1152bef56"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "6b760528-ea66-4d4b-a041-c1bd406e42ed",
+      "date": "2026-02-22T23:06:11.206Z",
+      "state": "closed",
+      "total": "22300.00",
+      "tip": "1700.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "ca15928c-0e2a-4968-961a-a79e0e8f7dd2",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T02:06:11.208Z",
+      "updatedAt": "2026-02-23T02:31:47.364Z",
+      "closedAt": "2026-02-22T23:31:47.333Z",
+      "orderDetails": [
+        {
+          "id": "c08dda27-ff5a-4e82-8592-e0ae14fd8e2d",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260222-0881",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "edd18883-9969-4db8-89d0-075f22ed2e6c",
+          "quantity": 1,
+          "unitaryPrice": "6600.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6600.00",
+          "productId": "dc2a6b8f-6d78-43eb-a555-1eac14f5422c",
+          "commandNumber": "Comanda impresa: 20260222-0881",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "24000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-02-23T02:31:47.334Z",
+          "id": "a71622d2-c51e-4f47-b810-a669cacd6e20"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "250116d5-3f1c-4b59-9679-392485d9e5fb",
+      "date": "2026-02-28T20:31:46.197Z",
+      "state": "closed",
+      "total": "36500.00",
+      "tip": "3700.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:31:46.198Z",
+      "updatedAt": "2026-03-01T00:29:05.091Z",
+      "closedAt": "2026-02-28T21:29:05.070Z",
+      "orderDetails": [
+        {
+          "id": "98a9a557-7c93-4d82-bf81-761b6b59d480",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260228-0894",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9fc50ba4-f207-49ce-8f2d-100be5141e3f",
+          "quantity": 1,
+          "unitaryPrice": "14000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14000.00",
+          "productId": "d63199e8-325a-43e2-82b2-bf10a81093fb",
+          "commandNumber": "Comanda impresa: 20260228-0894",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "17ffae06-7b38-40e4-891b-d26f5794779a",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "e27bdbb7-cfc2-4075-9b36-2e3e3fce6d91",
+          "commandNumber": "Comanda impresa: 20260228-0894",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "40200.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-03-01T00:29:05.071Z",
+          "id": "023d9931-ab3d-4724-9944-5bdbd680a8ab"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "970c9ba7-5e33-4269-bedb-bc14a87ca249",
+      "date": "2026-02-22T12:10:17.763Z",
+      "state": "closed",
+      "total": "22500.00",
+      "tip": "2250.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "23c4302e-8589-418e-8d96-10ee6effbe2b",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T15:10:17.765Z",
+      "updatedAt": "2026-02-22T15:40:53.836Z",
+      "closedAt": "2026-02-22T12:40:53.790Z",
+      "orderDetails": [
+        {
+          "id": "a1b47793-a317-49f5-89b6-8bd4b5516fdc",
+          "quantity": 1,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260222-0849",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fa65be2d-3e69-4756-b2df-d6bbc50895d6",
+          "quantity": 1,
+          "unitaryPrice": "7500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7500.00",
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20260222-0849",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2f6c0c87-aeb9-4ecb-a2d4-f8ba750d9ea9",
+          "quantity": 4,
+          "unitaryPrice": "2000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8000.00",
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20260222-0849",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "24750.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-22T15:40:53.791Z",
+          "id": "40849993-c60d-4f20-b08a-c4163f047f84"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "30b33813-7cb8-4d8c-99fb-5af33c96b1ec",
+      "date": "2026-02-28T12:53:12.141Z",
+      "state": "closed",
+      "total": "19200.00",
+      "tip": "1920.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "e6503b0f-1efb-41d5-aa4d-9efb29793b8c",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T15:53:12.142Z",
+      "updatedAt": "2026-02-28T16:58:45.093Z",
+      "closedAt": "2026-02-28T13:58:45.047Z",
+      "orderDetails": [
+        {
+          "id": "c00a2ef2-ca87-4239-9991-00475096824d",
+          "quantity": 2,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260228-0882",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "8b6bbd8f-bde1-4c5c-abcd-683c1a66654c",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "3793ba4d-36ad-4c29-be1a-bdab5d7d8b7d",
+          "commandNumber": "Comanda impresa: 20260228-0882",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "18457157-d06c-4855-a555-d7a03f15a426",
+          "quantity": 1,
+          "unitaryPrice": "8300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8300.00",
+          "productId": "4e0af888-951a-459e-86f4-004a0a17c974",
+          "commandNumber": "Comanda impresa: 20260228-0882",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "21120.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-02-28T16:58:45.048Z",
+          "id": "a2ad2f95-0405-490a-8437-79a41b51671e"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "06f32f81-c45c-4880-a408-d4546ecc4523",
+      "date": "2026-02-28T14:13:50.316Z",
+      "state": "closed",
+      "total": "18500.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "e6503b0f-1efb-41d5-aa4d-9efb29793b8c",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T17:13:50.317Z",
+      "updatedAt": "2026-02-28T17:54:16.542Z",
+      "closedAt": "2026-02-28T14:54:16.513Z",
+      "orderDetails": [
+        {
+          "id": "b0b386e6-bbef-4681-b343-2b9c2691508e",
+          "quantity": 1,
+          "unitaryPrice": "13300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "13300.00",
+          "productId": "4f76a22f-7b21-4791-90a1-4a099cd57fed",
+          "commandNumber": "Comanda impresa: 20260228-0885",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "e7290628-9b24-4101-bb72-9aff2042f5fe",
+          "quantity": 1,
+          "unitaryPrice": "5200.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5200.00",
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20260228-0885",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "18500.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-02-28T17:54:16.514Z",
+          "id": "43388282-406e-43ed-b31a-1b76e7ef0321"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "ece6ee31-1c67-4372-9ef6-bb61a1e3d55b",
+      "date": "2026-02-28T20:55:00.352Z",
+      "state": "closed",
+      "total": "38500.00",
+      "tip": "3850.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "ca15928c-0e2a-4968-961a-a79e0e8f7dd2",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:55:00.359Z",
+      "updatedAt": "2026-03-01T01:46:58.110Z",
+      "closedAt": "2026-02-28T22:46:58.092Z",
+      "orderDetails": [
+        {
+          "id": "586d712b-ea43-43e1-91f3-39e3afa5408a",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "872f0161-8ce3-43bf-a768-e37c9d6516fe",
+          "commandNumber": "Comanda impresa: 20260228-0896",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "65785c8b-17c3-4fdd-bf88-7c94897f68b9",
+          "quantity": 1,
+          "unitaryPrice": "4500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4500.00",
+          "productId": "e27bdbb7-cfc2-4075-9b36-2e3e3fce6d91",
+          "commandNumber": "Comanda impresa: 20260228-0896",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2592610f-762d-42c2-8b4a-f787f6883963",
+          "quantity": 1,
+          "unitaryPrice": "3500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3500.00",
+          "productId": "8efa0574-52b3-4f91-8590-3cd116e1c18c",
+          "commandNumber": "Comanda impresa: 20260228-0908",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "1f62eafa-639c-4bbe-9e29-5e2cc3864d58",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "2afb60b5-22df-4a08-93d3-bc209b1ca878",
+          "commandNumber": "Comanda impresa: 20260228-0896",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "a943877e-587f-49fb-bd26-8a84cc9e7bb6",
+          "quantity": 1,
+          "unitaryPrice": "7500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7500.00",
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20260228-0896",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "42350.00",
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-03-01T01:46:58.093Z",
+          "id": "33f10a73-4894-4cf6-b266-57fbb330a056"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "531c0364-0811-41e9-9180-87c41552904c",
+      "date": "2026-02-28T22:53:15.340Z",
+      "state": "closed",
+      "total": "35000.00",
+      "tip": "3500.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "9df94d31-3ce2-43da-bffd-0e112d62d969",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T01:53:15.340Z",
+      "updatedAt": "2026-03-01T02:32:35.007Z",
+      "closedAt": "2026-02-28T23:32:34.985Z",
+      "orderDetails": [
+        {
+          "id": "d6e57bd6-115a-44f4-8f60-c48d5e7c8590",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260228-0912",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9b48e779-2942-4cbb-a806-d0edd3f370ff",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260228-0912",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "c2f74083-945d-4036-a262-419feeb05dad",
+          "quantity": 2,
+          "unitaryPrice": "3000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6000.00",
+          "productId": "71074078-f01f-4886-a423-262872298e96",
+          "commandNumber": "Comanda impresa: 20260228-0912",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "38500.00",
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-03-01T02:32:34.986Z",
+          "id": "bf42ed8e-dccd-4c5f-be09-9899733f7726"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "c64e3fcc-eaf2-4dd8-8568-60d5546a9a2b",
+      "date": "2026-02-22T19:50:22.061Z",
+      "state": "closed",
+      "total": "60300.00",
+      "tip": "6030.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "a0daaeee-4e51-4d8d-b842-161b49f78e1a",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T22:50:22.063Z",
+      "updatedAt": "2026-02-23T00:17:11.096Z",
+      "closedAt": "2026-02-22T21:17:11.066Z",
+      "orderDetails": [
+        {
+          "id": "f1f0a6ed-8ea3-41b9-933a-ac05ff505e9a",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260222-0863",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3f9d68e9-71fe-42cb-a29d-54362aa48a60",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260222-0866",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d4cf7956-3c46-423b-b155-08a1a4d2e92d",
+          "quantity": 2,
+          "unitaryPrice": "4000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8000.00",
+          "productId": "6d682d9a-bfb5-4709-a51d-a205c64b12b7",
+          "commandNumber": "Comanda impresa: 20260222-0863",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "ee285efa-74c4-4750-864b-0a90cf0e7bcf",
+          "quantity": 1,
+          "unitaryPrice": "15700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15700.00",
+          "productId": "8eb31254-e921-4806-b099-2eacbd039cbf",
+          "commandNumber": "Comanda impresa: 20260222-0863",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0b238859-5a5f-4dc9-8b92-107c51b08164",
+          "quantity": 1,
+          "unitaryPrice": "6600.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "6600.00",
+          "productId": "dc2a6b8f-6d78-43eb-a555-1eac14f5422c",
+          "commandNumber": "Comanda impresa: 20260222-0863",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "66330.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-23T00:17:11.068Z",
+          "id": "243d1356-1440-427c-9630-bf97822fc47c"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "9015c2a6-8a59-4794-b072-92630e03ba46",
+      "date": "2026-02-28T21:25:16.114Z",
+      "state": "closed",
+      "total": "63000.00",
+      "tip": "6300.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T00:25:16.115Z",
+      "updatedAt": "2026-03-01T01:48:32.521Z",
+      "closedAt": "2026-02-28T22:48:32.502Z",
+      "orderDetails": [
+        {
+          "id": "363e14ce-2f6b-47ac-a0a8-6f6d00ed1ab0",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260228-0900",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b0e6475f-623d-4472-8ed7-b762cf4270c0",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "14762620-02e4-4882-af00-a319dafa1b90",
+          "commandNumber": "Comanda impresa: 20260228-0900",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "16b65447-1721-4033-a8cc-61a4cc1909da",
+          "quantity": 1,
+          "unitaryPrice": "14500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14500.00",
+          "productId": "18da04d7-95e3-4470-93c3-6504d0096c5d",
+          "commandNumber": "Comanda impresa: 20260228-0900",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "c3bf124c-a8ea-490f-b6bf-95a847b7dbc3",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "4cac743e-7789-43d1-aed2-0a7e7995b749",
+          "commandNumber": "Comanda impresa: 20260228-0900",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fe3e0e4c-0221-46f9-b07f-16d73a2dcc8f",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "c0f47002-6a89-4dbc-9b64-9bfaa026b281",
+          "commandNumber": "Comanda impresa: 20260228-0900",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "69300.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-03-01T01:48:32.503Z",
+          "id": "1923238a-76b2-4ac7-8281-dbb9fd44d52b"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "8540dad4-47d6-4bb0-9170-ab32836d24c4",
+      "date": "2026-02-22T14:44:33.741Z",
+      "state": "closed",
+      "total": "30100.00",
+      "tip": "3010.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "48d624ba-da42-4dbb-9938-db009a01beb3",
+      "dailyCashId": "e57ca7d6-f07a-480e-81ed-1ff132b8cc4c",
+      "commandNumber": null,
+      "createdAt": "2026-02-22T17:44:33.741Z",
+      "updatedAt": "2026-02-22T18:22:10.391Z",
+      "closedAt": "2026-02-22T15:22:10.373Z",
+      "orderDetails": [
+        {
+          "id": "cf424757-bbc8-4c4e-8f20-b1d2669a5686",
+          "quantity": 1,
+          "unitaryPrice": "3800.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "3800.00",
+          "productId": "d99c99bc-7857-4ed3-ba67-e41fc647b9c0",
+          "commandNumber": "Comanda impresa: 20260222-0858",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b5f1c11c-c0db-40df-ba39-cfd9189b6363",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20260222-0858",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "721ab16b-106c-43fe-8bc7-0a0cd87c6246",
+          "quantity": 1,
+          "unitaryPrice": "8300.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8300.00",
+          "productId": "4e0af888-951a-459e-86f4-004a0a17c974",
+          "commandNumber": "Comanda impresa: 20260222-0858",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "33110.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-02-22T18:22:10.374Z",
+          "id": "0789d447-1c01-4f3b-9b28-65a0114337bb"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "f57d3cf1-f120-4e50-bd23-4706c9dd068d",
+      "date": "2026-02-28T20:06:30.637Z",
+      "state": "closed",
+      "total": "23500.00",
+      "tip": "2350.00",
+      "numberCustomers": 1,
+      "comment": "",
+      "tableId": "c62ced1a-19a5-435a-bc25-9d9a9af1d69b",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-02-28T23:06:30.642Z",
+      "updatedAt": "2026-03-01T00:03:41.417Z",
+      "closedAt": "2026-02-28T21:03:41.329Z",
+      "orderDetails": [
+        {
+          "id": "47c3ea30-1d51-4619-9f4a-410ab6c218e4",
+          "quantity": 1,
+          "unitaryPrice": "8500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8500.00",
+          "productId": "897d2a21-73b5-4f4b-908e-0d8aba4820a8",
+          "commandNumber": "Comanda impresa: 20260228-0892",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "e41287fd-89cd-411a-83e8-dd3dad4b3efb",
+          "quantity": 1,
+          "unitaryPrice": "15000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "15000.00",
+          "productId": "51baa6d9-1a18-4da8-ba4f-7f70fe0e7c5c",
+          "commandNumber": "Comanda impresa: 20260228-0892",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "25850.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-03-01T00:03:41.331Z",
+          "id": "47cca956-d2d4-47cd-973b-3ddbb114869f"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "1d40006c-f740-4322-8a00-865004548adc",
+      "date": "2026-02-22T21:33:22.826Z",
+      "state": "closed",
+      "total": "58100.00",
+      "tip": "5810.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": "5473a2bd-683d-40b6-8dae-0cae8ebce352",
+      "dailyCashId": "a82ee3e7-892a-49ae-8e8e-a96051463f0d",
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:33:22.828Z",
+      "updatedAt": "2026-02-23T01:09:44.661Z",
+      "closedAt": "2026-02-22T22:09:44.628Z",
+      "orderDetails": [
+        {
+          "id": "6e1820fd-d8f1-46c6-93d8-2f755d4e8ced",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260222-0873",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "2d67c4e9-966c-4b67-bbf8-ae315c697674",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0873",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "fc52b659-426f-4f43-8e90-7e566364051a",
+          "quantity": 3,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "21000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260222-0873",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "80efb2a0-a573-4f7e-aa92-b7de8caf4eae",
+          "quantity": 3,
+          "unitaryPrice": "2700.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8100.00",
+          "productId": "688f36ff-8e35-4d57-9749-e67287f70fac",
+          "commandNumber": "Comanda impresa: 20260222-0873",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "63910.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-02-23T01:09:44.630Z",
+          "id": "6a298773-1bcc-45a9-9d08-371b012a5a29"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "f58a160a-5fb9-4137-bac5-4a2657d8c8c5",
+      "date": "2026-02-28T21:05:42.540Z",
+      "state": "closed",
+      "total": "24400.00",
+      "tip": "2440.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "b229cb6b-2860-4de6-8c97-646b1bde3117",
+      "dailyCashId": "afe2c779-9bea-4202-b5a3-a6f5e9ba0ce0",
+      "commandNumber": null,
+      "createdAt": "2026-03-01T00:05:42.540Z",
+      "updatedAt": "2026-03-01T00:47:04.523Z",
+      "closedAt": "2026-02-28T21:47:04.498Z",
+      "orderDetails": [
+        {
+          "id": "9fe03613-e79a-4583-9f8c-0262f3b66d9e",
+          "quantity": 1,
+          "unitaryPrice": "7500.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "7500.00",
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20260228-0899",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b18ae354-de66-4271-a866-14d33407f15d",
+          "quantity": 1,
+          "unitaryPrice": "12000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "12000.00",
+          "productId": "2afb60b5-22df-4a08-93d3-bc209b1ca878",
+          "commandNumber": "Comanda impresa: 20260228-0899",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0413ea0c-71db-422c-9292-beb84360341e",
+          "quantity": 1,
+          "unitaryPrice": "4900.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "4900.00",
+          "productId": "a542cb06-085e-4908-8e05-6316a69140d5",
+          "commandNumber": "Comanda impresa: 20260228-0899",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "26840.00",
+          "methodOfPayment": "mercadoPago",
+          "createdAt": "2026-03-01T00:47:04.500Z",
+          "id": "1d42b416-5a1d-4363-8e0a-5a1534166bbb"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "49c32e0f-4a1d-48ae-847a-c99f937ade94",
+      "date": "2026-02-22T21:24:52.465Z",
+      "state": "cancelled",
+      "total": "58100.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-02-23T00:24:52.467Z",
+      "updatedAt": "2026-02-23T00:33:14.550Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "33ad1f5f-a530-4b1a-ae4e-22637b7aa5e4",
+          "quantity": 1,
+          "unitaryPrice": "8000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "8000.00",
+          "productId": "51e50ba0-4251-43c0-9585-582b604a1647",
+          "commandNumber": "Comanda impresa: 20260222-0872",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "382e4e39-502d-4ba9-9ed4-7657da4bf1e4",
+          "quantity": 3,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "21000.00",
+          "productId": "73d4954f-17a5-42fc-b7f6-1c567bdcb45d",
+          "commandNumber": "Comanda impresa: 20260222-0872",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "0ef67651-6ecc-476c-93ba-a288d6d9b583",
+          "quantity": 1,
+          "unitaryPrice": "18000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20260222-0872",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "3285d2b6-e306-4bc5-a345-a4a0473cb2c7",
+          "quantity": 1,
+          "unitaryPrice": "11000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "11000.00",
+          "productId": "1c2b505a-e34c-4b4e-9b75-28531b37664f",
+          "commandNumber": "Comanda impresa: 20260222-0872",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "f655fd11-351f-4a84-98dd-1581decb24c5",
+          "quantity": 1,
+          "unitaryPrice": "100.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "100.00",
+          "productId": "672ce4d8-db61-439f-99e1-880107d38d80",
+          "commandNumber": "Comanda impresa: 20260222-0872",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    }
+  ]
+}

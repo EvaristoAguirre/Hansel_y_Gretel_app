@@ -191,9 +191,15 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      // const secondPrintSuccess = await this.sendRawCommand(commands);
+      const secondPrintSuccess = await this.sendRawCommand(commands);
 
       if (!firstPrintSuccess) {
+        this.logger.error(
+          `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
+        );
+        throw new Error('Print command failed');
+      }
+      if (!secondPrintSuccess) {
         this.logger.error(
           `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
         );
@@ -340,9 +346,9 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      const secondPrintSuccess = await this.sendRawCommand(commands);
+      //const secondPrintSuccess = await this.sendRawCommand(commands);
 
-      if (!firstPrintSuccess || !secondPrintSuccess) {
+      if (!firstPrintSuccess) {
         throw new Error('Print command failed');
       }
 
