@@ -171,6 +171,24 @@ export class OrderController {
     return order;
   }
 
+  @Post('reprint-comanda/:id')
+  @ApiOperation({
+    summary: 'Reimprimir comanda de cocina',
+    description:
+      'Reimprime la comanda de cocina de un pedido existente a partir de los productos ya confirmados.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID del pedido a reimprimir',
+  })
+  @ApiResponse({ status: 200, description: 'Comanda reimpresa exitosamente' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
+  async reprintKitchenOrder(@Param('id') id: string): Promise<string> {
+    return this.orderService.reprintKitchenOrder(id);
+  }
+
   @Post('cancel/:id')
   @ApiOperation({
     summary: 'Cancelar pedido',
