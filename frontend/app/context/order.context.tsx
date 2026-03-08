@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useState,
+  useRef,
   useCallback,
   useEffect,
   use,
@@ -145,6 +146,20 @@ const OrderProvider = ({
     [productId: string]: Array<{ [groupId: string]: string[] }>;
   }>({});
 
+  // Refs para acceder al estado actual desde callbacks estables (WebSocket listeners)
+  // sin que su cambio provoque la recreación de esos callbacks.
+  const tablesRef = useRef<ITable[]>([]);
+  const ordersRef = useRef<IOrderDetails[]>([]);
+  const selectedTableRef = useRef<ITable | null>(null);
+  const selectedOrderByTableRef = useRef<IOrderDetails | null>(null);
+  const tokenRef = useRef<string | null>(null);
+
+  useEffect(() => { tablesRef.current = tables; }, [tables]);
+  useEffect(() => { ordersRef.current = orders; }, [orders]);
+  useEffect(() => { selectedTableRef.current = selectedTable; }, [selectedTable]);
+  useEffect(() => { selectedOrderByTableRef.current = selectedOrderByTable; }, [selectedOrderByTable]);
+  useEffect(() => { tokenRef.current = token; }, [token]);
+
   useEffect(() => {
     const token = getAccessToken();
     if (token) {
@@ -169,19 +184,12 @@ const OrderProvider = ({
   }, [selectedTable]);
 
   const handleResetSelectedOrder = () => {
-    console.log("🥁🥁🥁🥁");
     setSelectedProducts([]);
-    console.log("selectedProducts", selectedProducts);
     setConfirmedProducts([]);
-    console.log("confirmedProducts", confirmedProducts);
     setSelectedOrderByTable(null);
-    console.log("selectedOrderByTable", selectedOrderByTable);
     setSelectedToppingsByProduct({});
-    console.log("selectedToppingsByProduct", selectedToppingsByProduct);
     setToppingsByProductGroup({});
-    console.log("toppingsByProductGroup", toppingsByProductGroup);
     setHighlightedProducts(new Set());
-    console.log("highlightedProducts", highlightedProducts);
   };
 
   const handleSetProductsByOrder = useCallback(
@@ -207,12 +215,23 @@ const OrderProvider = ({
     []
   );
 
+  // Usa refs para acceder al estado actual sin recrear el callback en cada cambio de tables/orders.
+  // Solo depende de handleSetProductsByOrder (estable, useCallback con []).
   const fetchOrderBySelectedTable = useCallback(async () => {
-    // Buscar la mesa actualizada en el store de mesas para obtener el estado real
-    const updatedTable = tables.find((t) => t.id === selectedTable?.id);
-    const actualTableState = updatedTable?.state || selectedTable?.state;
+    const currentSelectedTable = selectedTableRef.current;
+    const currentTables = tablesRef.current;
+    const currentOrders = ordersRef.current;
+    const currentToken = tokenRef.current;
 
-    // Solo limpiar si la mesa está realmente disponible o cerrada (verificar en el store actualizado)
+    if (!currentSelectedTable) {
+      setSelectedOrderByTable(null);
+      setConfirmedProducts([]);
+      return;
+    }
+
+    const updatedTable = currentTables.find((t) => t.id === currentSelectedTable.id);
+    const actualTableState = updatedTable?.state || currentSelectedTable.state;
+
     if (
       actualTableState === TableState.AVAILABLE ||
       actualTableState === TableState.CLOSED
@@ -221,136 +240,89 @@ const OrderProvider = ({
       setConfirmedProducts([]);
       return;
     }
-    if (selectedTable) {
-      try {
-        // Buscar la mesa actualizada en el store de mesas (puede tener orders actualizado)
-        const updatedTable = tables.find((t) => t.id === selectedTable.id);
-        const tableWithOrders = updatedTable || selectedTable;
 
-        // Obtener el ID de la orden desde la mesa actualizada o desde selectedTable
-        let orderId: string | undefined;
+    // Obtener orderId: primero desde tabla del store, luego desde orders store.
+    // Eliminado el doble-fetch a GET /order?tableId= que generaba cascada de requests.
+    let orderId: string | undefined;
+    const tableWithOrders = updatedTable || currentSelectedTable;
 
-        if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
-          orderId = tableWithOrders.orders[0];
-        } else {
-          // Si no hay orders en la mesa, buscar la orden por tableId en el store de órdenes
-          const orderInStore = orders.find(
-            (o) => o.table?.id === selectedTable.id
-          );
-          if (orderInStore) {
-            orderId = orderInStore.id;
-          } else {
-            // Si no hay orden en el store, intentar obtener todas las órdenes de la mesa desde el backend
-            // Por ahora, asumimos que si la mesa tiene estado diferente a AVAILABLE/CLOSED, tiene una orden
-            // y la obtenemos haciendo un fetch a la API de órdenes por tableId
-            try {
-              const ordersResponse = await fetch(
-                `${URI_ORDER}?tableId=${selectedTable.id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-              if (ordersResponse.ok) {
-                const ordersData = await ordersResponse.json();
-                if (ordersData && ordersData.length > 0) {
-                  // Obtener la orden más reciente o la que esté en estado pending_payment
-                  const pendingOrder = ordersData.find(
-                    (o: IOrderDetails) => o.state === "pending_payment"
-                  );
-                  orderId = pendingOrder?.id || ordersData[0]?.id;
-                }
-              }
-            } catch (error) {
-              console.error("Error al obtener órdenes por tableId:", error);
-            }
-          }
-        }
+    if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
+      orderId = tableWithOrders.orders[0];
+    } else {
+      const orderInStore = currentOrders.find(
+        (o) => o.table?.id === currentSelectedTable.id
+      );
+      orderId = orderInStore?.id;
+    }
 
-        if (orderId) {
-          const response = await fetch(`${URI_ORDER}/${orderId}`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (response.ok) {
-            const data: IOrderDetails = await response.json();
+    if (!orderId) {
+      setSelectedOrderByTable(null);
+      setConfirmedProducts([]);
+      return;
+    }
 
-            // NO cargar órdenes cerradas - si la orden está cerrada, limpiar todo
-            if (
-              data.state === OrderState.CLOSED ||
-              data.state === ("closed" as any)
-            ) {
-              setSelectedOrderByTable(null);
-              setConfirmedProducts([]);
-              return;
-            }
+    try {
+      const response = await fetch(`${URI_ORDER}/${orderId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
 
-            setSelectedOrderByTable(data);
-
-            const productsByOrder = data.products;
-
-            if (productsByOrder && productsByOrder.length > 0) {
-              // Adaptar ProductLineDto[] a SelectedProductsI[]
-              // El backend devuelve ProductLineDto con unitaryPrice: number
-              // pero SelectedProductsI espera unitaryPrice?: string | null
-              const adaptedProducts: SelectedProductsI[] = productsByOrder.map(
-                (product: any) => ({
-                  productId: product.productId,
-                  productName: product.productName,
-                  quantity: product.quantity,
-                  unitaryPrice:
-                    product.unitaryPrice != null
-                      ? String(product.unitaryPrice)
-                      : null,
-                  commentOfProduct: product.commentOfProduct || null,
-                  allowsToppings: product.allowsToppings,
-                  // Los toppings vienen como ToppingSummaryDto[] pero SelectedProductsI espera toppingsPerUnit?: string[][]
-                  // Por ahora no mapeamos los toppings ya que no se usan en confirmedProducts
-                })
-              );
-              handleSetProductsByOrder(adaptedProducts);
-            } else {
-              setConfirmedProducts([]);
-            }
-          } else {
-            setSelectedOrderByTable(null);
-            setConfirmedProducts([]);
-          }
-        } else {
-          setSelectedOrderByTable(null);
-          setConfirmedProducts([]);
-        }
-      } catch (error) {
-        console.error("Error al obtener el pedido:", error);
+      if (!response.ok) {
         setSelectedOrderByTable(null);
         setConfirmedProducts([]);
+        return;
       }
-    } else {
+
+      const data: IOrderDetails = await response.json();
+
+      if (
+        data.state === OrderState.CLOSED ||
+        data.state === ("closed" as any)
+      ) {
+        setSelectedOrderByTable(null);
+        setConfirmedProducts([]);
+        return;
+      }
+
+      setSelectedOrderByTable(data);
+
+      if (data.products && data.products.length > 0) {
+        const adaptedProducts: SelectedProductsI[] = data.products.map(
+          (product: any) => ({
+            productId: product.productId,
+            productName: product.productName,
+            quantity: product.quantity,
+            unitaryPrice:
+              product.unitaryPrice != null
+                ? String(product.unitaryPrice)
+                : null,
+            commentOfProduct: product.commentOfProduct || null,
+            allowsToppings: product.allowsToppings,
+          })
+        );
+        handleSetProductsByOrder(adaptedProducts);
+      } else {
+        setConfirmedProducts([]);
+      }
+    } catch (error) {
+      console.error("Error al obtener el pedido:", error);
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
     }
-  }, [selectedTable, token, handleSetProductsByOrder, tables, orders]);
+  }, [handleSetProductsByOrder]);
 
+  // Solo se re-ejecuta cuando cambia selectedTable (no cuando cambia cualquier mesa del store).
   useEffect(() => {
-    // No hacer fetch si la mesa está en estado AVAILABLE o CLOSED
-    // Verificamos AMBOS: el estado en selectedTable Y el estado en el store tables
-    // Si CUALQUIERA es AVAILABLE, no hacemos fetch (la mesa se está liberando)
-    const tableInStore = tables.find((t) => t.id === selectedTable?.id);
-    const stateInStore = tableInStore?.state;
     const stateInSelected = selectedTable?.state;
+    const tableInStore = tablesRef.current.find((t) => t.id === selectedTable?.id);
+    const stateInStore = tableInStore?.state;
 
-    // Si la mesa está AVAILABLE o CLOSED en CUALQUIERA de los dos lugares, limpiar y no hacer fetch
     if (
       stateInSelected === TableState.AVAILABLE ||
       stateInSelected === TableState.CLOSED ||
       stateInStore === TableState.AVAILABLE ||
       stateInStore === TableState.CLOSED
     ) {
-      // Limpiar el estado cuando la mesa está disponible o cerrada
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
       setSelectedProducts([]);
@@ -359,26 +331,7 @@ const OrderProvider = ({
       return;
     }
     fetchOrderBySelectedTable();
-  }, [fetchOrderBySelectedTable, selectedTable, tables]);
-
-  const checkStockAvailability = async (
-    productId: string,
-    quantity: number,
-    toppingsPerUnit?: string[][]
-  ) => {
-    const form: ICheckStock = {
-      productId: productId,
-      quantityToSell: quantity,
-      toppingsPerUnit: toppingsPerUnit?.flat(),
-    };
-    try {
-      const stock = await checkStock(form, token!);
-
-      return stock;
-    } catch (error) {
-      console.error("Error al obtener el stock:", error);
-    }
-  };
+  }, [selectedTable, fetchOrderBySelectedTable]);
 
   const checkStockToppingAvailability = async (
     productId: string,
@@ -399,24 +352,14 @@ const OrderProvider = ({
     }
   };
 
-  const handleSelectedProducts = async (product: ProductResponse) => {
+  // La validación de stock se realiza en el backend al confirmar (handleEditOrder).
+  // Eliminado el check por HTTP en cada interacción para respuesta instantánea en tablet.
+  const handleSelectedProducts = (product: ProductResponse) => {
     const foundProduct = selectedProducts.find(
       (p) => p.productId === product.id
     );
 
     const newQuantity = foundProduct ? foundProduct.quantity + 1 : 1;
-    const toppingsPerUnit = selectedToppingsByProduct[product.id] ?? [];
-
-    // Verificar stock como antes (las promociones con slots ya fueron interceptadas en OrderEditor)
-    const stockResponse = await checkStockAvailability(product.id, newQuantity);
-    if (!stockResponse?.available) {
-      Swal.fire({
-        icon: "error",
-        title: "Stock insuficiente",
-        text: stockResponse.message,
-      });
-      return;
-    }
 
     if (foundProduct) {
       const updatedDetails = selectedProducts.map((p) =>
@@ -490,311 +433,203 @@ const OrderProvider = ({
     });
   };
 
-  // Listener para evento de ticket impreso
+  // Listeners de WebSocket registrados UNA SOLA VEZ al montar el provider.
+  // Usan refs para acceder al estado actual sin requerir ser re-registrados,
+  // eliminando la "ventana ciega" que ocurría al desregistrar/re-registrar
+  // en cada cambio de orders, tables, selectedTable, etc.
   useEffect(() => {
-    if (typeof window === "undefined") return; // Solo en cliente
+    if (typeof window === "undefined") return;
 
-    // Asegurar conexión WebSocket
     const socket = webSocketService.connect();
 
     const handleTicketPrinted = async (data: any) => {
-      // El data que viene del WebSocket puede ser { order: Order } o directamente Order
       const orderData = data.order || data;
       const orderId = orderData.id;
       const orderTableId = orderData.table?.id || orderData.tableId;
 
-      // Verificar si la orden pertenece a la mesa seleccionada, es la orden seleccionada, existe en el store,
-      // o si la mesa de la orden está en el store de mesas (para actualizar cuando se seleccione después)
-      const orderTableInStore = tables.some((t) => t.id === orderTableId);
+      const currentSelectedTable = selectedTableRef.current;
+      const currentSelectedOrderByTable = selectedOrderByTableRef.current;
+      const currentToken = tokenRef.current;
+      const currentTables = tablesRef.current;
+      const currentOrders = ordersRef.current;
 
-      // Verificar si la orden pertenece a la mesa seleccionada (incluso si selectedOrderByTable no está actualizado)
+      const orderTableInStore = currentTables.some((t) => t.id === orderTableId);
       const orderBelongsToSelectedTable =
-        selectedTable?.orders?.includes(orderId) ||
-        selectedTable?.id === orderTableId;
-
+        currentSelectedTable?.orders?.includes(orderId) ||
+        currentSelectedTable?.id === orderTableId;
       const belongsToSelectedTable =
         orderBelongsToSelectedTable ||
-        selectedOrderByTable?.id === orderId ||
-        orders.some((o) => o.id === orderId) ||
+        currentSelectedOrderByTable?.id === orderId ||
+        currentOrders.some((o) => o.id === orderId) ||
         orderTableInStore;
 
-      if (belongsToSelectedTable && token) {
-        try {
-          // Hacer fetch de la orden completa adaptada desde el backend
-          const response = await fetch(`${URI_ORDER}/${orderId}`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+      if (!belongsToSelectedTable || !currentToken) return;
 
-          if (response.ok) {
-            const orderData: IOrderDetails = await response.json();
+      try {
+        const response = await fetch(`${URI_ORDER}/${orderId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${currentToken}` },
+        });
 
-            // Verificar si debemos actualizar selectedOrderByTable
-            const isSelectedOrder = selectedOrderByTable?.id === orderId;
-            const isSelectedTable = selectedTable?.id === orderTableId;
-            // También verificar si la orden pertenece a la mesa seleccionada (incluso si selectedOrderByTable no está actualizado)
-            // Esto es CRÍTICO: cuando el encargado está viendo la mesa, la orden debe actualizarse aunque selectedOrderByTable no esté sincronizado
-            const orderBelongsToSelectedTable =
-              selectedTable?.orders?.includes(orderId) ||
-              selectedTable?.id === orderTableId;
-            // SIEMPRE actualizar si la orden pertenece a la mesa seleccionada
-            const shouldUpdateSelectedOrder =
-              isSelectedOrder ||
-              isSelectedTable ||
-              orderBelongsToSelectedTable ||
-              orders.some((o) => o.id === orderId); // También si existe en el store
+        if (!response.ok) {
+          console.error("Error en respuesta orderTicketPrinted:", response.status);
+          return;
+        }
 
-            // SIEMPRE actualizar selectedOrderByTable si la orden pertenece a la mesa seleccionada
-            // Esto es crítico para que el estado se actualice correctamente cuando se imprime desde otra tablet
-            if (shouldUpdateSelectedOrder) {
-              // Asegurar que el estado sea 'pending_payment' cuando se imprime el ticket
-              const newState =
-                orderData.state === OrderState.PENDING_PAYMENT
-                  ? OrderState.PENDING_PAYMENT
-                  : orderData.state || OrderState.PENDING_PAYMENT;
+        const fullOrderData: IOrderDetails = await response.json();
 
-              setSelectedOrderByTable({
-                ...orderData,
-                state: newState,
-              });
-            }
+        const isSelectedOrder = currentSelectedOrderByTable?.id === orderId;
+        const isSelectedTable = currentSelectedTable?.id === orderTableId;
+        const orderBelongsToTable =
+          currentSelectedTable?.orders?.includes(orderId) ||
+          currentSelectedTable?.id === orderTableId;
+        const shouldUpdate =
+          isSelectedOrder ||
+          isSelectedTable ||
+          orderBelongsToTable ||
+          currentOrders.some((o) => o.id === orderId);
 
-            // SIEMPRE actualizar confirmedProducts si:
-            // 1. Es la orden seleccionada (isSelectedOrder) - CRÍTICO: mantener productos visibles
-            // 2. Pertenece a la mesa seleccionada (isSelectedTable)
-            // 3. Existe en el store de órdenes
-            // 4. La mesa está en el store de mesas
-            // 5. O si vamos a actualizar selectedOrderByTable (shouldUpdateSelectedOrder)
-            // Esto es crítico porque cuando se imprime desde otra tablet, necesitamos mantener los productos visibles
-            const shouldUpdateProducts =
-              isSelectedOrder || // Si es la orden seleccionada, SIEMPRE actualizar productos (más importante)
-              isSelectedTable ||
-              orders.some((o) => o.id === orderId) ||
-              orderTableInStore ||
-              shouldUpdateSelectedOrder; // Si actualizamos selectedOrderByTable, también actualizar productos
+        if (shouldUpdate) {
+          const newState =
+            fullOrderData.state === OrderState.PENDING_PAYMENT
+              ? OrderState.PENDING_PAYMENT
+              : fullOrderData.state || OrderState.PENDING_PAYMENT;
+          setSelectedOrderByTable({ ...fullOrderData, state: newState });
+        }
 
-            // SIEMPRE actualizar confirmedProducts si se cumple alguna condición
-            // Esto debe hacerse DESPUÉS de actualizar selectedOrderByTable para mantener consistencia
-            if (
-              orderData.products &&
-              orderData.products.length > 0 &&
-              shouldUpdateProducts
-            ) {
-              // Adaptar ProductLineDto[] a SelectedProductsI[]
-              // El backend devuelve ProductLineDto con unitaryPrice: number
-              // pero SelectedProductsI espera unitaryPrice?: string | null
-              const adaptedProducts: SelectedProductsI[] =
-                orderData.products.map((product: any) => ({
-                  productId: product.productId,
-                  productName: product.productName,
-                  quantity: product.quantity,
-                  unitaryPrice:
-                    product.unitaryPrice != null
-                      ? String(product.unitaryPrice)
-                      : null,
-                  commentOfProduct: product.commentOfProduct || null,
-                  allowsToppings: product.allowsToppings,
-                  // Los toppings vienen como ToppingSummaryDto[] pero SelectedProductsI espera toppingsPerUnit?: string[][]
-                  // Por ahora no mapeamos los toppings ya que no se usan en confirmedProducts
-                }));
-              handleSetProductsByOrder(adaptedProducts);
-            }
-          } else {
-            console.error(
-              "Error en respuesta orderTicketPrinted:",
-              response.status
-            );
+        if (fullOrderData.products && fullOrderData.products.length > 0 && shouldUpdate) {
+          const adaptedProducts: SelectedProductsI[] = fullOrderData.products.map(
+            (product: any) => ({
+              productId: product.productId,
+              productName: product.productName,
+              quantity: product.quantity,
+              unitaryPrice:
+                product.unitaryPrice != null ? String(product.unitaryPrice) : null,
+              commentOfProduct: product.commentOfProduct || null,
+              allowsToppings: product.allowsToppings,
+            })
+          );
+          handleSetProductsByOrder(adaptedProducts);
+        }
+      } catch (error) {
+        console.error("Error al obtener la orden actualizada:", error);
+      }
+    };
+
+    const handleOrderDeleted = async (data: any) => {
+      const orderData = data.order || data;
+      const orderId = orderData.id;
+      const orderTableId = orderData.table?.id || orderData.tableId;
+
+      const currentSelectedTable = selectedTableRef.current;
+      const currentSelectedOrderByTable = selectedOrderByTableRef.current;
+      const currentOrders = ordersRef.current;
+      const currentToken = tokenRef.current;
+
+      let tableId = orderTableId;
+      if (!tableId) {
+        const orderInStore = currentOrders.find((o) => o.id === orderId);
+        tableId = orderInStore?.table?.id;
+      }
+
+      const { tables: currentTables, updateTable } = useTableStore.getState();
+      const tableInStore = currentTables.find((t) => t.id === tableId);
+      const belongsToSelectedTable =
+        currentSelectedTable?.id === tableId ||
+        currentSelectedOrderByTable?.id === orderId ||
+        currentSelectedTable?.orders?.includes(orderId) ||
+        currentOrders.some((o) => o.id === orderId) ||
+        !!tableInStore;
+
+      if (!belongsToSelectedTable) return;
+
+      if (currentSelectedOrderByTable?.id === orderId) {
+        setSelectedOrderByTable(null);
+        setConfirmedProducts([]);
+        setSelectedProducts([]);
+        setSelectedToppingsByProduct({});
+        setToppingsByProductGroup({});
+      }
+
+      if (tableId) {
+        if (currentSelectedTable && currentSelectedTable.id === tableId) {
+          const updatedTable = {
+            ...currentSelectedTable,
+            orders: currentSelectedTable.orders?.filter((oId: string) => oId !== orderId) || [],
+            state: TableState.AVAILABLE,
+          } as ITable;
+          setSelectedTable(updatedTable);
+        }
+
+        if (tableInStore) {
+          const finalUpdatedTable = {
+            ...tableInStore,
+            orders: tableInStore.orders?.filter((oId: string) => oId !== orderId) || [],
+            state: TableState.AVAILABLE,
+          } as ITable;
+          updateTable(finalUpdatedTable);
+          if (currentSelectedTable?.id === tableId) {
+            setSelectedTable(finalUpdatedTable);
           }
-        } catch (error) {
-          console.error("Error al obtener la orden actualizada:", error);
+        } else if (currentToken) {
+          try {
+            const response = await fetch(
+              `${URI_TABLE}/by-room/${currentSelectedTable?.room?.id || ""}`,
+              { method: "GET", headers: { Authorization: `Bearer ${currentToken}` } }
+            );
+            if (response.ok) {
+              const tableData = await response.json();
+              const updatedTable = {
+                ...tableData,
+                orders: tableData.orders?.filter((oId: string) => oId !== orderId) || [],
+                state: TableState.AVAILABLE,
+              } as ITable;
+              updateTable(updatedTable);
+              if (currentSelectedTable?.id === tableId) {
+                setSelectedTable(updatedTable);
+              }
+            }
+          } catch (error) {
+            console.error("Error al obtener mesa desde backend:", error);
+          }
         }
       }
     };
 
-    // Registrar el listener cuando el socket esté conectado
-    const registerListener = () => {
+    const registerListeners = () => {
       if (webSocketService.isConnected()) {
-        // Registrar listener para orderTicketPrinted
         webSocketService.on("orderTicketPrinted", handleTicketPrinted);
-        // También registrar listener para orderUpdatedPending como alternativa
-        // (este evento también se emite cuando se imprime el ticket)
         webSocketService.on("orderUpdatedPending", handleTicketPrinted);
+        webSocketService.on("orderDeleted", handleOrderDeleted);
       } else {
         socket.once("connect", () => {
           webSocketService.on("orderTicketPrinted", handleTicketPrinted);
           webSocketService.on("orderUpdatedPending", handleTicketPrinted);
-        });
-      }
-    };
-
-    registerListener();
-
-    return () => {
-      webSocketService.off("orderTicketPrinted", handleTicketPrinted);
-      webSocketService.off("orderUpdatedPending", handleTicketPrinted);
-    };
-  }, [
-    selectedTable,
-    selectedOrderByTable,
-    token,
-    handleSetProductsByOrder,
-    orders,
-    tables,
-  ]);
-
-  // Listener para evento de orden cancelada/eliminada
-  useEffect(() => {
-    if (typeof window === "undefined") return; // Solo en cliente
-
-    const socket = webSocketService.connect();
-
-    const handleOrderDeleted = async (data: any) => {
-      // El data que viene del WebSocket puede ser { order: Order } o directamente Order
-      const orderData = data.order || data;
-      const orderId = orderData.id;
-      // Cuando se cancela, la orden puede no tener table (se establece en null)
-      // Necesitamos obtener el tableId de otra forma o de la orden en el store
-      const orderTableId = orderData.table?.id || orderData.tableId;
-
-      // Si no tenemos tableId de la orden, buscar en el store de órdenes
-      let tableId = orderTableId;
-      if (!tableId) {
-        const orderInStore = orders.find((o) => o.id === orderId);
-        tableId = orderInStore?.table?.id;
-      }
-
-      // Verificar si la orden cancelada pertenece a la mesa seleccionada o es la orden seleccionada
-      // También verificar si la mesa está en el store de mesas
-      const { tables } = useTableStore.getState();
-      const tableInStore = tables.find((t) => t.id === tableId);
-      const belongsToSelectedTable =
-        selectedTable?.id === tableId ||
-        selectedOrderByTable?.id === orderId ||
-        selectedTable?.orders?.includes(orderId) ||
-        orders.some((o) => o.id === orderId) ||
-        !!tableInStore; // Si la mesa está en el store, también actualizar
-
-      if (belongsToSelectedTable) {
-        // Limpiar el estado de la orden SIEMPRE si es la orden seleccionada
-        if (selectedOrderByTable?.id === orderId) {
-          setSelectedOrderByTable(null);
-          setConfirmedProducts([]);
-          setSelectedProducts([]);
-          setSelectedToppingsByProduct({});
-          setToppingsByProductGroup({});
-        }
-
-        // Actualizar la mesa a AVAILABLE si la orden pertenece a esa mesa
-        if (tableId) {
-          // Si es la mesa seleccionada, actualizarla directamente
-          if (selectedTable && selectedTable.id === tableId) {
-            const updatedTable = {
-              ...selectedTable,
-              orders:
-                selectedTable.orders?.filter(
-                  (oId: string) => oId !== orderId
-                ) || [],
-              state: TableState.AVAILABLE,
-            } as ITable;
-            setSelectedTable(updatedTable);
-          }
-
-          // Actualizar la mesa en el store de mesas
-          const { updateTable } = useTableStore.getState();
-          if (tableInStore) {
-            const finalUpdatedTable = {
-              ...tableInStore,
-              orders:
-                tableInStore.orders?.filter((oId: string) => oId !== orderId) ||
-                [],
-              state: TableState.AVAILABLE,
-            } as ITable;
-            updateTable(finalUpdatedTable);
-
-            // Si es la mesa seleccionada, también actualizarla en el contexto
-            if (selectedTable?.id === tableId) {
-              setSelectedTable(finalUpdatedTable);
-            }
-          } else {
-            // Si la mesa no está en el store pero tenemos el tableId, intentar obtenerla
-            try {
-              // Usar el endpoint correcto para obtener la mesa
-              const response = await fetch(
-                `${URI_TABLE}/by-room/${selectedTable?.room?.id || ""}`,
-                {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-              if (response.ok) {
-                const tableData = await response.json();
-                const updatedTable = {
-                  ...tableData,
-                  orders:
-                    tableData.orders?.filter(
-                      (oId: string) => oId !== orderId
-                    ) || [],
-                  state: TableState.AVAILABLE,
-                } as ITable;
-                updateTable(updatedTable);
-                if (selectedTable?.id === tableId) {
-                  setSelectedTable(updatedTable);
-                }
-              }
-            } catch (error) {
-              console.error("Error al obtener mesa desde backend:", error);
-            }
-          }
-        }
-      }
-    };
-
-    // Registrar el listener cuando el socket esté conectado
-    const registerListener = () => {
-      if (webSocketService.isConnected()) {
-        webSocketService.on("orderDeleted", handleOrderDeleted);
-      } else {
-        socket.once("connect", () => {
           webSocketService.on("orderDeleted", handleOrderDeleted);
         });
       }
     };
 
-    registerListener();
+    registerListeners();
 
     return () => {
+      webSocketService.off("orderTicketPrinted", handleTicketPrinted);
+      webSocketService.off("orderUpdatedPending", handleTicketPrinted);
       webSocketService.off("orderDeleted", handleOrderDeleted);
     };
-  }, [selectedTable, selectedOrderByTable, orders, tables, token]);
+  }, []); // Sin dependencias: se registra una sola vez al montar y usa refs para el estado actual.
 
   const handleDeleteSelectedProduct = (id: string) => {
     setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
     clearToppings();
   };
 
-  const increaseProductNumber = async (product: SelectedProductsI) => {
+  const increaseProductNumber = (product: SelectedProductsI) => {
     const productToUpdate = selectedProducts.find(
       (p) => p.productId === product.productId
     );
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity + 1;
-      // Verifica el stock antes de actualizar
-      const stockResponse = await checkStockAvailability(
-        product.productId,
-        newQuantity
-      );
-      if (!stockResponse?.available) {
-        Swal.fire({
-          icon: "error",
-          title: "Stock insuficiente",
-          text: stockResponse.message,
-        });
-        return;
-      }
       setSelectedProducts(
         selectedProducts.map((p) =>
           p.productId === product.productId
@@ -805,20 +640,10 @@ const OrderProvider = ({
     }
   };
 
-  const decreaseProductNumber = async (id: string) => {
+  const decreaseProductNumber = (id: string) => {
     const productToUpdate = selectedProducts.find((p) => p.productId === id);
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity - 1;
-      // Verifica el stock antes de actualizar
-      const stockResponse = await checkStockAvailability(id, newQuantity);
-      if (!stockResponse?.available) {
-        Swal.fire({
-          icon: "error",
-          title: "Stock insuficiente",
-          text: stockResponse.message,
-        });
-        return;
-      }
       setSelectedProducts(
         selectedProducts.map((p) =>
           p.productId === id ? { ...p, quantity: newQuantity } : p

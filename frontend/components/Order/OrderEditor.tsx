@@ -64,10 +64,11 @@ interface Props {
 }
 const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const { productosDisponibles, setProductosDisponibles } = useOrder();
-  const { fetchAndSetProducts, products } = useProducts();
+  // skipInitialFetch: los productos se cargan bajo demanda (por categoría o búsqueda)
+  // evitando la carga de 500 productos al abrir el editor en la tablet.
+  const { products } = useProducts({ skipInitialFetch: true });
   const { getAccessToken } = useAuth();
 
-  // Agregar al inicio del componente:
   const [promotionSlotModal, setPromotionSlotModal] = useState<{
     open: boolean;
     promotion: ProductResponse | null;
@@ -77,11 +78,6 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     promotion: null,
     quantity: 1,
   });
-
-  useEffect(() => {
-    const token = getAccessToken();
-    token && fetchAndSetProducts(token);
-  }, []);
 
   const {
     selectedProducts,

@@ -4,7 +4,7 @@ class WebSocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = Infinity;
   private connectionUrl: string | null = null;
 
   connect(url?: string): Socket {
@@ -28,7 +28,7 @@ class WebSocketService {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: this.maxReconnectAttempts,
+      reconnectionAttempts: Infinity,
       transports: ['websocket', 'polling'],
     });
 
