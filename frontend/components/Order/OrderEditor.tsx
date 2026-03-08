@@ -159,6 +159,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         setSelectedProducts([]);
         handleCompleteStep();
         handleNextStep();
+      } catch {
+        // El error ya fue mostrado mediante Swal en handleEditOrder.
+        // No se limpia selectedProducts para que el mozo pueda
+        // corregir el producto sin stock y reintentar.
       } finally {
         setLoading(false);
       }

@@ -922,19 +922,23 @@ const OrderProvider = ({
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage =
+          errorData.error?.message ||
+          errorData.message ||
+          "Error al confirmar el pedido.";
+
         if (response.status === 400) {
-          const errorData = await response.json();
           Swal.fire({
             icon: "error",
-            title: "Error",
-            text: errorData.message,
+            title: "Stock insuficiente",
+            text: errorMessage,
           });
-          return;
         } else {
-          const errorData = await response.json();
           console.error("Error:", errorData);
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
+
+        throw new Error(errorMessage);
       }
 
       const updatedOrder = await response.json();
@@ -949,7 +953,7 @@ const OrderProvider = ({
       return updatedOrder;
     } catch (error) {
       console.error(error);
-      return;
+      throw error;
     }
   };
 
