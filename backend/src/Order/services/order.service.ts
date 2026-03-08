@@ -164,8 +164,8 @@ export class OrderService {
 
             // Validar cantidad total por slot y calcular costos
             for (const [slotId, slotSelections] of selectionsBySlot.entries()) {
-              // Obtener la asignación del slot para esta promoción
-              const assignment = await queryRunner.manager.findOne(
+              // Obtener TODAS las asignaciones del slot para esta promoción
+              const assignments = await queryRunner.manager.find(
                 PromotionSlotAssignment,
                 {
                   where: {
@@ -175,11 +175,17 @@ export class OrderService {
                 },
               );
 
-              if (!assignment) {
+              if (!assignments || assignments.length === 0) {
                 throw new BadRequestException(
                   `Slot ${slotId} is not assigned to promotion ${product.id}`,
                 );
               }
+
+              // Sumar las quantities de todas las asignaciones de este slot
+              const totalRequiredQuantity = assignments.reduce(
+                (sum, assignment) => sum + assignment.quantity,
+                0,
+              );
 
               // Contar el total de productos seleccionados para este slot
               const totalProductsSelected = slotSelections.reduce(
@@ -187,10 +193,10 @@ export class OrderService {
                 0,
               );
 
-              // Validar que la cantidad total de productos seleccionados coincida con quantity
-              if (totalProductsSelected !== assignment.quantity) {
+              // Validar que la cantidad total de productos seleccionados coincida con la suma de quantities
+              if (totalProductsSelected !== totalRequiredQuantity) {
                 throw new BadRequestException(
-                  `Slot "${slotId}" requires ${assignment.quantity} product(s), but ${totalProductsSelected} were provided`,
+                  `Slot "${slotId}" requires ${totalRequiredQuantity} product(s), but ${totalProductsSelected} were provided`,
                 );
               }
 
@@ -253,8 +259,8 @@ export class OrderService {
 
             // Validar y procesar cada slot
             for (const [slotId, slotSelections] of selectionsBySlot.entries()) {
-              // Obtener la asignación del slot para esta promoción
-              const assignment = await queryRunner.manager.findOne(
+              // Obtener TODAS las asignaciones del slot para esta promoción
+              const assignments = await queryRunner.manager.find(
                 PromotionSlotAssignment,
                 {
                   where: {
@@ -264,11 +270,17 @@ export class OrderService {
                 },
               );
 
-              if (!assignment) {
+              if (!assignments || assignments.length === 0) {
                 throw new BadRequestException(
                   `Slot ${slotId} is not assigned to promotion ${product.id}`,
                 );
               }
+
+              // Sumar las quantities de todas las asignaciones de este slot
+              const totalRequiredQuantity = assignments.reduce(
+                (sum, assignment) => sum + assignment.quantity,
+                0,
+              );
 
               // Contar el total de productos seleccionados para este slot
               const totalProductsSelected = slotSelections.reduce(
@@ -276,10 +288,10 @@ export class OrderService {
                 0,
               );
 
-              // Validar que la cantidad total de productos seleccionados coincida con quantity
-              if (totalProductsSelected !== assignment.quantity) {
+              // Validar que la cantidad total de productos seleccionados coincida con la suma de quantities
+              if (totalProductsSelected !== totalRequiredQuantity) {
                 throw new BadRequestException(
-                  `Slot "${slotId}" requires ${assignment.quantity} product(s), but ${totalProductsSelected} were provided`,
+                  `Slot "${slotId}" requires ${totalRequiredQuantity} product(s), but ${totalProductsSelected} were provided`,
                 );
               }
 
@@ -346,6 +358,9 @@ export class OrderService {
           // 🖨️ Construir datos de impresión para este producto específico
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
             // LÓGICA PARA PROMOCIONES CON SLOTS
+            // Generar un ID único para agrupar productos de esta promoción
+            const promotionGroupId = `promo-${Date.now()}-${Math.random()}`;
+            
             // Iterar sobre cada unidad de la promoción
             for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
               // Para cada selección de slot en esta unidad
@@ -422,6 +437,7 @@ export class OrderService {
                         ? detail.commentOfProduct
                         : undefined,
                     toppings: toppingNames,
+                    promotionGroup: promotionGroupId, // Agregar ID del grupo de promoción
                   };
 
                   printProducts.push(productToPrint);

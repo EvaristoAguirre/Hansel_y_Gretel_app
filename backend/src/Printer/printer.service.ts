@@ -140,50 +140,46 @@ export class PrinterService {
         `MESA: ${this.normalizeText(orderData.table)}  PERSONAS: ${orderData.numberCustomers || 'N/A'}\n`,
         '----------------------------------------\n',
         '\x1B\x45\x01', // Negrita ON
-        `PRODUCTO${' '.repeat(35)}CANT\n`,
+        `PRODUCTO\n`,
         '\x1B\x45\x00', // Negrita OFF
         '----------------------------------------\n',
         '\x1D\x21\x00', // Tamaño normal para productos
         '\x1B\x4D\x00', // Tipografía estándar
-        ...orderData.products.flatMap((p) => {
+        '\x1B\x61\x00', // Alinear a la izquierda
+        ...orderData.products.flatMap((p, index) => {
           const name = this.normalizeText(p.name.toLocaleUpperCase());
           const toppings = (p.toppings || []).map(
             (t) => `+ ${this.normalizeText(t)}\n`,
           );
           const comment = `${this.normalizeText(p.commentOfProduct || '')}\n`;
-          const quantityText = `x${p.quantity.toString().padStart(2)}`;
-          const maxLineLength = 48;
           const lines: string[] = [];
 
           lines.push('\x1B\x45\x01'); // Negrita ON
-
-          if (name.length + quantityText.length + 1 <= maxLineLength) {
-            lines.push(
-              name.padEnd(maxLineLength - quantityText.length) + quantityText,
-            );
-          } else {
-            const nameLine1 = name.substring(0, maxLineLength);
-            const nameLine2 =
-              name
-                .substring(maxLineLength, maxLineLength * 2)
-                .padEnd(maxLineLength - quantityText.length) + quantityText;
-            lines.push(nameLine1);
-            lines.push(nameLine2);
-          }
-
+          lines.push(`${name}\n`);
           lines.push('\x1B\x45\x00'); // Negrita OFF
 
           if (toppings.length > 0) lines.push(...toppings);
 
           if (comment) {
-            lines.push('\x1B\x61\x00'); // Alinear izquierda
             lines.push(comment);
-            // lines.push('--------------------------\n');
-            lines.push('\x1B\x61\x01'); // Centrar
             lines.push('\n');
           }
 
-          lines.push(''); // espacio entre productos
+          // Solo agregar separador si:
+          // - No es el último producto
+          // - Y el siguiente producto NO pertenece al mismo grupo de promoción
+          const nextProduct = orderData.products[index + 1];
+          const isLastProduct = index === orderData.products.length - 1;
+          const isSamePromotionGroup =
+            p.promotionGroup &&
+            nextProduct?.promotionGroup === p.promotionGroup;
+
+          if (!isLastProduct && !isSamePromotionGroup) {
+            lines.push('--------------------\n'); // línea separadora
+            lines.push(''); // espacio
+          } else if (!isLastProduct) {
+            lines.push(''); // solo espacio sin línea dentro de la misma promoción
+          }
 
           return lines;
         }),
@@ -195,9 +191,15 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      // const secondPrintSuccess = await this.sendRawCommand(commands);
+      const secondPrintSuccess = await this.sendRawCommand(commands);
 
       if (!firstPrintSuccess) {
+        this.logger.error(
+          `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
+        );
+        throw new Error('Print command failed');
+      }
+      if (!secondPrintSuccess) {
         this.logger.error(
           `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
         );
@@ -344,9 +346,9 @@ export class PrinterService {
       ].join('');
 
       const firstPrintSuccess = await this.sendRawCommand(commands);
-      const secondPrintSuccess = await this.sendRawCommand(commands);
+      //const secondPrintSuccess = await this.sendRawCommand(commands);
 
-      if (!firstPrintSuccess || !secondPrintSuccess) {
+      if (!firstPrintSuccess) {
         throw new Error('Print command failed');
       }
 
