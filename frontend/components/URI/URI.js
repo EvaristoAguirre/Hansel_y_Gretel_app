@@ -50,6 +50,9 @@ export const URI_ORDER = `${API_URL}/order`;
 // PRINTS TICKETS
 export const URI_TICKET = `${API_URL}/printer/printTicket`;
 
+// REIMPRESIÓN COMANDA
+export const URI_COMANDA = `${API_URL}/order/reprint-comanda`;
+
 // USERS
 export const URI_USER = `${API_URL}/user`;
 

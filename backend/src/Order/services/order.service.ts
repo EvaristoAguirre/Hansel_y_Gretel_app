@@ -528,6 +528,87 @@ export class OrderService {
     }
   }
 
+  async reprintKitchenOrder(orderId: string): Promise<string> {
+    if (!isUUID(orderId)) {
+      throw new BadRequestException('Invalid order ID format.');
+    }
+
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId, isActive: true },
+      relations: [
+        'table',
+        'orderDetails',
+        'orderDetails.product',
+        'orderDetails.orderDetailToppings',
+        'orderDetails.orderDetailToppings.topping',
+        'orderDetails.promotionSelections',
+        'orderDetails.promotionSelections.selectedProduct',
+        'orderDetails.promotionSelections.slot',
+      ],
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID: ${orderId} not found`);
+    }
+
+    const printProducts: any[] = [];
+
+    for (const detail of order.orderDetails.filter((d) => d.isActive)) {
+      const isPromoWithSlots =
+        detail.product?.type === 'promotion' &&
+        detail.promotionSelections?.length > 0;
+
+      if (isPromoWithSlots) {
+        const promotionGroupId = `reprint-promo-${detail.id}`;
+        for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+          for (const selection of detail.promotionSelections) {
+            const selectedName =
+              selection.selectedProduct?.name || 'Producto';
+            const displayName = `${detail.product.name} - ${selectedName}`;
+            printProducts.push({
+              name: displayName,
+              quantity: 1,
+              commentOfProduct:
+                unitIndex === 0 ? detail.commentOfProduct : undefined,
+              toppings: [],
+              promotionGroup: promotionGroupId,
+            });
+          }
+        }
+      } else {
+        for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+          const toppingsForUnit = (detail.orderDetailToppings ?? [])
+            .filter((t) => t.unitIndex === unitIndex)
+            .map((t) => t.topping?.name)
+            .filter(Boolean);
+
+          printProducts.push({
+            name: detail.product?.name || 'Producto',
+            quantity: 1,
+            commentOfProduct:
+              unitIndex === 0 ? detail.commentOfProduct : undefined,
+            toppings: toppingsForUnit,
+          });
+        }
+      }
+    }
+
+    const printData = {
+      numberCustomers: order.numberCustomers,
+      table: order.table?.name || 'SIN MESA',
+      products: printProducts,
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+      return await this.printerService.printKitchenOrder(printData);
+    } else {
+      this.logger.log(
+        `🔁 [DEV] Simulando reimpresión de comanda para mesa ${printData.table}`,
+      );
+      return 'reimpresion-simulada-dev';
+    }
+  }
+
   async deleteOrder(id: string): Promise<string> {
     if (!id) {
       throw new BadRequestException('Order ID must be provided.');

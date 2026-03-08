@@ -22,6 +22,7 @@ import {
   Comment,
   AutoAwesome,
   SpaceBar,
+  Print,
 } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
@@ -45,6 +46,7 @@ import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
 import { TypeProduct } from "../Enums/view-products";
 import { PromotionSlotSelector } from "./PromotionSlotSelector";
 import { getSlotsByPromotionId } from "@/api/promotionSlot";
+import { reprintComanda } from "@/api/order";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -111,6 +113,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+  const [isPrintingComanda, setIsPrintingComanda] = useState<boolean>(false);
 
   useEffect(() => {
     token &&
@@ -118,6 +121,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         setCategories(categories)
       );
   }, []);
+
+  const handleReprintComanda = async () => {
+    if (!selectedOrderByTable?.id || !token) return;
+    setIsPrintingComanda(true);
+    try {
+      await reprintComanda(selectedOrderByTable.id, token);
+    } catch (error) {
+      console.error("Error al reimprimir comanda:", error);
+    } finally {
+      setIsPrintingComanda(false);
+    }
+  };
 
   const confirmarPedido: () => Promise<void> = async () => {
     const productDetails = selectedProducts.map((product) => {
@@ -770,16 +785,39 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 No hay productos confirmados.
               </Typography>
             )}
-            <Typography
+            <div
               style={{
-                width: "50%",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
               }}
             >
-              Total: ${formatNumber(total)}
-            </Typography>
+              <Typography style={{ color: "black", fontWeight: "bold" }}>
+                Total: ${formatNumber(total)}
+              </Typography>
+              {confirmedProducts?.length > 0 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={isPrintingComanda}
+                  onClick={handleReprintComanda}
+                  sx={{
+                    borderColor: "#7e9d8a",
+                    color: "black",
+                    fontSize: "0.7rem",
+                    "&:hover": {
+                      backgroundColor: "#f9b32d",
+                      borderColor: "#f9b32d",
+                      color: "black",
+                    },
+                  }}
+                >
+                  <Print style={{ marginRight: "4px", fontSize: "1rem" }} />
+                  {isPrintingComanda ? "Imprimiendo..." : "Reimprimir comanda"}
+                </Button>
+              )}
+            </div>
           </Box>
         </div>
       </div>
