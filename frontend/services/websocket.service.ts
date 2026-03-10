@@ -29,7 +29,9 @@ class WebSocketService {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: Infinity,
-      transports: ['websocket', 'polling'],
+      // En red local (LAN) se conecta directamente por WebSocket sin el
+      // handshake inicial de polling, reduciendo latencia en la primera conexión.
+      transports: ['websocket'],
     });
 
     this.socket.on('connect', () => {

@@ -9,7 +9,7 @@ import { useAuth } from "@/app/context/authContext";
 import { useTableStore } from "./useTableStore";
 import { ITable } from "../Interfaces/ITable";
 import { TableState } from "../Enums/table";
-import { checkOpenDailyCash } from "@/api/dailyCash";
+import { useDailyCash } from "@/app/context/dailyCashContext";
 
 
 
@@ -31,7 +31,6 @@ const TableEditor = ({
   const { selectedTable, setSelectedTable } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
-  const [openDailyCash, setOpenDailyCash] = useState(false);
   const {
     handleCreateOrder,
     handleEditOrder,
@@ -40,17 +39,10 @@ const TableEditor = ({
   } = useOrderContext();
 
   const token = getAccessToken();
-
-  useEffect(() => {
-    const cashOpen = async () => {
-      const cash = token && await checkOpenDailyCash(token)
-      if (cash?.dailyCashOpenId) {
-        setOpenDailyCash(true)
-      }
-    }
-    cashOpen()
-
-  }, []);
+  // Lee el estado de la caja desde el contexto compartido: DailyCashProvider
+  // ya llama a checkOpenDailyCash una sola vez al montar el árbol de Cafe,
+  // evitando un fetch duplicado por cada mesa que se selecciona.
+  const { isCashOpenToday } = useDailyCash();
 
   const setTableFields = useCallback(() => {
     if (selectedOrderByTable && selectedOrderByTable.comment) {
@@ -161,7 +153,7 @@ const TableEditor = ({
                 marginTop: "30px",
               }}
             >
-              {!openDailyCash && (
+              {!isCashOpenToday && (
                 <p style={{ color: "red", textAlign: "start", fontSize: "14px" }}>
                   *Debes abrir una caja antes de habilitar esta acción.
                 </p>
@@ -172,7 +164,7 @@ const TableEditor = ({
                 color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
-                disabled={!openDailyCash}
+                disabled={!isCashOpenToday}
                 onClick={() => {
                   if (cantidadPersonas === null || cantidadPersonas <= 0) {
                     Swal.fire(

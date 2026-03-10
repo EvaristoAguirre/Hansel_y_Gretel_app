@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import {
   Button,
   List,
@@ -63,7 +63,7 @@ interface Props {
   handleReset: () => void;
 }
 const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
-  const { productosDisponibles, setProductosDisponibles } = useOrder();
+  const { productosDisponibles, setProductosDisponibles, isLoadingOrders } = useOrder();
   // skipInitialFetch: los productos se cargan bajo demanda (por categoría o búsqueda)
   // evitando la carga de 500 productos al abrir el editor en la tablet.
   const { products } = useProducts({ skipInitialFetch: true });
@@ -284,12 +284,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     });
   };
 
-  /**
-   * Fracción de código para buscar productos en base a nombre,
-   * código o categorías seleccionadas.
-   */
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  // Ref del timer de debounce: evita llamar al backend en cada letra tecleada.
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
@@ -298,13 +296,27 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     if (results) setProductosDisponibles(results);
   };
 
+  // El input del mozo espera 350 ms de inactividad antes de lanzar la búsqueda.
+  // Si el campo y la categoría están vacíos, limpia los resultados sin consultar el backend
+  // (evita el 400 que el backend devuelve cuando no hay criterio de búsqueda).
   const handleSearch = (value: string) => {
     const trimmedValue = value.trim();
     setSearchTerm(trimmedValue);
-    searchProductsFiltered(trimmedValue, selectedCats);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    if (!trimmedValue && selectedCats.length === 0) {
+      setProductosDisponibles([]);
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      searchProductsFiltered(trimmedValue, selectedCats);
+    }, 350);
   };
 
+  // Solo busca si hay al menos un criterio (categoría seleccionada o término escrito).
   useEffect(() => {
+    if (selectedCats.length === 0 && !searchTerm) return;
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
@@ -411,7 +423,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     setPromotionSlotModal({ open: false, promotion: null, quantity: 1 });
   };
 
-  return loading ? (
+  return loading || isLoadingOrders ? (
     <LoadingLottie />
   ) : (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>

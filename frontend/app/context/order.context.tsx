@@ -7,6 +7,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
   use,
 } from "react";
 import Swal from "sweetalert2";
@@ -174,14 +175,9 @@ const OrderProvider = ({
     }
   }, [getAccessToken]);
 
-  /**
-   *
-   * Al cambiar la Mesa o la Sala seleccionada se limpia
-   *  la información de la Mesa saliente mediante `handleResetSelectedOrder`.
-   */
-  useEffect(() => {
-    handleResetSelectedOrder();
-  }, [selectedTable]);
+  // El reset se movió al efecto unificado de selectedTable (más abajo),
+  // junto con la lógica de fetch. Esto elimina el doble ciclo de render
+  // (vaciar → rellenar) al cambiar de mesa.
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -311,8 +307,20 @@ const OrderProvider = ({
     }
   }, [handleSetProductsByOrder]);
 
-  // Solo se re-ejecuta cuando cambia selectedTable (no cuando cambia cualquier mesa del store).
+  // Efecto unificado: reemplaza los dos efectos anteriores que reaccionaban a selectedTable.
+  // Primero limpia el estado de la mesa anterior, luego carga la orden de la nueva mesa.
+  // Esto elimina el parpadeo (vacío → datos) que producía el doble efecto.
   useEffect(() => {
+    // Limpiar siempre al cambiar de mesa
+    setSelectedProducts([]);
+    setConfirmedProducts([]);
+    setSelectedOrderByTable(null);
+    setSelectedToppingsByProduct({});
+    setToppingsByProductGroup({});
+    setHighlightedProducts(new Set());
+
+    if (!selectedTable) return;
+
     const stateInSelected = selectedTable?.state;
     const tableInStore = tablesRef.current.find((t) => t.id === selectedTable?.id);
     const stateInStore = tableInStore?.state;
@@ -323,11 +331,6 @@ const OrderProvider = ({
       stateInStore === TableState.AVAILABLE ||
       stateInStore === TableState.CLOSED
     ) {
-      setSelectedOrderByTable(null);
-      setConfirmedProducts([]);
-      setSelectedProducts([]);
-      setSelectedToppingsByProduct({});
-      setToppingsByProductGroup({});
       return;
     }
     fetchOrderBySelectedTable();
@@ -888,38 +891,52 @@ const OrderProvider = ({
     }
   };
 
+  // useMemo evita que el objeto de contexto se recree en cada render del provider
+  // cuando los datos no cambiaron, previniendo re-renders innecesarios en los consumidores.
+  const contextValue = useMemo(
+    () => ({
+      selectedProducts,
+      setSelectedProducts,
+      confirmedProducts,
+      setConfirmedProducts,
+      selectedOrderByTable,
+      setSelectedOrderByTable,
+      handleSelectedProducts,
+      highlightedProducts,
+      addHighlightedProduct,
+      removeHighlightedProduct,
+      handleDeleteSelectedProduct,
+      increaseProductNumber,
+      decreaseProductNumber,
+      productComment,
+      clearSelectedProducts,
+      deleteConfirmProduct,
+      handleCreateOrder,
+      handleEditOrder,
+      handleDeleteOrder,
+      handleResetSelectedOrder,
+      fetchOrderBySelectedTable,
+      handleCancelOrder,
+      handleAddTopping,
+      selectedToppingsByProduct,
+      updateToppingForUnit,
+      toppingsByProductGroup,
+      checkStockToppingAvailability,
+    }),
+    [
+      selectedProducts,
+      confirmedProducts,
+      selectedOrderByTable,
+      highlightedProducts,
+      selectedToppingsByProduct,
+      toppingsByProductGroup,
+      fetchOrderBySelectedTable,
+      token,
+    ]
+  );
+
   return (
-    <OrderContext.Provider
-      value={{
-        selectedProducts,
-        setSelectedProducts,
-        confirmedProducts,
-        setConfirmedProducts,
-        selectedOrderByTable,
-        setSelectedOrderByTable,
-        handleSelectedProducts,
-        highlightedProducts,
-        addHighlightedProduct,
-        removeHighlightedProduct,
-        handleDeleteSelectedProduct,
-        increaseProductNumber,
-        decreaseProductNumber,
-        productComment,
-        clearSelectedProducts,
-        deleteConfirmProduct,
-        handleCreateOrder,
-        handleEditOrder,
-        handleDeleteOrder,
-        handleResetSelectedOrder,
-        fetchOrderBySelectedTable,
-        handleCancelOrder,
-        handleAddTopping,
-        selectedToppingsByProduct,
-        updateToppingForUnit,
-        toppingsByProductGroup,
-        checkStockToppingAvailability,
-      }}
-    >
+    <OrderContext.Provider value={contextValue}>
       {children}
     </OrderContext.Provider>
   );
