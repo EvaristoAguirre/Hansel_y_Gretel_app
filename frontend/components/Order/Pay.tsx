@@ -2,10 +2,11 @@ import { orderToClosed } from "@/api/order";
 import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
-import { Payment } from "@mui/icons-material";
+import { AddCircleOutline, Close, Payment } from "@mui/icons-material";
 import {
   Button,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -50,6 +51,12 @@ interface ConfirmedPayment {
   amount: number;
 }
 
+interface FullSplit {
+  id: string;
+  method: paymentMethod | "";
+  amount: string;
+}
+
 interface TipInputsProps {
   baseAmount: number;
   customTip: number;
@@ -61,7 +68,6 @@ const TipInputs: React.FC<TipInputsProps> = ({
   customTip,
   onChangeCustomTip,
 }) => {
-  console.log(OrderState);
   const computedTotal = baseAmount + (customTip || 0);
   const [propinaInput, setPropinaInput] = useState<string>(
     formatNumber(customTip || 0)
@@ -149,7 +155,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
-  // Estado separado para switch de pago total
+  // ─── Estado modo parcial ───────────────────────────────────────────────────
   const [fullPaymentMode, setFullPaymentMode] = useState(false);
   const [draftPayment, setDraftPayment] = useState<DraftPayment>({
     productIds: [],
@@ -161,6 +167,15 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     ConfirmedPayment[]
   >([]);
 
+  // ─── Estado modo total (multi-método) ─────────────────────────────────────
+  const [fullTipType, setFullTipType] = useState<"none" | "10" | "custom">(
+    "none"
+  );
+  const [fullCustomTip, setFullCustomTip] = useState(0);
+  const [fullSplits, setFullSplits] = useState<FullSplit[]>([
+    { id: "split-0", method: "", amount: "" },
+  ]);
+
   useEffect(() => {
     setFullPaymentMode(false);
     setDraftPayment({
@@ -170,6 +185,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       customTip: 0,
     });
     setConfirmedPayments([]);
+    setFullTipType("none");
+    setFullCustomTip(0);
+    setFullSplits([{ id: "split-0", method: "", amount: "" }]);
   }, [selectedOrderByTable?.id]);
 
   const unpaidIds = confirmedProducts
@@ -182,11 +200,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     setFullPaymentMode((prev) => {
       const next = !prev;
       if (next) {
-        // Al activar, seleccionar todos y limpiar parciales
         setDraftPayment((prevDp) => ({ ...prevDp, productIds: unpaidIds }));
         setConfirmedPayments([]);
+        setFullTipType("none");
+        setFullCustomTip(0);
+        setFullSplits([{ id: `split-${Date.now()}`, method: "", amount: "" }]);
       } else {
-        // Al desactivar, deseleccionar todos
         setDraftPayment((prevDp) => ({ ...prevDp, productIds: [] }));
       }
       return next;
@@ -202,9 +221,27 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     }));
   };
 
-  const allSelected =
-    unpaidIds.length > 0 &&
-    unpaidIds.every((id) => draftPayment.productIds.includes(id));
+  // ─── Gestión de filas de splits (modo total) ───────────────────────────────
+  const addFullSplit = () => {
+    setFullSplits((prev) => [
+      ...prev,
+      { id: `split-${Date.now()}`, method: "", amount: "" },
+    ]);
+  };
+
+  const removeFullSplit = (id: string) => {
+    setFullSplits((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateFullSplit = (
+    id: string,
+    field: "method" | "amount",
+    value: string
+  ) => {
+    setFullSplits((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
+    );
+  };
 
   const handleAddDraftAsConfirmed = () => {
     const { productIds, method, tipType, customTip } = draftPayment;
@@ -243,8 +280,100 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     });
   };
 
+  // ─── Cálculos modo total ────────────────────────────────────────────────────
+  const fullBaseAmount = confirmedProducts.reduce(
+    (sum, p) => sum + Number(p.unitaryPrice ?? 0),
+    0
+  );
+  const fullTotalWithTip =
+    fullTipType === "10"
+      ? Math.round(fullBaseAmount * 1.1)
+      : fullTipType === "custom"
+      ? fullBaseAmount + fullCustomTip
+      : fullBaseAmount;
+  const fullPaid = fullSplits.reduce(
+    (sum, s) => sum + (parseInt(s.amount.replace(/\D/g, ""), 10) || 0),
+    0
+  );
+  const fullRemaining = Math.round(fullTotalWithTip) - Math.round(fullPaid);
+  const fullSplitsValid =
+    fullSplits.length > 0 &&
+    fullSplits.every(
+      (s) => s.method && parseInt(s.amount.replace(/\D/g, ""), 10) > 0
+    );
+
+  // ─── Cálculos modo parcial ─────────────────────────────────────────────────
+  const baseAmount = draftPayment.productIds.reduce(
+    (sum, id) =>
+      sum +
+      Number(
+        confirmedProducts.find((p) => p.internalId === id)?.unitaryPrice ?? 0
+      ),
+    0
+  );
+  const total10 = (baseAmount * 1.1).toFixed(2);
+  const totalCustom = (baseAmount + draftPayment.customTip).toFixed(2);
+
   const handlePayOrder = async () => {
     if (!token || !selectedOrderByTable || !selectedTable) return;
+
+    if (fullPaymentMode) {
+      if (!fullSplitsValid) {
+        Swal.fire(
+          "Completá todos los métodos y montos de pago",
+          "",
+          "warning"
+        );
+        return;
+      }
+      if (fullRemaining !== 0) {
+        Swal.fire(
+          "Los montos no coinciden con el total",
+          `Diferencia: $${formatNumber(Math.abs(fullRemaining))} ${
+            fullRemaining > 0 ? "faltante" : "de más"
+          }`,
+          "warning"
+        );
+        return;
+      }
+      try {
+        const payments = fullSplits.map((s) => ({
+          amount: parseInt(s.amount.replace(/\D/g, ""), 10),
+          methodOfPayment: s.method as paymentMethod,
+        }));
+        const paidOrder = await orderToClosed(
+          selectedOrderByTable.id,
+          token,
+          payments
+        );
+        if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+        setConfirmedProducts([]);
+        clearSelectedProducts();
+        const closedTable = await editTable(
+          { ...selectedTable, state: TableState.CLOSED },
+          token
+        );
+        if (paidOrder) {
+          setSelectedOrderByTable(paidOrder);
+          updateOrder(paidOrder);
+        }
+        if (closedTable) {
+          setSelectedTable(closedTable);
+          updateTable(closedTable);
+        }
+        handleComplete();
+      } catch (e: any) {
+        console.error(e);
+        Swal.fire(
+          e.statusCode === 409 ? "No hay caja abierta" : "Error",
+          e.message || "No se pudo cerrar.",
+          "error"
+        );
+      }
+      return;
+    }
+
+    // ─── Modo parcial ──────────────────────────────────────────────────────
     const allIds = confirmedProducts.map((p) => p.internalId!);
     const paidIds = confirmedPayments.flatMap((cp) => cp.productIds);
     if (allIds.some((id) => !paidIds.includes(id))) {
@@ -263,8 +392,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       );
       if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
 
-      // Limpiar confirmedProducts y selectedProducts ANTES de cambiar el estado de la mesa
-      // Esto garantiza que los productos se limpien de forma definitiva al pagar
       setConfirmedProducts([]);
       clearSelectedProducts();
 
@@ -291,42 +418,6 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     }
   };
 
-  // Totales
-  const baseAmount = draftPayment.productIds.reduce(
-    (sum, id) =>
-      sum +
-      Number(
-        confirmedProducts.find((p) => p.internalId === id)?.unitaryPrice ?? 0
-      ),
-    0
-  );
-  const total10 = (baseAmount * 1.1).toFixed(2);
-  const totalCustom = (baseAmount + draftPayment.customTip).toFixed(2);
-
-  // Auto-confirmación pago completo
-  const isBulkPaid =
-    fullPaymentMode &&
-    draftPayment.method &&
-    allSelected &&
-    confirmedPayments.length === 0;
-  useEffect(() => {
-    if (isBulkPaid) {
-      const amount =
-        draftPayment.tipType === "10"
-          ? baseAmount * 1.1
-          : draftPayment.tipType === "custom"
-          ? baseAmount + draftPayment.customTip
-          : baseAmount;
-      setConfirmedPayments([
-        {
-          productIds: [...draftPayment.productIds],
-          methodOfPayment: draftPayment.method as paymentMethod,
-          amount,
-        },
-      ]);
-    }
-  }, [isBulkPaid]);
-
   const orderStates = {
     pending_payment: "PENDIENTE DE PAGO",
     open: "ORDEN ABIERTA",
@@ -340,6 +431,16 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     closed: "text-green-500",
   };
   const total = selectedOrderByTable?.total || 0;
+
+  const canConfirmPartial =
+    selectedOrderByTable?.state === OrderState.PENDING_PAYMENT &&
+    confirmedPayments.flatMap((cp) => cp.productIds).length ===
+      confirmedProducts.length;
+
+  const canConfirmFull =
+    selectedOrderByTable?.state === OrderState.PENDING_PAYMENT &&
+    fullSplitsValid &&
+    fullRemaining === 0;
 
   return (
     <Box
@@ -400,7 +501,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               <Tooltip
                 title={
                   confirmedPayments.length > 0
-                    ? "No puedes cambiar al pago total con pagos parciales"
+                    ? "No puedes cambiar al pago total con pagos parciales confirmados"
                     : ""
                 }
               >
@@ -421,7 +522,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             }}
           />
 
-          {/* Modo Parcial */}
+          {/* ─── Modo Parcial ─────────────────────────────────────────────── */}
           {!fullPaymentMode && (
             <>
               <Box display="flex" width="100%" mt={2}>
@@ -604,7 +705,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             </>
           )}
 
-          {/* Modo Total */}
+          {/* ─── Modo Total (multi-método) ────────────────────────────────── */}
           {fullPaymentMode && (
             <>
               <Divider sx={{ my: 2 }} />
@@ -617,99 +718,179 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 mt={1}
               >
                 <Radio
-                  checked={draftPayment.tipType === "none"}
-                  onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: "none" })
-                  }
+                  checked={fullTipType === "none"}
+                  onChange={() => setFullTipType("none")}
                 />
                 <Typography>Total sin propina</Typography>
-                <Typography>${formatNumber(baseAmount)}</Typography>
+                <Typography>${formatNumber(fullBaseAmount)}</Typography>
 
                 <Radio
-                  checked={draftPayment.tipType === "10"}
-                  onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: "10" })
-                  }
+                  checked={fullTipType === "10"}
+                  onChange={() => setFullTipType("10")}
                 />
                 <Typography>Total + 10% propina</Typography>
-                <Typography>${formatNumber(Number(total10))}</Typography>
+                <Typography>
+                  ${formatNumber(Math.round(fullBaseAmount * 1.1))}
+                </Typography>
 
                 <Radio
-                  checked={draftPayment.tipType === "custom"}
-                  onChange={() =>
-                    setDraftPayment({ ...draftPayment, tipType: "custom" })
-                  }
+                  checked={fullTipType === "custom"}
+                  onChange={() => setFullTipType("custom")}
                 />
                 <Typography>Total + propina personalizada</Typography>
-                <Typography>${formatNumber(Number(totalCustom))}</Typography>
+                <Typography>
+                  ${formatNumber(fullBaseAmount + fullCustomTip)}
+                </Typography>
               </Box>
-              {draftPayment.tipType === "custom" && (
+              {fullTipType === "custom" && (
                 <TipInputs
-                  baseAmount={baseAmount}
-                  customTip={draftPayment.customTip}
-                  onChangeCustomTip={(v) =>
-                    setDraftPayment({ ...draftPayment, customTip: v })
-                  }
+                  baseAmount={fullBaseAmount}
+                  customTip={fullCustomTip}
+                  onChangeCustomTip={setFullCustomTip}
                 />
               )}
 
               <Divider sx={{ my: 2 }} />
-              <Typography fontWeight="bold">Método de pago:</Typography>
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel>Método</InputLabel>
-                <Select
-                  value={draftPayment.method}
-                  label="Método"
-                  onChange={(e) =>
-                    setDraftPayment({
-                      ...draftPayment,
-                      method: e.target.value as paymentMethod,
-                    })
-                  }
-                >
-                  {Object.values(paymentMethod).map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {capitalizeFirstLetter(m)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
 
-              {/* Resumen pago total */}
-              {confirmedPayments.length > 0 && (
-                <Paper sx={{ p: 2, mt: 2 }}>
-                  <Typography fontWeight="bold">Pago total</Typography>
-                  <Typography>
-                    Total: ${formatNumber(confirmedPayments[0].amount)}
+              {/* Indicador de montos */}
+              <Box
+                display="grid"
+                gridTemplateColumns="1fr 1fr 1fr"
+                sx={{
+                  mb: 2,
+                  p: 1.5,
+                  bgcolor: "#f5f0ea",
+                  borderRadius: 1,
+                  border: "1px solid #d4c0b3",
+                }}
+                gap={1}
+              >
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Total a pagar
                   </Typography>
-                  <Typography>
-                    Método:{" "}
-                    {capitalizeFirstLetter(
-                      confirmedPayments[0].methodOfPayment
-                    )}
+                  <Typography fontWeight="bold">
+                    ${formatNumber(fullTotalWithTip)}
                   </Typography>
-                </Paper>
-              )}
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Ingresado
+                  </Typography>
+                  <Typography fontWeight="bold" color="success.main">
+                    ${formatNumber(fullPaid)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Restante
+                  </Typography>
+                  <Typography
+                    fontWeight="bold"
+                    color={fullRemaining === 0 ? "success.main" : "error.main"}
+                  >
+                    ${formatNumber(fullRemaining)}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Filas de métodos de pago */}
+              <Typography fontWeight="bold" mb={1}>
+                Distribución del pago:
+              </Typography>
+              {fullSplits.map((split) => (
+                <Box
+                  key={split.id}
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                  mb={1}
+                >
+                  <FormControl sx={{ flex: 1 }} size="small">
+                    <InputLabel>Método</InputLabel>
+                    <Select
+                      value={split.method}
+                      label="Método"
+                      onChange={(e) =>
+                        updateFullSplit(split.id, "method", e.target.value)
+                      }
+                    >
+                      {Object.values(paymentMethod).map((m) => (
+                        <MenuItem key={m} value={m}>
+                          {capitalizeFirstLetter(m)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    sx={{ flex: 1 }}
+                    size="small"
+                    label="Monto"
+                    value={split.amount}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      updateFullSplit(split.id, "amount", digits);
+                    }}
+                    onBlur={() => {
+                      const parsed = parseInt(
+                        split.amount.replace(/\D/g, ""),
+                        10
+                      );
+                      if (!isNaN(parsed) && parsed > 0) {
+                        updateFullSplit(
+                          split.id,
+                          "amount",
+                          formatNumber(parsed)
+                        );
+                      }
+                    }}
+                    inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">$</InputAdornment>
+                      ),
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => removeFullSplit(split.id)}
+                    disabled={fullSplits.length === 1}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<AddCircleOutline />}
+                onClick={addFullSplit}
+                sx={{ mt: 0.5, color: "#7e9d8a" }}
+              >
+                Agregar método de pago
+              </Button>
             </>
           )}
 
-          {selectedOrderByTable?.state === OrderState.PENDING_PAYMENT &&
-            confirmedPayments.flatMap((cp) => cp.productIds).length ===
-              confirmedProducts.length && (
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{
-                  mt: 3,
-                  backgroundColor: "#7e9d8a",
-                  "&:hover": { backgroundColor: "#f9b32d", color: "black" },
-                }}
-                onClick={handlePayOrder}
-              >
-                <Payment sx={{ mr: 1 }} />
-                Confirmar Orden Pagada
-              </Button>
-            )}
+          {/* ─── Botón confirmar ──────────────────────────────────────────── */}
+          {((!fullPaymentMode && canConfirmPartial) ||
+            (fullPaymentMode && canConfirmFull)) && (
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{
+                mt: 3,
+                backgroundColor: "#7e9d8a",
+                "&:hover": { backgroundColor: "#f9b32d", color: "black" },
+              }}
+              onClick={handlePayOrder}
+            >
+              <Payment sx={{ mr: 1 }} />
+              Confirmar Orden Pagada
+            </Button>
+          )}
         </Box>
       ) : (
         <div className="flex justify-center text-red-500 font-bold my-16">

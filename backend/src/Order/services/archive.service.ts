@@ -118,6 +118,10 @@ export class ArchiveService {
               return archivedPayment;
             });
 
+            if (order.payments?.length === 1) {
+              archived.methodOfPayment = order.payments[0].methodOfPayment;
+            }
+
             return archived;
           });
 
@@ -159,13 +163,40 @@ export class ArchiveService {
     }
   }
 
+  private buildPaymentSummary(order: ArchivedOrder): object {
+    const payments = order.payments ?? [];
+
+    const byMethod = payments.reduce<Record<string, number>>((acc, p) => {
+      acc[p.methodOfPayment] = (acc[p.methodOfPayment] || 0) + Number(p.amount);
+      return acc;
+    }, {});
+
+    const totalPaid = Object.values(byMethod).reduce(
+      (sum, amt) => sum + amt,
+      0,
+    );
+
+    return {
+      totalPaid: totalPaid.toFixed(2),
+      methodCount: payments.length,
+      methods: Object.entries(byMethod).map(([method, amount]) => ({
+        method,
+        amount: amount.toFixed(2),
+      })),
+      primaryMethod: payments.length === 1 ? payments[0].methodOfPayment : null,
+    };
+  }
+
   private async createBackupFile(
     archivedOrders: ArchivedOrder[],
   ): Promise<void> {
     const backupData = {
       archivedAt: new Date().toISOString(),
       totalArchived: archivedOrders.length,
-      orders: archivedOrders,
+      orders: archivedOrders.map((order) => ({
+        ...order,
+        paymentSummary: this.buildPaymentSummary(order),
+      })),
     };
 
     const backupDir = path.join(process.cwd(), 'backups', 'archived-orders');

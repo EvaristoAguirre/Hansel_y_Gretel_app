@@ -15,6 +15,7 @@ const useOrder = () => {
   const [token, setToken] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [productosDisponibles, setProductosDisponibles] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const { products } = useProductStore();
 
   useEffect(() => {
@@ -27,31 +28,42 @@ const useOrder = () => {
     setToken(token);
   }, [getAccessToken]);
 
-
+  // token se agrega a las deps para que el fetch se dispare cuando el token
+  // esté disponible (al mount token es null, el efecto correría sin token).
   useEffect(() => {
-    async function fetchOrders(token: string) {
+    connectWebSocket();
+
+    if (!token) {
+      // Sin token aún: no hay nada que cargar, quitar el spinner.
+      setIsLoadingOrders(false);
+      return;
+    }
+
+    async function fetchOrders() {
+      setIsLoadingOrders(true);
       try {
         const response = await fetch(`${URI_ORDER}/active`, {
           method: "GET",
-          headers: { "Authorization": `Bearer ${token}`, },
+          headers: { "Authorization": `Bearer ${token}` },
         });
         const data = await response.json();
         setOrders(data);
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar los pedidos.", "error");
         console.error(error);
+      } finally {
+        setIsLoadingOrders(false);
       }
     }
-    if (token) {
-      fetchOrders(token);
-    }
-    connectWebSocket();
-  }, [setOrders, connectWebSocket]);
+
+    fetchOrders();
+  }, [token, setOrders, connectWebSocket]);
 
   return {
     orders,
     orderId,
     productosDisponibles,
+    isLoadingOrders,
     products,
     setOrderId,
     setProductosDisponibles,

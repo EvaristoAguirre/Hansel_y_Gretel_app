@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import {
   Button,
   List,
@@ -22,6 +22,7 @@ import {
   Comment,
   AutoAwesome,
   SpaceBar,
+  Print,
 } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
@@ -45,6 +46,7 @@ import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
 import { TypeProduct } from "../Enums/view-products";
 import { PromotionSlotSelector } from "./PromotionSlotSelector";
 import { getSlotsByPromotionId } from "@/api/promotionSlot";
+import { reprintComanda } from "@/api/order";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -61,11 +63,12 @@ interface Props {
   handleReset: () => void;
 }
 const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
-  const { productosDisponibles, setProductosDisponibles } = useOrder();
-  const { fetchAndSetProducts, products } = useProducts();
+  const { productosDisponibles, setProductosDisponibles, isLoadingOrders } = useOrder();
+  // skipInitialFetch: los productos se cargan bajo demanda (por categoría o búsqueda)
+  // evitando la carga de 500 productos al abrir el editor en la tablet.
+  const { products } = useProducts({ skipInitialFetch: true });
   const { getAccessToken } = useAuth();
 
-  // Agregar al inicio del componente:
   const [promotionSlotModal, setPromotionSlotModal] = useState<{
     open: boolean;
     promotion: ProductResponse | null;
@@ -75,11 +78,6 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     promotion: null,
     quantity: 1,
   });
-
-  useEffect(() => {
-    const token = getAccessToken();
-    token && fetchAndSetProducts(token);
-  }, []);
 
   const {
     selectedProducts,
@@ -111,6 +109,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const token = getAccessToken();
   const [isPriority, setIsPriority] = useState<boolean>(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+  const [isPrintingComanda, setIsPrintingComanda] = useState<boolean>(false);
 
   useEffect(() => {
     token &&
@@ -119,12 +118,33 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       );
   }, []);
 
+  const handleReprintComanda = async () => {
+    if (!selectedOrderByTable?.id || !token) return;
+    setIsPrintingComanda(true);
+    try {
+      await reprintComanda(selectedOrderByTable.id, token);
+    } catch (error) {
+      console.error("Error al reimprimir comanda:", error);
+    } finally {
+      setIsPrintingComanda(false);
+    }
+  };
+
   const confirmarPedido: () => Promise<void> = async () => {
     const productDetails = selectedProducts.map((product) => {
+      const rawToppings = selectedToppingsByProduct[product.productId] ?? [];
+      const toppingsPerUnit =
+        rawToppings.length > 0
+          ? Array.from(
+              { length: product.quantity },
+              (_, i) => rawToppings[i] ?? []
+            )
+          : [];
+
       const baseDetail: any = {
         productId: product.productId,
         quantity: product.quantity,
-        toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
+        toppingsPerUnit,
         commentOfProduct: commentInputs[product.productId],
       };
 
@@ -159,6 +179,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         setSelectedProducts([]);
         handleCompleteStep();
         handleNextStep();
+      } catch {
+        // El error ya fue mostrado mediante Swal en handleEditOrder.
+        // No se limpia selectedProducts para que el mozo pueda
+        // corregir el producto sin stock y reintentar.
       } finally {
         setLoading(false);
       }
@@ -178,7 +202,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
         if (settings.chargeExtra && settings.extraCost) {
           toppingsByUnit.forEach((unitToppings: any) => {
-            const selected = unitToppings[groupId] || [];
+            const selected = (unitToppings ?? {})[groupId] || [];
             toppingExtra += selected.length * settings.extraCost;
           });
         }
@@ -208,7 +232,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
         if (settings.chargeExtra && settings.extraCost) {
           toppingsByUnit.forEach((unitToppings: any) => {
-            const selected = unitToppings[groupId] || [];
+            const selected = (unitToppings ?? {})[groupId] || [];
             toppingExtra += selected.length * settings.extraCost;
           });
         }
@@ -269,12 +293,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     });
   };
 
-  /**
-   * Fracción de código para buscar productos en base a nombre,
-   * código o categorías seleccionadas.
-   */
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  // Ref del timer de debounce: evita llamar al backend en cada letra tecleada.
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
@@ -283,13 +305,27 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     if (results) setProductosDisponibles(results);
   };
 
+  // El input del mozo espera 350 ms de inactividad antes de lanzar la búsqueda.
+  // Si el campo y la categoría están vacíos, limpia los resultados sin consultar el backend
+  // (evita el 400 que el backend devuelve cuando no hay criterio de búsqueda).
   const handleSearch = (value: string) => {
     const trimmedValue = value.trim();
     setSearchTerm(trimmedValue);
-    searchProductsFiltered(trimmedValue, selectedCats);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    if (!trimmedValue && selectedCats.length === 0) {
+      setProductosDisponibles([]);
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      searchProductsFiltered(trimmedValue, selectedCats);
+    }, 350);
   };
 
+  // Solo busca si hay al menos un criterio (categoría seleccionada o término escrito).
   useEffect(() => {
+    if (selectedCats.length === 0 && !searchTerm) return;
     searchProductsFiltered(searchTerm, selectedCats);
   }, [selectedCats]);
 
@@ -312,6 +348,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     // Recorrer cada unidad del producto
     productToppings.forEach((unitToppings) => {
+      if (!unitToppings) return;
       // Recorrer cada grupo de toppings
       Object.entries(unitToppings).forEach(([groupId, toppingIds]) => {
         // Buscar el grupo en availableToppingGroups
@@ -396,7 +433,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     setPromotionSlotModal({ open: false, promotion: null, quantity: 1 });
   };
 
-  return loading ? (
+  return loading || isLoadingOrders ? (
     <LoadingLottie />
   ) : (
     <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
@@ -766,16 +803,39 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 No hay productos confirmados.
               </Typography>
             )}
-            <Typography
+            <div
               style={{
-                width: "50%",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 margin: "1rem 0",
-                color: "black",
-                fontWeight: "bold",
               }}
             >
-              Total: ${formatNumber(total)}
-            </Typography>
+              <Typography style={{ color: "black", fontWeight: "bold" }}>
+                Total: ${formatNumber(total)}
+              </Typography>
+              {confirmedProducts?.length > 0 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={isPrintingComanda}
+                  onClick={handleReprintComanda}
+                  sx={{
+                    borderColor: "#7e9d8a",
+                    color: "black",
+                    fontSize: "0.7rem",
+                    "&:hover": {
+                      backgroundColor: "#f9b32d",
+                      borderColor: "#f9b32d",
+                      color: "black",
+                    },
+                  }}
+                >
+                  <Print style={{ marginRight: "4px", fontSize: "1rem" }} />
+                  {isPrintingComanda ? "Imprimiendo..." : "Reimprimir comanda"}
+                </Button>
+              )}
+            </div>
           </Box>
         </div>
       </div>

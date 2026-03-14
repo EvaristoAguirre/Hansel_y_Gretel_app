@@ -16,6 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
+import { buildProductLines } from '../helpers/order-response.helper';
 import { TableService } from 'src/Table/table.service';
 import { isUUID } from 'class-validator';
 import { DailyCashService } from 'src/daily-cash/daily-cash.service';
@@ -24,7 +25,6 @@ import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
-import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
@@ -137,7 +137,6 @@ export class OrderService {
       if (updateData.productsDetails?.length) {
         let total = 0;
         const detailsToSave: OrderDetails[] = [];
-        const toppingsToSave: OrderDetailToppings[] = [];
         const printProducts: any[] = [];
 
         for (const pd of updateData.productsDetails) {
@@ -352,7 +351,6 @@ export class OrderService {
             );
           detail.commentOfProduct = pd.commentOfProduct;
           detailsToSave.push(detail);
-          toppingsToSave.push(...toppingDetails);
           total += Number(subtotal);
 
           // 🖨️ Construir datos de impresión para este producto específico
@@ -360,7 +358,7 @@ export class OrderService {
             // LÓGICA PARA PROMOCIONES CON SLOTS
             // Generar un ID único para agrupar productos de esta promoción
             const promotionGroupId = `promo-${Date.now()}-${Math.random()}`;
-            
+
             // Iterar sobre cada unidad de la promoción
             for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
               // Para cada selección de slot en esta unidad
@@ -494,27 +492,42 @@ export class OrderService {
           );
         }
 
-        // 💾 Guardar detalles y toppings con el número de comanda
+        // 💾 Guardar detalles (cascade: true en orderDetailToppings persiste los toppings automáticamente)
+        this.logger.log(
+          `[updateOrder] Guardando ${detailsToSave.length} detalle(s) de pedido`,
+        );
         for (const detail of detailsToSave) {
           detail.commandNumber = commandNumber;
+          this.logger.log(
+            `[updateOrder] Guardando detail: producto="${detail.product?.name}", cantidad=${detail.quantity}, toppings asignados=${detail.orderDetailToppings?.length ?? 0}`,
+          );
           const savedDetail = await queryRunner.manager.save(detail);
-
-          for (const topping of toppingsToSave.filter(
-            (t) => t.orderDetails?.product.id === detail.product.id,
-          )) {
-            topping.orderDetails = savedDetail;
-            await queryRunner.manager.save(topping);
-          }
-
+          this.logger.log(
+            `[updateOrder] Detail guardado con id=${savedDetail.id} | toppings en DB: ${savedDetail.orderDetailToppings?.length ?? 'no cargados aún'}`,
+          );
           order.orderDetails.push(savedDetail);
         }
 
         order.total = Number(order.total) + total;
       }
 
-      const updatedOrder = await queryRunner.manager.save(order);
+      await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
+
+      // Recargar la orden con todas las relaciones necesarias para construir
+      // los precios por unidad correctamente en adaptResponse.
+      const updatedOrder = await this.orderRepo.findOne({
+        where: { id: order.id },
+        relations: [
+          'orderDetails',
+          'table',
+          'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
+          'payments',
+        ],
+      });
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
@@ -525,6 +538,86 @@ export class OrderService {
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async reprintKitchenOrder(orderId: string): Promise<string> {
+    if (!isUUID(orderId)) {
+      throw new BadRequestException('Invalid order ID format.');
+    }
+
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId, isActive: true },
+      relations: [
+        'table',
+        'orderDetails',
+        'orderDetails.product',
+        'orderDetails.orderDetailToppings',
+        'orderDetails.orderDetailToppings.topping',
+        'orderDetails.promotionSelections',
+        'orderDetails.promotionSelections.selectedProduct',
+        'orderDetails.promotionSelections.slot',
+      ],
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID: ${orderId} not found`);
+    }
+
+    const printProducts: any[] = [];
+
+    for (const detail of order.orderDetails.filter((d) => d.isActive)) {
+      const isPromoWithSlots =
+        detail.product?.type === 'promotion' &&
+        detail.promotionSelections?.length > 0;
+
+      if (isPromoWithSlots) {
+        const promotionGroupId = `reprint-promo-${detail.id}`;
+        for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+          for (const selection of detail.promotionSelections) {
+            const selectedName = selection.selectedProduct?.name || 'Producto';
+            const displayName = `${detail.product.name} - ${selectedName}`;
+            printProducts.push({
+              name: displayName,
+              quantity: 1,
+              commentOfProduct:
+                unitIndex === 0 ? detail.commentOfProduct : undefined,
+              toppings: [],
+              promotionGroup: promotionGroupId,
+            });
+          }
+        }
+      } else {
+        for (let unitIndex = 0; unitIndex < detail.quantity; unitIndex++) {
+          const toppingsForUnit = (detail.orderDetailToppings ?? [])
+            .filter((t) => t.unitIndex === unitIndex)
+            .map((t) => t.topping?.name)
+            .filter(Boolean);
+
+          printProducts.push({
+            name: detail.product?.name || 'Producto',
+            quantity: 1,
+            commentOfProduct:
+              unitIndex === 0 ? detail.commentOfProduct : undefined,
+            toppings: toppingsForUnit,
+          });
+        }
+      }
+    }
+
+    const printData = {
+      numberCustomers: order.numberCustomers,
+      table: order.table?.name || 'SIN MESA',
+      products: printProducts,
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+      return await this.printerService.printKitchenOrder(printData);
+    } else {
+      this.logger.log(
+        `🔁 [DEV] Simulando reimpresión de comanda para mesa ${printData.table}`,
+      );
+      return 'reimpresion-simulada-dev';
     }
   }
 
@@ -579,6 +672,8 @@ export class OrderService {
           'orderDetails',
           'table',
           'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
           'payments',
         ],
       });
@@ -817,22 +912,7 @@ export class OrderService {
     const productLines: ProductLineDto[] = [];
 
     for (const detail of order.orderDetails) {
-      const toppings: ToppingSummaryDto[] =
-        detail.orderDetailToppings?.map((t) => ({
-          id: t.topping.id,
-          name: t.topping.name,
-        })) || [];
-
-      productLines.push({
-        productId: detail.product.id,
-        productName: detail.product.name,
-        quantity: detail.quantity,
-        unitaryPrice: Number(detail.unitaryPrice),
-        subtotal: Number(detail.subtotal),
-        allowsToppings: detail.product.allowsToppings,
-        commentOfProduct: detail.commentOfProduct || null,
-        toppings,
-      });
+      productLines.push(...buildProductLines(detail));
     }
 
     const response = new OrderSummaryResponseDto();

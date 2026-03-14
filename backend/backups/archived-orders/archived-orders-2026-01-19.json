@@ -1,0 +1,350 @@
+{
+  "archivedAt": "2026-01-19T12:32:06.395Z",
+  "totalArchived": 7,
+  "orders": [
+    {
+      "id": "b2a6973e-4b19-4f9e-9c25-7744ba3cab37",
+      "date": "2026-01-13T21:06:50.733Z",
+      "state": "closed",
+      "total": "204000.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "e40326da-3d77-4610-b733-28315ce8168b",
+      "dailyCashId": "898d3f59-afc7-48e5-9a8c-88a55f136b6e",
+      "commandNumber": null,
+      "createdAt": "2026-01-13T21:06:50.733Z",
+      "updatedAt": "2026-01-13T21:06:50.733Z",
+      "closedAt": "2026-01-13T21:36:39.345Z",
+      "orderDetails": [
+        {
+          "id": "e90170b2-6c81-4acd-92f9-f0fe1d7cf492",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "6f598d99-8bfb-4934-845d-de500393e17d",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "204000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-01-13T21:36:39.346Z",
+          "id": "c826c300-93ec-46e3-91a6-6130993aa1bd"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "49ecf24c-4d7c-4412-ab14-187f10042461",
+      "date": "2026-01-14T21:01:25.232Z",
+      "state": "closed",
+      "total": "327700.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "e40326da-3d77-4610-b733-28315ce8168b",
+      "dailyCashId": "8f7383ec-bbc0-44f4-a81a-2699bfd89b9d",
+      "commandNumber": null,
+      "createdAt": "2026-01-14T21:01:25.232Z",
+      "updatedAt": "2026-01-14T21:01:25.232Z",
+      "closedAt": "2026-01-15T18:58:25.459Z",
+      "orderDetails": [
+        {
+          "id": "2b7ceefd-d28f-43c9-ae53-22c13cee5c88",
+          "quantity": 1,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9000.00",
+          "productId": "155d634b-7036-4e6f-a9b9-062f18d17ea4",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "484063ab-4eb8-42db-bc0c-603e13b484d9",
+          "quantity": 1,
+          "unitaryPrice": "7700.00",
+          "toppingsExtraCost": "6000.00",
+          "subtotal": "7700.00",
+          "productId": "f812708e-e23c-421a-819b-def5dfaeccc9",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9cea04fd-b0fd-45ff-a6f3-9653d7bcfa08",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "187adfac-1652-4284-b0e0-8936132b448a",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "d6e41176-1ea8-4c70-83ca-7397f8d358c2",
+          "quantity": 1,
+          "unitaryPrice": "5000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "5000.00",
+          "productId": "238f44be-56d9-4057-948f-a6d5d8874b8b",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "b7ce3083-41be-4e34-9cf6-c39e275c24d0",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "327700.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-01-15T18:58:25.460Z",
+          "id": "a33f8246-6223-47cb-83a1-d71cc721e351"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "6a12d6f9-894a-4cd2-a490-e835b1888233",
+      "date": "2026-01-15T19:03:10.934Z",
+      "state": "closed",
+      "total": "32000.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "e40326da-3d77-4610-b733-28315ce8168b",
+      "dailyCashId": "8f7383ec-bbc0-44f4-a81a-2699bfd89b9d",
+      "commandNumber": null,
+      "createdAt": "2026-01-15T19:03:10.934Z",
+      "updatedAt": "2026-01-15T19:03:10.934Z",
+      "closedAt": "2026-01-15T19:04:02.761Z",
+      "orderDetails": [
+        {
+          "id": "d4fc40d7-95e1-4f95-9dc3-cdee859ceb2b",
+          "quantity": 2,
+          "unitaryPrice": "7000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "14000.00",
+          "productId": "2f363db0-b9b5-4878-b876-edae4d4f0e8b",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "7ce95281-dbab-4fd2-9489-83d009ff5086",
+          "quantity": 2,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "155d634b-7036-4e6f-a9b9-062f18d17ea4",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "18000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-01-15T19:04:02.762Z",
+          "id": "26440d8c-e7a9-4f9f-be7a-6196cdaaeef0"
+        },
+        {
+          "amount": "14000.00",
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-01-15T19:04:02.762Z",
+          "id": "55ce24a6-d8b9-4fdf-9a97-78d6777826c7"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "9f9db7ec-0707-4e2a-8fcc-218c4e0e7730",
+      "date": "2026-01-15T22:46:05.197Z",
+      "state": "closed",
+      "total": "111000.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": "e40326da-3d77-4610-b733-28315ce8168b",
+      "dailyCashId": "8f7383ec-bbc0-44f4-a81a-2699bfd89b9d",
+      "commandNumber": null,
+      "createdAt": "2026-01-15T22:46:05.197Z",
+      "updatedAt": "2026-01-15T22:46:05.197Z",
+      "closedAt": "2026-01-15T22:53:33.901Z",
+      "orderDetails": [
+        {
+          "id": "52468354-36de-457a-b4e4-e8d2a17ca64a",
+          "quantity": 1,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "9000.00",
+          "productId": "155d634b-7036-4e6f-a9b9-062f18d17ea4",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "e4c7f948-8f68-48ce-a497-31766b50e9ce",
+          "quantity": 1,
+          "unitaryPrice": "102000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "102000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [
+        {
+          "amount": "111000.00",
+          "methodOfPayment": "efectivo",
+          "createdAt": "2026-01-15T22:53:33.902Z",
+          "id": "b87020cb-7b78-44f7-adca-38df6e308291"
+        }
+      ],
+      "methodOfPayment": null
+    },
+    {
+      "id": "aa9db891-3200-45e6-98ed-e6b17b292492",
+      "date": "2026-01-13T21:50:44.868Z",
+      "state": "cancelled",
+      "total": "0.00",
+      "tip": "0.00",
+      "numberCustomers": 4,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-01-13T21:50:44.868Z",
+      "updatedAt": "2026-01-13T21:50:44.868Z",
+      "closedAt": null,
+      "orderDetails": [],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "26699b60-9d4c-492c-bc92-5a5e3b12131d",
+      "date": "2026-01-14T02:01:56.063Z",
+      "state": "cancelled",
+      "total": "39000.00",
+      "tip": "0.00",
+      "numberCustomers": 2,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-01-14T02:01:56.063Z",
+      "updatedAt": "2026-01-14T02:01:56.063Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "430c6002-2c64-4b3a-a484-660eb0199d96",
+          "quantity": 2,
+          "unitaryPrice": "9000.00",
+          "toppingsExtraCost": "0.00",
+          "subtotal": "18000.00",
+          "productId": "c8c1c528-900f-4143-94bf-54b3175e3d70",
+          "commandNumber": null,
+          "toppings": [],
+          "promotionSelections": []
+        },
+        {
+          "id": "9b118e88-c81b-4155-b39c-eadd13ace4db",
+          "quantity": 1,
+          "unitaryPrice": "21000.00",
+          "toppingsExtraCost": "12000.00",
+          "subtotal": "21000.00",
+          "productId": "396285af-3b45-4777-9108-e15bd904bae1",
+          "commandNumber": null,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "381f0079-eec6-48b1-b01b-0d060a533669",
+              "selectedProductId": "f812708e-e23c-421a-819b-def5dfaeccc9",
+              "selectedProductName": "Prod 1",
+              "extraCostApplied": "0.00"
+            },
+            {
+              "slotId": "381f0079-eec6-48b1-b01b-0d060a533669",
+              "selectedProductId": "f812708e-e23c-421a-819b-def5dfaeccc9",
+              "selectedProductName": "Prod 1",
+              "extraCostApplied": "0.00"
+            }
+          ]
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    },
+    {
+      "id": "189da843-0701-4501-b15e-c0c6aa1bc2ce",
+      "date": "2026-01-17T22:44:31.726Z",
+      "state": "cancelled",
+      "total": "105000.00",
+      "tip": "0.00",
+      "numberCustomers": 3,
+      "comment": "",
+      "tableId": null,
+      "dailyCashId": null,
+      "commandNumber": null,
+      "createdAt": "2026-01-17T22:44:31.726Z",
+      "updatedAt": "2026-01-18T15:29:16.522Z",
+      "closedAt": null,
+      "orderDetails": [
+        {
+          "id": "c8fce08d-19d3-4415-ade5-e405f39bc00a",
+          "quantity": 1,
+          "unitaryPrice": "105000.00",
+          "toppingsExtraCost": "15000.00",
+          "subtotal": "105000.00",
+          "productId": "856f73fb-9056-4c58-b8d5-9c714e3f039f",
+          "commandNumber": "grabandoTextFijo - 1111111111",
+          "toppings": [],
+          "promotionSelections": []
+        }
+      ],
+      "payments": [],
+      "methodOfPayment": null
+    }
+  ]
+}

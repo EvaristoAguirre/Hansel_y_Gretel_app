@@ -40,8 +40,10 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
 
   useEffect(() => {
     if (product && !toppingsByProductGroup[productId]) {
-      const emptyArray = Array.from({ length: product.quantity }, () => ({}));
-      updateToppingForUnit(productId, 0, emptyArray[0]);
+      // Inicializar TODAS las unidades para evitar entradas undefined en el array
+      Array.from({ length: product.quantity }).forEach((_, i) => {
+        updateToppingForUnit(productId, i, {});
+      });
     }
   }, [product]);
 
@@ -55,16 +57,23 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     const unitToppings = toppingsByProductGroup[productId]?.[unitIndex] || {};
     let newGroupToppings = [...(unitToppings[groupId] || [])];
 
-    if (checked) {
-      if (newGroupToppings.length >= groupMax) {
-        return; // no se puede agregar más
-      }
-      newGroupToppings.push(toppingId);
-    } else {
+    if (!checked) {
+      // Destilar nunca requiere verificación de stock: siempre reduce el total.
       newGroupToppings = newGroupToppings.filter((id) => id !== toppingId);
+      updateToppingForUnit(productId, unitIndex, {
+        ...unitToppings,
+        [groupId]: newGroupToppings,
+      });
+      return;
     }
 
-    // Simulamos cómo quedaría el producto si se aplicara el cambio
+    if (newGroupToppings.length >= groupMax) {
+      return; // límite de selección alcanzado para este grupo
+    }
+
+    newGroupToppings.push(toppingId);
+
+    // Verificar stock solo al agregar un topping nuevo
     const newToppingsByUnit = [...(toppingsByProductGroup[productId] || [])];
     newToppingsByUnit[unitIndex] = {
       ...unitToppings,
@@ -72,7 +81,7 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     };
 
     const simulatedToppingsPerUnit = newToppingsByUnit.map((unitGroup) =>
-      Object.values(unitGroup).flat()
+      unitGroup ? Object.values(unitGroup).flat() : []
     );
 
     const result = await checkStockToppingAvailability(

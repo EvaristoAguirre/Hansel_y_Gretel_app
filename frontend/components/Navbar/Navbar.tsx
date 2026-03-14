@@ -59,8 +59,26 @@ const Navbar = () => {
     return true;
   });
 
+  const isDev = process.env.NODE_ENV === 'development';
+
   return (
     <nav className="bg-black shadow-md py-4 absolute top-0 left-0 right-0 z-50 w-full">
+      {isDev && (
+        <div
+          style={{
+            backgroundColor: '#b45309',
+            color: '#fff',
+            textAlign: 'center',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            padding: '2px 0',
+          }}
+        >
+          ⚠ MODO DESARROLLO — la tablet debe apuntar al servidor de producción
+          (npm run start)
+        </div>
+      )}
       <div className="flex justify-between items-center px-8 border-b-8 border-[#856D5E]">
         {/* Logo */}
         <div className="flex items-center">

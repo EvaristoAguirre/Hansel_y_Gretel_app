@@ -316,7 +316,9 @@ export class StockService {
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
     if (!product) {
-      throw new NotFoundException(`Product with ID ${productId} not found.`);
+      throw new NotFoundException(
+        `Producto con ID ${productId} no encontrado.`,
+      );
     }
 
     const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
@@ -361,7 +363,7 @@ export class StockService {
   ) {
     if (!product.stock) {
       throw new NotFoundException(
-        `Product ${product.name} has no associated stock.`,
+        `El producto "${product.name}" no tiene stock asociado.`,
       );
     }
 
@@ -375,7 +377,7 @@ export class StockService {
 
     if (product.stock.quantityInStock < quantityToDeduct) {
       throw new BadRequestException(
-        `Insufficient stock for product ${product.name}.`,
+        `Stock insuficiente para el producto "${product.name}".`,
       );
     }
 
@@ -438,7 +440,7 @@ export class StockService {
     // Validar que existan asignaciones
     if (!assignments || assignments.length === 0) {
       throw new BadRequestException(
-        `Promotion "${promotion.name}" has no slot assignments configured`,
+        `La promoción "${promotion.name}" no tiene slots configurados.`,
       );
     }
 
@@ -453,19 +455,22 @@ export class StockService {
     }
 
     // Agrupar assignments por slotId y sumar quantities
-    const assignmentsBySlot = new Map<string, { 
-      assignments: PromotionSlotAssignment[], 
-      totalQuantity: number,
-      slot: PromotionSlot 
-    }>();
-    
+    const assignmentsBySlot = new Map<
+      string,
+      {
+        assignments: PromotionSlotAssignment[];
+        totalQuantity: number;
+        slot: PromotionSlot;
+      }
+    >();
+
     for (const assignment of assignments) {
       const slotId = assignment.slot.id;
       if (!assignmentsBySlot.has(slotId)) {
         assignmentsBySlot.set(slotId, {
           assignments: [],
           totalQuantity: 0,
-          slot: assignment.slot
+          slot: assignment.slot,
         });
       }
       const group = assignmentsBySlot.get(slotId)!;
@@ -478,7 +483,7 @@ export class StockService {
     for (const [slotId, group] of assignmentsBySlot.entries()) {
       slotIndex++;
       const slot = group.slot;
-      
+
       this.logger.log(
         `[deductPromotionStockWithSelections] Procesando slot "${slot.name}" (${slotIndex}/${assignmentsBySlot.size})`,
       );
@@ -487,19 +492,19 @@ export class StockService {
       const slotSelections = selectionsBySlot.get(slotId) || [];
 
       // Verificar si el slot es obligatorio (si alguna asignación no es opcional)
-      const isRequired = group.assignments.some(a => !a.isOptional);
-      
+      const isRequired = group.assignments.some((a) => !a.isOptional);
+
       // Si el slot es obligatorio y no tiene selecciones disponibles, error
       if (slotSelections.length === 0 && isRequired) {
         throw new BadRequestException(
-          `Slot "${slot.name}" is required and has no available selections`,
+          `El slot "${slot.name}" es obligatorio y no tiene selecciones disponibles.`,
         );
       }
 
       // Contar el total de productos seleccionados para este slot
       const totalProductsSelected = slotSelections.reduce(
         (sum, sel) => sum + (sel.selectedProductIds?.length || 0),
-        0
+        0,
       );
 
       // Validar que la cantidad total coincida con la suma de quantities de todas las asignaciones
@@ -508,7 +513,7 @@ export class StockService {
           `[deductPromotionStockWithSelections] ERROR: Slot "${slot.name}" requiere ${group.totalQuantity} producto(s) pero se proporcionaron ${totalProductsSelected}`,
         );
         throw new BadRequestException(
-          `Slot "${slot.name}" requires ${group.totalQuantity} product(s), but ${totalProductsSelected} were provided`,
+          `El slot "${slot.name}" requiere ${group.totalQuantity} producto(s), pero se proporcionaron ${totalProductsSelected}.`,
         );
       }
 
@@ -525,7 +530,7 @@ export class StockService {
 
           if (!validOption) {
             throw new BadRequestException(
-              `Product ${selectedProductId} is not a valid option for slot "${slot.name}"`,
+              `El producto no es una opción válida para el slot "${slot.name}".`,
             );
           }
 
@@ -559,7 +564,7 @@ export class StockService {
 
     if (!ingredient || !ingredient.stock) {
       throw new NotFoundException(
-        `Ingredient ${ingredientId} not found or has no stock.`,
+        `El ingrediente con ID ${ingredientId} no fue encontrado o no tiene stock.`,
       );
     }
 
@@ -573,7 +578,7 @@ export class StockService {
 
     if (ingredient.stock.quantityInStock < quantityToDeduct) {
       throw new BadRequestException(
-        `Insufficient stock for ingredient ${ingredient.name}.`,
+        `Stock insuficiente para el ingrediente "${ingredient.name}".`,
       );
     }
 
@@ -606,7 +611,9 @@ export class StockService {
       const toppingStock =
         await this.stockRepository.getStockByToppingId(toppingId);
       if (!toppingStock) {
-        throw new NotFoundException(`No stock found for topping ${toppingId}`);
+        throw new NotFoundException(
+          `No se encontró stock para el agregado con ID ${toppingId}.`,
+        );
       }
 
       const topping =
@@ -620,7 +627,7 @@ export class StockService {
 
       if (!toppingGroup) {
         throw new NotFoundException(
-          `Topping group for topping ${topping.name} (${toppingId}) not found`,
+          `Grupo de agregados para "${topping.name}" no encontrado.`,
         );
       }
 
@@ -650,7 +657,7 @@ export class StockService {
 
       if (Number(toppingStock.quantityInStock) < quantityToDeduct) {
         throw new BadRequestException(
-          `Insufficient stock for topping ${topping.name}`,
+          `Stock insuficiente para el agregado "${topping.name}".`,
         );
       }
 
