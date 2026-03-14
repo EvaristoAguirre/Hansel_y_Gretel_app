@@ -295,7 +295,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     (sum, s) => sum + (parseInt(s.amount.replace(/\D/g, ""), 10) || 0),
     0
   );
-  const fullRemaining = fullTotalWithTip - fullPaid;
+  const fullRemaining = Math.round(fullTotalWithTip) - Math.round(fullPaid);
   const fullSplitsValid =
     fullSplits.length > 0 &&
     fullSplits.every(

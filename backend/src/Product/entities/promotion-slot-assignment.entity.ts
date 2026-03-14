@@ -45,4 +45,3 @@ export class PromotionSlotAssignment {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-

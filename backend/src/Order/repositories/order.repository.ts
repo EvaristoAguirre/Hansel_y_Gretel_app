@@ -13,6 +13,7 @@ import { Product } from 'src/Product/entities/product.entity';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
+import { buildProductLines } from '../helpers/order-response.helper';
 import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { DailyCash } from 'src/daily-cash/daily-cash.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
@@ -136,6 +137,8 @@ export class OrderRepository {
           'orderDetails',
           'table',
           'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
           'payments',
         ],
       });
@@ -195,14 +198,13 @@ export class OrderRepository {
       }
 
       if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
-        if (detailData.toppingsPerUnit.length !== quantity) {
-          throw new BadRequestException(
-            `La cantidad de unidades (${quantity}) no coincide con el número de arreglos de toppings (${detailData.toppingsPerUnit.length})`,
-          );
-        }
+        const normalizedToppings: string[][] = Array.from(
+          { length: quantity },
+          (_, i) => detailData.toppingsPerUnit![i] ?? [],
+        );
 
         for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
-          const toppingsForUnit = detailData.toppingsPerUnit[unitIndex];
+          const toppingsForUnit = normalizedToppings[unitIndex];
           this.logger.debug(
             `[buildOrderDetailWithToppings] Procesando unidad ${unitIndex}, toppings: ${JSON.stringify(toppingsForUnit)}`,
           );
@@ -243,23 +245,26 @@ export class OrderRepository {
               );
             }
 
-            if (
+            const toppingExtraCost =
               config.settings?.chargeExtra &&
               typeof config.settings.extraCost === 'number'
-            ) {
-              totalExtraCost += Number(config.settings.extraCost);
+                ? Number(config.settings.extraCost)
+                : 0;
+
+            if (toppingExtraCost > 0) {
+              totalExtraCost += toppingExtraCost;
             }
 
             const td = qr.manager.create(OrderDetailToppings, {
               topping,
-              orderDetails: null,
               unitOfMeasure: config.unitOfMeasure,
               unitOfMeasureName: config.unitOfMeasure?.name,
               unitIndex: unitIndex,
+              extraCost: toppingExtraCost,
             });
 
             this.logger.debug(
-              `[buildOrderDetailWithToppings] Topping creado - Nombre: ${topping.name}, Unidad: ${unitIndex}, Costo extra: ${config.settings?.extraCost || 0}`,
+              `[buildOrderDetailWithToppings] Topping creado - Nombre: ${topping.name}, Unidad: ${unitIndex}, Costo extra: ${toppingExtraCost}`,
             );
             toppingDetails.push(td);
           }
@@ -357,19 +362,22 @@ export class OrderRepository {
                   continue;
                 }
 
-                if (
+                const slotToppingExtraCost =
                   config.settings?.chargeExtra &&
                   typeof config.settings.extraCost === 'number'
-                ) {
-                  totalExtraCost += Number(config.settings.extraCost);
+                    ? Number(config.settings.extraCost)
+                    : 0;
+
+                if (slotToppingExtraCost > 0) {
+                  totalExtraCost += slotToppingExtraCost;
                 }
 
                 const td = qr.manager.create(OrderDetailToppings, {
                   topping,
-                  orderDetails: null,
                   unitOfMeasure: config.unitOfMeasure,
                   unitOfMeasureName: config.unitOfMeasure?.name,
                   unitIndex: unitIndex,
+                  extraCost: slotToppingExtraCost,
                 });
 
                 toppingDetails.push(td);
@@ -383,6 +391,15 @@ export class OrderRepository {
       const unitaryPrice = Number(product.price) + Number(unitaryToppingsCost);
       const subtotal = unitaryPrice * quantity;
 
+      this.logger.log(
+        `[buildOrderDetailWithToppings] Resumen final - Producto: ${product.name} | Cantidad: ${quantity} | TotalExtraCost: ${totalExtraCost} | UnitaryPrice: ${unitaryPrice} | Subtotal: ${subtotal} | Toppings a guardar: ${toppingDetails.length}`,
+      );
+      toppingDetails.forEach((td, i) => {
+        this.logger.debug(
+          `[buildOrderDetailWithToppings] toppingDetails[${i}] => topping: ${td.topping?.name}, unitIndex: ${td.unitIndex}, extraCost: ${td.extraCost}`,
+        );
+      });
+
       const detail = qr.manager.create(OrderDetails, {
         quantity,
         unitaryPrice,
@@ -390,7 +407,12 @@ export class OrderRepository {
         toppingsExtraCost: totalExtraCost,
         product,
         order,
+        orderDetailToppings: toppingDetails,
       });
+
+      this.logger.log(
+        `[buildOrderDetailWithToppings] OrderDetails creado con ${detail.orderDetailToppings?.length ?? 0} toppings asignados (cascade)`,
+      );
 
       return {
         detail,
@@ -407,22 +429,7 @@ export class OrderRepository {
     const productLines: ProductLineDto[] = [];
 
     for (const detail of order.orderDetails) {
-      const toppings: ToppingSummaryDto[] =
-        detail.orderDetailToppings?.map((t) => ({
-          id: t.topping.id,
-          name: t.topping.name,
-        })) || [];
-
-      productLines.push({
-        productId: detail.product.id,
-        productName: detail.product.name,
-        quantity: detail.quantity,
-        unitaryPrice: Number(detail.unitaryPrice),
-        subtotal: Number(detail.subtotal),
-        allowsToppings: detail.product.allowsToppings,
-        commentOfProduct: detail.commentOfProduct || null,
-        toppings,
-      });
+      productLines.push(...buildProductLines(detail));
     }
 
     const response = new OrderSummaryResponseDto();

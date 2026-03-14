@@ -183,8 +183,7 @@ export class ArchiveService {
         method,
         amount: amount.toFixed(2),
       })),
-      primaryMethod:
-        payments.length === 1 ? payments[0].methodOfPayment : null,
+      primaryMethod: payments.length === 1 ? payments[0].methodOfPayment : null,
     };
   }
 

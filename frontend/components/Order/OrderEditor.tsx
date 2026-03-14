@@ -132,10 +132,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
   const confirmarPedido: () => Promise<void> = async () => {
     const productDetails = selectedProducts.map((product) => {
+      const rawToppings = selectedToppingsByProduct[product.productId] ?? [];
+      const toppingsPerUnit =
+        rawToppings.length > 0
+          ? Array.from(
+              { length: product.quantity },
+              (_, i) => rawToppings[i] ?? []
+            )
+          : [];
+
       const baseDetail: any = {
         productId: product.productId,
         quantity: product.quantity,
-        toppingsPerUnit: selectedToppingsByProduct[product.productId] ?? [],
+        toppingsPerUnit,
         commentOfProduct: commentInputs[product.productId],
       };
 
@@ -193,7 +202,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
         if (settings.chargeExtra && settings.extraCost) {
           toppingsByUnit.forEach((unitToppings: any) => {
-            const selected = unitToppings[groupId] || [];
+            const selected = (unitToppings ?? {})[groupId] || [];
             toppingExtra += selected.length * settings.extraCost;
           });
         }
@@ -223,7 +232,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
         if (settings.chargeExtra && settings.extraCost) {
           toppingsByUnit.forEach((unitToppings: any) => {
-            const selected = unitToppings[groupId] || [];
+            const selected = (unitToppings ?? {})[groupId] || [];
             toppingExtra += selected.length * settings.extraCost;
           });
         }
@@ -339,6 +348,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     // Recorrer cada unidad del producto
     productToppings.forEach((unitToppings) => {
+      if (!unitToppings) return;
       // Recorrer cada grupo de toppings
       Object.entries(unitToppings).forEach(([groupId, toppingIds]) => {
         // Buscar el grupo en availableToppingGroups

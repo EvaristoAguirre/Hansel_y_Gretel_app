@@ -14,6 +14,9 @@ export class OrderDetailToppings {
   @Column({ type: 'int', default: 0 })
   unitIndex: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  extraCost: number;
+
   //--------------- Relaciones ---------------- //
 
   @ManyToOne(() => OrderDetails, (order) => order.orderDetailToppings)

@@ -575,9 +575,12 @@ const OrderProvider = ({
             setSelectedTable(finalUpdatedTable);
           }
         } else if (currentToken) {
+          const roomId = currentSelectedTable?.room?.id;
+          if (!roomId) return;
+
           try {
             const response = await fetch(
-              `${URI_TABLE}/by-room/${currentSelectedTable?.room?.id || ""}`,
+              `${URI_TABLE}/by-room/${roomId}`,
               { method: "GET", headers: { Authorization: `Bearer ${currentToken}` } }
             );
             if (response.ok) {
