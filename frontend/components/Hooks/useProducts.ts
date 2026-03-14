@@ -12,7 +12,13 @@ import { ProductForm } from '../Interfaces/IProducts';
 import { useAuth } from '@/app/context/authContext';
 import { FormTypeProduct, TypeProduct } from '../Enums/view-products';
 
-export const useProducts = () => {
+interface UseProductsOptions {
+  /** Si es true, no se realiza la carga inicial de los 500 productos al montar.
+   *  Útil en vistas de tablet (mozo) donde los productos se buscan bajo demanda. */
+  skipInitialFetch?: boolean;
+}
+
+export const useProducts = (options?: UseProductsOptions) => {
   const { getAccessToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
   const {
@@ -26,7 +32,7 @@ export const useProducts = () => {
   const [modalType, setModalType] = useState<FormTypeProduct>(
     FormTypeProduct.CREATE
   );
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!options?.skipInitialFetch);
   const [form, setForm] = useState<ProductForm>({
     id: '',
     code: null,
@@ -46,12 +52,13 @@ export const useProducts = () => {
     slots: [],
   });
 
-  // Llamada inicial para cargar productos
   useEffect(() => {
     const getToken = getAccessToken();
     if (!getToken) return;
     setToken(getToken);
-    fetchAndSetProducts(getToken);
+    if (!options?.skipInitialFetch) {
+      fetchAndSetProducts(getToken);
+    }
   }, []);
 
   const fetchAndSetProducts = async (token: string) => {

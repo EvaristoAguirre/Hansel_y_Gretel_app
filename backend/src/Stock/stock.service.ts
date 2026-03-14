@@ -316,7 +316,9 @@ export class StockService {
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
     if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado.`);
+      throw new NotFoundException(
+        `Producto con ID ${productId} no encontrado.`,
+      );
     }
 
     const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
@@ -453,19 +455,22 @@ export class StockService {
     }
 
     // Agrupar assignments por slotId y sumar quantities
-    const assignmentsBySlot = new Map<string, { 
-      assignments: PromotionSlotAssignment[], 
-      totalQuantity: number,
-      slot: PromotionSlot 
-    }>();
-    
+    const assignmentsBySlot = new Map<
+      string,
+      {
+        assignments: PromotionSlotAssignment[];
+        totalQuantity: number;
+        slot: PromotionSlot;
+      }
+    >();
+
     for (const assignment of assignments) {
       const slotId = assignment.slot.id;
       if (!assignmentsBySlot.has(slotId)) {
         assignmentsBySlot.set(slotId, {
           assignments: [],
           totalQuantity: 0,
-          slot: assignment.slot
+          slot: assignment.slot,
         });
       }
       const group = assignmentsBySlot.get(slotId)!;
@@ -478,7 +483,7 @@ export class StockService {
     for (const [slotId, group] of assignmentsBySlot.entries()) {
       slotIndex++;
       const slot = group.slot;
-      
+
       this.logger.log(
         `[deductPromotionStockWithSelections] Procesando slot "${slot.name}" (${slotIndex}/${assignmentsBySlot.size})`,
       );
@@ -487,8 +492,8 @@ export class StockService {
       const slotSelections = selectionsBySlot.get(slotId) || [];
 
       // Verificar si el slot es obligatorio (si alguna asignación no es opcional)
-      const isRequired = group.assignments.some(a => !a.isOptional);
-      
+      const isRequired = group.assignments.some((a) => !a.isOptional);
+
       // Si el slot es obligatorio y no tiene selecciones disponibles, error
       if (slotSelections.length === 0 && isRequired) {
         throw new BadRequestException(
@@ -499,7 +504,7 @@ export class StockService {
       // Contar el total de productos seleccionados para este slot
       const totalProductsSelected = slotSelections.reduce(
         (sum, sel) => sum + (sel.selectedProductIds?.length || 0),
-        0
+        0,
       );
 
       // Validar que la cantidad total coincida con la suma de quantities de todas las asignaciones
@@ -606,7 +611,9 @@ export class StockService {
       const toppingStock =
         await this.stockRepository.getStockByToppingId(toppingId);
       if (!toppingStock) {
-        throw new NotFoundException(`No se encontró stock para el agregado con ID ${toppingId}.`);
+        throw new NotFoundException(
+          `No se encontró stock para el agregado con ID ${toppingId}.`,
+        );
       }
 
       const topping =

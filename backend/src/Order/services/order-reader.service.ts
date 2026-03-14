@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { isUUID } from 'class-validator';
 import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
+import { buildProductLines } from '../helpers/order-response.helper';
 import { OrderDetails } from '../entities/order_details.entity';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
 
@@ -89,22 +90,7 @@ export class OrderReaderService {
     const productLines: ProductLineDto[] = [];
 
     for (const detail of order.orderDetails) {
-      const toppings: ToppingSummaryDto[] =
-        detail.orderDetailToppings?.map((t) => ({
-          id: t.topping.id,
-          name: t.topping.name,
-        })) || [];
-
-      productLines.push({
-        productId: detail.product.id,
-        productName: detail.product.name,
-        quantity: detail.quantity,
-        unitaryPrice: Number(detail.unitaryPrice),
-        subtotal: Number(detail.subtotal),
-        allowsToppings: detail.product.allowsToppings,
-        commentOfProduct: detail.commentOfProduct || null,
-        toppings,
-      });
+      productLines.push(...buildProductLines(detail));
     }
 
     const response = new OrderSummaryResponseDto();

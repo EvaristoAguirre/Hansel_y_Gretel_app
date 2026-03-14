@@ -22,4 +22,3 @@ export class UpdatePromotionSlotAssignmentDto {
   @IsOptional()
   isOptional?: boolean;
 }
-

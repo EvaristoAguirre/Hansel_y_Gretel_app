@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -168,19 +169,6 @@ export class TableController {
     return this.tableService.getAllTablesAvailable(page, limit);
   }
 
-  @Get(':id')
-  @ApiOperation({
-    summary: 'Obtener mesa por ID',
-    description: 'Devuelve una mesa específica por su UUID',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'UUID de la mesa' })
-  @ApiResponse({ status: 200, description: 'Mesa encontrada' })
-  @ApiResponse({ status: 404, description: 'Mesa no encontrada' })
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  getTableById(@Param('id') id: string): Promise<Table> {
-    return this.tableService.getTableById(id);
-  }
-
   @Get('by-name/:name')
   @ApiOperation({
     summary: 'Buscar mesa por nombre',
@@ -208,7 +196,22 @@ export class TableController {
   @ApiResponse({ status: 200, description: 'Lista de mesas del salón' })
   @ApiResponse({ status: 404, description: 'Salón no encontrado' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
-  async getTablesByRoom(@Param('id') roomId: string): Promise<Table[]> {
+  async getTablesByRoom(
+    @Param('id', new ParseUUIDPipe()) roomId: string,
+  ): Promise<Table[]> {
     return this.tableService.getTablesByRoom(roomId);
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Obtener mesa por ID',
+    description: 'Devuelve una mesa específica por su UUID',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'UUID de la mesa' })
+  @ApiResponse({ status: 200, description: 'Mesa encontrada' })
+  @ApiResponse({ status: 404, description: 'Mesa no encontrada' })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  getTableById(@Param('id', new ParseUUIDPipe()) id: string): Promise<Table> {
+    return this.tableService.getTableById(id);
   }
 }
