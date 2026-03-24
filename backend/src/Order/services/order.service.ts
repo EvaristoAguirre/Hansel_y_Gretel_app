@@ -15,7 +15,7 @@ import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { OrderState, TableState } from 'src/Enums/states.enum';
-import { ProductLineDto, ToppingSummaryDto } from 'src/DTOs/productSummary.dto';
+import { ProductLineDto } from 'src/DTOs/productSummary.dto';
 import { buildProductLines } from '../helpers/order-response.helper';
 import { TableService } from 'src/Table/table.service';
 import { isUUID } from 'class-validator';
@@ -40,10 +40,7 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
-    @InjectRepository(Ingredient)
-    private readonly ingredientRepo: Repository<Ingredient>,
-    @InjectRepository(OrderDetails)
-    private readonly orderDetailsRepo: Repository<OrderDetails>,
+
     private readonly orderRepository: OrderRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly tableService: TableService,
@@ -931,6 +928,9 @@ export class OrderService {
       methodOfPayment: p.methodOfPayment,
     }));
     response.total = Number(order.total);
+    response.tip = Number(order.tip);
+    response.discountPercent = Number(order.discountPercent ?? 0);
+    response.discountAmount = Number(order.discountAmount ?? 0);
 
     return response;
   }

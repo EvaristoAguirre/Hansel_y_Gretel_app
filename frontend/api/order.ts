@@ -65,13 +65,15 @@ export const orderToClosed = async (
   orderId: string,
   token: string,
   payments: PaymentDTO[],
-  commandNumber?: string
+  commandNumber?: string,
+  discountPercent: number = 0
 ) => {
   const total = payments.reduce((sum, p) => sum + p.amount, 0);
 
   const body = {
     total,
     payments,
+    discountPercent: Math.min(100, Math.max(0, Math.round(discountPercent))),
     ...(commandNumber && { commandNumber }),
   };
 

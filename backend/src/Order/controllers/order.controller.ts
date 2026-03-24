@@ -108,12 +108,22 @@ export class OrderController {
     description: 'Datos de cierre del pedido',
     examples: {
       efectivo: {
-        summary: 'Pago en efectivo',
-        value: { paymentMethod: 'EFECTIVO', discount: 0 },
+        summary: 'Pago en efectivo (sin descuento)',
+        value: {
+          total: 15000,
+          payments: [{ amount: 15000, methodOfPayment: 'efectivo' }],
+          discountPercent: 0,
+        },
       },
-      tarjeta: {
-        summary: 'Pago con tarjeta',
-        value: { paymentMethod: 'TARJETA', discount: 10 },
+      conDescuento: {
+        summary: 'Pago total con 10% de descuento',
+        value: {
+          total: 13500,
+          payments: [
+            { amount: 13500, methodOfPayment: 'tarjeta de debito' },
+          ],
+          discountPercent: 10,
+        },
       },
     },
   })

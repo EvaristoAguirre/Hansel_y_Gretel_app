@@ -28,6 +28,12 @@ export class ArchivedOrder {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tip: number;
 
+  @Column('decimal', { precision: 5, scale: 2, default: 0 })
+  discountPercent: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  discountAmount: number;
+
   @Column({ nullable: true })
   numberCustomers: number;
 

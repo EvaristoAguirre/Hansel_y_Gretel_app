@@ -114,17 +114,44 @@ export class OrderRepository {
         0,
       );
 
-      const declaredTotal = Number(closeOrderDto.total);
-      const calculatedTip = declaredTotal - totalConsumed;
+      const totalConsumedNum = Number(totalConsumed);
+      const grossRounded = Math.round(totalConsumedNum);
+      const pctRaw = Number(closeOrderDto.discountPercent ?? 0);
+      const discountPercent = Math.min(100, Math.max(0, Math.round(pctRaw)));
 
-      if (calculatedTip < 0) {
-        throw new BadRequestException(
-          `The declared total (${declaredTotal}) is less than the consumed amount (${totalConsumed}). This implies a negative tip.`,
-        );
+      let calculatedTip: number;
+      let discountAmount = 0;
+
+      if (discountPercent === 0) {
+        discountAmount = 0;
+        const declaredTotal = Number(closeOrderDto.total);
+        calculatedTip = declaredTotal - totalConsumedNum;
+        if (calculatedTip < 0) {
+          throw new BadRequestException(
+            `The declared total (${declaredTotal}) is less than the consumed amount (${totalConsumedNum}). This implies a negative tip.`,
+          );
+        }
+      } else {
+        discountAmount = Math.round((grossRounded * discountPercent) / 100);
+        const netAfterDiscount = grossRounded - discountAmount;
+        if (netAfterDiscount < 0) {
+          throw new BadRequestException(
+            'El descuento no puede superar el subtotal.',
+          );
+        }
+        const declaredTotal = Math.round(Number(closeOrderDto.total));
+        calculatedTip = declaredTotal - netAfterDiscount;
+        if (calculatedTip < 0) {
+          throw new BadRequestException(
+            `El total cobrado (${declaredTotal}) es menor que el neto tras descuento (${netAfterDiscount}).`,
+          );
+        }
       }
 
       order.total = totalConsumed;
       order.tip = calculatedTip;
+      order.discountPercent = discountPercent;
+      order.discountAmount = discountAmount;
 
       await this.orderPaymentRepository.save(orderPayments);
 
@@ -448,6 +475,9 @@ export class OrderRepository {
       methodOfPayment: p.methodOfPayment,
     }));
     response.total = Number(order.total);
+    response.tip = Number(order.tip);
+    response.discountPercent = Number(order.discountPercent ?? 0);
+    response.discountAmount = Number(order.discountAmount ?? 0);
 
     return response;
   }

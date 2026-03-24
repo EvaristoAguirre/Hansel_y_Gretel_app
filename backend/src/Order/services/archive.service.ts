@@ -70,6 +70,8 @@ export class ArchiveService {
             archived.state = order.state;
             archived.total = order.total;
             archived.tip = order.tip;
+            archived.discountPercent = Number(order.discountPercent ?? 0);
+            archived.discountAmount = Number(order.discountAmount ?? 0);
             archived.numberCustomers = order.numberCustomers;
             archived.comment = order.comment;
             archived.tableId = order.table?.id ?? null;
@@ -184,6 +186,8 @@ export class ArchiveService {
         amount: amount.toFixed(2),
       })),
       primaryMethod: payments.length === 1 ? payments[0].methodOfPayment : null,
+      discountPercent: Number(order.discountPercent ?? 0),
+      discountAmount: Number(order.discountAmount ?? 0),
     };
   }
 

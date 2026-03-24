@@ -109,6 +109,9 @@ export class OrderReaderService {
       methodOfPayment: p.methodOfPayment,
     }));
     response.total = Number(order.total);
+    response.tip = Number(order.tip);
+    response.discountPercent = Number(order.discountPercent ?? 0);
+    response.discountAmount = Number(order.discountAmount ?? 0);
 
     return response;
   }
