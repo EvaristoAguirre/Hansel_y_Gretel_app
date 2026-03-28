@@ -768,9 +768,12 @@ export class OrderService {
         where: { id, isActive: true },
         relations: [
           'orderDetails',
+          'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
+          'orderDetails.promotionSelections',
           'table',
           'table.room',
-          'orderDetails.product',
         ],
       });
 
@@ -780,6 +783,66 @@ export class OrderService {
 
       if (order.state === OrderState.CLOSED) {
         throw new ConflictException('Closed orders cannot be cancelled.');
+      }
+
+      if (order.state === OrderState.CANCELLED) {
+        throw new ConflictException('Order is already cancelled.');
+      }
+
+      // Restituir stock de cada ítem activo dentro de la misma transacción
+      const activeDetails = (order.orderDetails ?? []).filter(
+        (d) => d.isActive,
+      );
+
+      for (const detail of activeDetails) {
+        if (!detail.product) {
+          this.logger.warn(
+            `[cancelOrder] Detail ${detail.id} sin producto asociado, omitiendo restitución de stock.`,
+          );
+          continue;
+        }
+
+        // Reconstruir toppingsPerUnit agrupando por unitIndex
+        const toppingsPerUnit: string[][] = [];
+        for (const toppingRecord of detail.orderDetailToppings ?? []) {
+          const idx = toppingRecord.unitIndex;
+          if (!toppingsPerUnit[idx]) toppingsPerUnit[idx] = [];
+          if (toppingRecord.topping?.id) {
+            toppingsPerUnit[idx].push(toppingRecord.topping.id);
+          }
+        }
+
+        // Reconstruir promotionSelections agrupando por slotId
+        let promotionSelections: PromotionSelectionDto[] | undefined;
+        if (detail.promotionSelections?.length) {
+          const slotMap = new Map<string, string[]>();
+          for (const sel of detail.promotionSelections) {
+            if (!slotMap.has(sel.slotId)) slotMap.set(sel.slotId, []);
+            slotMap.get(sel.slotId).push(sel.selectedProductId);
+          }
+          promotionSelections = [...slotMap.entries()].map(
+            ([slotId, selectedProductIds]) => ({ slotId, selectedProductIds }),
+          );
+        }
+
+        try {
+          await this.stockService.restoreStock(
+            detail.product.id,
+            detail.quantity,
+            toppingsPerUnit.length ? toppingsPerUnit : undefined,
+            promotionSelections,
+            queryRunner,
+          );
+          this.logger.log(
+            `[cancelOrder] Stock restituido: producto "${detail.product.name}" x${detail.quantity}`,
+          );
+        } catch (stockError) {
+          // Modo lenient: registrar el error pero continuar con los demás ítems
+          this.logger.warn(
+            `[cancelOrder] No se pudo restituir stock del producto "${detail.product.name}" ` +
+              `(ID: ${detail.product.id}): ${stockError.message}`,
+          );
+        }
       }
 
       const previousTableId = order.table?.id;
@@ -792,13 +855,14 @@ export class OrderService {
       }
 
       order.state = OrderState.CANCELLED;
-      order.isActive = false; // Marcar como inactiva para que no aparezca en búsquedas
+      order.isActive = false;
 
       const updatedOrder = await queryRunner.manager.save(order);
 
+      // Commit único: restitución de stock + cancelación de orden
       await queryRunner.commitTransaction();
 
-      // Cambiar estado de mesa (fuera de la transacción)
+      // Cambiar estado de mesa (fuera de la transacción, tolerado)
       if (previousTableId) {
         try {
           await this.tableService.updateTableState(
@@ -812,11 +876,9 @@ export class OrderService {
         }
       }
 
-      // Emitir evento de orden cancelada para sincronización en tiempo real
-      // Incluir información de la mesa antes de que se estableciera en null
       const orderWithTableInfo = {
         ...updatedOrder,
-        table: tableInfo, // Incluir el tableId en el evento
+        table: tableInfo,
       };
 
       this.eventEmitter.emit('order.deleted', { order: orderWithTableInfo });
