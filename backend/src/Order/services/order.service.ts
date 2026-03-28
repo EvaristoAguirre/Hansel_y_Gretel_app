@@ -10,6 +10,8 @@ import { Order } from '../entities/order.entity';
 import { UpdateOrderDto } from 'src/Order/dtos/update-order.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderDetails } from '../entities/order_details.entity';
+import { OrderDetailToppings } from '../entities/order_details_toppings.entity';
+import { CancelOrderDetailDto } from '../dtos/cancel-order-detail.dto';
 import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -887,6 +889,203 @@ export class OrderService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error('cancelOrder', error);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async cancelOrderDetail(
+    orderId: string,
+    detailId: string,
+    dto: CancelOrderDetailDto,
+  ): Promise<OrderSummaryResponseDto> {
+    if (!isUUID(orderId)) throw new BadRequestException('Invalid order ID.');
+    if (!isUUID(detailId)) throw new BadRequestException('Invalid detail ID.');
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1) Cargar la orden con todas las relaciones necesarias
+      const order = await queryRunner.manager.findOne(Order, {
+        where: { id: orderId, isActive: true },
+        relations: [
+          'table',
+          'orderDetails',
+          'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
+          'orderDetails.promotionSelections',
+        ],
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID: ${orderId} not found`);
+      }
+
+      // 2) Guards de estado
+      if (order.state === OrderState.CLOSED) {
+        throw new ConflictException('Closed orders cannot be modified.');
+      }
+      if (order.state === OrderState.CANCELLED) {
+        throw new ConflictException('Cancelled orders cannot be modified.');
+      }
+      if (order.state === OrderState.PENDING_PAYMENT) {
+        throw new ConflictException(
+          'Cannot modify an order with pending payment.',
+        );
+      }
+
+      // 3) Buscar el detalle específico activo
+      const detail = order.orderDetails.find(
+        (d) => d.id === detailId && d.isActive,
+      );
+      if (!detail) {
+        throw new NotFoundException(
+          `Order detail with ID: ${detailId} not found or already inactive.`,
+        );
+      }
+
+      if (!detail.product) {
+        throw new BadRequestException(
+          `The detail has no associated product and cannot be processed.`,
+        );
+      }
+
+      // 4) Validar la cantidad a anular
+      const { quantityToCancel } = dto;
+      if (quantityToCancel > detail.quantity) {
+        throw new BadRequestException(
+          `Cannot cancel ${quantityToCancel} unit(s). The detail only has ${detail.quantity} active unit(s).`,
+        );
+      }
+
+      const isFullCancellation = quantityToCancel === detail.quantity;
+
+      // 5) Identificar los índices de unidad que se cancelan (las últimas N)
+      const firstCancelledIndex = detail.quantity - quantityToCancel;
+      const lastCancelledIndex = detail.quantity - 1;
+
+      // 6) Obtener los registros de toppings de las unidades canceladas
+      const cancelledToppingRecords = (detail.orderDetailToppings ?? []).filter(
+        (t) =>
+          t.unitIndex >= firstCancelledIndex &&
+          t.unitIndex <= lastCancelledIndex,
+      );
+
+      // 7) Reconstruir toppingsPerUnit re-indexados 0…(quantityToCancel-1) para restoreStock
+      const toppingsPerUnit: string[][] = [];
+      for (const tr of cancelledToppingRecords) {
+        const idx = tr.unitIndex - firstCancelledIndex;
+        if (!toppingsPerUnit[idx]) toppingsPerUnit[idx] = [];
+        if (tr.topping?.id) toppingsPerUnit[idx].push(tr.topping.id);
+      }
+
+      // 8) Reconstruir promotionSelections agrupando por slotId (aplican a todas las unidades)
+      let promotionSelections: PromotionSelectionDto[] | undefined;
+      if (detail.promotionSelections?.length) {
+        const slotMap = new Map<string, string[]>();
+        for (const sel of detail.promotionSelections) {
+          if (!slotMap.has(sel.slotId)) slotMap.set(sel.slotId, []);
+          slotMap.get(sel.slotId).push(sel.selectedProductId);
+        }
+        promotionSelections = [...slotMap.entries()].map(
+          ([slotId, selectedProductIds]) => ({ slotId, selectedProductIds }),
+        );
+      }
+
+      // 9) Restituir stock (modo lenient: loguear y continuar si falla)
+      try {
+        await this.stockService.restoreStock(
+          detail.product.id,
+          quantityToCancel,
+          toppingsPerUnit.length ? toppingsPerUnit : undefined,
+          promotionSelections,
+          queryRunner,
+        );
+        this.logger.log(
+          `[cancelOrderDetail] Stock restituido: "${detail.product.name}" x${quantityToCancel}`,
+        );
+      } catch (stockError) {
+        this.logger.warn(
+          `[cancelOrderDetail] No se pudo restituir stock de "${detail.product.name}" ` +
+            `(ID: ${detail.product.id}): ${stockError.message}`,
+        );
+      }
+
+      // 10) Calcular el subtotal que se descuenta del total de la orden
+      const cancelledToppingsExtraCost = cancelledToppingRecords.reduce(
+        (sum, tr) => sum + Number(tr.extraCost ?? 0),
+        0,
+      );
+      const baseProductPricePerUnit =
+        Number(detail.unitaryPrice) -
+        Number(detail.toppingsExtraCost) / detail.quantity;
+      const cancelledSubtotal =
+        baseProductPricePerUnit * quantityToCancel + cancelledToppingsExtraCost;
+
+      // 11) Actualizar el total de la orden
+      order.total = Math.max(0, Number(order.total) - cancelledSubtotal);
+
+      if (isFullCancellation) {
+        // Cancelación total: soft-delete del detalle completo
+        detail.isActive = false;
+      } else {
+        // Cancelación parcial: eliminar los toppingRecords de las unidades canceladas,
+        // luego recalcular cantidad y precios
+        if (cancelledToppingRecords.length > 0) {
+          await queryRunner.manager.remove(
+            OrderDetailToppings,
+            cancelledToppingRecords,
+          );
+        }
+        const newQuantity = detail.quantity - quantityToCancel;
+        const newToppingsExtraCost =
+          Number(detail.toppingsExtraCost) - cancelledToppingsExtraCost;
+        const newUnitaryToppingsCostPerUnit =
+          newQuantity > 0 ? newToppingsExtraCost / newQuantity : 0;
+
+        detail.quantity = newQuantity;
+        detail.toppingsExtraCost = newToppingsExtraCost;
+        detail.unitaryPrice = baseProductPricePerUnit + newUnitaryToppingsCostPerUnit;
+        detail.subtotal = detail.unitaryPrice * newQuantity;
+      }
+
+      await queryRunner.manager.save(detail);
+      await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
+
+      // 12) Reimprimir comanda de cocina con el estado actualizado (fuera de la transacción)
+      try {
+        await this.reprintKitchenOrder(orderId);
+      } catch (printError) {
+        this.logger.warn(
+          `[cancelOrderDetail] Falló la reimpresión de comanda: ${printError.message}`,
+        );
+      }
+
+      // 13) Recargar la orden y emitir evento
+      const updatedOrder = await this.orderRepo.findOne({
+        where: { id: orderId },
+        relations: [
+          'orderDetails',
+          'table',
+          'orderDetails.product',
+          'orderDetails.orderDetailToppings',
+          'orderDetails.orderDetailToppings.topping',
+          'payments',
+        ],
+      });
+
+      this.eventEmitter.emit('order.updated', { order: updatedOrder });
+
+      return await this.adaptResponse(updatedOrder);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('cancelOrderDetail', error);
       throw error;
     } finally {
       await queryRunner.release();
