@@ -16,13 +16,14 @@ import Swal from "sweetalert2";
 interface ToppingsGroupsViewerProps {
   groups: IProductToppingsGroupResponse[];
   fetchGroupById: (id: string) => Promise<{ toppings: ITopping[] }>;
-  productId: string;
+  /** internalId de la línea en el carrito */
+  lineId: string;
 }
 
 const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
   groups,
   fetchGroupById,
-  productId,
+  lineId,
 }) => {
   const [visibleGroups, setVisibleGroups] = useState<{ [id: string]: boolean }>({});
   const [loadedToppings, setLoadedToppings] = useState<{ [id: string]: ITopping[] }>({});
@@ -35,17 +36,17 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     checkStockToppingAvailability
   } = useOrderContext();
 
-  const product = selectedProducts.find((p) => p.productId === productId);
+  const product = selectedProducts.find((p) => p.internalId === lineId);
   const quantity = product?.quantity || 0;
 
   useEffect(() => {
-    if (product && !toppingsByProductGroup[productId]) {
+    if (product && !toppingsByProductGroup[lineId]) {
       // Inicializar TODAS las unidades para evitar entradas undefined en el array
       Array.from({ length: product.quantity }).forEach((_, i) => {
-        updateToppingForUnit(productId, i, {});
+        updateToppingForUnit(lineId, i, {});
       });
     }
-  }, [product]);
+  }, [product, lineId]);
 
   const handleToppingChange = async (
     checked: boolean,
@@ -54,13 +55,13 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     unitIndex: number,
     groupMax: number
   ) => {
-    const unitToppings = toppingsByProductGroup[productId]?.[unitIndex] || {};
+    const unitToppings = toppingsByProductGroup[lineId]?.[unitIndex] || {};
     let newGroupToppings = [...(unitToppings[groupId] || [])];
 
     if (!checked) {
       // Destilar nunca requiere verificación de stock: siempre reduce el total.
       newGroupToppings = newGroupToppings.filter((id) => id !== toppingId);
-      updateToppingForUnit(productId, unitIndex, {
+      updateToppingForUnit(lineId, unitIndex, {
         ...unitToppings,
         [groupId]: newGroupToppings,
       });
@@ -74,7 +75,7 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     newGroupToppings.push(toppingId);
 
     // Verificar stock solo al agregar un topping nuevo
-    const newToppingsByUnit = [...(toppingsByProductGroup[productId] || [])];
+    const newToppingsByUnit = [...(toppingsByProductGroup[lineId] || [])];
     newToppingsByUnit[unitIndex] = {
       ...unitToppings,
       [groupId]: newGroupToppings,
@@ -85,13 +86,13 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
     );
 
     const result = await checkStockToppingAvailability(
-      productId,
+      product?.productId ?? "",
       quantity,
       simulatedToppingsPerUnit
     );
 
     if (result?.available) {
-      updateToppingForUnit(productId, unitIndex, {
+      updateToppingForUnit(lineId, unitIndex, {
         ...unitToppings,
         [groupId]: newGroupToppings,
       });
@@ -161,7 +162,7 @@ const ToppingsGroupsViewer: React.FC<ToppingsGroupsViewerProps> = ({
           {(quantity === 1 || visibleUnits[unitIndex]) && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "0.5rem" }}>
               {groups.map((group) => {
-                const unitToppings = toppingsByProductGroup[productId]?.[unitIndex] || {};
+                const unitToppings = toppingsByProductGroup[lineId]?.[unitIndex] || {};
                 const selectedGroupToppings = unitToppings[group.id] || [];
 
                 return (
