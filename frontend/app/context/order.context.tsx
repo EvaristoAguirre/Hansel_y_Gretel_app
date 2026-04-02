@@ -175,9 +175,9 @@ const OrderProvider = ({
     }
   }, [getAccessToken]);
 
-  // El reset se movió al efecto unificado de selectedTable (más abajo),
-  // junto con la lógica de fetch. Esto elimina el doble ciclo de render
-  // (vaciar → rellenar) al cambiar de mesa.
+  // Rastrea el ID de la mesa anterior para distinguir entre cambio de mesa
+  // (requiere reset completo) vs. cambio de estado de la misma mesa (no requiere reset).
+  const previousTableIdRef = useRef<string | null>(null);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -251,6 +251,13 @@ const OrderProvider = ({
       orderId = orderInStore?.id;
     }
 
+    if (
+      !orderId &&
+      selectedOrderByTableRef.current?.table?.id === currentSelectedTable.id
+    ) {
+      orderId = selectedOrderByTableRef.current.id;
+    }
+
     if (!orderId) {
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
@@ -285,6 +292,7 @@ const OrderProvider = ({
       if (data.products && data.products.length > 0) {
         const adaptedProducts: SelectedProductsI[] = data.products.map(
           (product: any) => ({
+            detailId: product.detailId,
             productId: product.productId,
             productName: product.productName,
             quantity: product.quantity,
@@ -307,17 +315,25 @@ const OrderProvider = ({
     }
   }, [handleSetProductsByOrder]);
 
-  // Efecto unificado: reemplaza los dos efectos anteriores que reaccionaban a selectedTable.
-  // Primero limpia el estado de la mesa anterior, luego carga la orden de la nueva mesa.
-  // Esto elimina el parpadeo (vacío → datos) que producía el doble efecto.
+  // Efecto unificado: reacciona a cambios de selectedTable.
+  // Solo resetea el estado cuando cambia la MESA (distinto ID).
+  // Si la misma mesa cambia de estado (ej. OPEN→PENDING_PAYMENT al imprimir ticket),
+  // no re-fetch-ea si ya hay una orden cargada para esa mesa: evita pisar el estado
+  // que handlePayOrder / cancelOrderDetail acaban de actualizar (race con store WS).
   useEffect(() => {
-    // Limpiar siempre al cambiar de mesa
-    setSelectedProducts([]);
-    setConfirmedProducts([]);
-    setSelectedOrderByTable(null);
-    setSelectedToppingsByProduct({});
-    setToppingsByProductGroup({});
-    setHighlightedProducts(new Set());
+    const newTableId = selectedTable?.id ?? null;
+    const tableIdChanged = newTableId !== previousTableIdRef.current;
+    previousTableIdRef.current = newTableId;
+
+    if (tableIdChanged) {
+      // Solo limpiar al cambiar a una mesa diferente
+      setSelectedProducts([]);
+      setConfirmedProducts([]);
+      setSelectedOrderByTable(null);
+      setSelectedToppingsByProduct({});
+      setToppingsByProductGroup({});
+      setHighlightedProducts(new Set());
+    }
 
     if (!selectedTable) return;
 
@@ -333,6 +349,14 @@ const OrderProvider = ({
     ) {
       return;
     }
+
+    if (
+      !tableIdChanged &&
+      selectedOrderByTableRef.current?.table?.id === newTableId
+    ) {
+      return;
+    }
+
     fetchOrderBySelectedTable();
   }, [selectedTable, fetchOrderBySelectedTable]);
 
@@ -503,6 +527,7 @@ const OrderProvider = ({
         if (fullOrderData.products && fullOrderData.products.length > 0 && shouldUpdate) {
           const adaptedProducts: SelectedProductsI[] = fullOrderData.products.map(
             (product: any) => ({
+              detailId: product.detailId,
               productId: product.productId,
               productName: product.productName,
               quantity: product.quantity,

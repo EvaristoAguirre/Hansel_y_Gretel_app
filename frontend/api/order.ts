@@ -137,6 +137,34 @@ export const cancelOrder = async (id: string, token: string) => {
   return await response.json();
 };
 
+export const cancelOrderDetail = async (
+  orderId: string,
+  detailId: string,
+  quantityToCancel: number,
+  token: string
+) => {
+  const response = await fetch(
+    `${URI_ORDER}/${orderId}/detail/${detailId}/cancel`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ quantityToCancel }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage =
+      errorData.message || `Error: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+
+  return await response.json();
+};
+
 export const transferOrder = async (token: string, data: IOrderTranfer) => {
   const dataBody = {
     fromTableId: data.fromTableId,

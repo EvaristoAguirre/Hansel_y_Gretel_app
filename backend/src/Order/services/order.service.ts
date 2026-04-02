@@ -1169,7 +1169,7 @@ export class OrderService {
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
     const productLines: ProductLineDto[] = [];
 
-    for (const detail of order.orderDetails) {
+    for (const detail of order.orderDetails.filter((d) => d.isActive)) {
       productLines.push(...buildProductLines(detail));
     }
 

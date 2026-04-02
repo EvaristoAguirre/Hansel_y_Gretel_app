@@ -109,10 +109,9 @@ export class OrderRepository {
         }),
       );
 
-      const totalConsumed = order.orderDetails.reduce(
-        (acc, detail) => acc + Number(detail.subtotal),
-        0,
-      );
+      const totalConsumed = order.orderDetails
+        .filter((detail) => detail.isActive)
+        .reduce((acc, detail) => acc + Number(detail.subtotal), 0);
 
       const totalConsumedNum = Number(totalConsumed);
       const grossRounded = Math.round(totalConsumedNum);
@@ -455,7 +454,7 @@ export class OrderRepository {
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
     const productLines: ProductLineDto[] = [];
 
-    for (const detail of order.orderDetails) {
+    for (const detail of order.orderDetails.filter((d) => d.isActive)) {
       productLines.push(...buildProductLines(detail));
     }
 

@@ -23,6 +23,7 @@ import {
   AutoAwesome,
   SpaceBar,
   Print,
+  RemoveCircleOutline,
 } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
@@ -46,7 +47,7 @@ import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
 import { TypeProduct } from "../Enums/view-products";
 import { PromotionSlotSelector } from "./PromotionSlotSelector";
 import { getSlotsByPromotionId } from "@/api/promotionSlot";
-import { reprintComanda } from "@/api/order";
+import { cancelOrderDetail, reprintComanda } from "@/api/order";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -83,7 +84,9 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     selectedProducts,
     setSelectedProducts,
     confirmedProducts,
+    setConfirmedProducts,
     selectedOrderByTable,
+    setSelectedOrderByTable,
     handleSelectedProducts,
     handleDeleteSelectedProduct,
     increaseProductNumber,
@@ -110,6 +113,11 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const [isPriority, setIsPriority] = useState<boolean>(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
   const [isPrintingComanda, setIsPrintingComanda] = useState<boolean>(false);
+  const [cancelDetailModal, setCancelDetailModal] = useState<{
+    open: boolean;
+    item: SelectedProductsI | null;
+    loading: boolean;
+  }>({ open: false, item: null, loading: false });
 
   useEffect(() => {
     token &&
@@ -431,6 +439,43 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     setSelectedProducts([...selectedProducts, newProduct]);
     setPromotionSlotModal({ open: false, promotion: null, quantity: 1 });
+  };
+
+  const handleConfirmCancelDetail = async () => {
+    const { item } = cancelDetailModal;
+    if (!item?.detailId || !selectedOrderByTable?.id || !token) return;
+
+    setCancelDetailModal((prev) => ({ ...prev, loading: true }));
+    try {
+      const updatedOrder = await cancelOrderDetail(
+        selectedOrderByTable.id,
+        item.detailId,
+        1,
+        token
+      );
+      // Actualizar la lista de confirmados con la orden devuelta por el backend
+      if (updatedOrder?.products) {
+        const adaptedProducts: SelectedProductsI[] = updatedOrder.products.map(
+          (p: any) => ({
+            detailId: p.detailId,
+            productId: p.productId,
+            productName: p.productName,
+            quantity: p.quantity,
+            unitaryPrice: p.unitaryPrice != null ? String(p.unitaryPrice) : null,
+            commentOfProduct: p.commentOfProduct || null,
+            allowsToppings: p.allowsToppings,
+          })
+        );
+        setConfirmedProducts(adaptedProducts);
+      }
+      if (updatedOrder) {
+        setSelectedOrderByTable(updatedOrder);
+      }
+      setCancelDetailModal({ open: false, item: null, loading: false });
+    } catch (error: any) {
+      setCancelDetailModal((prev) => ({ ...prev, loading: false }));
+      console.error("Error al anular ítem:", error);
+    }
   };
 
   return loading || isLoadingOrders ? (
@@ -755,8 +800,29 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       color: "#ffffff",
                       borderBottom: "1px solid #856D5E",
                       justifyContent: "space-between",
+                      paddingLeft: "4px",
                     }}
                   >
+                    {/* Ícono de anulación — primera columna */}
+                    <Tooltip title="Anular ítem" arrow>
+                      <IconButton
+                        size="small"
+                        sx={{ padding: "4px", flexShrink: 0 }}
+                        onClick={() =>
+                          setCancelDetailModal({
+                            open: true,
+                            item,
+                            loading: false,
+                          })
+                        }
+                      >
+                        <RemoveCircleOutline
+                          fontSize="small"
+                          sx={{ color: "#c0392b" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+
                     <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
@@ -839,6 +905,77 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
           </Box>
         </div>
       </div>
+
+      {/* Modal de confirmación de anulación de ítem */}
+      <Dialog
+        open={cancelDetailModal.open}
+        onClose={() =>
+          !cancelDetailModal.loading &&
+          setCancelDetailModal({ open: false, item: null, loading: false })
+        }
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "10px" } }}
+      >
+        <DialogTitle
+          sx={{
+            backgroundColor: "#856D5E",
+            color: "#ffffff",
+            textAlign: "center",
+            py: 1.5,
+          }}
+        >
+          <Typography component="span" variant="h6" fontWeight="bold" display="block">
+            Anular ítem confirmado
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 2, textAlign: "center" }}>
+          <Typography variant="body1" sx={{ color: "#333", lineHeight: 1.6 }}>
+            ¿Anular{" "}
+            <strong style={{ color: "#856D5E" }}>
+              {capitalizeFirstLetter(cancelDetailModal.item?.productName ?? "")}
+            </strong>{" "}
+            x1?
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "#999", display: "block", mt: 1.5 }}
+          >
+            El stock será restituido y la comanda se reimprimirá.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1.5 }}>
+          <Button
+            onClick={() =>
+              setCancelDetailModal({ open: false, item: null, loading: false })
+            }
+            disabled={cancelDetailModal.loading}
+            variant="outlined"
+            fullWidth
+            sx={{
+              color: "#856D5E",
+              borderColor: "#856D5E",
+              "&:hover": { backgroundColor: "#f5ede8", borderColor: "#856D5E" },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmCancelDetail}
+            disabled={cancelDetailModal.loading}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#856D5E",
+              color: "#fff",
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#6e5a50" },
+            }}
+          >
+            {cancelDetailModal.loading ? "Anulando..." : "Confirmar anulación"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Modal de selección de slots para promociones */}
       <PromotionSlotSelector
