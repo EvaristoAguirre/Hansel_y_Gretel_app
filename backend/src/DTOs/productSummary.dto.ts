@@ -14,6 +14,7 @@ export class ToppingSummaryDto {
 }
 
 export class ProductLineDto {
+  detailId: string;
   productId: string;
   productName: string;
   quantity: number;

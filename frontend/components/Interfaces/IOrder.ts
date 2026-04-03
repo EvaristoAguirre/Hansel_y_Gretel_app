@@ -18,6 +18,10 @@ export interface IOrderDetails {
     name: string;
   };
   total: number;
+  /** Presente al cerrar cobro */
+  tip?: number;
+  discountPercent?: number;
+  discountAmount?: number;
   products: IConfirmedProducts[];
 }
 

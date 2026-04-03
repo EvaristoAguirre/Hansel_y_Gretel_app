@@ -68,6 +68,9 @@ export type OrderCash = {
   room: string;
   numberCustomers: number;
   total: string;
+  /** Porcentaje de descuento (listado caja) o string decimal en detalle API. */
+  discountPercent?: string | number;
+  discountAmount?: string | number;
   paymentMethods: Payment[];
   products: Product[];
   createdAt: string;
