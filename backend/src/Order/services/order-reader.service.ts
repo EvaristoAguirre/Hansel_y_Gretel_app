@@ -89,7 +89,7 @@ export class OrderReaderService {
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {
     const productLines: ProductLineDto[] = [];
 
-    for (const detail of order.orderDetails) {
+    for (const detail of order.orderDetails.filter((d) => d.isActive)) {
       productLines.push(...buildProductLines(detail));
     }
 
@@ -109,6 +109,9 @@ export class OrderReaderService {
       methodOfPayment: p.methodOfPayment,
     }));
     response.total = Number(order.total);
+    response.tip = Number(order.tip);
+    response.discountPercent = Number(order.discountPercent ?? 0);
+    response.discountAmount = Number(order.discountAmount ?? 0);
 
     return response;
   }
@@ -168,6 +171,8 @@ export class OrderReaderService {
         room: order.table?.room?.name || 'Sin salón',
         numberCustomers: order.numberCustomers,
         total: Number(order.total).toFixed(2),
+        discountPercent: Number(order.discountPercent ?? 0).toFixed(2),
+        discountAmount: Number(order.discountAmount ?? 0).toFixed(2),
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
         closedAt: order.closedAt,

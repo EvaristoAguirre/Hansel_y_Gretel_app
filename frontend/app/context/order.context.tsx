@@ -28,6 +28,7 @@ import { TableState } from "@/components/Enums/table";
 import { OrderState } from "@/components/Enums/order";
 import { editTable } from "@/api/tables";
 import { webSocketService } from "@/services/websocket.service";
+import { newOrderLineId } from "@/components/Utils/newOrderLineId";
 
 type OrderContextType = {
   selectedProducts: SelectedProductsI[];
@@ -40,12 +41,12 @@ type OrderContextType = {
   highlightedProducts: Set<string>;
   addHighlightedProduct: (id: string) => void;
   removeHighlightedProduct: (id: string) => void;
-  handleDeleteSelectedProduct: (productId: string) => void;
+  handleDeleteSelectedProduct: (lineId: string) => void;
   increaseProductNumber: (product: SelectedProductsI) => void;
-  decreaseProductNumber: (productId: string) => void;
-  productComment: (id: string, comment: string) => void;
+  decreaseProductNumber: (lineId: string) => void;
+  productComment: (lineId: string, comment: string) => void;
   clearSelectedProducts: () => void;
-  deleteConfirmProduct: (productId: string) => void;
+  deleteConfirmProduct: (lineId: string) => void;
   handleCreateOrder: (
     table: ITable,
     cantidadPersonas: number,
@@ -62,15 +63,16 @@ type OrderContextType = {
   handleResetSelectedOrder: () => void;
   fetchOrderBySelectedTable: () => void;
   handleCancelOrder: (orderId: string) => Promise<void>;
-  handleAddTopping: (productId: string, toppingIds: string[]) => Promise<void>;
-  selectedToppingsByProduct: { [productId: string]: string[][] };
+  handleAddTopping: (lineId: string, toppingIds: string[]) => Promise<void>;
+  /** Clave = internalId de la línea del carrito */
+  selectedToppingsByProduct: { [lineId: string]: string[][] };
   updateToppingForUnit: (
-    productId: string,
+    lineId: string,
     unitIndex: number,
     updatedGroup: { [groupId: string]: string[] }
   ) => void;
   toppingsByProductGroup: {
-    [productId: string]: Array<{ [groupId: string]: string[] }>;
+    [lineId: string]: Array<{ [groupId: string]: string[] }>;
   };
   checkStockToppingAvailability: (
     productId: string,
@@ -129,7 +131,7 @@ const OrderProvider = ({
   );
 
   const [selectedToppingsByProduct, setSelectedToppingsByProduct] = useState<{
-    [productId: string]: string[][];
+    [lineId: string]: string[][];
   }>({});
 
   const [confirmedProducts, setConfirmedProducts] = useState<
@@ -144,7 +146,7 @@ const OrderProvider = ({
   );
 
   const [toppingsByProductGroup, setToppingsByProductGroup] = useState<{
-    [productId: string]: Array<{ [groupId: string]: string[] }>;
+    [lineId: string]: Array<{ [groupId: string]: string[] }>;
   }>({});
 
   // Refs para acceder al estado actual desde callbacks estables (WebSocket listeners)
@@ -175,9 +177,9 @@ const OrderProvider = ({
     }
   }, [getAccessToken]);
 
-  // El reset se movió al efecto unificado de selectedTable (más abajo),
-  // junto con la lógica de fetch. Esto elimina el doble ciclo de render
-  // (vaciar → rellenar) al cambiar de mesa.
+  // Rastrea el ID de la mesa anterior para distinguir entre cambio de mesa
+  // (requiere reset completo) vs. cambio de estado de la misma mesa (no requiere reset).
+  const previousTableIdRef = useRef<string | null>(null);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -251,6 +253,13 @@ const OrderProvider = ({
       orderId = orderInStore?.id;
     }
 
+    if (
+      !orderId &&
+      selectedOrderByTableRef.current?.table?.id === currentSelectedTable.id
+    ) {
+      orderId = selectedOrderByTableRef.current.id;
+    }
+
     if (!orderId) {
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
@@ -285,6 +294,7 @@ const OrderProvider = ({
       if (data.products && data.products.length > 0) {
         const adaptedProducts: SelectedProductsI[] = data.products.map(
           (product: any) => ({
+            detailId: product.detailId,
             productId: product.productId,
             productName: product.productName,
             quantity: product.quantity,
@@ -307,17 +317,25 @@ const OrderProvider = ({
     }
   }, [handleSetProductsByOrder]);
 
-  // Efecto unificado: reemplaza los dos efectos anteriores que reaccionaban a selectedTable.
-  // Primero limpia el estado de la mesa anterior, luego carga la orden de la nueva mesa.
-  // Esto elimina el parpadeo (vacío → datos) que producía el doble efecto.
+  // Efecto unificado: reacciona a cambios de selectedTable.
+  // Solo resetea el estado cuando cambia la MESA (distinto ID).
+  // Si la misma mesa cambia de estado (ej. OPEN→PENDING_PAYMENT al imprimir ticket),
+  // no re-fetch-ea si ya hay una orden cargada para esa mesa: evita pisar el estado
+  // que handlePayOrder / cancelOrderDetail acaban de actualizar (race con store WS).
   useEffect(() => {
-    // Limpiar siempre al cambiar de mesa
-    setSelectedProducts([]);
-    setConfirmedProducts([]);
-    setSelectedOrderByTable(null);
-    setSelectedToppingsByProduct({});
-    setToppingsByProductGroup({});
-    setHighlightedProducts(new Set());
+    const newTableId = selectedTable?.id ?? null;
+    const tableIdChanged = newTableId !== previousTableIdRef.current;
+    previousTableIdRef.current = newTableId;
+
+    if (tableIdChanged) {
+      // Solo limpiar al cambiar a una mesa diferente
+      setSelectedProducts([]);
+      setConfirmedProducts([]);
+      setSelectedOrderByTable(null);
+      setSelectedToppingsByProduct({});
+      setToppingsByProductGroup({});
+      setHighlightedProducts(new Set());
+    }
 
     if (!selectedTable) return;
 
@@ -333,6 +351,14 @@ const OrderProvider = ({
     ) {
       return;
     }
+
+    if (
+      !tableIdChanged &&
+      selectedOrderByTableRef.current?.table?.id === newTableId
+    ) {
+      return;
+    }
+
     fetchOrderBySelectedTable();
   }, [selectedTable, fetchOrderBySelectedTable]);
 
@@ -370,7 +396,8 @@ const OrderProvider = ({
       );
       setSelectedProducts(updatedDetails);
     } else if (!foundProduct || product.allowsToppings) {
-      const newProduct = {
+      const newProduct: SelectedProductsI = {
+        internalId: newOrderLineId(),
         productId: product.id,
         quantity: 1,
         unitaryPrice: product.price,
@@ -386,10 +413,10 @@ const OrderProvider = ({
     }
   };
 
-  const handleAddTopping = async (productId: string, toppingIds: string[]) => {
+  const handleAddTopping = async (lineId: string, toppingIds: string[]) => {
     setSelectedProducts((prevProducts) =>
       prevProducts.map((p) =>
-        p.productId === productId ? { ...p, toppingsIds: toppingIds } : p
+        p.internalId === lineId ? { ...p, toppingsIds: toppingIds } : p
       )
     );
   };
@@ -400,12 +427,12 @@ const OrderProvider = ({
   };
 
   const updateToppingForUnit = (
-    productId: string,
+    lineId: string,
     unitIndex: number,
     updatedGroup: { [groupId: string]: string[] }
   ) => {
     setToppingsByProductGroup((prev) => {
-      const productData = [...(prev[productId] || [])];
+      const productData = [...(prev[lineId] || [])];
       productData[unitIndex] = updatedGroup;
 
       const flattened = productData.map((groupMap) => {
@@ -414,12 +441,12 @@ const OrderProvider = ({
 
       setSelectedToppingsByProduct((prevFlat) => ({
         ...prevFlat,
-        [productId]: flattened,
+        [lineId]: flattened,
       }));
 
       return {
         ...prev,
-        [productId]: productData,
+        [lineId]: productData,
       };
     });
   };
@@ -503,6 +530,7 @@ const OrderProvider = ({
         if (fullOrderData.products && fullOrderData.products.length > 0 && shouldUpdate) {
           const adaptedProducts: SelectedProductsI[] = fullOrderData.products.map(
             (product: any) => ({
+              detailId: product.detailId,
               productId: product.productId,
               productName: product.productName,
               quantity: product.quantity,
@@ -625,45 +653,52 @@ const OrderProvider = ({
     };
   }, []); // Sin dependencias: se registra una sola vez al montar y usa refs para el estado actual.
 
-  const handleDeleteSelectedProduct = (id: string) => {
-    setSelectedProducts(selectedProducts.filter((p) => p.productId !== id));
-    clearToppings();
+  const handleDeleteSelectedProduct = (lineId: string) => {
+    setSelectedProducts((prev) => prev.filter((p) => p.internalId !== lineId));
+    setSelectedToppingsByProduct((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
+    setToppingsByProductGroup((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
   };
 
   const increaseProductNumber = (product: SelectedProductsI) => {
-    const productToUpdate = selectedProducts.find(
-      (p) => p.productId === product.productId
-    );
+    const lineId = product.internalId;
+    if (!lineId) return;
+    const productToUpdate = selectedProducts.find((p) => p.internalId === lineId);
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity + 1;
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === product.productId
-            ? { ...p, quantity: newQuantity }
-            : p
+          p.internalId === lineId ? { ...p, quantity: newQuantity } : p
         )
       );
     }
   };
 
-  const decreaseProductNumber = (id: string) => {
-    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+  const decreaseProductNumber = (lineId: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.internalId === lineId);
     if (productToUpdate) {
       const newQuantity = productToUpdate.quantity - 1;
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === id ? { ...p, quantity: newQuantity } : p
+          p.internalId === lineId ? { ...p, quantity: newQuantity } : p
         )
       );
     }
   };
 
-  const productComment = async (id: string, comment: string) => {
-    const productToUpdate = selectedProducts.find((p) => p.productId === id);
+  const productComment = async (lineId: string, comment: string) => {
+    const productToUpdate = selectedProducts.find((p) => p.internalId === lineId);
     if (productToUpdate) {
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.productId === id ? { ...p, commentOfProduct: comment } : p
+          p.internalId === lineId ? { ...p, commentOfProduct: comment } : p
         )
       );
     }
@@ -673,9 +708,9 @@ const OrderProvider = ({
     setSelectedProducts([]);
   };
 
-  const deleteConfirmProduct = (id: string) => {
+  const deleteConfirmProduct = (lineId: string) => {
     setConfirmedProducts(
-      confirmedProducts.filter((p: SelectedProductsI) => p.productId !== id)
+      confirmedProducts.filter((p: SelectedProductsI) => p.internalId !== lineId)
     );
   };
 

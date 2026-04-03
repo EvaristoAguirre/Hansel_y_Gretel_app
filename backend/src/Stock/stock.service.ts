@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// eslint-disable @typescript-eslint/no-unused-vars
 /* eslint-disable prettier/prettier */
 import {
   BadRequestException,
@@ -23,8 +23,8 @@ import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { isUUID } from 'class-validator';
 import { Logger } from '@nestjs/common';
 import { StockResponseFormatter } from './stock-response-formatter';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { PromotionSelectionDto } from 'src/Product/dtos/promotion-selection.dto';
@@ -41,6 +41,8 @@ export class StockService {
     private readonly productService: ProductService,
     @InjectRepository(PromotionSlot)
     private readonly promotionSlotRepository: Repository<PromotionSlot>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   // ------------- formato string, con separador de miles y decimales
@@ -670,6 +672,350 @@ export class StockService {
       );
     }
   }
+
+  // ==================== RESTITUCIÓN DE STOCK ====================
+
+  /**
+   * Método público principal para restituir stock.
+   * Espejo simétrico de deductStock: soporta productos simples, compuestos,
+   * promociones (legacy y con slots) y toppings.
+   *
+   * @param productId - ID del producto cuyo stock se restituye
+   * @param quantity - Cantidad de unidades a restituir
+   * @param toppingsPerUnit - IDs de toppings por unidad de producto (opcional)
+   * @param promotionSelections - Selecciones de slots de promoción (opcional)
+   * @param queryRunner - QueryRunner externo para participar en una transacción ya abierta (opcional)
+   */
+  async restoreStock(
+    productId: string,
+    quantity: number,
+    toppingsPerUnit?: string[][],
+    promotionSelections?: PromotionSelectionDto[],
+    queryRunner?: QueryRunner,
+  ): Promise<string> {
+    const isExternal = !!queryRunner;
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+
+    if (!isExternal) {
+      await qr.connect();
+      await qr.startTransaction();
+    }
+
+    try {
+      const product =
+        await this.productService.getProductByIdToAnotherService(productId);
+      if (!product) {
+        throw new NotFoundException(
+          `Producto con ID ${productId} no encontrado.`,
+        );
+      }
+
+      const unidad = await this.unitOfMeasureService.getUnitOfMeasureUnidad();
+      const unidadId = unidad?.id;
+      if (!unidadId) {
+        throw new InternalServerErrorException('Unidad base no encontrada');
+      }
+
+      if (product.type === 'simple') {
+        await this.restoreSimpleStock(product, quantity, unidadId, qr);
+      } else if (product.type === 'product') {
+        await this.restoreCompositeStock(product, quantity, qr);
+      } else if (product.type === 'promotion') {
+        if (promotionSelections && promotionSelections.length > 0) {
+          await this.restorePromotionStockWithSelections(
+            product,
+            quantity,
+            promotionSelections,
+            qr,
+          );
+        } else {
+          await this.restorePromotionStockLegacy(product, quantity, qr);
+        }
+      }
+
+      if (toppingsPerUnit?.length) {
+        await this.restoreToppingsStock(toppingsPerUnit, quantity, product, qr);
+      }
+
+      if (!isExternal) {
+        await qr.commitTransaction();
+      }
+
+      this.eventEmitter.emit('stock.restored', { stockRestored: true });
+      return 'Stock restored successfully.';
+    } catch (error) {
+      if (!isExternal) {
+        await qr.rollbackTransaction();
+      }
+      this.logger.error('[restoreStock]', error);
+      throw error;
+    } finally {
+      if (!isExternal) {
+        await qr.release();
+      }
+    }
+  }
+
+  /**
+   * Restituye el stock de un ingrediente (usado como ingrediente de receta o como topping).
+   * Puede llamarse de forma independiente o dentro de una transacción externa.
+   *
+   * @param ingredientId - ID del ingrediente
+   * @param quantity - Cantidad a restituir, expresada en la unidad indicada por unitOfMeasureId
+   * @param unitOfMeasureId - ID de la unidad de medida en que se expresa quantity
+   * @param queryRunner - QueryRunner externo para participar en una transacción ya abierta (opcional)
+   */
+  async restoreIngredientStock(
+    ingredientId: string,
+    quantity: number,
+    unitOfMeasureId: string,
+    queryRunner?: QueryRunner,
+  ): Promise<void> {
+    const isExternal = !!queryRunner;
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+
+    if (!isExternal) {
+      await qr.connect();
+      await qr.startTransaction();
+    }
+
+    try {
+      await this.restoreIngredientStockCore(
+        ingredientId,
+        quantity,
+        unitOfMeasureId,
+        qr,
+      );
+
+      if (!isExternal) {
+        await qr.commitTransaction();
+      }
+    } catch (error) {
+      if (!isExternal) {
+        await qr.rollbackTransaction();
+      }
+      this.logger.error('[restoreIngredientStock]', error);
+      throw error;
+    } finally {
+      if (!isExternal) {
+        await qr.release();
+      }
+    }
+  }
+
+  private async restoreSimpleStock(
+    product: Product,
+    quantity: number,
+    unidadId: string,
+    qr: QueryRunner,
+  ): Promise<void> {
+    if (!product.stock) {
+      throw new NotFoundException(
+        `El producto "${product.name}" no tiene stock asociado.`,
+      );
+    }
+
+    const stockUnitId = product.stock.unitOfMeasure.id;
+
+    const quantityToRestore = await this.unitOfMeasureService.convertUnit(
+      unidadId,
+      stockUnitId,
+      quantity,
+    );
+
+    product.stock.quantityInStock =
+      Number(product.stock.quantityInStock) + quantityToRestore;
+
+    await qr.manager.save(product.stock);
+  }
+
+  private async restoreCompositeStock(
+    product: Product,
+    quantity: number,
+    qr: QueryRunner,
+  ): Promise<void> {
+    for (const pi of product.productIngredients) {
+      await this.restoreIngredientStockCore(
+        pi.ingredient.id,
+        pi.quantityOfIngredient * quantity,
+        pi.unitOfMeasure.id,
+        qr,
+      );
+    }
+  }
+
+  /**
+   * Núcleo interno de restitución de ingrediente.
+   * Compartido por restoreIngredientStock (público) y los métodos privados
+   * de producto compuesto y toppings, garantizando que todos participen en la
+   * misma transacción.
+   */
+  private async restoreIngredientStockCore(
+    ingredientId: string,
+    quantity: number,
+    unitOfMeasureId: string,
+    qr: QueryRunner,
+  ): Promise<void> {
+    const ingredient =
+      await this.ingredientService.getIngredientByIdToAnotherService(
+        ingredientId,
+      );
+
+    if (!ingredient || !ingredient.stock) {
+      throw new NotFoundException(
+        `El ingrediente con ID ${ingredientId} no fue encontrado o no tiene stock.`,
+      );
+    }
+
+    const stockUnitId = ingredient.stock.unitOfMeasure.id;
+
+    const quantityToRestore = await this.unitOfMeasureService.convertUnit(
+      unitOfMeasureId,
+      stockUnitId,
+      quantity,
+    );
+
+    this.logger.log(
+      `[restoreIngredientStockCore] Restaurando ${quantityToRestore} ${ingredient.stock.unitOfMeasure.abbreviation} → ingrediente "${ingredient.name}"`,
+    );
+
+    ingredient.stock.quantityInStock =
+      Number(ingredient.stock.quantityInStock) + quantityToRestore;
+
+    await qr.manager.save(ingredient.stock);
+  }
+
+  private async restoreToppingsStock(
+    toppingsPerUnit: string[][],
+    productQuantity: number,
+    product: Product,
+    qr: QueryRunner,
+  ): Promise<void> {
+    this.logger.log(
+      `[restoreToppingsStock] Toppings por unidad: ${JSON.stringify(toppingsPerUnit)} | Cantidad de producto: ${productQuantity}`,
+    );
+
+    const toppingCountMap: Record<string, number> = {};
+
+    for (const unitToppings of toppingsPerUnit) {
+      for (const toppingId of unitToppings) {
+        toppingCountMap[toppingId] = (toppingCountMap[toppingId] || 0) + 1;
+      }
+    }
+
+    for (const [toppingId, totalUses] of Object.entries(toppingCountMap)) {
+      const toppingStock =
+        await this.stockRepository.getStockByToppingId(toppingId);
+      if (!toppingStock) {
+        throw new NotFoundException(
+          `No se encontró stock para el agregado con ID ${toppingId}.`,
+        );
+      }
+
+      const topping =
+        await this.ingredientService.getIngredientByIdToAnotherService(
+          toppingId,
+        );
+
+      const toppingGroup = product.availableToppingGroups.find((group) =>
+        group.toppingGroup?.toppings?.some((t) => t.id === toppingId),
+      );
+
+      if (!toppingGroup) {
+        throw new NotFoundException(
+          `Grupo de agregados para "${topping.name}" no encontrado.`,
+        );
+      }
+
+      const quantityPerUse = Number(toppingGroup.quantityOfTopping);
+      const sourceUnitId = toppingGroup.unitOfMeasure.id;
+      const targetUnitId = toppingStock.unitOfMeasure.id;
+
+      const totalToRestoreInSource = totalUses * quantityPerUse;
+
+      const quantityToRestore = await this.unitOfMeasureService.convertUnit(
+        sourceUnitId,
+        targetUnitId,
+        totalToRestoreInSource,
+      );
+
+      this.logger.log(
+        `[restoreToppingsStock] Restaurando ${quantityToRestore} ${toppingStock.unitOfMeasure.abbreviation} → topping "${topping.name}"`,
+      );
+
+      toppingStock.quantityInStock =
+        Number(toppingStock.quantityInStock) + quantityToRestore;
+
+      await qr.manager.save(toppingStock);
+    }
+  }
+
+  private async restorePromotionStockLegacy(
+    promotion: Product,
+    quantity: number,
+    qr: QueryRunner,
+  ): Promise<void> {
+    const promotionProducts =
+      await this.productService.getPromotionProductsToAnotherService(
+        promotion.id,
+      );
+
+    for (const promotionProduct of promotionProducts) {
+      await this.restoreStock(
+        promotionProduct.product.id,
+        promotionProduct.quantity * quantity,
+        undefined,
+        undefined,
+        qr,
+      );
+    }
+  }
+
+  private async restorePromotionStockWithSelections(
+    promotion: Product,
+    quantity: number,
+    selections: PromotionSelectionDto[],
+    qr: QueryRunner,
+  ): Promise<void> {
+    this.logger.log(
+      `[restorePromotionStockWithSelections] Restitución de stock para promoción: ${promotion.name}, Cantidad: ${quantity}`,
+    );
+
+    const assignments = await this.promotionSlotRepository.manager.find(
+      PromotionSlotAssignment,
+      {
+        where: { promotionId: promotion.id },
+        relations: ['slot', 'slot.options', 'slot.options.product'],
+      },
+    );
+
+    if (!assignments || assignments.length === 0) {
+      throw new BadRequestException(
+        `La promoción "${promotion.name}" no tiene slots configurados.`,
+      );
+    }
+
+    for (const selection of selections) {
+      for (let i = 0; i < (selection.selectedProductIds || []).length; i++) {
+        const selectedProductId = selection.selectedProductIds[i];
+        const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
+
+        await this.restoreStock(
+          selectedProductId,
+          quantity,
+          toppingsForThisProduct.length ? [toppingsForThisProduct] : undefined,
+          undefined,
+          qr,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[restorePromotionStockWithSelections] Restitución completada para promoción: ${promotion.name}`,
+    );
+  }
+
+  // ===============================================================
 
   /**
    * Verifica la disponibilidad de stock para una promoción con slots

@@ -172,6 +172,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     "none"
   );
   const [fullCustomTip, setFullCustomTip] = useState(0);
+  const [fullDiscountPercent, setFullDiscountPercent] = useState(0);
   const [fullSplits, setFullSplits] = useState<FullSplit[]>([
     { id: "split-0", method: "", amount: "" },
   ]);
@@ -187,8 +188,13 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     setConfirmedPayments([]);
     setFullTipType("none");
     setFullCustomTip(0);
+    setFullDiscountPercent(0);
     setFullSplits([{ id: "split-0", method: "", amount: "" }]);
   }, [selectedOrderByTable?.id]);
+
+  useEffect(() => {
+    setFullSplits([{ id: `split-${Date.now()}`, method: "", amount: "" }]);
+  }, [fullDiscountPercent]);
 
   const unpaidIds = confirmedProducts
     .map((p) => p.internalId!)
@@ -204,9 +210,11 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         setConfirmedPayments([]);
         setFullTipType("none");
         setFullCustomTip(0);
+        setFullDiscountPercent(0);
         setFullSplits([{ id: `split-${Date.now()}`, method: "", amount: "" }]);
       } else {
         setDraftPayment((prevDp) => ({ ...prevDp, productIds: [] }));
+        setFullDiscountPercent(0);
       }
       return next;
     });
@@ -285,12 +293,17 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
     (sum, p) => sum + Number(p.unitaryPrice ?? 0),
     0
   );
+  const fullGrossRounded = Math.round(fullBaseAmount);
+  const fullDiscountAmount = Math.round(
+    (fullGrossRounded * fullDiscountPercent) / 100
+  );
+  const fullNetAfterDiscount = fullGrossRounded - fullDiscountAmount;
   const fullTotalWithTip =
     fullTipType === "10"
-      ? Math.round(fullBaseAmount * 1.1)
+      ? Math.round(fullNetAfterDiscount * 1.1)
       : fullTipType === "custom"
-      ? fullBaseAmount + fullCustomTip
-      : fullBaseAmount;
+      ? fullNetAfterDiscount + fullCustomTip
+      : fullNetAfterDiscount;
   const fullPaid = fullSplits.reduce(
     (sum, s) => sum + (parseInt(s.amount.replace(/\D/g, ""), 10) || 0),
     0
@@ -344,7 +357,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         const paidOrder = await orderToClosed(
           selectedOrderByTable.id,
           token,
-          payments
+          payments,
+          undefined,
+          fullDiscountPercent
         );
         if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
         setConfirmedProducts([]);
@@ -709,7 +724,96 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           {fullPaymentMode && (
             <>
               <Divider sx={{ my: 2 }} />
-              <Typography fontWeight="bold">Tipo de total:</Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" },
+                  gap: 2,
+                  alignItems: "stretch",
+                  mb: 2,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  label="Porcentaje de descuento"
+                  InputLabelProps={{ shrink: true }}
+                  value={
+                    fullDiscountPercent === 0
+                      ? ""
+                      : String(fullDiscountPercent)
+                  }
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    if (raw === "") {
+                      setFullDiscountPercent(0);
+                      return;
+                    }
+                    const n = Math.min(100, parseInt(raw, 10) || 0);
+                    setFullDiscountPercent(n);
+                  }}
+                  inputProps={{
+                    inputMode: "numeric",
+                    pattern: "[0-9]*",
+                    maxLength: 3,
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">%</InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  label="Monto a descontar"
+                  InputLabelProps={{ shrink: true }}
+                  value={
+                    fullDiscountAmount > 0
+                      ? `-$${formatNumber(fullDiscountAmount)}`
+                      : `$${formatNumber(fullDiscountAmount)}`
+                  }
+                  InputProps={{ readOnly: true }}
+                  inputProps={{
+                    readOnly: true,
+                    tabIndex: -1,
+                  }}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "error.main",
+                      fontWeight: "bold",
+                      textAlign: { xs: "left", sm: "center" },
+                      cursor: "default",
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  label="Monto neto"
+                  InputLabelProps={{ shrink: true }}
+                  value={`$${formatNumber(fullNetAfterDiscount)}`}
+                  InputProps={{ readOnly: true }}
+                  inputProps={{
+                    readOnly: true,
+                    tabIndex: -1,
+                  }}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      fontWeight: "bold",
+                      textAlign: { xs: "left", sm: "right" },
+                      cursor: "default",
+                    },
+                  }}
+                />
+              </Box>
+
+              <Typography fontWeight="bold">
+                Tipo de total (sobre el neto tras descuento):
+              </Typography>
               <Box
                 display="grid"
                 gridTemplateColumns="30px 3fr 1fr"
@@ -722,7 +826,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   onChange={() => setFullTipType("none")}
                 />
                 <Typography>Total sin propina</Typography>
-                <Typography>${formatNumber(fullBaseAmount)}</Typography>
+                <Typography>${formatNumber(fullNetAfterDiscount)}</Typography>
 
                 <Radio
                   checked={fullTipType === "10"}
@@ -730,7 +834,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 />
                 <Typography>Total + 10% propina</Typography>
                 <Typography>
-                  ${formatNumber(Math.round(fullBaseAmount * 1.1))}
+                  ${formatNumber(Math.round(fullNetAfterDiscount * 1.1))}
                 </Typography>
 
                 <Radio
@@ -739,12 +843,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 />
                 <Typography>Total + propina personalizada</Typography>
                 <Typography>
-                  ${formatNumber(fullBaseAmount + fullCustomTip)}
+                  ${formatNumber(fullNetAfterDiscount + fullCustomTip)}
                 </Typography>
               </Box>
               {fullTipType === "custom" && (
                 <TipInputs
-                  baseAmount={fullBaseAmount}
+                  baseAmount={fullNetAfterDiscount}
                   customTip={fullCustomTip}
                   onChangeCustomTip={setFullCustomTip}
                 />

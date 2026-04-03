@@ -8,6 +8,10 @@ export class OrderDetailsDto {
   room: string;
   numberCustomers: number;
   total: string;
+  /** Porcentaje de descuento aplicado al cerrar (0 si no hubo). */
+  discountPercent: string;
+  /** Monto de descuento en pesos. */
+  discountAmount: string;
   paymentMethods: {
     methodOfPayment: string;
     amount: string;

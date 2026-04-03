@@ -33,6 +33,7 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
 import { OrderDetailsDto } from 'src/DTOs/daily-cash-detail.dto';
+import { CancelOrderDetailDto } from 'src/Order/dtos/cancel-order-detail.dto';
 
 @ApiTags('Pedido')
 @ApiBearerAuth('JWT-auth')
@@ -108,12 +109,22 @@ export class OrderController {
     description: 'Datos de cierre del pedido',
     examples: {
       efectivo: {
-        summary: 'Pago en efectivo',
-        value: { paymentMethod: 'EFECTIVO', discount: 0 },
+        summary: 'Pago en efectivo (sin descuento)',
+        value: {
+          total: 15000,
+          payments: [{ amount: 15000, methodOfPayment: 'efectivo' }],
+          discountPercent: 0,
+        },
       },
-      tarjeta: {
-        summary: 'Pago con tarjeta',
-        value: { paymentMethod: 'TARJETA', discount: 10 },
+      conDescuento: {
+        summary: 'Pago total con 10% de descuento',
+        value: {
+          total: 13500,
+          payments: [
+            { amount: 13500, methodOfPayment: 'tarjeta de debito' },
+          ],
+          discountPercent: 10,
+        },
       },
     },
   })
@@ -205,6 +216,54 @@ export class OrderController {
   async cancelOrder(@Param('id') id: string): Promise<Order> {
     const result = await this.orderService.cancelOrder(id);
     return result;
+  }
+
+  @Patch(':orderId/detail/:detailId/cancel')
+  @ApiOperation({
+    summary: 'Anular un ítem (o cantidad parcial) de un pedido',
+    description:
+      'Anula una cantidad determinada de un ítem confirmado. ' +
+      'Restituye el stock correspondiente y, en caso de cancelación parcial, ' +
+      'actualiza la cantidad y el subtotal del detalle. ' +
+      'Genera una reimpresión de comanda con el estado actualizado.',
+  })
+  @ApiParam({ name: 'orderId', type: String, description: 'UUID del pedido' })
+  @ApiParam({
+    name: 'detailId',
+    type: String,
+    description: 'UUID del detalle de orden a anular',
+  })
+  @ApiBody({
+    type: CancelOrderDetailDto,
+    examples: {
+      totalCancellation: {
+        summary: 'Anulación total del ítem',
+        value: { quantityToCancel: 1 },
+      },
+      partialCancellation: {
+        summary: 'Anulación parcial (de 3 unidades, se anulan 2)',
+        value: { quantityToCancel: 2 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Ítem anulado. Devuelve la orden actualizada.',
+    type: OrderSummaryResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Cantidad inválida o mayor a la actual' })
+  @ApiResponse({ status: 404, description: 'Pedido o detalle no encontrado' })
+  @ApiResponse({
+    status: 409,
+    description: 'El pedido está cerrado, cancelado o pendiente de pago',
+  })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
+  async cancelOrderDetail(
+    @Param('orderId') orderId: string,
+    @Param('detailId') detailId: string,
+    @Body() dto: CancelOrderDetailDto,
+  ): Promise<OrderSummaryResponseDto> {
+    return this.orderService.cancelOrderDetail(orderId, detailId, dto);
   }
 
   @Delete(':id')

@@ -24,6 +24,7 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
 
     return [
       {
+        detailId: detail.id,
         productId: detail.product.id,
         productName: detail.product.name,
         quantity: detail.quantity,
@@ -85,6 +86,7 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
   return Array.from(groups.values()).map((group) => {
     const unitaryPrice = Math.round(basePrice + group.extraCost);
     return {
+      detailId: detail.id,
       productId: detail.product.id,
       productName: detail.product.name,
       quantity: group.count,

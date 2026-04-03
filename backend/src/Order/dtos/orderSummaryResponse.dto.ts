@@ -13,6 +13,9 @@ export class OrderSummaryResponseDto {
     state: TableState;
   };
   total: number;
+  tip?: number;
+  discountPercent?: number;
+  discountAmount?: number;
   products: ProductLineDto[];
   payments: OrderPaymentSummary[];
 }

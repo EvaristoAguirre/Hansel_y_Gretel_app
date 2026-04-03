@@ -34,6 +34,14 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tip: number;
 
+  /** Porcentaje 0–100 aplicado al subtotal de ítems (pago total). */
+  @Column('decimal', { precision: 5, scale: 2, default: 0 })
+  discountPercent: number;
+
+  /** Monto de descuento en pesos (redondeado). */
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  discountAmount: number;
+
   @Column({ nullable: false })
   numberCustomers: number;
 

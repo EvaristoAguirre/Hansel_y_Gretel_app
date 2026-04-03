@@ -23,6 +23,7 @@ import {
   AutoAwesome,
   SpaceBar,
   Print,
+  RemoveCircleOutline,
 } from "@mui/icons-material";
 import { Box } from "@mui/system";
 import { useOrderContext } from "../../app/context/order.context";
@@ -46,7 +47,8 @@ import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
 import { TypeProduct } from "../Enums/view-products";
 import { PromotionSlotSelector } from "./PromotionSlotSelector";
 import { getSlotsByPromotionId } from "@/api/promotionSlot";
-import { reprintComanda } from "@/api/order";
+import { newOrderLineId } from "../Utils/newOrderLineId";
+import { cancelOrderDetail, reprintComanda } from "@/api/order";
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -83,7 +85,9 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     selectedProducts,
     setSelectedProducts,
     confirmedProducts,
+    setConfirmedProducts,
     selectedOrderByTable,
+    setSelectedOrderByTable,
     handleSelectedProducts,
     handleDeleteSelectedProduct,
     increaseProductNumber,
@@ -110,6 +114,11 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const [isPriority, setIsPriority] = useState<boolean>(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
   const [isPrintingComanda, setIsPrintingComanda] = useState<boolean>(false);
+  const [cancelDetailModal, setCancelDetailModal] = useState<{
+    open: boolean;
+    item: SelectedProductsI | null;
+    loading: boolean;
+  }>({ open: false, item: null, loading: false });
 
   useEffect(() => {
     token &&
@@ -132,7 +141,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
   const confirmarPedido: () => Promise<void> = async () => {
     const productDetails = selectedProducts.map((product) => {
-      const rawToppings = selectedToppingsByProduct[product.productId] ?? [];
+      const lineId = product.internalId ?? "";
+      const rawToppings = lineId
+        ? selectedToppingsByProduct[lineId] ?? []
+        : [];
       const toppingsPerUnit =
         rawToppings.length > 0
           ? Array.from(
@@ -141,11 +153,16 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             )
           : [];
 
+      const draftComment =
+        lineId && commentInputs[lineId] !== undefined
+          ? commentInputs[lineId]
+          : product.commentOfProduct;
+
       const baseDetail: any = {
         productId: product.productId,
         quantity: product.quantity,
         toppingsPerUnit,
-        commentOfProduct: commentInputs[product.productId],
+        commentOfProduct: draftComment ?? null,
       };
 
       // Si el producto tiene selecciones de slots, transformarlas al formato del backend
@@ -247,7 +264,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   useEffect(() => {
     const calcularSubtotal = () => {
       const subtotal = selectedProducts.reduce((acc, product) => {
-        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        const lineId = product.internalId ?? product.productId;
+        const toppings = toppingsByProductGroup[lineId] ?? [];
         return (
           acc +
           calcularPrecioConToppingsNumero(product, product.quantity, toppings)
@@ -258,7 +276,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     const calculateTotal = () => {
       const total = confirmedProducts.reduce((acc, product) => {
-        const toppings = toppingsByProductGroup[product.productId] ?? [];
+        const lineId = product.internalId ?? product.productId;
+        const toppings = toppingsByProductGroup[lineId] ?? [];
         return (
           acc +
           calcularPrecioConToppingsNumero(product, product.quantity, toppings)
@@ -271,24 +290,21 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     calculateTotal();
   }, [selectedProducts, confirmedProducts, toppingsByProductGroup]);
 
-  const toggleCommentInput = (productId: string) => {
+  const toggleCommentInput = (lineId: string) => {
     setVisibleCommentInputs((prev) => ({
       ...prev,
-      [productId]: !prev[productId],
+      [lineId]: !prev[lineId],
     }));
   };
 
   /**
-   *
-   * @param productId - El ID del producto a eliminar
-   * @returns La función `handleDeleteProductAndComment` elimina un producto del contexto y su comentario asociado en el estado local.
-   * Si el producto eliminado estaba siendo editado, se cancela la edición.
+   * Elimina una línea del carrito (por `internalId`) y su borrador de comentario local.
    */
-  const handleDeleteProductAndComment = (productId: string) => {
-    handleDeleteSelectedProduct(productId);
+  const handleDeleteProductAndComment = (lineId: string) => {
+    handleDeleteSelectedProduct(lineId);
     setCommentInputs((prevCommentInputs) => {
       const newCommentInputs = { ...prevCommentInputs };
-      delete newCommentInputs[productId];
+      delete newCommentInputs[lineId];
       return newCommentInputs;
     });
   };
@@ -330,18 +346,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   }, [selectedCats]);
 
   const [visibleToppings, setVisibleToppings] = useState<{
-    [productId: string]: boolean;
+    [lineId: string]: boolean;
   }>({});
-  const handleShowToppings = (productId: string) => {
+  const handleShowToppings = (lineId: string) => {
     setVisibleToppings((prev) => ({
       ...prev,
-      [productId]: !prev[productId],
+      [lineId]: !prev[lineId],
     }));
   };
 
   // Función auxiliar para obtener los nombres de los toppings seleccionados de un producto normal
   const getToppingNamesForProduct = (item: SelectedProductsI): string[] => {
-    const productToppings = toppingsByProductGroup[item.productId];
+    const lineId = item.internalId ?? item.productId;
+    const productToppings = toppingsByProductGroup[lineId];
     if (!productToppings || !item.availableToppingGroups) return [];
 
     const toppingNames: string[] = [];
@@ -418,7 +435,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     const quantity = promotionSlotModal.quantity;
 
     // Crear el producto con las selecciones de slots (incluyendo toppings)
-    const newProduct = {
+    const newProduct: SelectedProductsI = {
+      internalId: newOrderLineId(),
       productId: promotion.id,
       quantity: quantity,
       unitaryPrice: promotion.price,
@@ -431,6 +449,43 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     setSelectedProducts([...selectedProducts, newProduct]);
     setPromotionSlotModal({ open: false, promotion: null, quantity: 1 });
+  };
+
+  const handleConfirmCancelDetail = async () => {
+    const { item } = cancelDetailModal;
+    if (!item?.detailId || !selectedOrderByTable?.id || !token) return;
+
+    setCancelDetailModal((prev) => ({ ...prev, loading: true }));
+    try {
+      const updatedOrder = await cancelOrderDetail(
+        selectedOrderByTable.id,
+        item.detailId,
+        1,
+        token
+      );
+      // Actualizar la lista de confirmados con la orden devuelta por el backend
+      if (updatedOrder?.products) {
+        const adaptedProducts: SelectedProductsI[] = updatedOrder.products.map(
+          (p: any) => ({
+            detailId: p.detailId,
+            productId: p.productId,
+            productName: p.productName,
+            quantity: p.quantity,
+            unitaryPrice: p.unitaryPrice != null ? String(p.unitaryPrice) : null,
+            commentOfProduct: p.commentOfProduct || null,
+            allowsToppings: p.allowsToppings,
+          })
+        );
+        setConfirmedProducts(adaptedProducts);
+      }
+      if (updatedOrder) {
+        setSelectedOrderByTable(updatedOrder);
+      }
+      setCancelDetailModal({ open: false, item: null, loading: false });
+    } catch (error: any) {
+      setCancelDetailModal((prev) => ({ ...prev, loading: false }));
+      console.error("Error al anular ítem:", error);
+    }
   };
 
   return loading || isLoadingOrders ? (
@@ -500,167 +555,175 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                   <h5>Productos sin confirmar:</h5>
                 </div>
 
-                {selectedProducts.map((item, index) => (
-                  <ListItem
-                    key={index}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
-                      width: "100%",
-                      padding: "3px",
-                    }}
-                  >
-                    {/* Línea principal de datos del producto */}
-                    <div
+                {selectedProducts.map((item, index) => {
+                  const lineId = item.internalId ?? `legacy-line-${index}`;
+                  return (
+                    <ListItem
+                      key={lineId}
                       style={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        color: "#ffffff",
-                        justifyContent: "space-between",
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        width: "100%",
+                        padding: "3px",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <IconButton
-                          size="small"
-                          sx={{ padding: "4px" }}
-                          onClick={() => decreaseProductNumber(item.productId)}
-                        >
-                          <Remove fontSize="small" color="error" />
-                        </IconButton>
-                        <Typography
-                          sx={{
-                            border: "1px solid #856D5E",
-                            color: "#856D5E",
-                            width: "1.5rem",
-                            textAlign: "center",
-                            borderRadius: "5px",
-                          }}
-                        >
-                          {item.quantity}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          sx={{ padding: "4px" }}
-                          onClick={() => increaseProductNumber(item)}
-                        >
-                          <Add fontSize="small" color="success" />
-                        </IconButton>
-                      </div>
-
-                      <Tooltip title={item.productName} arrow>
-                        <ListItemText
-                          style={{
-                            color: "black",
-                            display: "-webkit-box",
-                            WebkitBoxOrient: "vertical",
-                            WebkitLineClamp: 1,
-                            overflow: "hidden",
-                            maxWidth: "15rem",
-                          }}
-                          primary={capitalizeFirstLetter(
-                            item.productName ?? ""
-                          )}
-                        />
-                      </Tooltip>
-
-                      <Typography style={{ color: "black" }}>
-                        $
-                        {calcularPrecioConToppings(
-                          item,
-                          item.quantity,
-                          toppingsByProductGroup[item.productId] ?? []
-                        )}
-                      </Typography>
-
-                      {/* ICON DE AGREGADOS */}
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        {item.allowsToppings && (
-                          <Tooltip title="Agregados" arrow>
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                handleShowToppings(item.productId);
-                                removeHighlightedProduct(item.productId);
-                              }}
-                              sx={{
-                                "@keyframes heartbeat": {
-                                  "0%": { transform: "scale(1)" },
-                                  "14%": { transform: "scale(1.3)" },
-                                  "28%": { transform: "scale(1)" },
-                                  "42%": { transform: "scale(1.3)" },
-                                  "70%": { transform: "scale(1)" },
-                                },
-                                animation: highlightedProducts.has(
-                                  item.productId
-                                )
-                                  ? "heartbeat 2.2s infinite ease-in-out"
-                                  : "none",
-                              }}
-                            >
-                              <AutoAwesome />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title="Comentarios" arrow>
+                      {/* Línea principal de datos del producto */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          color: "#ffffff",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center" }}>
                           <IconButton
-                            onClick={() => toggleCommentInput(item.productId)}
-                          >
-                            <Comment style={{ color: "#856D5E" }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Eliminar" arrow>
-                          <IconButton
+                            size="small"
+                            sx={{ padding: "4px" }}
                             onClick={() =>
-                              handleDeleteProductAndComment(item.productId)
+                              item.internalId &&
+                              decreaseProductNumber(item.internalId)
                             }
                           >
-                            <Delete />
+                            <Remove fontSize="small" color="error" />
                           </IconButton>
-                        </Tooltip>
-                      </div>
-                    </div>
+                          <Typography
+                            sx={{
+                              border: "1px solid #856D5E",
+                              color: "#856D5E",
+                              width: "1.5rem",
+                              textAlign: "center",
+                              borderRadius: "5px",
+                            }}
+                          >
+                            {item.quantity}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            sx={{ padding: "4px" }}
+                            onClick={() => increaseProductNumber(item)}
+                          >
+                            <Add fontSize="small" color="success" />
+                          </IconButton>
+                        </div>
 
-                    {/* Comentario */}
-                    {visibleCommentInputs[item.productId] && (
-                      <div style={{ marginTop: "0.5rem", width: "100%" }}>
-                        <AutoGrowTextarea
-                          value={
-                            commentInputs[item.productId] !== undefined
-                              ? commentInputs[item.productId]
-                              : item.commentOfProduct ?? ""
-                          }
-                          placeholder="Comentario al producto"
-                          onChange={(value) =>
-                            setCommentInputs((prev) => ({
-                              ...prev,
-                              [item.productId]: value,
-                            }))
-                          }
-                          onBlur={() =>
-                            productComment(
-                              item.productId,
-                              commentInputs[item.productId] || ""
-                            )
-                          }
-                        />
+                        <Tooltip title={item.productName} arrow>
+                          <ListItemText
+                            style={{
+                              color: "black",
+                              display: "-webkit-box",
+                              WebkitBoxOrient: "vertical",
+                              WebkitLineClamp: 1,
+                              overflow: "hidden",
+                              maxWidth: "15rem",
+                            }}
+                            primary={capitalizeFirstLetter(
+                              item.productName ?? ""
+                            )}
+                          />
+                        </Tooltip>
+
+                        <Typography style={{ color: "black" }}>
+                          $
+                          {calcularPrecioConToppings(
+                            item,
+                            item.quantity,
+                            toppingsByProductGroup[lineId] ?? []
+                          )}
+                        </Typography>
+
+                        {/* ICON DE AGREGADOS */}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          {item.allowsToppings && (
+                            <Tooltip title="Agregados" arrow>
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  handleShowToppings(lineId);
+                                  removeHighlightedProduct(item.productId);
+                                }}
+                                sx={{
+                                  "@keyframes heartbeat": {
+                                    "0%": { transform: "scale(1)" },
+                                    "14%": { transform: "scale(1.3)" },
+                                    "28%": { transform: "scale(1)" },
+                                    "42%": { transform: "scale(1.3)" },
+                                    "70%": { transform: "scale(1)" },
+                                  },
+                                  animation: highlightedProducts.has(
+                                    item.productId
+                                  )
+                                    ? "heartbeat 2.2s infinite ease-in-out"
+                                    : "none",
+                                }}
+                              >
+                                <AutoAwesome />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Comentarios" arrow>
+                            <IconButton
+                              onClick={() => toggleCommentInput(lineId)}
+                            >
+                              <Comment style={{ color: "#856D5E" }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Eliminar" arrow>
+                            <IconButton
+                              onClick={() =>
+                                item.internalId &&
+                                handleDeleteProductAndComment(item.internalId)
+                              }
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
                       </div>
-                    )}
-                    {/* ::::::::::::::::::::::::::::: */}
-                    {/* AGREGADOS */}
-                    {visibleToppings[item.productId] && (
-                      <ToppingsGroupsViewer
-                        groups={item.availableToppingGroups ?? []}
-                        fetchGroupById={(id: string) =>
-                          fetchToppingsGroupById(token as string, id)
-                        }
-                        productId={item.productId}
-                      />
-                    )}
-                    <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
-                  </ListItem>
-                ))}
+
+                      {/* Comentario */}
+                      {visibleCommentInputs[lineId] && (
+                        <div style={{ marginTop: "0.5rem", width: "100%" }}>
+                          <AutoGrowTextarea
+                            value={
+                              commentInputs[lineId] !== undefined
+                                ? commentInputs[lineId]
+                                : item.commentOfProduct ?? ""
+                            }
+                            placeholder="Comentario al producto"
+                            onChange={(value) =>
+                              setCommentInputs((prev) => ({
+                                ...prev,
+                                [lineId]: value,
+                              }))
+                            }
+                            onBlur={() =>
+                              item.internalId &&
+                              productComment(
+                                item.internalId,
+                                commentInputs[lineId] || ""
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+                      {/* ::::::::::::::::::::::::::::: */}
+                      {/* AGREGADOS */}
+                      {visibleToppings[lineId] && item.internalId && (
+                        <ToppingsGroupsViewer
+                          groups={item.availableToppingGroups ?? []}
+                          fetchGroupById={(id: string) =>
+                            fetchToppingsGroupById(token as string, id)
+                          }
+                          lineId={item.internalId}
+                        />
+                      )}
+                      <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
+                    </ListItem>
+                  );
+                })}
               </List>
             ) : (
               <Typography
@@ -755,8 +818,29 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       color: "#ffffff",
                       borderBottom: "1px solid #856D5E",
                       justifyContent: "space-between",
+                      paddingLeft: "4px",
                     }}
                   >
+                    {/* Ícono de anulación — primera columna */}
+                    <Tooltip title="Anular ítem" arrow>
+                      <IconButton
+                        size="small"
+                        sx={{ padding: "4px", flexShrink: 0 }}
+                        onClick={() =>
+                          setCancelDetailModal({
+                            open: true,
+                            item,
+                            loading: false,
+                          })
+                        }
+                      >
+                        <RemoveCircleOutline
+                          fontSize="small"
+                          sx={{ color: "#c0392b" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+
                     <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
@@ -840,6 +924,77 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         </div>
       </div>
 
+      {/* Modal de confirmación de anulación de ítem */}
+      <Dialog
+        open={cancelDetailModal.open}
+        onClose={() =>
+          !cancelDetailModal.loading &&
+          setCancelDetailModal({ open: false, item: null, loading: false })
+        }
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "10px" } }}
+      >
+        <DialogTitle
+          sx={{
+            backgroundColor: "#856D5E",
+            color: "#ffffff",
+            textAlign: "center",
+            py: 1.5,
+          }}
+        >
+          <Typography component="span" variant="h6" fontWeight="bold" display="block">
+            Anular ítem confirmado
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 2, textAlign: "center" }}>
+          <Typography variant="body1" sx={{ color: "#333", lineHeight: 1.6 }}>
+            ¿Anular{" "}
+            <strong style={{ color: "#856D5E" }}>
+              {capitalizeFirstLetter(cancelDetailModal.item?.productName ?? "")}
+            </strong>{" "}
+            x1?
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "#999", display: "block", mt: 1.5 }}
+          >
+            El stock será restituido y la comanda se reimprimirá.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1.5 }}>
+          <Button
+            onClick={() =>
+              setCancelDetailModal({ open: false, item: null, loading: false })
+            }
+            disabled={cancelDetailModal.loading}
+            variant="outlined"
+            fullWidth
+            sx={{
+              color: "#856D5E",
+              borderColor: "#856D5E",
+              "&:hover": { backgroundColor: "#f5ede8", borderColor: "#856D5E" },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmCancelDetail}
+            disabled={cancelDetailModal.loading}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#856D5E",
+              color: "#fff",
+              fontWeight: "bold",
+              "&:hover": { backgroundColor: "#6e5a50" },
+            }}
+          >
+            {cancelDetailModal.loading ? "Anulando..." : "Confirmar anulación"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Modal de selección de slots para promociones */}
       <PromotionSlotSelector
         open={promotionSlotModal.open}
@@ -918,7 +1073,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               <List dense sx={{ py: 0 }}>
                 {selectedProducts.map((item, index) => (
                   <ListItem
-                    key={index}
+                    key={item.internalId ?? `dlg-${index}`}
                     sx={{
                       py: 0.5,
                       px: 1,
@@ -1001,7 +1156,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                         {calcularPrecioConToppings(
                           item,
                           item.quantity,
-                          toppingsByProductGroup[item.productId] ?? []
+                          toppingsByProductGroup[item.internalId ?? item.productId] ?? []
                         )}
                       </Typography>
                     </Box>

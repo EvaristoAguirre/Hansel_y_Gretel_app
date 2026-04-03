@@ -164,6 +164,7 @@ export interface ProductsProps {
 }
 
 export interface SelectedProductsI {
+  detailId?: string;
   productId: string;
   productName?: string;
   quantity: number;
