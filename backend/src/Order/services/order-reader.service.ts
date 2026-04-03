@@ -171,6 +171,8 @@ export class OrderReaderService {
         room: order.table?.room?.name || 'Sin salón',
         numberCustomers: order.numberCustomers,
         total: Number(order.total).toFixed(2),
+        discountPercent: Number(order.discountPercent ?? 0).toFixed(2),
+        discountAmount: Number(order.discountAmount ?? 0).toFixed(2),
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
         closedAt: order.closedAt,

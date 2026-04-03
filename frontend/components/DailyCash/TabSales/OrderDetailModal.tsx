@@ -16,7 +16,10 @@ import {
 import dayjs from 'dayjs';
 import { OrderCash } from '@/components/Interfaces/IDailyCash';
 import { capitalizeFirstLetter } from '@/components/Utils/CapitalizeFirstLetter';
-import { formatNumber } from '@/components/Utils/FormatNumber';
+import {
+  formatNumber,
+  parseEsARNumber,
+} from '@/components/Utils/FormatNumber';
 
 type Props = {
   open: boolean;
@@ -60,6 +63,21 @@ const OrderDetailModal = ({ open, onClose, orderDetails }: Props) => {
               <Typography variant="h6" mt={1.5} color="primary">
                 Total: ${formatNumber(Number(orderDetails.total))}
               </Typography>
+              {parseEsARNumber(orderDetails.discountPercent) > 0 ||
+              parseEsARNumber(orderDetails.discountAmount) > 0 ? (
+                <Typography variant="body1" color="text.secondary" mt={0.5}>
+                  Descuento aplicado:{' '}
+                  {parseEsARNumber(orderDetails.discountPercent).toLocaleString(
+                    'es-AR',
+                    { minimumFractionDigits: 0, maximumFractionDigits: 2 }
+                  )}
+                  % — $ {formatNumber(parseEsARNumber(orderDetails.discountAmount))}
+                </Typography>
+              ) : (
+                <Typography variant="body2" color="text.secondary" mt={0.5}>
+                  Sin descuento
+                </Typography>
+              )}
             </Box>
 
             <Divider sx={{ my: 2 }} />

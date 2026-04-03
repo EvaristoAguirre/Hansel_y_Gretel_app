@@ -28,7 +28,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CashMovementDetailModal from './CashMovementDetailModal';
 import OrderDetailModal from './OrderDetailModal';
 import { MovementCash, OrderCash } from '@/components/Interfaces/IDailyCash';
-import { formatNumber } from '@/components/Utils/FormatNumber';
+import { formatNumber, parseEsARNumber } from '@/components/Utils/FormatNumber';
 
 const DailySalesView = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
@@ -121,6 +121,38 @@ const DailySalesView = () => {
           <>$ {formatNumber(params.value)}</>
         </span>
       ),
+    },
+    {
+      field: 'discountPercent',
+      headerName: 'Desc. %',
+      flex: 0.8,
+      renderCell: (params) => {
+        const pct = parseEsARNumber(params.value);
+        return pct > 0 ? (
+          <span style={{ color: '#b45309' }}>
+            {pct.toLocaleString('es-AR', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 2,
+            })}
+            %
+          </span>
+        ) : (
+          <span style={{ color: '#888' }}>—</span>
+        );
+      },
+    },
+    {
+      field: 'discountAmount',
+      headerName: 'Desc. $',
+      flex: 1,
+      renderCell: (params) => {
+        const amt = parseEsARNumber(params.value);
+        return amt > 0 ? (
+          <span style={{ color: '#b45309' }}>$ {formatNumber(amt)}</span>
+        ) : (
+          <span style={{ color: '#888' }}>—</span>
+        );
+      },
     },
     {
       field: 'numberCustomers',

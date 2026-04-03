@@ -12,6 +12,11 @@ export class OrderMapper {
       comment: order.comment,
       total: formatARNumber(order.total),
       tip: formatARNumber(order.tip),
+      discountPercent: Number(order.discountPercent ?? 0).toLocaleString(
+        'es-AR',
+        { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+      ),
+      discountAmount: formatARNumber(order.discountAmount),
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       closedAt: order.closedAt,
