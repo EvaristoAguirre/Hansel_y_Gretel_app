@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from 'react';
 import {
   Button,
   List,
@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Add,
   Remove,
@@ -24,31 +24,31 @@ import {
   SpaceBar,
   Print,
   RemoveCircleOutline,
-} from "@mui/icons-material";
-import { Box } from "@mui/system";
-import { useOrderContext } from "../../app/context/order.context";
-import "../../styles/pedidoEditor.css";
-import { useProducts } from "../Hooks/useProducts";
-import useOrder from "../Hooks/useOrder";
-import LoadingLottie from "../Loader/Loading";
-import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
-import AutoGrowTextarea from "../Utils/Textarea";
-import { fetchCategories } from "@/api/categories";
-import { ICategory } from "../Interfaces/ICategories";
-import { searchProducts } from "@/api/products";
-import AutoCompleteProduct from "../Utils/Autocomplete";
-import { CategorySelector } from "./filterCategories";
-import { useAuth } from "@/app/context/authContext";
-import { fetchToppingsGroupById } from "@/api/topping";
-import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
-import { formatNumber } from "../Utils/FormatNumber";
-import { normalizeNumber } from "../Utils/NormalizeNumber";
-import { ProductResponse, SelectedProductsI } from "../Interfaces/IProducts";
-import { TypeProduct } from "../Enums/view-products";
-import { PromotionSlotSelector } from "./PromotionSlotSelector";
-import { getSlotsByPromotionId } from "@/api/promotionSlot";
-import { newOrderLineId } from "../Utils/newOrderLineId";
-import { cancelOrderDetail, reprintComanda } from "@/api/order";
+} from '@mui/icons-material';
+import { Box } from '@mui/system';
+import { useOrderContext } from '../../app/context/order.context';
+import '../../styles/pedidoEditor.css';
+import { useProducts } from '../Hooks/useProducts';
+import useOrder from '../Hooks/useOrder';
+import LoadingLottie from '../Loader/Loading';
+import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
+import AutoGrowTextarea from '../Utils/Textarea';
+import { fetchCategories } from '@/api/categories';
+import { ICategory } from '../Interfaces/ICategories';
+import { searchProducts } from '@/api/products';
+import AutoCompleteProduct from '../Utils/Autocomplete';
+import { CategorySelector } from './filterCategories';
+import { useAuth } from '@/app/context/authContext';
+import { fetchToppingsGroupById } from '@/api/topping';
+import ToppingsGroupsViewer from './ToppingsSection.tsx/ToppingsGroupsViewer';
+import { formatNumber } from '../Utils/FormatNumber';
+import { normalizeNumber } from '../Utils/NormalizeNumber';
+import { ProductResponse, SelectedProductsI } from '../Interfaces/IProducts';
+import { TypeProduct } from '../Enums/view-products';
+import { PromotionSlotSelector } from './PromotionSlotSelector';
+import { getSlotsByPromotionId } from '@/api/promotionSlot';
+import { newOrderLineId } from '../Utils/newOrderLineId';
+import { cancelOrderDetail, reprintComanda } from '@/api/order';
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -65,7 +65,8 @@ interface Props {
   handleReset: () => void;
 }
 const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
-  const { productosDisponibles, setProductosDisponibles, isLoadingOrders } = useOrder();
+  const { productosDisponibles, setProductosDisponibles, isLoadingOrders } =
+    useOrder();
   // skipInitialFetch: los productos se cargan bajo demanda (por categoría o búsqueda)
   // evitando la carga de 500 productos al abrir el editor en la tablet.
   const { products } = useProducts({ skipInitialFetch: true });
@@ -107,7 +108,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     [key: string]: boolean;
   }>({});
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>(
-    {}
+    {},
   );
   const [categories, setCategories] = useState<ICategory[]>([]);
   const token = getAccessToken();
@@ -123,7 +124,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   useEffect(() => {
     token &&
       fetchCategories(token).then((categories = []) =>
-        setCategories(categories)
+        setCategories(categories),
       );
   }, []);
 
@@ -133,7 +134,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     try {
       await reprintComanda(selectedOrderByTable.id, token);
     } catch (error) {
-      console.error("Error al reimprimir comanda:", error);
+      console.error('Error al reimprimir comanda:', error);
     } finally {
       setIsPrintingComanda(false);
     }
@@ -141,15 +142,15 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
   const confirmarPedido: () => Promise<void> = async () => {
     const productDetails = selectedProducts.map((product) => {
-      const lineId = product.internalId ?? "";
+      const lineId = product.internalId ?? '';
       const rawToppings = lineId
-        ? selectedToppingsByProduct[lineId] ?? []
+        ? (selectedToppingsByProduct[lineId] ?? [])
         : [];
       const toppingsPerUnit =
         rawToppings.length > 0
           ? Array.from(
               { length: product.quantity },
-              (_, i) => rawToppings[i] ?? []
+              (_, i) => rawToppings[i] ?? [],
             )
           : [];
 
@@ -191,7 +192,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
           productDetails,
           selectedOrderByTable.numberCustomers,
           selectedOrderByTable.comment,
-          isPriority
+          isPriority,
         );
         setSelectedProducts([]);
         handleCompleteStep();
@@ -209,7 +210,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const calcularPrecioConToppings = (
     product: any,
     quantity: number,
-    toppingsByUnit: any[]
+    toppingsByUnit: any[],
   ) => {
     let toppingExtra = 0;
 
@@ -239,7 +240,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const calcularPrecioConToppingsNumero = (
     product: any,
     quantity: number,
-    toppingsByUnit: any[]
+    toppingsByUnit: any[],
   ): number => {
     let toppingExtra = 0;
 
@@ -309,7 +310,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     });
   };
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   // Ref del timer de debounce: evita llamar al backend en cada letra tecleada.
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -317,7 +318,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
     const results =
-      token && (await searchProducts(trimmedTerm, token, categories.join(",")));
+      token && (await searchProducts(trimmedTerm, token, categories.join(',')));
     if (results) setProductosDisponibles(results);
   };
 
@@ -370,7 +371,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       Object.entries(unitToppings).forEach(([groupId, toppingIds]) => {
         // Buscar el grupo en availableToppingGroups
         const group = item.availableToppingGroups?.find(
-          (g) => g.id === groupId
+          (g) => g.id === groupId,
         );
         if (group && group.toppings) {
           // Buscar cada topping seleccionado
@@ -409,7 +410,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             return;
           }
         } catch (error) {
-          console.error("Error al verificar slots de promoción:", error);
+          console.error('Error al verificar slots de promoción:', error);
           // Si hay error, continuar con el flujo normal
         }
       }
@@ -427,7 +428,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       selectedProductName?: string;
       toppingsPerUnit?: string[];
       toppingNames?: string[];
-    }[]
+    }[],
   ) => {
     if (!promotionSlotModal.promotion) return;
 
@@ -461,7 +462,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         selectedOrderByTable.id,
         item.detailId,
         1,
-        token
+        token,
       );
       // Actualizar la lista de confirmados con la orden devuelta por el backend
       if (updatedOrder?.products) {
@@ -471,10 +472,11 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             productId: p.productId,
             productName: p.productName,
             quantity: p.quantity,
-            unitaryPrice: p.unitaryPrice != null ? String(p.unitaryPrice) : null,
+            unitaryPrice:
+              p.unitaryPrice != null ? String(p.unitaryPrice) : null,
             commentOfProduct: p.commentOfProduct || null,
             allowsToppings: p.allowsToppings,
-          })
+          }),
         );
         setConfirmedProducts(adaptedProducts);
       }
@@ -484,47 +486,47 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       setCancelDetailModal({ open: false, item: null, loading: false });
     } catch (error: any) {
       setCancelDetailModal((prev) => ({ ...prev, loading: false }));
-      console.error("Error al anular ítem:", error);
+      console.error('Error al anular ítem:', error);
     }
   };
 
   return loading || isLoadingOrders ? (
     <LoadingLottie />
   ) : (
-    <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "row",
-          gap: "2rem",
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '2rem',
         }}
       >
         <div
           style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            border: "1px solid #d4c0b3",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            padding: "1rem",
-            justifyContent: "space-between",
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid #d4c0b3',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            padding: '1rem',
+            justifyContent: 'space-between',
           }}
         >
           <div
             style={{
-              height: "2rem",
-              backgroundColor: "#856D5E",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#ffffff",
-              marginBottom: "1rem",
+              height: '2rem',
+              backgroundColor: '#856D5E',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: '#ffffff',
+              marginBottom: '1rem',
             }}
           >
             <h2>Seleccionar productos</h2>
           </div>
-          <Box sx={{ borderRadius: "5px" }}>
+          <Box sx={{ borderRadius: '5px' }}>
             <CategorySelector
               categories={categories}
               selected={selectedCats}
@@ -542,13 +544,13 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "16rem",
-                  overflowY: "auto",
-                  border: "2px solid #856D5E",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
-                  fontSize: "0.8rem",
-                  padding: "0.5rem",
+                  maxHeight: '16rem',
+                  overflowY: 'auto',
+                  border: '2px solid #856D5E',
+                  borderRadius: '5px',
+                  marginTop: '0.5rem',
+                  fontSize: '0.8rem',
+                  padding: '0.5rem',
                 }}
               >
                 <div className="w-full flex items-center justify-start mb-2 text-[#856D5E]">
@@ -561,27 +563,27 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                     <ListItem
                       key={lineId}
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "stretch",
-                        width: "100%",
-                        padding: "3px",
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
+                        width: '100%',
+                        padding: '3px',
                       }}
                     >
                       {/* Línea principal de datos del producto */}
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          color: "#ffffff",
-                          justifyContent: "space-between",
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          color: '#ffffff',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           <IconButton
                             size="small"
-                            sx={{ padding: "4px" }}
+                            sx={{ padding: '4px' }}
                             onClick={() =>
                               item.internalId &&
                               decreaseProductNumber(item.internalId)
@@ -591,18 +593,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                           </IconButton>
                           <Typography
                             sx={{
-                              border: "1px solid #856D5E",
-                              color: "#856D5E",
-                              width: "1.5rem",
-                              textAlign: "center",
-                              borderRadius: "5px",
+                              border: '1px solid #856D5E',
+                              color: '#856D5E',
+                              width: '1.5rem',
+                              textAlign: 'center',
+                              borderRadius: '5px',
                             }}
                           >
                             {item.quantity}
                           </Typography>
                           <IconButton
                             size="small"
-                            sx={{ padding: "4px" }}
+                            sx={{ padding: '4px' }}
                             onClick={() => increaseProductNumber(item)}
                           >
                             <Add fontSize="small" color="success" />
@@ -612,30 +614,30 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                         <Tooltip title={item.productName} arrow>
                           <ListItemText
                             style={{
-                              color: "black",
-                              display: "-webkit-box",
-                              WebkitBoxOrient: "vertical",
+                              color: 'black',
+                              display: '-webkit-box',
+                              WebkitBoxOrient: 'vertical',
                               WebkitLineClamp: 1,
-                              overflow: "hidden",
-                              maxWidth: "15rem",
+                              overflow: 'hidden',
+                              maxWidth: '15rem',
                             }}
                             primary={capitalizeFirstLetter(
-                              item.productName ?? ""
+                              item.productName ?? '',
                             )}
                           />
                         </Tooltip>
 
-                        <Typography style={{ color: "black" }}>
+                        <Typography style={{ color: 'black' }}>
                           $
                           {calcularPrecioConToppings(
                             item,
                             item.quantity,
-                            toppingsByProductGroup[lineId] ?? []
+                            toppingsByProductGroup[lineId] ?? [],
                           )}
                         </Typography>
 
                         {/* ICON DE AGREGADOS */}
-                        <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           {item.allowsToppings && (
                             <Tooltip title="Agregados" arrow>
                               <IconButton
@@ -645,18 +647,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                                   removeHighlightedProduct(item.productId);
                                 }}
                                 sx={{
-                                  "@keyframes heartbeat": {
-                                    "0%": { transform: "scale(1)" },
-                                    "14%": { transform: "scale(1.3)" },
-                                    "28%": { transform: "scale(1)" },
-                                    "42%": { transform: "scale(1.3)" },
-                                    "70%": { transform: "scale(1)" },
+                                  '@keyframes heartbeat': {
+                                    '0%': { transform: 'scale(1)' },
+                                    '14%': { transform: 'scale(1.3)' },
+                                    '28%': { transform: 'scale(1)' },
+                                    '42%': { transform: 'scale(1.3)' },
+                                    '70%': { transform: 'scale(1)' },
                                   },
                                   animation: highlightedProducts.has(
-                                    item.productId
+                                    item.productId,
                                   )
-                                    ? "heartbeat 2.2s infinite ease-in-out"
-                                    : "none",
+                                    ? 'heartbeat 2.2s infinite ease-in-out'
+                                    : 'none',
                                 }}
                               >
                                 <AutoAwesome />
@@ -667,7 +669,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                             <IconButton
                               onClick={() => toggleCommentInput(lineId)}
                             >
-                              <Comment style={{ color: "#856D5E" }} />
+                              <Comment style={{ color: '#856D5E' }} />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Eliminar" arrow>
@@ -685,12 +687,12 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
                       {/* Comentario */}
                       {visibleCommentInputs[lineId] && (
-                        <div style={{ marginTop: "0.5rem", width: "100%" }}>
+                        <div style={{ marginTop: '0.5rem', width: '100%' }}>
                           <AutoGrowTextarea
                             value={
                               commentInputs[lineId] !== undefined
                                 ? commentInputs[lineId]
-                                : item.commentOfProduct ?? ""
+                                : (item.commentOfProduct ?? '')
                             }
                             placeholder="Comentario al producto"
                             onChange={(value) =>
@@ -703,7 +705,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                               item.internalId &&
                               productComment(
                                 item.internalId,
-                                commentInputs[lineId] || ""
+                                commentInputs[lineId] || '',
                               )
                             }
                           />
@@ -720,7 +722,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                           lineId={item.internalId}
                         />
                       )}
-                      <Divider color="#856D5E" sx={{ marginTop: "10px" }} />
+                      <Divider color="#856D5E" sx={{ marginTop: '10px' }} />
                     </ListItem>
                   );
                 })}
@@ -728,10 +730,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             ) : (
               <Typography
                 style={{
-                  margin: "1rem 0",
-                  color: "gray",
-                  fontSize: "0.8rem",
-                  width: "100%",
+                  margin: '1rem 0',
+                  color: 'gray',
+                  fontSize: '0.8rem',
+                  width: '100%',
                 }}
               >
                 No hay productos pre-seleccionados.
@@ -740,17 +742,17 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                flexDirection: "row",
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
               }}
             >
               <Typography
                 style={{
-                  width: "50%",
-                  margin: "1rem 0",
-                  color: "black",
-                  fontWeight: "bold",
+                  width: '50%',
+                  margin: '1rem 0',
+                  color: 'black',
+                  fontWeight: 'bold',
                 }}
               >
                 Subtotal: ${formatNumber(subtotal)}
@@ -764,9 +766,9 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 }
                 label="Orden Prioritaria"
                 style={{
-                  fontSize: "0.8rem",
-                  color: `${isPriority ? "red" : "gray"}`,
-                  fontWeight: "bold",
+                  fontSize: '0.8rem',
+                  color: `${isPriority ? 'red' : 'gray'}`,
+                  fontWeight: 'bold',
                 }}
               />
             </div>
@@ -775,10 +777,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 fullWidth
                 variant="contained"
                 sx={{
-                  backgroundColor: "#f9b32d",
-                  filter: "brightness(90%)",
-                  color: "black",
-                  "&:hover": { filter: "none", color: "black" },
+                  backgroundColor: '#f9b32d',
+                  filter: 'brightness(90%)',
+                  color: 'black',
+                  '&:hover': { filter: 'none', color: 'black' },
                 }}
                 onClick={() => setConfirmModalOpen(true)}
                 disabled={selectedProducts.length === 0}
@@ -793,11 +795,11 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               <List
                 className="custom-scrollbar"
                 style={{
-                  maxHeight: "12rem",
-                  overflowY: "auto",
-                  border: "2px solid #856D5E",
-                  borderRadius: "5px",
-                  marginTop: "0.5rem",
+                  maxHeight: '12rem',
+                  overflowY: 'auto',
+                  border: '2px solid #856D5E',
+                  borderRadius: '5px',
+                  marginTop: '0.5rem',
                 }}
               >
                 <div
@@ -810,22 +812,22 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                   <ListItem
                     key={index}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      height: "2.3rem",
-                      margin: "0.3rem 0",
-                      color: "#ffffff",
-                      borderBottom: "1px solid #856D5E",
-                      justifyContent: "space-between",
-                      paddingLeft: "4px",
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      height: '2.3rem',
+                      margin: '0.3rem 0',
+                      color: '#ffffff',
+                      borderBottom: '1px solid #856D5E',
+                      justifyContent: 'space-between',
+                      paddingLeft: '4px',
                     }}
                   >
                     {/* Ícono de anulación — primera columna */}
                     <Tooltip title="Anular ítem" arrow>
                       <IconButton
                         size="small"
-                        sx={{ padding: "4px", flexShrink: 0 }}
+                        sx={{ padding: '4px', flexShrink: 0 }}
                         onClick={() =>
                           setCancelDetailModal({
                             open: true,
@@ -836,7 +838,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       >
                         <RemoveCircleOutline
                           fontSize="small"
-                          sx={{ color: "#c0392b" }}
+                          sx={{ color: '#c0392b' }}
                         />
                       </IconButton>
                     </Tooltip>
@@ -844,12 +846,12 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                     <Tooltip title={item.quantity} arrow>
                       <ListItemText
                         style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
+                          color: 'black',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 1,
-                          overflow: "hidden",
-                          maxWidth: "5rem",
+                          overflow: 'hidden',
+                          maxWidth: '5rem',
                         }}
                         primary={item.quantity}
                       />
@@ -857,19 +859,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                     <Tooltip title={item.productName} arrow>
                       <ListItemText
                         style={{
-                          color: "black",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
+                          color: 'black',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 1,
-                          overflow: "hidden",
+                          overflow: 'hidden',
                         }}
                         primary={item.productName}
                       />
                     </Tooltip>
-                    <Typography style={{ color: "black" }}>
+                    <Typography style={{ color: 'black' }}>
                       $
                       {formatNumber(
-                        normalizeNumber(item.unitaryPrice) * item.quantity
+                        normalizeNumber(item.unitaryPrice) * item.quantity,
                       )}
                     </Typography>
                   </ListItem>
@@ -878,10 +880,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             ) : (
               <Typography
                 style={{
-                  margin: "1rem 0",
-                  color: "gray",
-                  fontSize: "0.8rem",
-                  width: "100%",
+                  margin: '1rem 0',
+                  color: 'gray',
+                  fontSize: '0.8rem',
+                  width: '100%',
                 }}
               >
                 No hay productos confirmados.
@@ -889,13 +891,13 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             )}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                margin: "1rem 0",
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                margin: '1rem 0',
               }}
             >
-              <Typography style={{ color: "black", fontWeight: "bold" }}>
+              <Typography style={{ color: 'black', fontWeight: 'bold' }}>
                 Total: ${formatNumber(total)}
               </Typography>
               {confirmedProducts?.length > 0 && (
@@ -905,18 +907,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                   disabled={isPrintingComanda}
                   onClick={handleReprintComanda}
                   sx={{
-                    borderColor: "#7e9d8a",
-                    color: "black",
-                    fontSize: "0.7rem",
-                    "&:hover": {
-                      backgroundColor: "#f9b32d",
-                      borderColor: "#f9b32d",
-                      color: "black",
+                    borderColor: '#7e9d8a',
+                    color: 'black',
+                    fontSize: '0.7rem',
+                    '&:hover': {
+                      backgroundColor: '#f9b32d',
+                      borderColor: '#f9b32d',
+                      color: 'black',
                     },
                   }}
                 >
-                  <Print style={{ marginRight: "4px", fontSize: "1rem" }} />
-                  {isPrintingComanda ? "Imprimiendo..." : "Reimprimir comanda"}
+                  <Print style={{ marginRight: '4px', fontSize: '1rem' }} />
+                  {isPrintingComanda ? 'Imprimiendo...' : 'Reimprimir comanda'}
                 </Button>
               )}
             </div>
@@ -933,47 +935,79 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         }
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: "10px" } }}
+        PaperProps={{
+          sx: {
+            borderRadius: '8px',
+            overflow: 'hidden',
+          },
+        }}
       >
         <DialogTitle
           sx={{
-            backgroundColor: "#856D5E",
-            color: "#ffffff",
-            textAlign: "center",
-            py: 1.5,
+            backgroundColor: '#856D5E',
+            color: '#ffffff',
+            textAlign: 'center',
+            pt: 1.5,
+            pb: 1.5,
           }}
         >
-          <Typography component="span" variant="h6" fontWeight="bold" display="block">
-            Anular ítem confirmado
+          <Typography
+            component="span"
+            variant="subtitle1"
+            fontWeight="bold"
+            display="block"
+            sx={{ lineHeight: 1.35 }}
+          >
+            Anular ítem:{' '}
+            {capitalizeFirstLetter(cancelDetailModal.item?.productName ?? '')}
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 2, textAlign: "center" }}>
-          <Typography variant="body1" sx={{ color: "#333", lineHeight: 1.6 }}>
-            ¿Anular{" "}
-            <strong style={{ color: "#856D5E" }}>
-              {capitalizeFirstLetter(cancelDetailModal.item?.productName ?? "")}
-            </strong>{" "}
-            x1?
+        <DialogContent
+          sx={(theme) => ({
+            px: 3,
+            pb: 2,
+            // Tras DialogTitle, MUI pone padding-top: 0; sin override el texto queda pegado al encabezado
+            paddingTop: `${theme.spacing(5)} !important`,
+          })}
+        >
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: 'bold', color: '#856D5E', lineHeight: 1.6 }}
+          >
+            ¿Confirmar la anulación de este ítem?
           </Typography>
           <Typography
             variant="body2"
-            sx={{ color: "#999", display: "block", mt: 1.5 }}
+            sx={{ color: '#757575', display: 'block', mt: 1.5 }}
           >
             El stock será restituido y la comanda se reimprimirá.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, gap: 1.5 }}>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 1.5,
+            justifyContent: 'flex-end',
+            gap: 1,
+            borderTop: '1px solid #d4c0b3',
+            bgcolor: '#fff',
+          }}
+        >
           <Button
             onClick={() =>
               setCancelDetailModal({ open: false, item: null, loading: false })
             }
             disabled={cancelDetailModal.loading}
-            variant="outlined"
-            fullWidth
+            size="small"
             sx={{
-              color: "#856D5E",
-              borderColor: "#856D5E",
-              "&:hover": { backgroundColor: "#f5ede8", borderColor: "#856D5E" },
+              color: '#FFB300',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              minWidth: 'auto',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 179, 0, 0.08)',
+                color: '#e6a200',
+              },
             }}
           >
             Cancelar
@@ -982,15 +1016,22 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             onClick={handleConfirmCancelDetail}
             disabled={cancelDetailModal.loading}
             variant="contained"
-            fullWidth
+            size="small"
+            disableElevation={false}
             sx={{
-              backgroundColor: "#856D5E",
-              color: "#fff",
-              fontWeight: "bold",
-              "&:hover": { backgroundColor: "#6e5a50" },
+              backgroundColor: '#856D5E',
+              color: '#fff',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              borderRadius: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              '&:hover': {
+                backgroundColor: '#6e5a50',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+              },
             }}
           >
-            {cancelDetailModal.loading ? "Anulando..." : "Confirmar anulación"}
+            {cancelDetailModal.loading ? 'Anulando...' : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1005,7 +1046,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 name: promotionSlotModal.promotion.name,
                 price: parseFloat(promotionSlotModal.promotion.price),
               }
-            : { id: "", name: "", price: 0 }
+            : { id: '', name: '', price: 0 }
         }
         quantity={promotionSlotModal.quantity}
         onConfirm={handleConfirmSlotSelection}
@@ -1022,16 +1063,16 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "8px",
-            maxHeight: "85vh",
+            borderRadius: '8px',
+            maxHeight: '85vh',
           },
         }}
       >
         <DialogTitle
           sx={{
-            backgroundColor: "#856D5E",
-            color: "#ffffff",
-            textAlign: "center",
+            backgroundColor: '#856D5E',
+            color: '#ffffff',
+            textAlign: 'center',
             py: 1.5,
           }}
         >
@@ -1061,10 +1102,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               <Typography
                 variant="subtitle2"
                 sx={{
-                  fontWeight: "bold",
-                  color: "#856D5E",
+                  fontWeight: 'bold',
+                  color: '#856D5E',
                   mb: 1,
-                  borderBottom: "2px solid #f9b32d",
+                  borderBottom: '2px solid #f9b32d',
                   pb: 0.5,
                 }}
               >
@@ -1078,58 +1119,58 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       py: 0.5,
                       px: 1,
                       backgroundColor:
-                        index % 2 === 0 ? "#f9f6f3" : "transparent",
-                      borderRadius: "4px",
-                      flexDirection: "column",
-                      alignItems: "stretch",
+                        index % 2 === 0 ? '#f9f6f3' : 'transparent',
+                      borderRadius: '4px',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
                     }}
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%',
                       }}
                     >
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography
                           sx={{
-                            backgroundColor: "#856D5E",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            width: "24px",
-                            height: "24px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
+                            backgroundColor: '#856D5E',
+                            color: '#fff',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
                           }}
                         >
                           {item.quantity}
                         </Typography>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {capitalizeFirstLetter(item.productName ?? "")}
+                            {capitalizeFirstLetter(item.productName ?? '')}
                             {/* Mostrar toppings de productos normales */}
                             {!item.slotSelections &&
                               getToppingNamesForProduct(item).length > 0 && (
                                 <Typography
                                   component="span"
                                   sx={{
-                                    color: "#856D5E",
-                                    fontSize: "0.7rem",
-                                    fontStyle: "italic",
+                                    color: '#856D5E',
+                                    fontSize: '0.7rem',
+                                    fontStyle: 'italic',
                                   }}
                                 >
-                                  {" "}
-                                  +{" "}
+                                  {' '}
+                                  +{' '}
                                   {getToppingNamesForProduct(item)
                                     .map((name) => capitalizeFirstLetter(name))
-                                    .join(" + ")}
+                                    .join(' + ')}
                                 </Typography>
                               )}
                           </Typography>
@@ -1138,9 +1179,9 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                               <Typography
                                 variant="caption"
                                 sx={{
-                                  color: "#f9b32d",
-                                  fontWeight: "bold",
-                                  fontSize: "0.65rem",
+                                  color: '#f9b32d',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.65rem',
                                 }}
                               >
                                 PROMO
@@ -1150,13 +1191,15 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       </Box>
                       <Typography
                         variant="body2"
-                        sx={{ fontWeight: "bold", color: "#856D5E" }}
+                        sx={{ fontWeight: 'bold', color: '#856D5E' }}
                       >
                         $
                         {calcularPrecioConToppings(
                           item,
                           item.quantity,
-                          toppingsByProductGroup[item.internalId ?? item.productId] ?? []
+                          toppingsByProductGroup[
+                            item.internalId ?? item.productId
+                          ] ?? [],
                         )}
                       </Typography>
                     </Box>
@@ -1167,7 +1210,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                           mt: 0.5,
                           ml: 4,
                           pl: 1,
-                          borderLeft: "2px solid #f9b32d",
+                          borderLeft: '2px solid #f9b32d',
                         }}
                       >
                         {item.slotSelections.map((selection, selIndex) => (
@@ -1175,30 +1218,30 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                             key={selIndex}
                             variant="caption"
                             sx={{
-                              display: "block",
-                              color: "#5a4a40",
-                              fontSize: "0.7rem",
+                              display: 'block',
+                              color: '#5a4a40',
+                              fontSize: '0.7rem',
                             }}
                           >
-                            •{" "}
+                            •{' '}
                             {capitalizeFirstLetter(
-                              selection.selectedProductName || "Producto"
+                              selection.selectedProductName || 'Producto',
                             )}
                             {selection.toppingNames &&
                               selection.toppingNames.length > 0 && (
                                 <Typography
                                   component="span"
                                   sx={{
-                                    color: "#856D5E",
-                                    fontSize: "0.65rem",
-                                    fontStyle: "italic",
+                                    color: '#856D5E',
+                                    fontSize: '0.65rem',
+                                    fontStyle: 'italic',
                                   }}
                                 >
-                                  {" "}
-                                  +{" "}
+                                  {' '}
+                                  +{' '}
                                   {selection.toppingNames
                                     .map((name) => capitalizeFirstLetter(name))
-                                    .join(" + ")}
+                                    .join(' + ')}
                                 </Typography>
                               )}
                           </Typography>
@@ -1210,19 +1253,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               </List>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   mt: 1,
                   pt: 1,
-                  borderTop: "1px dashed #d4c0b3",
+                  borderTop: '1px dashed #d4c0b3',
                 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   Subtotal a agregar:
                 </Typography>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: "bold", color: "#856D5E" }}
+                  sx={{ fontWeight: 'bold', color: '#856D5E' }}
                 >
                   ${formatNumber(subtotal)}
                 </Typography>
@@ -1236,10 +1279,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               <Typography
                 variant="subtitle2"
                 sx={{
-                  fontWeight: "bold",
-                  color: "#856D5E",
+                  fontWeight: 'bold',
+                  color: '#856D5E',
                   mb: 1,
-                  borderBottom: "2px solid #856D5E",
+                  borderBottom: '2px solid #856D5E',
                   pb: 0.5,
                 }}
               >
@@ -1249,8 +1292,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                 dense
                 sx={{
                   py: 0,
-                  maxHeight: "150px",
-                  overflowY: "auto",
+                  maxHeight: '150px',
+                  overflowY: 'auto',
                 }}
                 className="custom-scrollbar"
               >
@@ -1261,45 +1304,45 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                       py: 0.5,
                       px: 1,
                       backgroundColor:
-                        index % 2 === 0 ? "#f0ebe7" : "transparent",
-                      borderRadius: "4px",
+                        index % 2 === 0 ? '#f0ebe7' : 'transparent',
+                      borderRadius: '4px',
                     }}
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%',
                       }}
                     >
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                       >
                         <Typography
                           sx={{
-                            backgroundColor: "#d4c0b3",
-                            color: "#5a4a40",
-                            borderRadius: "50%",
-                            width: "24px",
-                            height: "24px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.75rem",
-                            fontWeight: "bold",
+                            backgroundColor: '#d4c0b3',
+                            color: '#5a4a40',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
                           }}
                         >
                           {item.quantity}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "#5a4a40" }}>
-                          {capitalizeFirstLetter(item.productName ?? "")}
+                        <Typography variant="body2" sx={{ color: '#5a4a40' }}>
+                          {capitalizeFirstLetter(item.productName ?? '')}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ color: "#856D5E" }}>
+                      <Typography variant="body2" sx={{ color: '#856D5E' }}>
                         $
                         {formatNumber(
-                          normalizeNumber(item.unitaryPrice) * item.quantity
+                          normalizeNumber(item.unitaryPrice) * item.quantity,
                         )}
                       </Typography>
                     </Box>
@@ -1308,17 +1351,17 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
               </List>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   mt: 1,
                   pt: 1,
-                  borderTop: "1px dashed #d4c0b3",
+                  borderTop: '1px dashed #d4c0b3',
                 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   Total confirmado:
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#856D5E" }}>
+                <Typography variant="body2" sx={{ color: '#856D5E' }}>
                   ${formatNumber(total)}
                 </Typography>
               </Box>
@@ -1329,19 +1372,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
           {isPriority && (
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#fff3cd",
-                border: "1px solid #ffc107",
-                borderRadius: "4px",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '4px',
                 p: 1,
                 mb: 2,
               }}
             >
               <Typography
                 variant="body2"
-                sx={{ color: "#856404", fontWeight: "bold" }}
+                sx={{ color: '#856404', fontWeight: 'bold' }}
               >
                 ORDEN PRIORITARIA
               </Typography>
@@ -1350,23 +1393,23 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
           {/* Total General */}
           <Divider
-            sx={{ my: 1.5, borderColor: "#856D5E", borderWidth: "2px" }}
+            sx={{ my: 1.5, borderColor: '#856D5E', borderWidth: '2px' }}
           />
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "#856D5E",
-              color: "#ffffff",
-              borderRadius: "6px",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#856D5E',
+              color: '#ffffff',
+              borderRadius: '6px',
               p: 1.5,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               TOTAL GENERAL:
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               ${formatNumber(subtotal + total)}
             </Typography>
           </Box>
@@ -1376,7 +1419,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
           sx={{
             px: 2,
             py: 1.5,
-            borderTop: "1px solid #d4c0b3",
+            borderTop: '1px solid #d4c0b3',
             gap: 1,
           }}
         >
@@ -1384,11 +1427,11 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             onClick={() => setConfirmModalOpen(false)}
             size="medium"
             sx={{
-              color: "#856D5E",
-              borderColor: "#856D5E",
-              "&:hover": {
-                backgroundColor: "#f5f5f5",
-                borderColor: "#856D5E",
+              color: '#856D5E',
+              borderColor: '#856D5E',
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+                borderColor: '#856D5E',
               },
             }}
             variant="outlined"
@@ -1403,13 +1446,13 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
             variant="contained"
             size="medium"
             sx={{
-              backgroundColor: "#f9b32d",
-              color: "black",
-              fontWeight: "bold",
+              backgroundColor: '#f9b32d',
+              color: 'black',
+              fontWeight: 'bold',
               px: 3,
-              "&:hover": {
-                backgroundColor: "#f9b32d",
-                filter: "brightness(90%)",
+              '&:hover': {
+                backgroundColor: '#f9b32d',
+                filter: 'brightness(90%)',
               },
             }}
           >
