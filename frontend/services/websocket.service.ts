@@ -116,6 +116,19 @@ class WebSocketService {
     }
   }
 
+  /** Suscribirse a la sala de una mesa para recibir eventos de esa mesa específica. */
+  joinTable(tableId: string) {
+    if (!tableId) return;
+    const socket = this.socket ?? this.connect();
+    socket.emit('joinTable', { tableId });
+  }
+
+  /** Abandonar la sala de una mesa. */
+  leaveTable(tableId: string) {
+    if (!tableId || !this.socket) return;
+    this.socket.emit('leaveTable', { tableId });
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();

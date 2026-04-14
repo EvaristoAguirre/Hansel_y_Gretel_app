@@ -79,6 +79,11 @@ type OrderContextType = {
     quantity: number,
     toppingsPerUnit?: string[][]
   ) => Promise<{ available: boolean } | undefined>;
+  /** Activo mientras la encargada está procesando el cobro (paso 4).
+   *  Cuando es true, los eventos WebSocket no actualizan selectedOrderByTable
+   *  ni confirmedProducts para proteger la integridad del proceso de pago. */
+  isPaymentInProgress: boolean;
+  setIsPaymentInProgress: (value: boolean) => void;
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -109,6 +114,8 @@ const OrderContext = createContext<OrderContextType>({
   selectedToppingsByProduct: {},
   updateToppingForUnit: () => {},
   toppingsByProductGroup: {},
+  isPaymentInProgress: false,
+  setIsPaymentInProgress: () => {},
 });
 
 export const useOrderContext = () => {
@@ -149,6 +156,8 @@ const OrderProvider = ({
     [lineId: string]: Array<{ [groupId: string]: string[] }>;
   }>({});
 
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
+
   // Refs para acceder al estado actual desde callbacks estables (WebSocket listeners)
   // sin que su cambio provoque la recreación de esos callbacks.
   const tablesRef = useRef<ITable[]>([]);
@@ -156,12 +165,14 @@ const OrderProvider = ({
   const selectedTableRef = useRef<ITable | null>(null);
   const selectedOrderByTableRef = useRef<IOrderDetails | null>(null);
   const tokenRef = useRef<string | null>(null);
+  const isPaymentInProgressRef = useRef(false);
 
   useEffect(() => { tablesRef.current = tables; }, [tables]);
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { selectedTableRef.current = selectedTable; }, [selectedTable]);
   useEffect(() => { selectedOrderByTableRef.current = selectedOrderByTable; }, [selectedOrderByTable]);
   useEffect(() => { tokenRef.current = token; }, [token]);
+  useEffect(() => { isPaymentInProgressRef.current = isPaymentInProgress; }, [isPaymentInProgress]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -180,6 +191,19 @@ const OrderProvider = ({
   // Rastrea el ID de la mesa anterior para distinguir entre cambio de mesa
   // (requiere reset completo) vs. cambio de estado de la misma mesa (no requiere reset).
   const previousTableIdRef = useRef<string | null>(null);
+
+  // Gestión de salas Socket.IO: unirse a la sala de la mesa seleccionada y
+  // abandonar la sala de la mesa anterior al cambiar de mesa.
+  useEffect(() => {
+    const previousId = previousTableIdRef.current;
+    const newId = selectedTable?.id ?? null;
+    if (previousId && previousId !== newId) {
+      webSocketService.leaveTable(previousId);
+    }
+    if (newId) {
+      webSocketService.joinTable(newId);
+    }
+  }, [selectedTable?.id]);
 
   const handleResetSelectedOrder = () => {
     setSelectedProducts([]);
@@ -473,6 +497,9 @@ const OrderProvider = ({
     const socket = webSocketService.connect();
 
     const handleTicketPrinted = async (data: any) => {
+      // No interrumpir la vista de cobro con actualizaciones externas
+      if (isPaymentInProgressRef.current) return;
+
       const orderData = data.order || data;
       const orderId = orderData.id;
       const orderTableId = orderData.table?.id || orderData.tableId;
@@ -480,18 +507,11 @@ const OrderProvider = ({
       const currentSelectedTable = selectedTableRef.current;
       const currentSelectedOrderByTable = selectedOrderByTableRef.current;
       const currentToken = tokenRef.current;
-      const currentTables = tablesRef.current;
-      const currentOrders = ordersRef.current;
 
-      const orderTableInStore = currentTables.some((t) => t.id === orderTableId);
-      const orderBelongsToSelectedTable =
-        currentSelectedTable?.orders?.includes(orderId) ||
-        currentSelectedTable?.id === orderTableId;
       const belongsToSelectedTable =
-        orderBelongsToSelectedTable ||
         currentSelectedOrderByTable?.id === orderId ||
-        currentOrders.some((o) => o.id === orderId) ||
-        orderTableInStore;
+        currentSelectedTable?.id === orderTableId ||
+        currentSelectedTable?.orders?.includes(orderId);
 
       if (!belongsToSelectedTable || !currentToken) return;
 
@@ -508,16 +528,8 @@ const OrderProvider = ({
 
         const fullOrderData: IOrderDetails = await response.json();
 
-        const isSelectedOrder = currentSelectedOrderByTable?.id === orderId;
-        const isSelectedTable = currentSelectedTable?.id === orderTableId;
-        const orderBelongsToTable =
-          currentSelectedTable?.orders?.includes(orderId) ||
-          currentSelectedTable?.id === orderTableId;
-        const shouldUpdate =
-          isSelectedOrder ||
-          isSelectedTable ||
-          orderBelongsToTable ||
-          currentOrders.some((o) => o.id === orderId);
+        // Reutilizar la misma condición del filtro inicial para decidir si actualizar
+        const shouldUpdate = belongsToSelectedTable;
 
         if (shouldUpdate) {
           const newState =
@@ -548,6 +560,9 @@ const OrderProvider = ({
     };
 
     const handleOrderDeleted = async (data: any) => {
+      // No interrumpir la vista de cobro con actualizaciones externas
+      if (isPaymentInProgressRef.current) return;
+
       const orderData = data.order || data;
       const orderId = orderData.id;
       const orderTableId = orderData.table?.id || orderData.tableId;
@@ -960,6 +975,8 @@ const OrderProvider = ({
       updateToppingForUnit,
       toppingsByProductGroup,
       checkStockToppingAvailability,
+      isPaymentInProgress,
+      setIsPaymentInProgress,
     }),
     [
       selectedProducts,
@@ -970,6 +987,7 @@ const OrderProvider = ({
       toppingsByProductGroup,
       fetchOrderBySelectedTable,
       token,
+      isPaymentInProgress,
     ]
   );
 
