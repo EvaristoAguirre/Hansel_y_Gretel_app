@@ -115,6 +115,10 @@ export class OrderService {
         throw new NotFoundException('Order not found');
       if (order.state === OrderState.CLOSED)
         throw new ConflictException('Order is closed');
+      if (order.state === OrderState.PENDING_PAYMENT)
+        throw new ConflictException(
+          'Order is pending payment and cannot be modified. Please complete the payment first.',
+        );
       if (updateData.state && updateData.state !== OrderState.OPEN) {
         throw new ConflictException('Only "OPEN" orders can be modified');
       }

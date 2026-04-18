@@ -45,6 +45,7 @@ export const StepperTable: React.FC<Props> = ({
     fetchOrderBySelectedTable,
     handleCancelOrder,
     handleResetSelectedOrder,
+    setIsPaymentInProgress,
   } = useOrderContext();
   const { setSelectedTable } = useRoomContext();
   const { updateTable } = useTableStore();
@@ -62,21 +63,26 @@ export const StepperTable: React.FC<Props> = ({
     // Si el usuario es MOZO y está intentando avanzar al paso 4 (pago), no permitirlo
     const nextStep = isLastStep() ? activeStep : activeStep + 1;
     if (userRole === UserRole.MOZO && nextStep === 3) {
-      // El mozo no puede acceder al paso 4 (pago), se queda en el paso 3
       return;
     }
+    if (nextStep === 3) setIsPaymentInProgress(true);
+    else setIsPaymentInProgress(false);
     setActiveStep(nextStep);
   };
 
   const handleBack = () => {
-    setActiveStep(activeStep > 0 ? activeStep - 1 : activeStep);
+    const prevStep = activeStep > 0 ? activeStep - 1 : activeStep;
+    if (prevStep !== 3) setIsPaymentInProgress(false);
+    setActiveStep(prevStep);
   };
 
   const handleStep = (step: number) => () => {
     // Si el usuario es MOZO, no permitir acceso al paso 4 (pago)
     if (userRole === UserRole.MOZO && step === 3) {
-      return; // No permitir acceso al paso 4
+      return;
     }
+    if (step === 3) setIsPaymentInProgress(true);
+    else setIsPaymentInProgress(false);
     setActiveStep(step);
   };
 
@@ -84,15 +90,16 @@ export const StepperTable: React.FC<Props> = ({
     setCompleted({ ...completed, [activeStep]: true });
   };
   const handleComplete = () => {
+    setIsPaymentInProgress(false);
     setCompleted({ ...completed, [activeStep]: true });
     handleReset();
     handleResetSelectedOrder();
   };
 
   const handleReset = () => {
+    setIsPaymentInProgress(false);
     setActiveStep(0);
     setCompleted({});
-    // handleResetSelectedOrder();
   };
 
   const imprimirComanda = () => {
