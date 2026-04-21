@@ -11,6 +11,7 @@ export interface ProductSummary {
 export class ToppingSummaryDto {
   id: string;
   name: string;
+  extraCost?: number;
 }
 
 export class ProductLineDto {

@@ -265,7 +265,10 @@ export class PrinterService {
         name: line.productName,
         quantity: line.quantity,
         price: Number(line.unitaryPrice),
-        toppings: (line.toppings || []).map((t) => t.name),
+        toppings: (line.toppings || []).map((t) => ({
+          name: t.name,
+          extraCost: t.extraCost ?? 0,
+        })),
         lineSubtotal: Number(line.subtotal),
       }));
 
@@ -277,7 +280,7 @@ export class PrinterService {
         name: string;
         quantity: number;
         price: number;
-        toppings: string[];
+        toppings: { name: string; extraCost: number }[];
         lineSubtotal: number;
       }) => {
         const name = this.normalizeTextToTicket(product.name)
@@ -289,9 +292,12 @@ export class PrinterService {
           .toLocaleString('es-AR')
           .padStart(8)}`;
 
-        const toppingLines = (product.toppings || []).map(
-          (t) => `   + ${this.normalizeTextToTicket(t)}`,
-        );
+        const toppingLines = (product.toppings || []).map((t) => {
+          const toppingName = this.normalizeTextToTicket(t.name);
+          return t.extraCost > 0
+            ? `   + ${toppingName} (+$${t.extraCost.toLocaleString('es-AR')})`
+            : `   + ${toppingName}`;
+        });
 
         return [
           `${quantity} ${name} ${price}`,
