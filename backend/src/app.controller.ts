@@ -9,8 +9,8 @@ export class AppController {
 
   @Get()
   @ApiOperation({
-    summary: 'Health Check',
-    description: 'Verifica que el servidor está funcionando correctamente',
+    summary: 'Root',
+    description: 'Ruta raíz del servidor',
   })
   @ApiResponse({
     status: 200,
@@ -19,5 +19,21 @@ export class AppController {
   })
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @Get('health')
+  @ApiOperation({
+    summary: 'Health Check',
+    description: 'Verifica que el servidor está en línea y respondiendo',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Servidor en funcionamiento',
+    schema: {
+      example: { status: 'ok', timestamp: '2026-04-23T21:00:00.000Z' },
+    },
+  })
+  getHealth(): { status: string; timestamp: string } {
+    return this.appService.getHealth();
   }
 }
