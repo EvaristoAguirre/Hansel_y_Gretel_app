@@ -7,13 +7,16 @@ set BACKEND_URL=http://localhost:3000
 set BACKEND_HEALTH_ENDPOINT=/health
 set BACKEND_PATH=C:\Users\hanse\Documents\HyG\Hansel_y_Gretel_app\backend
 set FRONTEND_PATH=C:\Users\hanse\Documents\HyG\Hansel_y_Gretel_app\frontend
-set LOG_FILE=%TEMP%\hansel_logs\startup_%date:~0,10%_%time:~0,2%-%time:~3,2%-%time:~6,2%.log
 set MAX_RETRIES=30
 set RETRY_DELAY=2
 set APP_NAME=Hansel y Gretel
 
 :: Crear carpeta de logs
 if not exist "%TEMP%\hansel_logs" mkdir "%TEMP%\hansel_logs"
+
+:: Generar timestamp seguro (sin barras ni espacios) usando PowerShell
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'"') do set DATETIME=%%i
+set LOG_FILE=%TEMP%\hansel_logs\startup_%DATETIME%.log
 
 echo. > "%LOG_FILE%"
 echo ========================================== >> "%LOG_FILE%"
@@ -52,7 +55,7 @@ echo Rutas validadas correctamente >> "%LOG_FILE%"
 echo. >> "%LOG_FILE%"
 echo Starting Backend (PRODUCTION) >> "%LOG_FILE%"
 cd /d "%BACKEND_PATH%"
-start "Hansel-Backend-Prod" /MIN cmd /k "npm run start >> "%LOG_FILE%" 2>&1"
+start "Hansel-Backend-Prod" /MIN cmd /k "npm run start"
 echo Backend iniciado >> "%LOG_FILE%"
 
 :: Health Check del Backend
@@ -86,7 +89,7 @@ goto CHECK_BACKEND
 echo. >> "%LOG_FILE%"
 echo Starting Frontend (PRODUCTION) >> "%LOG_FILE%"
 cd /d "%FRONTEND_PATH%"
-start "Hansel-Frontend-Prod" /MIN cmd /k "npm run start >> "%LOG_FILE%" 2>&1"
+start "Hansel-Frontend-Prod" /MIN cmd /k "npm run start"
 echo Frontend iniciado >> "%LOG_FILE%"
 
 timeout /t 3 /nobreak >nul
