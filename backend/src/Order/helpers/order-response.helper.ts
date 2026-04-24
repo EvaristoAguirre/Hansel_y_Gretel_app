@@ -20,7 +20,7 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
   if (!hasChargedToppings) {
     const toppings: ToppingSummaryDto[] = allToppings
       .filter((t) => t.topping?.id)
-      .map((t) => ({ id: t.topping.id, name: t.topping.name }));
+      .map((t) => ({ id: t.topping.id, name: t.topping.name, extraCost: 0 }));
 
     return [
       {
@@ -77,7 +77,11 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
         extraCost: unitExtraCost,
         toppings: unitToppings
           .filter((t) => t.topping?.id)
-          .map((t) => ({ id: t.topping.id, name: t.topping.name })),
+          .map((t) => ({
+            id: t.topping.id,
+            name: t.topping.name,
+            extraCost: Number(t.extraCost),
+          })),
       });
     }
     groups.get(key)!.count++;
