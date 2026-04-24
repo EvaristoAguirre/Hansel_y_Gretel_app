@@ -10,6 +10,7 @@ import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
+import { buildProductLines } from 'src/Order/helpers/order-response.helper';
 
 @Injectable()
 export class PrinterService {
@@ -251,39 +252,56 @@ export class PrinterService {
       //---------------------------------------------------------NO OLVIDARME EL NUMERO DE COMANDA
       // const commandNumber = commandNumberToPrint || 'S/N';
 
-      const products = order.orderDetails
+      // Desglosamos cada OrderDetails en líneas agrupadas por combinación
+      // exacta de toppings (mismo helper que usa la respuesta API), de modo que
+      // el ticket muestre el precio real por unidad y los agregados con cargo
+      // queden visibles. Esto garantiza que la suma de las líneas coincida
+      // exactamente con el subtotal impreso.
+      const productLines = order.orderDetails
         .filter((detail) => detail.isActive)
-        .map((detail) => ({
-          name: detail.product?.name || 'Producto no disponible',
-          quantity: detail.quantity,
-          price: Number(detail.unitaryPrice),
-        }));
+        .flatMap((detail) => buildProductLines(detail));
 
-      const subtotal = order.orderDetails.reduce(
-        (sum, detail) => sum + Number(detail.unitaryPrice) * detail.quantity,
-        0,
-      );
-      const tip = subtotal * 0.1;
+      const products = productLines.map((line) => ({
+        name: line.productName,
+        quantity: line.quantity,
+        price: Number(line.unitaryPrice),
+        toppings: (line.toppings || []).map((t) => ({
+          name: t.name,
+          extraCost: t.extraCost ?? 0,
+        })),
+        lineSubtotal: Number(line.subtotal),
+      }));
+
+      const subtotal = products.reduce((acc, p) => acc + p.lineSubtotal, 0);
+      const tip = Math.round(subtotal * 0.1);
       const total = subtotal + tip;
 
       const formatProductLine = (product: {
         name: string;
         quantity: number;
         price: number;
+        toppings: { name: string; extraCost: number }[];
+        lineSubtotal: number;
       }) => {
         const name = this.normalizeTextToTicket(product.name)
           .substring(0, 32)
           .padEnd(32);
         const quantity = `x${product.quantity.toString().padStart(2)}`;
-        const price = `$${Math.round(product.price).toLocaleString('es-AR').padStart(5)}`;
-        const totalLine = `Total: $${Math.round(
-          product.price * product.quantity,
-        )
+        const price = `$${product.price.toLocaleString('es-AR').padStart(5)}`;
+        const totalLine = `Total: $${product.lineSubtotal
           .toLocaleString('es-AR')
           .padStart(8)}`;
 
+        const toppingLines = (product.toppings || []).map((t) => {
+          const toppingName = this.normalizeTextToTicket(t.name);
+          return t.extraCost > 0
+            ? `   + ${toppingName} (+$${t.extraCost.toLocaleString('es-AR')})`
+            : `   + ${toppingName}`;
+        });
+
         return [
           `${quantity} ${name} ${price}`,
+          ...toppingLines,
           `${' '.repeat(48 - totalLine.length)}${totalLine}`,
         ].join('\n');
       };
@@ -310,10 +328,8 @@ export class PrinterService {
         ...products.map(formatProductLine),
         '-----------------------------------\n',
         '\x1B\x61\x02', // Alinear derecha
-        // `Subtotal: $${subtotal.toFixed(2).padStart(8)}\n`,
-        // `Propina sugerida (10%): $${tip.toFixed(2).padStart(6)}\n`,
-        `Subtotal: $${Math.round(subtotal).toLocaleString('es-AR').padStart(6)}\n`,
-        `Propina sugerida (10%): $${Math.round(tip).toLocaleString('es-AR').padStart(6)}\n`,
+        `Subtotal: $${subtotal.toLocaleString('es-AR').padStart(6)}\n`,
+        `Propina sugerida (10%): $${tip.toLocaleString('es-AR').padStart(6)}\n`,
 
         '\x1B\x61\x01', // Centrar texto
         '\x1B\x45\x01', // Negrita ON
@@ -321,9 +337,7 @@ export class PrinterService {
         '\x1B\x61\x02', // Alinear derecha
         '\x1D\x21\x11', // Texto doble tamaño
         `\x1B\x4D\x01`, // 2da tipografia
-        // `TOTAL (sin propina): $${subtotal.toFixed(2).padStart(10)}\n`,
-        // `TOTAL (con propina): $${total.toFixed(2).padStart(10)}\n`,
-        `TOTAL (sin propina): $${Math.round(subtotal).toLocaleString('es-AR').padStart(8)}\n`,
+        `TOTAL (sin propina): $${subtotal.toLocaleString('es-AR').padStart(8)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x00', // Texto normal
@@ -332,7 +346,7 @@ export class PrinterService {
         '\x1B\x45\x01', // Negrita ON
         '\x1D\x21\x11', // Texto doble tamaño
         `\x1B\x4D\x01`, // 2da tipografia
-        `TOTAL (con propina): $${Math.round(total).toLocaleString('es-AR').padStart(8)}\n`,
+        `TOTAL (con propina): $${total.toLocaleString('es-AR').padStart(8)}\n`,
         '\x1B\x45\x00', // Negrita OFF
         '\x1B\x61\x01', // Centrar texto
         '\x1D\x21\x00', // Texto normal
@@ -352,7 +366,7 @@ export class PrinterService {
         throw new Error('Print command failed');
       }
 
-      return `Ticket de pago impreso correctamente (Total: $${total.toFixed(2)})`;
+      return `Ticket de pago impreso correctamente (Total: $${total.toLocaleString('es-AR')})`;
     } catch (error) {
       this.logger.error('printTicketOrder', error);
       throw error;
