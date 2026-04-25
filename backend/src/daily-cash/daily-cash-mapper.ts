@@ -23,6 +23,18 @@ export class DailyCashMapper {
       totalMercadoPago: formatARNumber(dailyCash.totalMercadoPago),
       totalIncomes: formatARNumber(dailyCash.totalIncomes),
       totalExpenses: formatARNumber(dailyCash.totalExpenses),
+      totalNetSales:
+        dailyCash.totalNetSales !== null && dailyCash.totalNetSales !== undefined
+          ? formatARNumber(dailyCash.totalNetSales)
+          : null,
+      totalDiscounts:
+        dailyCash.totalDiscounts !== null && dailyCash.totalDiscounts !== undefined
+          ? formatARNumber(dailyCash.totalDiscounts)
+          : null,
+      totalBatchClose:
+        dailyCash.totalBatchClose !== null && dailyCash.totalBatchClose !== undefined
+          ? formatARNumber(dailyCash.totalBatchClose)
+          : null,
       movements: CashMovementMapper.toMany(dailyCash.movements || []),
       orders: OrderMapper.toMany(dailyCash.orders || []),
     };

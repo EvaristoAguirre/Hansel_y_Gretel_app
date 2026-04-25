@@ -187,7 +187,9 @@ export class DailyCashService {
       );
 
       // --- Guardar TOTALES de ventas, propinas, ingresos y egresos directos ---
-      dailyCash.totalSales = this.sumTotalOrders(dailyCash.orders);
+      dailyCash.totalSales = this.sumGrossTotalOrders(dailyCash.orders);
+      dailyCash.totalDiscounts = this.sumDiscountsOrders(dailyCash.orders);
+      dailyCash.totalNetSales = dailyCash.totalSales - dailyCash.totalDiscounts;
       dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders);
       dailyCash.totalIncomes = this.sumTotal(incomes);
       dailyCash.totalExpenses = this.sumTotal(expenses);
@@ -230,6 +232,12 @@ export class DailyCashService {
         (orderPayments[PaymentMethod.MERCADOPAGO] || 0) +
         (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
         (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
+
+      // Cierre por lote: tarjeta de crédito + débito + transferencias
+      dailyCash.totalBatchClose =
+        dailyCash.totalCreditCard +
+        dailyCash.totalDebitCard +
+        dailyCash.totalTransfer;
 
       dailyCash.cashDifference =
         Number(closeDailyCashDto.finalCash) -
@@ -443,8 +451,19 @@ export class DailyCashService {
     return records.reduce((acc, r) => acc + Number(r.amount), 0);
   }
 
-  private sumTotalOrders(records: { total: number }[]): number {
+  /** Ventas brutas: suma del total de cada orden antes de descuentos. */
+  private sumGrossTotalOrders(records: { total: number }[]): number {
     return records.reduce((acc, r) => acc + Number(r.total), 0);
+  }
+
+  /** Suma de todos los descuentos aplicados en las órdenes. */
+  private sumDiscountsOrders(
+    records: { discountAmount?: number }[],
+  ): number {
+    return records.reduce(
+      (acc, r) => acc + Number(r.discountAmount ?? 0),
+      0,
+    );
   }
 
   private groupRecordsByPaymentMethod(
@@ -506,7 +525,7 @@ export class DailyCashService {
           (mov) => mov.type === DailyCashMovementType.EXPENSE,
         );
         const totalSalesFromOrders = Number(
-          this.sumTotalOrders(openedDailyCash.orders),
+          this.sumGrossTotalOrders(openedDailyCash.orders),
         );
         const totalIncomes = Number(this.sumTotal(incomes));
         const totalExpenses = Number(this.sumTotal(expenses));

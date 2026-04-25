@@ -59,6 +59,9 @@ export interface IDailyCash {
   ordersIds?: string[];
   totalIncomes?: string;
   totalTips?: string;
+  totalNetSales?: string | null;
+  totalDiscounts?: string | null;
+  totalBatchClose?: string | null;
 }
 
 export type OrderCash = {
