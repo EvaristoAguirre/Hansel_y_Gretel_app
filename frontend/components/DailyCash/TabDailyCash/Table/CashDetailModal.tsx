@@ -21,6 +21,9 @@ import DifferenceIcon from '@mui/icons-material/CompareArrows';
 import { GridArrowDownwardIcon, GridArrowUpwardIcon } from '@mui/x-data-grid';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
+import PaymentsIcon from '@mui/icons-material/Payments';
 import { formatNumber } from '@/components/Utils/FormatNumber';
 import { normalizeNumber } from '@/components/Utils/NormalizeNumber';
 
@@ -32,6 +35,10 @@ interface Props {
 
 const CashDetailModal = ({ open, onClose, data }: Props) => {
   if (!data) return null;
+
+  /** Muestra el valor formateado o "N/D" para campos que pueden ser null en cajas históricas. */
+  const showValue = (v: string | null | undefined) =>
+    v != null ? `$ ${formatNumber(normalizeNumber(v))}` : 'N/D';
 
   const totals = [
     {
@@ -136,8 +143,20 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
 
             <Typography display="flex" alignItems="center" gap={1}>
               <PointOfSaleIcon color="success" fontSize="small" />
-              <strong>Total de Ventas:</strong> ${' '}
+              <strong>Ventas Brutas:</strong> ${' '}
               {formatNumber(normalizeNumber(data.totalSales))}
+            </Typography>
+
+            <Typography display="flex" alignItems="center" gap={1}>
+              <LocalOfferIcon color="error" fontSize="small" />
+              <strong>Total Descuentos:</strong>{' '}
+              {showValue(data.totalDiscounts)}
+            </Typography>
+
+            <Typography display="flex" alignItems="center" gap={1}>
+              <PriceCheckIcon color="success" fontSize="small" />
+              <strong>Ventas Netas:</strong>{' '}
+              {showValue(data.totalNetSales)}
             </Typography>
 
             <Typography display="flex" alignItems="center" gap={1}>
@@ -171,6 +190,30 @@ const CashDetailModal = ({ open, onClose, data }: Props) => {
             </Grid>
           ))}
         </Grid>
+
+        {/* Cierre por Lote */}
+        <Divider sx={{ mt: 2, mb: 1, borderStyle: 'dashed' }} />
+        <Typography
+          display="flex"
+          alignItems="center"
+          gap={1}
+          mt={1}
+          sx={{
+            bgcolor: 'action.hover',
+            borderRadius: 1,
+            px: 1.5,
+            py: 0.75,
+          }}
+        >
+          <PaymentsIcon color="primary" fontSize="small" />
+          <strong>Cierre por Lote</strong>
+          <Typography component="span" color="text.secondary" fontSize="0.75rem" ml={0.5}>
+            (crédito + débito + transferencia)
+          </Typography>
+          <Typography component="span" fontWeight="bold" color="primary" ml="auto">
+            {showValue(data.totalBatchClose)}
+          </Typography>
+        </Typography>
       </DialogContent>
       <Typography
         variant="subtitle1"

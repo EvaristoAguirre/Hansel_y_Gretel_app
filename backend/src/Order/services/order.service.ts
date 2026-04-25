@@ -150,9 +150,10 @@ export class OrderService {
 
           let finalPrice = product.price;
           let extraCost = 0;
+          // Cache de slots con opciones para reutilizar al crear las selecciones
+          const cachedSlots = new Map<string, PromotionSlot>();
 
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            // Calcular costos para las selecciones premium
             // Agrupar selecciones por slotId para validar cantidad total
             const selectionsBySlot = new Map<string, PromotionSelectionDto[]>();
 
@@ -166,7 +167,6 @@ export class OrderService {
 
             // Validar cantidad total por slot y calcular costos
             for (const [slotId, slotSelections] of selectionsBySlot.entries()) {
-              // Obtener TODAS las asignaciones del slot para esta promoción
               const assignments = await queryRunner.manager.find(
                 PromotionSlotAssignment,
                 {
@@ -183,26 +183,22 @@ export class OrderService {
                 );
               }
 
-              // Sumar las quantities de todas las asignaciones de este slot
               const totalRequiredQuantity = assignments.reduce(
                 (sum, assignment) => sum + assignment.quantity,
                 0,
               );
 
-              // Contar el total de productos seleccionados para este slot
               const totalProductsSelected = slotSelections.reduce(
                 (sum, sel) => sum + (sel.selectedProductIds?.length || 0),
                 0,
               );
 
-              // Validar que la cantidad total de productos seleccionados coincida con la suma de quantities
               if (totalProductsSelected !== totalRequiredQuantity) {
                 throw new BadRequestException(
                   `Slot "${slotId}" requires ${totalRequiredQuantity} product(s), but ${totalProductsSelected} were provided`,
                 );
               }
 
-              // Obtener el slot con sus opciones
               const slot = await queryRunner.manager.findOne(PromotionSlot, {
                 where: { id: slotId, isActive: true },
                 relations: ['options'],
@@ -212,8 +208,9 @@ export class OrderService {
                 throw new NotFoundException(`Slot with ID ${slotId} not found`);
               }
 
-              // Calcular costo extra por cada producto seleccionado
-              // Cada selección puede tener 1 o más productos (aunque en frontend será 1)
+              // Guardar en caché para no repetir la consulta al crear selecciones
+              cachedSlots.set(slotId, slot);
+
               for (const selection of slotSelections) {
                 for (const selectedProductId of selection.selectedProductIds ||
                   []) {
@@ -236,21 +233,36 @@ export class OrderService {
             finalPrice += extraCost;
           }
 
-          //crear OrderDetail
-          const orderDetail = queryRunner.manager.create(OrderDetails, {
-            product,
-            quantity: pd.quantity,
-            unitaryPrice: finalPrice,
-            subtotal: finalPrice * pd.quantity,
-            // ... otros campos
-          });
-          const savedOrderDetail = await queryRunner.manager.save(orderDetail);
+          //------------------- Deducción de stock con soporte para promociones con slots
+          await this.stockService.deductStock(
+            product.id,
+            pd.quantity,
+            pd.toppingsPerUnit,
+            pd.promotionSelections,
+          );
 
-          // Guardar selecciones de promoción (crear un registro por cada producto seleccionado)
+          // Construir el OrderDetail real con el precio correcto.
+          // Para promociones con extra cost, se pasa finalPrice como overrideBasePrice
+          // de modo que el subtotal incluya el costo extra de los slots.
+          const { detail, toppingDetails, subtotal } =
+            await this.orderRepository.buildOrderDetailWithToppings(
+              order,
+              product,
+              pd,
+              queryRunner,
+              product.type === 'promotion' && extraCost > 0
+                ? finalPrice
+                : undefined,
+            );
+          detail.commentOfProduct = pd.commentOfProduct;
+
+          // Crear selecciones de promoción vinculadas al detail real.
+          // Se agregan al array detail.promotionSelections para que sean
+          // persistidas por cascade cuando se guarde el detail.
           if (product.type === 'promotion' && pd.promotionSelections?.length) {
-            // Agrupar selecciones por slotId para validar cantidad total
-            const selectionsBySlot = new Map<string, PromotionSelectionDto[]>();
+            if (!detail.promotionSelections) detail.promotionSelections = [];
 
+            const selectionsBySlot = new Map<string, PromotionSelectionDto[]>();
             for (const selection of pd.promotionSelections) {
               const slotId = selection.slotId;
               if (!selectionsBySlot.has(slotId)) {
@@ -259,56 +271,10 @@ export class OrderService {
               selectionsBySlot.get(slotId)!.push(selection);
             }
 
-            // Validar y procesar cada slot
             for (const [slotId, slotSelections] of selectionsBySlot.entries()) {
-              // Obtener TODAS las asignaciones del slot para esta promoción
-              const assignments = await queryRunner.manager.find(
-                PromotionSlotAssignment,
-                {
-                  where: {
-                    promotionId: product.id,
-                    slotId: slotId,
-                  },
-                },
-              );
+              const slot = cachedSlots.get(slotId);
+              if (!slot) continue; // ya validado arriba
 
-              if (!assignments || assignments.length === 0) {
-                throw new BadRequestException(
-                  `Slot ${slotId} is not assigned to promotion ${product.id}`,
-                );
-              }
-
-              // Sumar las quantities de todas las asignaciones de este slot
-              const totalRequiredQuantity = assignments.reduce(
-                (sum, assignment) => sum + assignment.quantity,
-                0,
-              );
-
-              // Contar el total de productos seleccionados para este slot
-              const totalProductsSelected = slotSelections.reduce(
-                (sum, sel) => sum + (sel.selectedProductIds?.length || 0),
-                0,
-              );
-
-              // Validar que la cantidad total de productos seleccionados coincida con la suma de quantities
-              if (totalProductsSelected !== totalRequiredQuantity) {
-                throw new BadRequestException(
-                  `Slot "${slotId}" requires ${totalRequiredQuantity} product(s), but ${totalProductsSelected} were provided`,
-                );
-              }
-
-              // Obtener el slot con sus opciones
-              const slot = await queryRunner.manager.findOne(PromotionSlot, {
-                where: { id: slotId, isActive: true },
-                relations: ['options'],
-              });
-
-              if (!slot) {
-                throw new NotFoundException(`Slot with ID ${slotId} not found`);
-              }
-
-              // Crear un registro de OrderPromotionSelection por cada selección individual
-              // Cada selección puede tener 1 o más productos (aunque en frontend será 1)
               for (const selection of slotSelections) {
                 for (const selectedProductId of selection.selectedProductIds ||
                   []) {
@@ -325,34 +291,17 @@ export class OrderService {
                   const promotionSelection = queryRunner.manager.create(
                     OrderPromotionSelection,
                     {
-                      orderDetail: savedOrderDetail,
                       slotId: slotId,
                       selectedProductId: selectedProductId,
                       extraCostApplied: option.extraCost || 0,
                     },
                   );
-                  await queryRunner.manager.save(promotionSelection);
+                  detail.promotionSelections.push(promotionSelection);
                 }
               }
             }
           }
 
-          //------------------- Deducción de stock con soporte para promociones con slots
-          await this.stockService.deductStock(
-            product.id,
-            pd.quantity,
-            pd.toppingsPerUnit,
-            pd.promotionSelections, // Pasar selecciones de promoción si aplica
-          );
-
-          const { detail, toppingDetails, subtotal } =
-            await this.orderRepository.buildOrderDetailWithToppings(
-              order,
-              product,
-              pd,
-              queryRunner,
-            );
-          detail.commentOfProduct = pd.commentOfProduct;
           detailsToSave.push(detail);
           total += Number(subtotal);
 
