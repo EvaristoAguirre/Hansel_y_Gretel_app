@@ -196,6 +196,7 @@ export class OrderRepository {
     product: Product,
     detailData: OrderDetailsDto,
     qr: QueryRunner,
+    overrideBasePrice?: number,
   ): Promise<{
     detail: OrderDetails;
     toppingDetails: OrderDetailToppings[];
@@ -414,11 +415,14 @@ export class OrderRepository {
       }
 
       const unitaryToppingsCost = totalExtraCost / quantity;
-      const unitaryPrice = Number(product.price) + Number(unitaryToppingsCost);
+      const basePrice = overrideBasePrice !== undefined
+        ? Number(overrideBasePrice)
+        : Number(product.price);
+      const unitaryPrice = basePrice + Number(unitaryToppingsCost);
       const subtotal = unitaryPrice * quantity;
 
       this.logger.log(
-        `[buildOrderDetailWithToppings] Resumen final - Producto: ${product.name} | Cantidad: ${quantity} | TotalExtraCost: ${totalExtraCost} | UnitaryPrice: ${unitaryPrice} | Subtotal: ${subtotal} | Toppings a guardar: ${toppingDetails.length}`,
+        `[buildOrderDetailWithToppings] Resumen final - Producto: ${product.name} | Cantidad: ${quantity} | BasePrice: ${basePrice} | TotalExtraCost: ${totalExtraCost} | UnitaryPrice: ${unitaryPrice} | Subtotal: ${subtotal} | Toppings a guardar: ${toppingDetails.length}`,
       );
       toppingDetails.forEach((td, i) => {
         this.logger.debug(

@@ -30,6 +30,7 @@ export class ArchivedOrderDetails {
     toppingName: string;
     unitOfMeasureName: string;
     unitIndex: number;
+    extraCost: number;
   }[];
 
   @Column({ type: 'json', nullable: true })
@@ -39,6 +40,10 @@ export class ArchivedOrderDetails {
     selectedProductName: string;
     extraCostApplied: number;
   }[];
+
+  /** Indica si el ítem estaba activo al momento del archivado (false = cancelado dentro de la orden). */
+  @Column({ nullable: true, default: true })
+  isActive: boolean;
 
   @ManyToOne(() => ArchivedOrder, (archivedOrder) => archivedOrder.orderDetails)
   order: ArchivedOrder;

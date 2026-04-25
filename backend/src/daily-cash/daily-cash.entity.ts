@@ -56,6 +56,18 @@ export class DailyCash {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalExpenses: number;
 
+  /** Ventas netas: totalSales menos totalDiscounts (lo que el cliente realmente pagó por los productos). */
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
+  totalNetSales: number | null;
+
+  /** Suma de todos los descuentos aplicados en las órdenes del día. */
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
+  totalDiscounts: number | null;
+
+  /** Cierre por lote: suma de tarjeta de crédito + débito + transferencias. */
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: null })
+  totalBatchClose: number | null;
+
   // --------- Relaciones ---------
 
   @OneToMany(() => Order, (order) => order.dailyCash)

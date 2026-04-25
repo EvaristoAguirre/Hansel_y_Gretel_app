@@ -90,14 +90,16 @@ export class ArchiveService {
               archivedDetail.subtotal = detail.subtotal;
               archivedDetail.productId = detail.product?.id;
               archivedDetail.commandNumber = detail.commandNumber ?? null;
+              archivedDetail.isActive = detail.isActive ?? true;
 
-              // Mapear toppings a JSON
+              // Mapear toppings a JSON (incluye extraCost para trazabilidad histórica)
               archivedDetail.toppings =
                 detail.orderDetailToppings?.map((topping) => ({
                   toppingId: topping.topping?.id,
                   toppingName: topping.topping?.name,
                   unitOfMeasureName: topping.unitOfMeasureName,
                   unitIndex: topping.unitIndex,
+                  extraCost: Number(topping.extraCost ?? 0),
                 })) ?? [];
 
               // Mapear promotion selections a JSON
