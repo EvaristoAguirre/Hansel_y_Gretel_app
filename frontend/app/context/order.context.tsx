@@ -809,15 +809,12 @@ const OrderProvider = ({
           errorData.message ||
           "Error al confirmar el pedido.";
 
-        if (response.status === 400) {
-          Swal.fire({
-            icon: "error",
-            title: "Stock insuficiente",
-            text: errorMessage,
-          });
-        } else {
-          console.error("Error:", errorData);
-        }
+        Swal.fire({
+          icon: "error",
+          title: response.status === 400 ? "No se pudo confirmar" : "Error al confirmar",
+          text: errorMessage,
+        });
+        console.error("Error:", errorData);
 
         throw new Error(errorMessage);
       }
