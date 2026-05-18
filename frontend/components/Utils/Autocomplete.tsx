@@ -23,7 +23,13 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
 }) => {
   return (
     <Autocomplete
-      sx={sx}
+      sx={{
+        ...( typeof sx === 'object' && sx !== null ? sx : {}),
+        '& .MuiAutocomplete-option[aria-disabled="true"]': {
+          opacity: '1 !important',
+          cursor: 'not-allowed',
+        },
+      }}
       options={options}
       getOptionLabel={(product) =>
         `${product.name} - (Código: ${product.code})`
@@ -65,9 +71,9 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
               </span>
               {isSimple && stockQty !== null && (
                 <Chip
-                  label={sinStock ? 'Sin stock' : stockQty}
+                  label={sinStock ? 0 : stockQty}
                   size="small"
-                  color={sinStock ? 'warning' : 'success'}
+                  color={sinStock ? 'error' : 'success'}
                   sx={{ minWidth: 36, fontSize: '0.7rem', flexShrink: 0 }}
                 />
               )}
