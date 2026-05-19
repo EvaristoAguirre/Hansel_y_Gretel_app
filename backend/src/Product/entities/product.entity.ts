@@ -39,22 +39,22 @@ export class Product {
   description: string;
 
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   price: number;
 
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   cost: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   baseCost: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)
   toppingsCost: number;
 

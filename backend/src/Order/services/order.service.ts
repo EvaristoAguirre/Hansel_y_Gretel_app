@@ -148,7 +148,12 @@ export class OrderService {
           });
           if (!product) throw new NotFoundException('Product not found');
 
-          let finalPrice = product.price;
+          let finalPrice = Number(product.price ?? 0);
+          if (isNaN(finalPrice)) {
+            throw new BadRequestException(
+              `El precio del producto "${product.name}" es inválido (NaN). Revisá el precio antes de confirmar el pedido.`,
+            );
+          }
           let extraCost = 0;
           // Cache de slots con opciones para reutilizar al crear las selecciones
           const cachedSlots = new Map<string, PromotionSlot>();
@@ -230,7 +235,7 @@ export class OrderService {
                 }
               }
             }
-            finalPrice += extraCost;
+            finalPrice = Number(finalPrice) + Number(extraCost);
           }
 
           //------------------- Deducción de stock con soporte para promociones con slots
