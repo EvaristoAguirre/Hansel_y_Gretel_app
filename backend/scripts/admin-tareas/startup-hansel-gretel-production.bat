@@ -55,7 +55,7 @@ echo Rutas validadas correctamente >> "%LOG_FILE%"
 echo. >> "%LOG_FILE%"
 echo Starting Backend (PRODUCTION) >> "%LOG_FILE%"
 cd /d "%BACKEND_PATH%"
-start "Hansel-Backend-Prod" /MIN cmd /k "npm run start"
+start "Hansel-Backend-Prod" /MIN cmd /c "npm run start"
 echo Backend iniciado >> "%LOG_FILE%"
 
 :: Health Check del Backend
@@ -68,7 +68,7 @@ set BACKEND_READY=0
 :CHECK_BACKEND
 set /a RETRY_COUNT+=1
 
-powershell -NoProfile -Command "try { $response = Invoke-WebRequest -Uri '%BACKEND_URL%%BACKEND_HEALTH_ENDPOINT%' -Method GET -TimeoutSec 5 -ErrorAction Stop; if ($response.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
+powershell -NoProfile -Command "try { $response = Invoke-WebRequest -Uri '%BACKEND_URL%%BACKEND_HEALTH_ENDPOINT%' -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop; if ($response.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
 
 if %errorlevel% equ 0 (
     echo [Intento %RETRY_COUNT%] Backend ready >> "%LOG_FILE%"
@@ -89,7 +89,7 @@ goto CHECK_BACKEND
 echo. >> "%LOG_FILE%"
 echo Starting Frontend (PRODUCTION) >> "%LOG_FILE%"
 cd /d "%FRONTEND_PATH%"
-start "Hansel-Frontend-Prod" /MIN cmd /k "npm run start"
+start "Hansel-Frontend-Prod" /MIN cmd /c "npm run start"
 echo Frontend iniciado >> "%LOG_FILE%"
 
 timeout /t 3 /nobreak >nul
