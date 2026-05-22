@@ -205,6 +205,12 @@ export class OrderRepository {
     try {
       const quantity = detailData.quantity;
 
+      if (!quantity || quantity <= 0) {
+        throw new BadRequestException(
+          `La cantidad debe ser mayor a 0 para el producto "${product.name}".`,
+        );
+      }
+
       const toppingDetails: OrderDetailToppings[] = [];
 
       let totalExtraCost = 0;

@@ -364,8 +364,8 @@ export class StockService {
     unidadId: string,
   ) {
     if (!product.stock) {
-      throw new NotFoundException(
-        `El producto "${product.name}" no tiene stock asociado.`,
+      throw new BadRequestException(
+        `El producto "${product.name}" no tiene stock configurado. Revisá el producto en administración.`,
       );
     }
 
@@ -810,8 +810,8 @@ export class StockService {
     qr: QueryRunner,
   ): Promise<void> {
     if (!product.stock) {
-      throw new NotFoundException(
-        `El producto "${product.name}" no tiene stock asociado.`,
+      throw new BadRequestException(
+        `El producto "${product.name}" no tiene stock configurado. Revisá el producto en administración.`,
       );
     }
 

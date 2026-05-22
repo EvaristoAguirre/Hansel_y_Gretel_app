@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -17,6 +18,7 @@ export class OrderDetailsDto {
   toppingsPerUnit?: string[][];
 
   @IsNumber()
+  @Min(1)
   quantity: number;
 
   @IsString()

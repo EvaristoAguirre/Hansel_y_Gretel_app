@@ -1,8 +1,11 @@
 import React from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
 import { ProductResponse } from '../Interfaces/IProducts';
 import { capitalizeFirstLetter } from './CapitalizeFirstLetter';
+import { TypeProduct } from '../Enums/view-products';
 
 interface AutoCompleteProductProps {
   options: ProductResponse[];
@@ -18,19 +21,24 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
   label = 'Buscar productos por nombre o código',
   sx = { flexGrow: 1, width: '100%', marginRight: 2 },
 }) => {
-  // Filtrar solo productos con stock disponible
-  // const availableOptions = options.filter((product) => {
-  //   const stockQuantity = parseFloat(product.stock?.quantityInStock || "0");
-  //   return stockQuantity > 0;
-  // });
-
   return (
     <Autocomplete
-      sx={sx}
+      sx={{
+        ...( typeof sx === 'object' && sx !== null ? sx : {}),
+        '& .MuiAutocomplete-option[aria-disabled="true"]': {
+          opacity: '1 !important',
+          cursor: 'not-allowed',
+        },
+      }}
       options={options}
       getOptionLabel={(product) =>
         `${product.name} - (Código: ${product.code})`
       }
+      getOptionDisabled={(product) => {
+        if (product.type !== TypeProduct.SIMPLE) return false;
+        const qty = parseFloat(product.stock?.quantityInStock ?? '0');
+        return qty <= 0;
+      }}
       onInputChange={(event, value) => onSearch(value)}
       onChange={(event, selectedProduct) => {
         if (selectedProduct) {
@@ -40,13 +48,39 @@ const AutoCompleteProduct: React.FC<AutoCompleteProductProps> = ({
       renderInput={(params) => (
         <TextField {...params} label={label} variant="outlined" fullWidth />
       )}
-      renderOption={(props, product) => (
-        <li {...props} key={String(product.id)}>
-          {`${capitalizeFirstLetter(product.name)}  - (Código: ${
-            product.code
-          })`}
-        </li>
-      )}
+      renderOption={(props, product) => {
+        const isSimple = product.type === TypeProduct.SIMPLE;
+        const stockQty = isSimple
+          ? parseFloat(product.stock?.quantityInStock ?? '0')
+          : null;
+        const sinStock = isSimple && stockQty !== null && stockQty <= 0;
+
+        return (
+          <li {...props} key={String(product.id)}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                gap: 1,
+              }}
+            >
+              <span>
+                {`${capitalizeFirstLetter(product.name)}  - (Código: ${product.code})`}
+              </span>
+              {isSimple && stockQty !== null && (
+                <Chip
+                  label={sinStock ? 0 : stockQty}
+                  size="small"
+                  color={sinStock ? 'error' : 'success'}
+                  sx={{ minWidth: 36, fontSize: '0.7rem', flexShrink: 0 }}
+                />
+              )}
+            </Box>
+          </li>
+        );
+      }}
     />
   );
 };
