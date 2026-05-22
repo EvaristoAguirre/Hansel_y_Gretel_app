@@ -20,7 +20,7 @@ export class PrinterService {
   private readonly printerConfig = {
     host: '192.168.70.3',
     port: 9100,
-    timeout: 5000,
+    timeout: 9000,
   };
 
   constructor(private readonly loggerService: LoggerService) {
@@ -92,6 +92,7 @@ export class PrinterService {
           { event: 'connection_error', printerConfig: this.printerConfig },
           err,
         );
+        socket.destroy();
         reject(new Error('Error de conexión con la impresora'));
       });
 
@@ -107,6 +108,28 @@ export class PrinterService {
         );
       });
     });
+  }
+
+  private async sendRawCommandWithRetry(
+    command: string,
+    retries = 3,
+    delayMs = 2000,
+  ): Promise<boolean> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await this.sendRawCommand(command);
+      } catch (error) {
+        this.logger.warn(
+          `sendRawCommandWithRetry: intento ${attempt}/${retries} fallido`,
+        );
+        if (attempt < retries) {
+          await new Promise((res) => setTimeout(res, delayMs));
+        } else {
+          throw error;
+        }
+      }
+    }
+    return false;
   }
 
   async printKitchenOrder(orderData: PrintComandaDTO): Promise<string> {
@@ -191,8 +214,7 @@ export class PrinterService {
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('');
 
-      const firstPrintSuccess = await this.sendRawCommand(commands);
-      const secondPrintSuccess = await this.sendRawCommand(commands);
+      const firstPrintSuccess = await this.sendRawCommandWithRetry(commands);
 
       if (!firstPrintSuccess) {
         this.logger.error(
@@ -200,14 +222,18 @@ export class PrinterService {
         );
         throw new Error('Print command failed');
       }
-      if (!secondPrintSuccess) {
-        this.logger.error(
-          `[printKitchenOrder] 🖨️ ❌ Falló el envío de comandos a la impresora`,
+
+      let secondCopyWarning = '';
+      try {
+        await this.sendRawCommandWithRetry(commands);
+      } catch {
+        this.logger.warn(
+          `[printKitchenOrder] ⚠️ La primera copia se imprimió correctamente, pero falló la segunda copia`,
         );
-        throw new Error('Print command failed');
+        secondCopyWarning = ' (segunda copia no impresa)';
       }
 
-      return `Comanda impresa: ${orderCode}`;
+      return `Comanda impresa: ${orderCode}${secondCopyWarning}`;
     } catch (error) {
       this.logger.error('printKitchenOrder', error);
       throw error;
@@ -359,8 +385,7 @@ export class PrinterService {
         '\x1D\x56\x41\x50', // Cortar papel con avance
       ].join('');
 
-      const firstPrintSuccess = await this.sendRawCommand(commands);
-      //const secondPrintSuccess = await this.sendRawCommand(commands);
+      const firstPrintSuccess = await this.sendRawCommandWithRetry(commands);
 
       if (!firstPrintSuccess) {
         throw new Error('Print command failed');
@@ -487,7 +512,7 @@ export class PrinterService {
         '\x1D\x56\x41\x30', // Cortar papel
       ].join('\n');
 
-      const printSuccess = await this.sendRawCommand(commands);
+      const printSuccess = await this.sendRawCommandWithRetry(commands);
 
       if (!printSuccess) {
         throw new Error('Print command failed');
