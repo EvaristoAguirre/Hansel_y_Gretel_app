@@ -559,6 +559,34 @@ const OrderProvider = ({
       }
     };
 
+    const handleOrderClosed = (data: any) => {
+      // No interrumpir la vista de cobro con actualizaciones externas
+      if (isPaymentInProgressRef.current) return;
+
+      const orderData = data.order || data;
+      const orderTableId = orderData.table?.id;
+
+      if (!orderTableId) return;
+
+      const { tables: currentTables, updateTable } = useTableStore.getState();
+      const tableInStore = currentTables.find((t) => t.id === orderTableId);
+
+      if (tableInStore && orderData.table) {
+        const updatedTable = { ...tableInStore, ...orderData.table };
+        updateTable(updatedTable);
+
+        const currentSelectedTable = selectedTableRef.current;
+        if (currentSelectedTable?.id === orderTableId) {
+          setSelectedTable(updatedTable);
+          setSelectedOrderByTable(null);
+          setConfirmedProducts([]);
+          setSelectedProducts([]);
+          setSelectedToppingsByProduct({});
+          setToppingsByProductGroup({});
+        }
+      }
+    };
+
     const handleOrderDeleted = async (data: any) => {
       // No interrumpir la vista de cobro con actualizaciones externas
       if (isPaymentInProgressRef.current) return;
@@ -650,11 +678,13 @@ const OrderProvider = ({
         webSocketService.on("orderTicketPrinted", handleTicketPrinted);
         webSocketService.on("orderUpdatedPending", handleTicketPrinted);
         webSocketService.on("orderDeleted", handleOrderDeleted);
+        webSocketService.on("orderUpdatedClose", handleOrderClosed);
       } else {
         socket.once("connect", () => {
           webSocketService.on("orderTicketPrinted", handleTicketPrinted);
           webSocketService.on("orderUpdatedPending", handleTicketPrinted);
           webSocketService.on("orderDeleted", handleOrderDeleted);
+          webSocketService.on("orderUpdatedClose", handleOrderClosed);
         });
       }
     };
@@ -665,6 +695,7 @@ const OrderProvider = ({
       webSocketService.off("orderTicketPrinted", handleTicketPrinted);
       webSocketService.off("orderUpdatedPending", handleTicketPrinted);
       webSocketService.off("orderDeleted", handleOrderDeleted);
+      webSocketService.off("orderUpdatedClose", handleOrderClosed);
     };
   }, []); // Sin dependencias: se registra una sola vez al montar y usa refs para el estado actual.
 
