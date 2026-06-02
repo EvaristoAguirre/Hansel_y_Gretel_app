@@ -1,5 +1,6 @@
 "use client";
 import { URI_ORDER, URI_ORDER_OPEN, URI_TABLE } from "@/components/URI/URI";
+import { apiFetch } from "@/lib/apiClient";
 import {
   createContext,
   useContext,
@@ -291,16 +292,10 @@ const OrderProvider = ({
     }
 
     try {
-      const response = await fetch(`${URI_ORDER}/${orderId}`, {
+      const response = await apiFetch(`${URI_ORDER}/${orderId}`, {
         method: "GET",
         headers: { Authorization: `Bearer ${currentToken}` },
       });
-
-      if (!response.ok) {
-        setSelectedOrderByTable(null);
-        setConfirmedProducts([]);
-        return;
-      }
 
       const data: IOrderDetails = await response.json();
 
@@ -334,8 +329,12 @@ const OrderProvider = ({
       } else {
         setConfirmedProducts([]);
       }
-    } catch (error) {
-      console.error("Error al obtener el pedido:", error);
+    } catch (err) {
+      if (err instanceof Error && err.message === "TIMEOUT") {
+        Swal.fire("Sin respuesta", "El servidor no respondió. Reintentá en un momento.", "warning");
+      } else {
+        console.error("Error al obtener el pedido:", err);
+      }
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
     }

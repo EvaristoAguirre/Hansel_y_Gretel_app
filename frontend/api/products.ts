@@ -4,6 +4,7 @@ import {
   URI_PRODUCT_PROMO_WITH_SLOTS,
 } from '@/components/URI/URI';
 import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
+import { apiFetch } from '@/lib/apiClient';
 
 export interface CreatePromoWithSlotsPayload {
   name: string;
@@ -81,15 +82,14 @@ export const fetchProducts = async (
 ) => {
   const queryParams = new URLSearchParams({ page, limit }).toString();
 
-  const response = await fetch(`${URI_PRODUCT}?${queryParams}`, {
+  const response = await apiFetch(`${URI_PRODUCT}?${queryParams}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return await response.json();
 };
 
 export const getProductsByCategory = async (id: string, token: string) => {

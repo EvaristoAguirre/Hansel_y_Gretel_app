@@ -5,8 +5,10 @@ import { useTableStore } from '../Table/useTableStore';
 
 interface OrderStateZustand {
   orders: IOrderDetails[];
+  error: string | null;
   findOrderByTableId: (tableId: string) => IOrderDetails | null;
   setOrders: (orders: IOrderDetails[]) => void;
+  setError: (msg: string | null) => void;
   addOrder: (order: IOrderDetails) => void;
   removeOrder: (id: string) => void;
   updateOrder: (updatedOrder: IOrderDetails) => void;
@@ -79,6 +81,8 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
 
   return {
     orders: [],
+    error: null,
+    setError: (msg) => set({ error: msg }),
     findOrderByTableId: (tableId) => {
       return get().orders.find((order) => order.table.id === tableId) || null;
     },
