@@ -16,6 +16,13 @@ if(process.env.NODE_ENV === 'production') {
   API_URL = process.env.NEXT_PUBLIC_API_URL_DEV;
 }
 
+if (!API_URL) {
+  throw new Error(
+    'Variable de entorno NEXT_PUBLIC_API_URL o NEXT_PUBLIC_API_URL_DEV no definida. ' +
+    'Verificar .env.production o .env.local.'
+  );
+}
+
 // CATEGORIES
 export const URI_CATEGORY = `${API_URL}/category`;
 

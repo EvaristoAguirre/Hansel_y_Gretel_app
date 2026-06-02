@@ -112,11 +112,8 @@ export const StepperTable: React.FC<Props> = ({
       token
     );
     if (tableEdited) {
-      console.log("🈯🈯🈯🈯🈯🈯");
       setSelectedTable(tableEdited);
       updateTable(tableEdited);
-
-      // RESETEAR TODOS LOS ESTADOS DE LA ORDEN
       handleResetSelectedOrder();
     }
     handleComplete();
@@ -139,8 +136,7 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         ) : (
           <div className="flex justify-center text-red-500 font-bold my-16">
-            La mesa ya paso a "Pagada", pasar mesa a disponible e iniciar nuevo
-            pedido.
+            Mesa cerrada (transferida). Ir al paso 4 para habilitarla.
           </div>
         );
       case 1:
@@ -157,8 +153,7 @@ export const StepperTable: React.FC<Props> = ({
           </div>
         ) : selectedTable.state === TableState.CLOSED ? (
           <div className="flex justify-center text-red-500 font-bold my-16">
-            La orden ya pasó a "Pagada", pasar mesa a disponible e iniciar nuevo
-            pedido.
+            Mesa cerrada (transferida). Ir al paso 4 para habilitarla.
           </div>
         ) : (
           <div className="flex justify-center text-red-500 font-bold my-16">
@@ -196,7 +191,7 @@ export const StepperTable: React.FC<Props> = ({
           selectedTable?.state === TableState.CLOSED && (
             <>
               <div className="flex justify-center text-red-500 font-bold my-16">
-                Orden PAGADA. Finalizó el ciclo de la orden.
+                Mesa cerrada (transferida). Pasarla a disponible para iniciar un nuevo pedido.
               </div>
               <Button
                 fullWidth

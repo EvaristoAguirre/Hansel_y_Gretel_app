@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { IOrderDetails } from '../Interfaces/IOrder';
 import { webSocketService } from '@/services/websocket.service';
+import { useTableStore } from '../Table/useTableStore';
 
 interface OrderStateZustand {
   orders: IOrderDetails[];
+  error: string | null;
   findOrderByTableId: (tableId: string) => IOrderDetails | null;
   setOrders: (orders: IOrderDetails[]) => void;
+  setError: (msg: string | null) => void;
   addOrder: (order: IOrderDetails) => void;
   removeOrder: (id: string) => void;
   updateOrder: (updatedOrder: IOrderDetails) => void;
@@ -46,6 +49,13 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
         order.id === data.id ? { ...order, status: 'closed' } : order
       ),
     }));
+    if (data.table) {
+      const { tables, updateTable } = useTableStore.getState();
+      const tableInStore = tables.find((t) => t.id === data.table.id);
+      if (tableInStore) {
+        updateTable({ ...tableInStore, ...data.table });
+      }
+    }
   });
 
   webSocketService.on('orderDeleted', (data) => {
@@ -71,6 +81,8 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
 
   return {
     orders: [],
+    error: null,
+    setError: (msg) => set({ error: msg }),
     findOrderByTableId: (tableId) => {
       return get().orders.find((order) => order.table.id === tableId) || null;
     },

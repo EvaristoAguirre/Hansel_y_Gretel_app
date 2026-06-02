@@ -4,6 +4,7 @@ import { useOrderStore } from "../Order/useOrderStore";
 import Swal from "sweetalert2";
 import { useProductStore } from "./useProductStore";
 import { useAuth } from "@/app/context/authContext";
+import { apiFetch } from "@/lib/apiClient";
 
 const useOrder = () => {
   const {
@@ -42,15 +43,21 @@ const useOrder = () => {
     async function fetchOrders() {
       setIsLoadingOrders(true);
       try {
-        const response = await fetch(`${URI_ORDER}/active`, {
+        const response = await apiFetch(`${URI_ORDER}/active`, {
           method: "GET",
           headers: { "Authorization": `Bearer ${token}` },
         });
         const data = await response.json();
         setOrders(data);
-      } catch (error) {
-        Swal.fire("Error", "No se pudieron cargar los pedidos.", "error");
-        console.error(error);
+        useOrderStore.getState().setError(null);
+      } catch (err) {
+        if (err instanceof Error && err.message === "TIMEOUT") {
+          Swal.fire("Sin respuesta", "El servidor no respondió. Reintentá en un momento.", "warning");
+        } else {
+          Swal.fire("Error", "No se pudieron cargar los pedidos.", "error");
+        }
+        useOrderStore.getState().setError("No se pudieron cargar los pedidos.");
+        console.error(err);
       } finally {
         setIsLoadingOrders(false);
       }

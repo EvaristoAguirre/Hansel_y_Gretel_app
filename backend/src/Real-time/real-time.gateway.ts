@@ -12,9 +12,15 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { BroadcastService } from './broadcast.service';
 
+const wsOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: wsOrigins.length ? wsOrigins : ['http://localhost:3001'],
+    credentials: true,
   },
 })
 export class RealTimeGateway

@@ -5,7 +5,9 @@ import { webSocketService } from "@/services/websocket.service";
 
 interface TableStateZustand {
   tables: ITable[];
+  error: string | null;
   setTables: (tables: ITable[]) => void;
+  setError: (msg: string | null) => void;
   addTable: (table: ITable) => void;
   removeTable: (id: string) => void;
   updateTable: (updatedTable: ITable) => void;
@@ -44,12 +46,21 @@ export const useTableStore = create<TableStateZustand>((set) => {
   });
 
   const updateTablesByRoom = async (salaId: string, token: string) => {
-    const tables = await getTableByRoom(token, salaId);
-    set({ tables });
+    try {
+      const tables = await getTableByRoom(token, salaId);
+      set({ tables, error: null });
+    } catch (err) {
+      const msg = err instanceof Error && err.message === 'TIMEOUT'
+        ? 'Sin respuesta del servidor al cargar las mesas.'
+        : 'No se pudieron cargar las mesas.';
+      set({ error: msg });
+    }
   };
 
   return {
     tables: [],
+    error: null,
+    setError: (msg) => set({ error: msg }),
     setTables: (tables) => set({ tables }),
     addTable: (table) => set((state) => ({ tables: [...state.tables, table] })),
     removeTable: (id) =>
