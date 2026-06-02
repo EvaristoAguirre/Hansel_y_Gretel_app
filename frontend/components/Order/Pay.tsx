@@ -1,5 +1,4 @@
 import { orderToClosed } from "@/api/order";
-import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
 import { AddCircleOutline, Close, Payment } from "@mui/icons-material";
@@ -33,7 +32,6 @@ import { useOrderContext } from "../../app/context/order.context";
 import { useTableStore } from "../Table/useTableStore";
 import { useOrderStore } from "./useOrderStore";
 import { paymentMethod } from "../Enums/dailyCash";
-import { TableState } from "../Enums/table";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import { OrderState } from "../Enums/order";
 import { formatNumber } from "../Utils/FormatNumber";
@@ -364,17 +362,14 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
         setConfirmedProducts([]);
         clearSelectedProducts();
-        const closedTable = await editTable(
-          { ...selectedTable, state: TableState.CLOSED },
-          token
-        );
         if (paidOrder) {
           setSelectedOrderByTable(paidOrder);
           updateOrder(paidOrder);
         }
-        if (closedTable) {
-          setSelectedTable(closedTable);
-          updateTable(closedTable);
+        if (paidOrder?.table) {
+          const availableTable = { ...selectedTable, ...paidOrder.table };
+          setSelectedTable(availableTable);
+          updateTable(availableTable);
         }
         handleComplete();
       } catch (e: any) {
@@ -410,17 +405,14 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       setConfirmedProducts([]);
       clearSelectedProducts();
 
-      const closedTable = await editTable(
-        { ...selectedTable, state: TableState.CLOSED },
-        token
-      );
       if (paidOrder) {
         setSelectedOrderByTable(paidOrder);
         updateOrder(paidOrder);
       }
-      if (closedTable) {
-        setSelectedTable(closedTable);
-        updateTable(closedTable);
+      if (paidOrder?.table) {
+        const availableTable = { ...selectedTable, ...paidOrder.table };
+        setSelectedTable(availableTable);
+        updateTable(availableTable);
       }
       handleComplete();
     } catch (e: any) {

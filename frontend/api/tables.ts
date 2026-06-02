@@ -1,6 +1,6 @@
-import { useAuth } from "@/app/context/authContext";
 import { TableForm } from "@/components/Interfaces/ITable";
 import { URI_TABLE } from "@/components/URI/URI";
+import { apiFetch } from "@/lib/apiClient";
 
 
 export const validateTableByNumber = async (number: number, token: string) => {
@@ -135,23 +135,12 @@ export const getTablesAvailable = async (token: string) => {
 
 
 export const getTableByRoom = async (token: string, roomId: string) => {
-  try {
-    const response = await fetch(`${URI_TABLE}/by-room/${roomId}`, {
-      method: "GET",
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Error:", errorData);
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
+  const response = await apiFetch(`${URI_TABLE}/by-room/${roomId}`, {
+    method: "GET",
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  return await response.json();
 }

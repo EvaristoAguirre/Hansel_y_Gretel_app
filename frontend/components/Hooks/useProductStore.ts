@@ -65,7 +65,9 @@ export const useProductStore = create<ProductState>((set) => {
 
   return {
     products: [],
+    error: null,
     setProducts: (products) => set({ products }),
+    setError: (msg) => set({ error: msg }),
 
     addProduct: (product) => {
       set((state) => ({ products: [...state.products, product] }));

@@ -5,6 +5,7 @@ import { URI_ROOM } from '@/components/URI/URI';
 import { createContext, useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from './authContext';
+import { apiFetch } from '@/lib/apiClient';
 type RoomContextType = {
   rooms: IRoom[];
   selectedRoom: IRoom | null;
@@ -76,16 +77,20 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
     async function fetchRooms() {
       try {
-        const response = await fetch(URI_ROOM, {
+        const response = await apiFetch(URI_ROOM, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
-          }
+          },
         });
         const data = await response.json();
         setRooms(data);
-      } catch (error) {
-        Swal.fire("Error", "No se pudieron cargar las salas.", "error");
+      } catch (err) {
+        if (err instanceof Error && err.message === "TIMEOUT") {
+          Swal.fire("Sin respuesta", "El servidor no respondió. Reintentá en un momento.", "warning");
+        } else {
+          Swal.fire("Error", "No se pudieron cargar las salas.", "error");
+        }
       }
     }
     fetchRooms();
