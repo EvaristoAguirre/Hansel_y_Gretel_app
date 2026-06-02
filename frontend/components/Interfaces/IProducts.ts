@@ -151,7 +151,9 @@ export interface ProductResponse {
 
 export interface ProductState {
   products: ProductResponse[];
+  error: string | null;
   setProducts: (products: ProductResponse[]) => void;
+  setError: (msg: string | null) => void;
   addProduct: (product: ProductResponse) => void;
   removeProduct: (id: string) => void;
   updateProduct: (updatedProduct: ProductResponse) => void;
