@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { IOrderDetails } from '../Interfaces/IOrder';
 import { webSocketService } from '@/services/websocket.service';
+import { useTableStore } from '../Table/useTableStore';
 
 interface OrderStateZustand {
   orders: IOrderDetails[];
@@ -48,6 +49,13 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
         order.id === data.id ? { ...order, status: 'closed' } : order
       ),
     }));
+    if (data.table) {
+      const { tables, updateTable } = useTableStore.getState();
+      const tableInStore = tables.find((t) => t.id === data.table.id);
+      if (tableInStore) {
+        updateTable({ ...tableInStore, ...data.table });
+      }
+    }
   });
 
   webSocketService.on('orderDeleted', (data) => {
