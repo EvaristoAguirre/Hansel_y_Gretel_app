@@ -12,9 +12,9 @@ export const orderToPending = async (id: string, token: string) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
+    const errorData = await response.json().catch(() => ({}));
     console.error("Error:", errorData);
-    throw new Error(`Error: ${response.status} ${response.statusText}`);
+    throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
   }
   return await response.json();
 };
@@ -49,9 +49,9 @@ export const orderToReprint = async (id: string, token: string) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
+    const errorData = await response.json().catch(() => ({}));
     console.error("Error:", errorData);
-    throw new Error(`Error: ${response.status} ${response.statusText}`);
+    throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
   }
   return await response.json();
 };

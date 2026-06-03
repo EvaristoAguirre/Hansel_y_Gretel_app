@@ -858,6 +858,15 @@ const OrderProvider = ({
 
       clearToppings();
 
+      if (updatedOrder.comandaWarning) {
+        await Swal.fire({
+          title: "Impresora no disponible",
+          text: "El pedido fue confirmado correctamente, pero la comanda no pudo imprimirse. Avisá a cocina de forma manual.",
+          icon: "warning",
+          confirmButtonText: "Entendido",
+        });
+      }
+
       return updatedOrder;
     } catch (error) {
       console.error(error);

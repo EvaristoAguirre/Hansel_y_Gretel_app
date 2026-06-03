@@ -2,6 +2,7 @@ import {
   URI_PRODUCT,
   URI_PRODUCT_BY_CATEGORY,
   URI_PRODUCT_PROMO_WITH_SLOTS,
+  URI_PRODUCT_SEARCH_FOR_ORDERING,
 } from '@/components/URI/URI';
 import { ICheckStock, ProductForm } from '../components/Interfaces/IProducts';
 import { apiFetch } from '@/lib/apiClient';
@@ -299,6 +300,48 @@ export const checkStock = async (form: ICheckStock, token: string) => {
   });
 
   return await response.json();
+};
+
+/**
+ * Búsqueda optimizada para el contexto de toma de pedidos.
+ * Llama a POST /product/search-for-ordering, que devuelve un DTO reducido
+ * sin ingredientes, costos ni relaciones administrativas.
+ */
+export const searchProductsForOrdering = async (
+  searchTerm: string,
+  token: string,
+  selectedCategoryId?: string | null
+) => {
+  try {
+    const isNumeric = !isNaN(Number(searchTerm));
+    const queryParams = new URLSearchParams({
+      [isNumeric ? 'code' : 'name']: searchTerm,
+      limit: '10',
+    });
+
+    const response = await fetch(
+      `${URI_PRODUCT_SEARCH_FOR_ORDERING}?${queryParams.toString()}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(
+          selectedCategoryId ? { categories: [selectedCategoryId] } : {}
+        ),
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error en searchProductsForOrdering:', error);
+    return [];
+  }
 };
 
 export const createPromoWithSlots = async (

@@ -18,6 +18,10 @@ export class OrderSummaryResponseDto {
   discountAmount?: number;
   products: ProductLineDto[];
   payments: OrderPaymentSummary[];
+  /** Presente cuando el cambio de estado se guardó pero la impresora no respondió (ticket). */
+  printerWarning?: string | null;
+  /** Presente cuando el pedido se confirmó pero la comanda no pudo imprimirse. */
+  comandaWarning?: string | null;
 }
 
 export class OrderPaymentSummary {
