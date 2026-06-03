@@ -30,6 +30,7 @@ export const URI_CATEGORY = `${API_URL}/category`;
 export const URI_PRODUCT = `${API_URL}/product`;
 export const URI_PRODUCT_BY_CATEGORY = `${API_URL}/product/by-categories`;
 export const URI_PRODUCT_PROMO_WITH_SLOTS = `${API_URL}/product/promo-with-slots`;
+export const URI_PRODUCT_SEARCH_FOR_ORDERING = `${API_URL}/product/search-for-ordering`;
 
 // PROMOTION SLOT
 export const URI_PROMOTION_SLOT = `${API_URL}/promotion-slot`;

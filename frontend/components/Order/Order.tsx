@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending, orderToReprint } from "@/api/order";
 import { SelectedProductsI } from "../Interfaces/IProducts";
@@ -22,6 +23,7 @@ import { TableState } from "../Enums/table";
 import { normalizeNumber } from "../Utils/NormalizeNumber";
 import { formatNumber } from "../Utils/FormatNumber";
 import { UserRole } from "../Enums/user";
+import LoadingLottie from "../Loader/Loading";
 
 export interface OrderProps {
   imprimirComanda: any;
@@ -48,6 +50,7 @@ const Order: React.FC<OrderProps> = ({
   const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
   const [total, setTotal] = useState(0);
+  const [isPrinting, setIsPrinting] = useState(false);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
 
@@ -64,107 +67,117 @@ const Order: React.FC<OrderProps> = ({
     calcularTotal();
   }, [confirmedProducts]);
 
+  const expandOrderProducts = (products: SelectedProductsI[]): SelectedProductsI[] => {
+    const expanded: SelectedProductsI[] = [];
+    let counter = 0;
+    products.forEach((product) => {
+      const qty = product.quantity || 1;
+      for (let i = 0; i < qty; i++) {
+        expanded.push({
+          ...product,
+          internalId: `${product.productId}-${counter}`,
+          quantity: 1,
+        });
+        counter++;
+      }
+    });
+    return expanded;
+  };
+
   const handlePayOrder = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
-    if (selectedOrderByTable) {
-      const ordenPendingPay = await orderToPending(
-        selectedOrderByTable.id,
+    setIsPrinting(true);
+    try {
+      if (selectedOrderByTable) {
+        const ordenPendingPay = await orderToPending(selectedOrderByTable.id, token);
+
+        setSelectedOrderByTable(ordenPendingPay);
+        setOrderSelectedTable(ordenPendingPay.id);
+        addOrder(ordenPendingPay);
+
+        if (ordenPendingPay.products) {
+          setConfirmedProducts(expandOrderProducts(ordenPendingPay.products));
+        }
+
+        if (ordenPendingPay.printerWarning) {
+          await Swal.fire({
+            title: "Impresora no disponible",
+            text: `${ordenPendingPay.printerWarning}. El ticket no fue impreso, pero la cuenta quedó registrada. Podés reimprimirlo cuando la impresora esté lista.`,
+            icon: "warning",
+            confirmButtonText: "Entendido",
+          });
+        }
+      }
+
+      const tableEdited = await editTable(
+        { ...selectedTable, state: TableState.PENDING_PAYMENT },
         token
       );
-
-      setSelectedOrderByTable(ordenPendingPay);
-      setOrderSelectedTable(ordenPendingPay.id);
-      addOrder(ordenPendingPay);
-
-      // Actualizar confirmedProducts con los productos de la orden actualizada
-      if (ordenPendingPay.products) {
-        const expandedProducts: SelectedProductsI[] = [];
-        let internalCounter = 0;
-
-        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
-          const quantity = product.quantity || 1;
-
-          for (let i = 0; i < quantity; i++) {
-            expandedProducts.push({
-              ...product,
-              internalId: `${product.productId}-${internalCounter}`,
-              quantity: 1,
-            });
-            internalCounter++;
-          }
-        });
-
-        setConfirmedProducts(expandedProducts);
+      if (tableEdited) {
+        setSelectedTable({ ...selectedTable, state: tableEdited.state });
+        updateTable(tableEdited);
       }
-    }
+      handleCompleteStep();
 
-    const tableEdited = await editTable(
-      { ...selectedTable, state: TableState.PENDING_PAYMENT },
-      token
-    );
-    if (tableEdited) {
-      setSelectedTable({ ...selectedTable, state: tableEdited.state });
-      updateTable(tableEdited);
+      // Solo avanzar al paso 4 (pago) si el usuario NO es MOZO
+      const userRole = userRoleFromToken();
+      if (userRole !== UserRole.MOZO) {
+        handleNextStep();
+      }
+    } catch (error: any) {
+      console.error("handlePayOrder:", error?.message);
+      Swal.fire({
+        title: "Impresora no disponible",
+        text: "No se pudo imprimir el ticket. La cuenta quedó registrada correctamente. Podés reimprimirlo cuando la impresora esté lista.",
+        icon: "warning",
+        confirmButtonText: "Entendido",
+      });
+    } finally {
+      setIsPrinting(false);
     }
-    handleCompleteStep();
-
-    // Solo avanzar al paso 4 (pago) si el usuario NO es MOZO
-    // El mozo solo puede ver hasta el paso 3 (imprimir ticket)
-    const userRole = userRoleFromToken();
-    if (userRole !== UserRole.MOZO) {
-      handleNextStep();
-    }
-    // Si es MOZO, se queda en el paso 3 (no avanza al paso 4)
   };
 
   const handleReprintOrder = async (selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
-    if (selectedOrderByTable) {
-      const ordenPendingPay = await orderToReprint(
-        selectedOrderByTable.id,
+    setIsPrinting(true);
+    try {
+      if (selectedOrderByTable) {
+        const ordenPendingPay = await orderToReprint(selectedOrderByTable.id, token);
+
+        setSelectedOrderByTable(ordenPendingPay);
+        setOrderSelectedTable(ordenPendingPay.id);
+        addOrder(ordenPendingPay);
+
+        if (ordenPendingPay.products) {
+          setConfirmedProducts(expandOrderProducts(ordenPendingPay.products));
+        }
+      }
+
+      const tableEdited = await editTable(
+        { ...selectedTable, state: TableState.PENDING_PAYMENT },
         token
       );
-
-      setSelectedOrderByTable(ordenPendingPay);
-      setOrderSelectedTable(ordenPendingPay.id);
-      addOrder(ordenPendingPay);
-
-      // Actualizar confirmedProducts con los productos de la orden actualizada
-      if (ordenPendingPay.products) {
-        const expandedProducts: SelectedProductsI[] = [];
-        let internalCounter = 0;
-
-        ordenPendingPay.products.forEach((product: SelectedProductsI) => {
-          const quantity = product.quantity || 1;
-
-          for (let i = 0; i < quantity; i++) {
-            expandedProducts.push({
-              ...product,
-              internalId: `${product.productId}-${internalCounter}`,
-              quantity: 1,
-            });
-            internalCounter++;
-          }
-        });
-
-        setConfirmedProducts(expandedProducts);
+      if (tableEdited) {
+        setSelectedTable({ ...selectedTable, state: tableEdited.state });
+        updateTable(tableEdited);
       }
+      handleCompleteStep();
+      handleNextStep();
+    } catch (error: any) {
+      console.error("handleReprintOrder:", error?.message);
+      Swal.fire({
+        title: "Impresora no disponible",
+        text: "No se pudo conectar con la impresora. Intentá de nuevo en unos segundos.",
+        icon: "warning",
+        confirmButtonText: "Cerrar",
+      });
+    } finally {
+      setIsPrinting(false);
     }
-
-    const tableEdited = await editTable(
-      { ...selectedTable, state: TableState.PENDING_PAYMENT },
-      token
-    );
-    if (tableEdited) {
-      setSelectedTable({ ...selectedTable, state: tableEdited.state });
-      updateTable(tableEdited);
-    }
-    handleCompleteStep();
-    handleNextStep();
   };
   const cancelOrder = async (orderId: string) => {
     const token = getAccessToken();
@@ -184,6 +197,10 @@ const Order: React.FC<OrderProps> = ({
     backgroundColor: "#7e9d8a",
     "&:hover": { backgroundColor: "#f9b32d", color: "black" },
   };
+
+  if (isPrinting) {
+    return <LoadingLottie />;
+  }
 
   return (
     <>

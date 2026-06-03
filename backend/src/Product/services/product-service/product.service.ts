@@ -9,6 +9,7 @@ import { CreateProductDto } from '../../dtos/create-product.dto';
 import { UpdateProductDto } from 'src/Product/dtos/update-product-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { ProductOrderingResponseDto } from 'src/DTOs/productOrderingResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { Product } from '../../entities/product.entity';
 import { ProductRepository } from 'src/Product/repositories/product.repository';
@@ -137,6 +138,15 @@ export class ProductService {
       page,
       limit,
     );
+  }
+
+  async searchForOrdering(
+    name?: string,
+    code?: string,
+    categories?: string[],
+    limit: number = 10,
+  ): Promise<ProductOrderingResponseDto[]> {
+    return this.reader.searchForOrdering(name, code, categories, limit);
   }
 
   async searchProductsToPromotion(

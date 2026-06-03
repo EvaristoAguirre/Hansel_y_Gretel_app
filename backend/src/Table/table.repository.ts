@@ -212,6 +212,7 @@ export class TableRepository {
           { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
         )
         .where('table.roomId = :roomId', { roomId })
+        .andWhere('table.isActive = :isActive', { isActive: true })
         .getMany();
       if (!tables) {
         throw new NotFoundException(`Tables with Room ID: ${roomId} not found`);

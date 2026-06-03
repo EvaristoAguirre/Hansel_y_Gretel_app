@@ -32,6 +32,7 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { GetProductsByCategoriesDto } from 'src/DTOs/get-by-categories.dto';
 import { ProductResponseDto } from 'src/DTOs/productResponse.dto';
+import { ProductOrderingResponseDto } from 'src/DTOs/productOrderingResponse.dto';
 import { CheckStockDto } from 'src/DTOs/checkStock.dto';
 import { CreatePromotionWithSlotsDto } from '../dtos/create-promotion-with-slots.dto';
 
@@ -183,6 +184,41 @@ export class ProductController {
       name,
       code,
     );
+  }
+
+  @Post('search-for-ordering')
+  @ApiOperation({
+    summary: 'Búsqueda de productos optimizada para toma de pedidos',
+    description:
+      'Devuelve un DTO reducido con solo los campos que el mozo necesita para armar un pedido ' +
+      '(nombre, precio, toppings, slots de promoción, stock). ' +
+      'Excluye ingredientes, costos y relaciones administrativas.',
+  })
+  @ApiQuery({ name: 'name', required: false, type: String })
+  @ApiQuery({ name: 'code', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiBody({
+    description: 'IDs de categorías para filtrar (opcional)',
+    required: false,
+    schema: {
+      type: 'object',
+      properties: {
+        categories: {
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Resultados de búsqueda para pedido' })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO)
+  async searchForOrdering(
+    @Query('name') name?: string,
+    @Query('code') code?: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+    @Body('categories') categories?: string[],
+  ): Promise<ProductOrderingResponseDto[]> {
+    return this.productService.searchForOrdering(name, code, categories, limit);
   }
 
   @Post('search')

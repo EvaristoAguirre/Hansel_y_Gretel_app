@@ -106,6 +106,8 @@ export class OrderService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    let comandaWarning: string | null = null;
+
     try {
       const order = await this.orderRepository.getOrderWithRelations(
         id,
@@ -447,6 +449,7 @@ export class OrderService {
             '❌ Falló la impresión de la comanda',
             printError.stack,
           );
+          comandaWarning = 'No se pudo conectar con la impresora. La comanda no fue impresa.';
         }
 
         // 💾 Guardar detalles (cascade: true en orderDetailToppings persiste los toppings automáticamente)
@@ -488,7 +491,9 @@ export class OrderService {
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
-      return await this.adaptResponse(updatedOrder);
+      const responseAdapted = await this.adaptResponse(updatedOrder);
+      responseAdapted.comandaWarning = comandaWarning;
+      return responseAdapted;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error('updateOrder', error);
@@ -653,29 +658,35 @@ export class OrderService {
       );
       const orderPending = await this.orderRepo.save(order);
 
+      let printerWarning: string | null = null;
+
       if (process.env.NODE_ENV === 'production') {
         try {
           await this.printerService.printTicketOrder(order);
         } catch (error) {
           this.logger.error('printTicketOrder', error);
-          throw error;
+          printerWarning = 'Tiempo de espera agotado al conectar con la impresora';
+          // Notificar el fallo de impresora por WebSocket (sin bloquear el flujo)
+          this.eventEmitter.emit('order.printerError', {
+            order: orderPending,
+            message: printerWarning,
+          });
         }
       } else {
         console.log('simulando impresion de ticket');
         console.log('orderPending to print ticket', orderPending);
       }
 
-      // Emitir evento de ticket impreso (paso 3 completado)
+      // Emitir siempre: el estado de negocio cambió correctamente aunque la impresora falle
       this.eventEmitter.emit('order.ticketPrinted', {
         order: orderPending,
       });
-
-      // Emitir evento de orden actualizada a pendiente de pago
       this.eventEmitter.emit('order.updatePending', {
         order: orderPending,
       });
 
       const responseAdapted = await this.adaptResponse(orderPending);
+      responseAdapted.printerWarning = printerWarning;
 
       return responseAdapted;
     } catch (error) {
