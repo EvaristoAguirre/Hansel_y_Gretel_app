@@ -53,4 +53,16 @@ export class OrderWSListener {
       this.broadcastService.broadcast('orderTicketPrinted', event.order);
     }
   }
+
+  /** Error de impresora: el estado cambió correctamente pero no se pudo imprimir. */
+  @OnEvent('order.printerError')
+  handleOrderPrinterError(event: { order: Order; message: string }) {
+    const tableId = event.order?.table?.id;
+    const payload = { order: event.order, message: event.message };
+    if (tableId) {
+      this.broadcastService.broadcastToTable(tableId, 'printerError', payload);
+    } else {
+      this.broadcastService.broadcast('printerError', payload);
+    }
+  }
 }

@@ -1295,6 +1295,61 @@ export class ProductRepository {
   }
 
   //---------------- Consultas de Stock ---------------
+  /**
+   * Búsqueda optimizada para el contexto de toma de pedidos (vista café/mozo).
+   * Carga solo las relaciones que el mozo necesita para armar un pedido:
+   * categorías, stock, grupos de toppings y slots de promoción.
+   * Excluye ingredientes, costos internos y demás relaciones administrativas.
+   */
+  async searchForOrdering(
+    name?: string,
+    code?: string,
+    categories?: string[],
+    limit: number = 10,
+  ): Promise<Product[]> {
+    if (!name && !code && (!categories || categories.length === 0)) {
+      throw new BadRequestException(
+        'At least a name, code, or category must be provided for search.',
+      );
+    }
+
+    const whereConditions: any = { isActive: true };
+
+    if (name) {
+      whereConditions.name = ILike(`%${name}%`);
+    } else if (code) {
+      whereConditions.code = Raw(
+        (alias) => `CAST(${alias} AS TEXT) ILIKE :code`,
+        { code: `%${code}%` },
+      );
+    }
+
+    if (categories && categories.length > 0) {
+      whereConditions.categories = { id: In(categories) };
+    }
+
+    const [products] = await this.productRepository.findAndCount({
+      where: whereConditions,
+      relations: [
+        'categories',
+        'stock',
+        'stock.unitOfMeasure',
+        'availableToppingGroups',
+        'availableToppingGroups.unitOfMeasure',
+        'availableToppingGroups.toppingGroup',
+        'availableToppingGroups.toppingGroup.toppings',
+        'promotionSlotAssignments',
+        'promotionSlotAssignments.slot',
+        'promotionSlotAssignments.slot.options',
+        'promotionSlotAssignments.slot.options.product',
+      ],
+      take: limit,
+      order: { name: 'ASC' },
+    });
+
+    return products;
+  }
+
   async getProductsWithStock(): Promise<Product[]> {
     return this.productRepository
       .createQueryBuilder('product')
