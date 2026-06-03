@@ -23,6 +23,10 @@ export interface IOrderDetails {
   discountPercent?: number;
   discountAmount?: number;
   products: IConfirmedProducts[];
+  /** Presente cuando el estado se guardó pero la impresora no respondió (ticket). */
+  printerWarning?: string | null;
+  /** Presente cuando el pedido se confirmó pero la comanda no pudo imprimirse. */
+  comandaWarning?: string | null;
 }
 
 export interface IConfirmedProducts {

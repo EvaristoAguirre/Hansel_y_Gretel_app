@@ -35,7 +35,7 @@ import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
 import AutoGrowTextarea from '../Utils/Textarea';
 import { fetchCategories } from '@/api/categories';
 import { ICategory } from '../Interfaces/ICategories';
-import { searchProducts } from '@/api/products';
+import { searchProductsForOrdering } from '@/api/products';
 import AutoCompleteProduct from '../Utils/Autocomplete';
 import { CategorySelector } from './filterCategories';
 import { useAuth } from '@/app/context/authContext';
@@ -318,7 +318,8 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const searchProductsFiltered = async (term: string, categories: string[]) => {
     const trimmedTerm = term.trim();
     const results =
-      token && (await searchProducts(trimmedTerm, token, categories.join(',')));
+      token &&
+      (await searchProductsForOrdering(trimmedTerm, token, categories.join(',')));
     if (results) setProductosDisponibles(results);
   };
 
