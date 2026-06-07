@@ -58,8 +58,17 @@ export class OrderService {
   ): Promise<OrderSummaryResponseDto> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const tableInUse = await this.tableService.getTableById(tableId);
+      // Lock pesimista sobre la fila de la mesa: garantiza que dos requests
+      // concurrentes no pasen la validación de estado simultáneamente.
+      const tableInUse = await queryRunner.manager.findOne(Table, {
+        where: { id: tableId, isActive: true },
+        lock: { mode: 'pessimistic_write' },
+      });
 
       if (!tableInUse) {
         throw new NotFoundException(`Table with ID: ${tableId} not found`);
@@ -69,9 +78,11 @@ export class OrderService {
         throw new ConflictException(`Table with ID: ${tableId} not available`);
       }
 
-      await this.tableService.updateTableState(tableId, TableState.OPEN);
+      await queryRunner.manager.update(Table, tableId, {
+        state: TableState.OPEN,
+      });
 
-      const newOrder = this.orderRepo.create({
+      const newOrder = queryRunner.manager.create(Order, {
         date: new Date(),
         total: 0,
         numberCustomers: numberCustomers,
@@ -81,7 +92,8 @@ export class OrderService {
         isActive: true,
       });
 
-      await this.orderRepo.save(newOrder);
+      await queryRunner.manager.save(newOrder);
+      await queryRunner.commitTransaction();
 
       this.eventEmitter.emit('order.created', {
         order: newOrder,
@@ -90,8 +102,11 @@ export class OrderService {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       this.logger.error('openOrder', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -821,6 +836,15 @@ export class OrderService {
       // Guardar información de la mesa antes de establecerla en null
       const tableInfo = order.table ? { id: order.table.id } : null;
 
+      // Liberar la mesa DENTRO de la transacción para garantizar atomicidad:
+      // si el servidor falla entre el commit y esta línea, la mesa quedaba 'open'
+      // indefinidamente (origen de las órdenes zombie).
+      if (previousTableId) {
+        await queryRunner.manager.update(Table, previousTableId, {
+          state: TableState.AVAILABLE,
+        });
+      }
+
       if (order.table) {
         order.table = null;
       }
@@ -830,22 +854,8 @@ export class OrderService {
 
       const updatedOrder = await queryRunner.manager.save(order);
 
-      // Commit único: restitución de stock + cancelación de orden
+      // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
-
-      // Cambiar estado de mesa (fuera de la transacción, tolerado)
-      if (previousTableId) {
-        try {
-          await this.tableService.updateTableState(
-            previousTableId,
-            TableState.AVAILABLE,
-          );
-        } catch (err) {
-          this.logger.warn(
-            `⚠️ La orden ${id} fue cancelada, pero no se pudo actualizar el estado de la mesa ${previousTableId}: ${err.message}`,
-          );
-        }
-      }
 
       const orderWithTableInfo = {
         ...updatedOrder,

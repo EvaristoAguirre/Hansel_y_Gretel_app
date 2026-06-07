@@ -62,7 +62,15 @@ const CashModal = ({ open, onClose, type }: Props) => {
       handleClose();
     } catch (error) {
       console.error("Error al procesar caja:", error);
-      Swal.fire("Error", `No se pudo ${type === dailyCashModalType.OPEN ? "abrir" : "cerrar"} la caja.`, "error");
+      const backendMessage = error instanceof Error ? error.message : undefined;
+      handleClose();
+      Swal.fire({
+        title: "Error",
+        html: backendMessage
+          ? backendMessage.replace(/\n/g, "<br>")
+          : `No se pudo ${type === dailyCashModalType.OPEN ? "abrir" : "cerrar"} la caja.`,
+        icon: "error",
+      });
     } finally {
       setLoading(false);
     }
