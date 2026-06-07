@@ -95,6 +95,12 @@ export class OrderService {
       await queryRunner.manager.save(newOrder);
       await queryRunner.commitTransaction();
 
+      // Emitir tableUpdated para que el frontend actualice el color de la mesa.
+      // Se hace después del commit usando getTableById (que ya filtra órdenes activas)
+      // para que el payload refleje el estado real persistido.
+      const updatedTable = await this.tableService.getTableById(tableId);
+      this.eventEmitter.emit('table.updated', { table: updatedTable });
+
       this.eventEmitter.emit('order.created', {
         order: newOrder,
       });
@@ -735,6 +741,21 @@ export class OrderService {
       openDailyCash,
     );
 
+    // Emitir tableUpdated para que el frontend libere la mesa visualmente.
+    // closeOrder en el repositorio guarda la mesa como AVAILABLE directamente
+    // con tableRepository.save() sin pasar por tableService, por lo que nunca
+    // se emitía este evento y la mesa quedaba visualmente en pending_payment.
+    if (closedOrder.table?.id) {
+      try {
+        const freedTable = await this.tableService.getTableById(closedOrder.table.id);
+        this.eventEmitter.emit('table.updated', { table: freedTable });
+      } catch (err) {
+        this.logger.warn(
+          `[closeOrder] No se pudo emitir tableUpdated para la mesa ${closedOrder.table.id}: ${err.message}`,
+        );
+      }
+    }
+
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 
     return closedOrder;
@@ -856,6 +877,18 @@ export class OrderService {
 
       // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
+
+      // Emitir tableUpdated después del commit para que el frontend actualice el color.
+      if (previousTableId) {
+        try {
+          const freedTable = await this.tableService.getTableById(previousTableId);
+          this.eventEmitter.emit('table.updated', { table: freedTable });
+        } catch (err) {
+          this.logger.warn(
+            `[cancelOrder] No se pudo emitir tableUpdated para la mesa ${previousTableId}: ${err.message}`,
+          );
+        }
+      }
 
       const orderWithTableInfo = {
         ...updatedOrder,
