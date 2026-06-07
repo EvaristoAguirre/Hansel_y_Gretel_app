@@ -38,8 +38,11 @@ export default function RegisterForm() {
         title: "Ingresaste con éxito!",
       });
 
+      const redirectTo = sessionStorage.getItem("redirectAfterLogin") || "/";
+      sessionStorage.removeItem("redirectAfterLogin");
+
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = redirectTo;
       }, 1000);
 
       validateUserSession();
