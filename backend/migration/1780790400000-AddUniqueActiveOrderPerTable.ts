@@ -8,6 +8,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * activas para la misma mesa, complementando la validación de la capa de
  * aplicación y protegiéndose ante race conditions o manipulación directa.
  *
+ * Nota: se usa CREATE INDEX sin CONCURRENTLY porque TypeORM envuelve cada
+ * migración en una transacción y PostgreSQL no permite CONCURRENTLY dentro
+ * de un bloque transaccional. El bloqueo de escritura en la tabla orders
+ * dura milisegundos en una base de datos de este tamaño.
+ *
  * REQUISITO PREVIO: no debe existir ninguna orden con state 'open' o
  * 'pending_payment' duplicada para el mismo tableId. Verificar con:
  *   SELECT "tableId", COUNT(*) FROM orders
@@ -36,9 +41,8 @@ export class AddUniqueActiveOrderPerTable1780790400000
       );
     }
 
-    // CONCURRENTLY permite crear el índice sin bloquear lecturas ni escrituras
     await queryRunner.query(`
-      CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "UQ_active_order_per_table"
+      CREATE UNIQUE INDEX IF NOT EXISTS "UQ_active_order_per_table"
       ON "orders" ("tableId")
       WHERE state IN ('open', 'pending_payment') AND "tableId" IS NOT NULL
     `);
