@@ -8,6 +8,7 @@ import { UserRole } from "@/components/Enums/user";
 interface AuthContextProps {
   user: any;
   accessToken: string | null;
+  isAuthLoaded: boolean;
   setUser: (user: any) => void;
   validateUserSession: () => boolean | null;
   userRoleFromToken: () => string | null;
@@ -25,6 +26,7 @@ interface CustomJwtPayload extends JwtPayload {
 const AuthContext = createContext<AuthContextProps>({
   user: null,
   accessToken: null,
+  isAuthLoaded: false,
   setUser: () => { },
   validateUserSession: () => null,
   userRoleFromToken: () => null,
@@ -37,6 +39,7 @@ const AuthContext = createContext<AuthContextProps>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -46,6 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(parsedUser);
         setAccessToken(parsedUser.accessToken);
       }
+      setIsAuthLoaded(true);
     }
   }, []);
 
@@ -192,6 +196,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         accessToken,
+        isAuthLoaded,
         getAccessToken,
         setUser,
         validateUserSession,

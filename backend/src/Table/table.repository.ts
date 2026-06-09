@@ -253,4 +253,29 @@ export class TableRepository {
       throw error;
     }
   }
+
+  async getTablesWithActiveOrders(): Promise<
+    { tableName: string; roomName: string; state: TableState }[]
+  > {
+    try {
+      const tables = await this.tableRepository
+        .createQueryBuilder('table')
+        .leftJoinAndSelect('table.room', 'room')
+        .where('table.isActive = :isActive', { isActive: true })
+        .andWhere('table.state IN (:...states)', {
+          states: [TableState.OPEN, TableState.PENDING_PAYMENT],
+        })
+        .select(['table.id', 'table.name', 'table.state', 'room.name'])
+        .getMany();
+
+      return tables.map((table) => ({
+        tableName: table.name,
+        roomName: table.room?.name ?? 'Sin sala',
+        state: table.state,
+      }));
+    } catch (error) {
+      this.logger.error('getTablesWithActiveOrders', error);
+      throw error;
+    }
+  }
 }
