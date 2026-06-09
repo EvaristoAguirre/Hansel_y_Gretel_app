@@ -40,9 +40,10 @@ export class OrderRepository {
       return this.orderRepository
         .createQueryBuilder('order')
         .leftJoinAndSelect('order.table', 'table')
-        .where('table.state IN (:...states)', {
+        .where('order.state IN (:...states)', {
           states: ['open', 'pending_payment'],
         })
+        .andWhere('order.isActive = :isActive', { isActive: true })
         .getMany();
     } catch (error) {
       this.logger.error('getOrdersForOpenOrPendingTables', error);

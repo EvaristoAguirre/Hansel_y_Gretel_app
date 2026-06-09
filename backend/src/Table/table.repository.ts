@@ -145,7 +145,7 @@ export class TableRepository {
     try {
       const table = await this.tableRepository.findOne({
         where: { id, isActive: true },
-        relations: ['orders'],
+        relations: ['orders', 'room'],
       });
 
       if (!table) {

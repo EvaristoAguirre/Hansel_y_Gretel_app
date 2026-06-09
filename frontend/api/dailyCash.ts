@@ -106,8 +106,11 @@ export const closeDailyCash = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Error:', errorData);
-    throw new Error(`Error: ${response.status} ${response.statusText}`);
+    const backendMessage =
+      errorData?.error?.message ||
+      errorData?.message ||
+      `Error ${response.status}`;
+    throw new Error(backendMessage);
   }
   return await response.json();
 };
