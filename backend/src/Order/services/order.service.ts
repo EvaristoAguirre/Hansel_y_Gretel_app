@@ -58,8 +58,17 @@ export class OrderService {
   ): Promise<OrderSummaryResponseDto> {
     const { tableId, numberCustomers, comment } = orderToCreate;
 
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const tableInUse = await this.tableService.getTableById(tableId);
+      // Lock pesimista sobre la fila de la mesa: garantiza que dos requests
+      // concurrentes no pasen la validación de estado simultáneamente.
+      const tableInUse = await queryRunner.manager.findOne(Table, {
+        where: { id: tableId, isActive: true },
+        lock: { mode: 'pessimistic_write' },
+      });
 
       if (!tableInUse) {
         throw new NotFoundException(`Table with ID: ${tableId} not found`);
@@ -69,9 +78,11 @@ export class OrderService {
         throw new ConflictException(`Table with ID: ${tableId} not available`);
       }
 
-      await this.tableService.updateTableState(tableId, TableState.OPEN);
+      await queryRunner.manager.update(Table, tableId, {
+        state: TableState.OPEN,
+      });
 
-      const newOrder = this.orderRepo.create({
+      const newOrder = queryRunner.manager.create(Order, {
         date: new Date(),
         total: 0,
         numberCustomers: numberCustomers,
@@ -81,7 +92,14 @@ export class OrderService {
         isActive: true,
       });
 
-      await this.orderRepo.save(newOrder);
+      await queryRunner.manager.save(newOrder);
+      await queryRunner.commitTransaction();
+
+      // Emitir tableUpdated para que el frontend actualice el color de la mesa.
+      // Se hace después del commit usando getTableById (que ya filtra órdenes activas)
+      // para que el payload refleje el estado real persistido.
+      const updatedTable = await this.tableService.getTableById(tableId);
+      this.eventEmitter.emit('table.updated', { table: updatedTable });
 
       this.eventEmitter.emit('order.created', {
         order: newOrder,
@@ -90,8 +108,11 @@ export class OrderService {
       const responseAdapted = await this.adaptResponse(newOrder);
       return responseAdapted;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       this.logger.error('openOrder', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -720,6 +741,21 @@ export class OrderService {
       openDailyCash,
     );
 
+    // Emitir tableUpdated para que el frontend libere la mesa visualmente.
+    // closeOrder en el repositorio guarda la mesa como AVAILABLE directamente
+    // con tableRepository.save() sin pasar por tableService, por lo que nunca
+    // se emitía este evento y la mesa quedaba visualmente en pending_payment.
+    if (closedOrder.table?.id) {
+      try {
+        const freedTable = await this.tableService.getTableById(closedOrder.table.id);
+        this.eventEmitter.emit('table.updated', { table: freedTable });
+      } catch (err) {
+        this.logger.warn(
+          `[closeOrder] No se pudo emitir tableUpdated para la mesa ${closedOrder.table.id}: ${err.message}`,
+        );
+      }
+    }
+
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 
     return closedOrder;
@@ -821,6 +857,15 @@ export class OrderService {
       // Guardar información de la mesa antes de establecerla en null
       const tableInfo = order.table ? { id: order.table.id } : null;
 
+      // Liberar la mesa DENTRO de la transacción para garantizar atomicidad:
+      // si el servidor falla entre el commit y esta línea, la mesa quedaba 'open'
+      // indefinidamente (origen de las órdenes zombie).
+      if (previousTableId) {
+        await queryRunner.manager.update(Table, previousTableId, {
+          state: TableState.AVAILABLE,
+        });
+      }
+
       if (order.table) {
         order.table = null;
       }
@@ -830,19 +875,17 @@ export class OrderService {
 
       const updatedOrder = await queryRunner.manager.save(order);
 
-      // Commit único: restitución de stock + cancelación de orden
+      // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
 
-      // Cambiar estado de mesa (fuera de la transacción, tolerado)
+      // Emitir tableUpdated después del commit para que el frontend actualice el color.
       if (previousTableId) {
         try {
-          await this.tableService.updateTableState(
-            previousTableId,
-            TableState.AVAILABLE,
-          );
+          const freedTable = await this.tableService.getTableById(previousTableId);
+          this.eventEmitter.emit('table.updated', { table: freedTable });
         } catch (err) {
           this.logger.warn(
-            `⚠️ La orden ${id} fue cancelada, pero no se pudo actualizar el estado de la mesa ${previousTableId}: ${err.message}`,
+            `[cancelOrder] No se pudo emitir tableUpdated para la mesa ${previousTableId}: ${err.message}`,
           );
         }
       }

@@ -270,6 +270,12 @@ const OrderProvider = ({
     const tableWithOrders = updatedTable || currentSelectedTable;
 
     if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
+      if (tableWithOrders.orders.length > 1) {
+        console.warn(
+          `[OrderContext] La mesa ${tableWithOrders.id} tiene ${tableWithOrders.orders.length} órdenes activas. ` +
+          `Se carga la primera (${tableWithOrders.orders[0]}). Revisar consistencia en base de datos.`
+        );
+      }
       orderId = tableWithOrders.orders[0];
     } else {
       const orderInStore = currentOrders.find(
