@@ -18,7 +18,7 @@ import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
-import { DailyCashState } from 'src/Enums/states.enum';
+import { DailyCashState, TableState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
 import { DailyCashMovementType } from 'src/Enums/dailyCash.enum';
@@ -27,6 +27,7 @@ import { DailyCashMapper } from './daily-cash-mapper';
 import { CashMovementMapper } from './cash-movement-mapper';
 import { Order } from 'src/Order/entities/order.entity';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
+import { TableService } from 'src/Table/table.service';
 
 @Injectable()
 export class DailyCashService {
@@ -39,6 +40,7 @@ export class DailyCashService {
     private readonly dailyCashRepository: DailyCashRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly monitoringLogger: LoggerService,
+    private readonly tableService: TableService,
   ) {}
 
   async openDailyCash(
@@ -173,6 +175,25 @@ export class DailyCashService {
 
       if (dailyCash.state === DailyCashState.CLOSED) {
         throw new ConflictException('Daily cash report is already closed.');
+      }
+
+      const tablesWithActiveOrders =
+        await this.tableService.getTablesWithActiveOrders();
+
+      if (tablesWithActiveOrders.length > 0) {
+        const detail = tablesWithActiveOrders
+          .map((t) => {
+            const stateLabel =
+              t.state === TableState.PENDING_PAYMENT
+                ? 'pendiente de cobro'
+                : 'con orden abierta';
+            return `• [${t.roomName}] ${t.tableName} (${stateLabel})`;
+          })
+          .join('\n');
+
+        throw new ConflictException(
+          `No es posible cerrar la caja. Las siguientes mesas tienen órdenes activas:\n${detail}\n\nCerrá todas las órdenes antes de continuar.`,
+        );
       }
 
       dailyCash.state = DailyCashState.CLOSED;

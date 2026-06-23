@@ -52,7 +52,7 @@ type OrderContextType = {
     table: ITable,
     cantidadPersonas: number,
     comentario: string
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   handleEditOrder: (
     id: string,
     selectedProducts: SelectedProductsI[],
@@ -105,7 +105,7 @@ const OrderContext = createContext<OrderContextType>({
   productComment: () => {},
   clearSelectedProducts: () => {},
   deleteConfirmProduct: () => {},
-  handleCreateOrder: async () => {},
+  handleCreateOrder: async () => false,
   handleEditOrder: async () => {},
   handleDeleteOrder: async () => {},
   handleResetSelectedOrder: () => {},
@@ -270,6 +270,12 @@ const OrderProvider = ({
     const tableWithOrders = updatedTable || currentSelectedTable;
 
     if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
+      if (tableWithOrders.orders.length > 1) {
+        console.warn(
+          `[OrderContext] La mesa ${tableWithOrders.id} tiene ${tableWithOrders.orders.length} órdenes activas. ` +
+          `Se carga la primera (${tableWithOrders.orders[0]}). Revisar consistencia en base de datos.`
+        );
+      }
       orderId = tableWithOrders.orders[0];
     } else {
       const orderInStore = currentOrders.find(
@@ -763,13 +769,32 @@ const OrderProvider = ({
     selectedTable: ITable,
     cantidadPersonas: number,
     comentario: string
-  ) => {
+  ): Promise<boolean> => {
+    const { tables: currentTables, updateTable } = useTableStore.getState();
+    const tableInStore = currentTables.find((t) => t.id === selectedTable.id);
+    const tableToOpen = tableInStore
+      ? { ...selectedTable, ...tableInStore }
+      : selectedTable;
+
+    if (tableToOpen.state !== TableState.AVAILABLE) {
+      Swal.fire(
+        "Mesa no disponible",
+        "Esta mesa ya no está libre. Seleccioná la mesa de nuevo para ver su estado actual.",
+        "warning"
+      );
+      return false;
+    }
+
+    if (!token) {
+      Swal.fire("Error", "Sesión expirada. Volvé a iniciar sesión.", "error");
+      return false;
+    }
+
     try {
       const pedido = {
-        tableId: selectedTable.id,
+        tableId: tableToOpen.id,
         numberCustomers: cantidadPersonas,
         comment: comentario,
-        productsDetails: [],
       };
 
       const response = await fetch(URI_ORDER_OPEN, {
@@ -782,27 +807,49 @@ const OrderProvider = ({
       });
 
       if (response.status !== 201) {
-        const errorData = await response.json();
-        console.error("Error:", errorData);
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        let errorMessage = "No se pudo abrir la mesa.";
+        try {
+          const errorData = await response.json();
+          console.error("Error al abrir mesa:", errorData);
+          const backendMsg = errorData.message || errorData.error?.message;
+          if (response.status === 409) {
+            errorMessage =
+              "Esta mesa ya tiene un pedido activo. Seleccioná la mesa de nuevo para ver el pedido.";
+          } else if (backendMsg) {
+            errorMessage = backendMsg;
+          }
+        } catch {
+          console.error("Error al abrir mesa: respuesta no JSON", response.status);
+        }
+        Swal.fire(
+          "Error",
+          errorMessage,
+          response.status === 409 ? "warning" : "error"
+        );
+        return false;
       }
 
       const newOrder = await response.json();
 
       addOrder(newOrder);
-
       setSelectedOrderByTable(newOrder);
-      const tableEdited =
-        token &&
-        (await editTable({ ...selectedTable, state: TableState.OPEN }, token));
 
-      const updatedTable = {
-        ...tableEdited,
+      const updatedTable: ITable = {
+        ...tableToOpen,
+        state: TableState.OPEN,
         orders: [newOrder.id],
       };
+      updateTable(updatedTable);
       handleSelectTable(updatedTable);
+      return true;
     } catch (error) {
-      Swal.fire("Error", "No se pudo abrir la mesa.", "error");
+      console.error("Error al abrir mesa:", error);
+      Swal.fire(
+        "Error",
+        "No se pudo conectar con el servidor. Reintentá en un momento.",
+        "error"
+      );
+      return false;
     }
   };
 

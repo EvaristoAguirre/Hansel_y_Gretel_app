@@ -68,5 +68,11 @@ export class TableService {
     return await this.tableRepository.getAllTablesAvailable(page, limit);
   }
 
+  async getTablesWithActiveOrders(): Promise<
+    { tableName: string; roomName: string; state: TableState }[]
+  > {
+    return this.tableRepository.getTablesWithActiveOrders();
+  }
+
   // ------------------- creados porque los necesite en otro servicio
 }
