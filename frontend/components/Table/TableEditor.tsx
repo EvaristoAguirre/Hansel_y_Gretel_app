@@ -31,6 +31,7 @@ const TableEditor = ({
   const { selectedTable, setSelectedTable } = useRoomContext();
   const [cantidadPersonas, setCantidadPersonas] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
+  const [isOpening, setIsOpening] = useState(false);
   const {
     handleCreateOrder,
     handleEditOrder,
@@ -81,6 +82,13 @@ const TableEditor = ({
   };
 
   const { tables, connectWebSocket } = useTableStore();
+
+  const tableInStore = tables.find((t) => t.id === selectedTable?.id);
+  const effectiveTableState = tableInStore?.state ?? selectedTable?.state;
+  const tableToOpen =
+    selectedTable && tableInStore
+      ? { ...selectedTable, ...tableInStore }
+      : selectedTable;
 
   useEffect(() => {
     connectWebSocket();
@@ -164,8 +172,8 @@ const TableEditor = ({
                 color="primary"
                 variant="contained"
                 style={{ marginTop: "10px" }}
-                disabled={!isCashOpenToday}
-                onClick={() => {
+                disabled={!isCashOpenToday || isOpening}
+                onClick={async () => {
                   if (cantidadPersonas === null || cantidadPersonas <= 0) {
                     Swal.fire(
                       "Error",
@@ -173,34 +181,49 @@ const TableEditor = ({
                       "error"
                     );
                     return;
-                  } else if (selectedTable?.state === "available") {
-                    handleCreateOrder(
-                      selectedTable,
+                  }
+
+                  if (effectiveTableState === TableState.AVAILABLE && tableToOpen) {
+                    setIsOpening(true);
+                    try {
+                      const success = await handleCreateOrder(
+                        tableToOpen,
+                        cantidadPersonas,
+                        comentario
+                      );
+                      if (success) {
+                        onAbrirPedido();
+                        handleCompleteStep();
+                        handleNextStep();
+                      }
+                    } finally {
+                      setIsOpening(false);
+                    }
+                    return;
+                  }
+
+                  if (selectedOrderByTable?.id) {
+                    handleEditOrder(
+                      selectedOrderByTable.id,
+                      selectedProducts,
                       cantidadPersonas,
                       comentario
                     );
-                    onAbrirPedido();
-                    handleCompleteStep();
+
+                    Swal.fire(
+                      "Cambios Guardados",
+                      "Los cambios se han guardado correctamente.",
+                      "success"
+                    );
                     handleNextStep();
-
-                  } else {
-                    if (selectedOrderByTable?.id) {
-
-                      handleEditOrder(selectedOrderByTable.id, selectedProducts, cantidadPersonas, comentario);
-
-                      Swal.fire(
-                        "Cambios Guardados",
-                        "Los cambios se han guardado correctamente.",
-                        "success"
-                      );
-                      handleNextStep();
-                    }
                   }
                 }}
               >
-                {selectedTable?.state === "open"
-                  ? "Guardar Cambios"
-                  : "Abrir Mesa"}
+                {isOpening
+                  ? "Abriendo..."
+                  : effectiveTableState === TableState.OPEN
+                    ? "Guardar Cambios"
+                    : "Abrir Mesa"}
               </Button>
             </div>
           </form>
