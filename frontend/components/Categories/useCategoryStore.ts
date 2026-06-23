@@ -34,7 +34,7 @@ export const useCategoryStore = create<CategoryState>((set) => {
   webSocketService.on("categoryDeleted", (data) => {
     set((state) => ({
       categories: state.categories.filter(
-        (category) => category.id === data.id
+        (category) => category.id !== data.id
       ),
     }));
   });
