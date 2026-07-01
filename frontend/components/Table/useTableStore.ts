@@ -65,15 +65,26 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
     const roomId = (data as any)?.room?.id as string | undefined;
     set((state) => {
       const newByRoom = { ...state.tablesByRoom };
-      if (roomId && newByRoom[roomId]) {
-        newByRoom[roomId] = newByRoom[roomId].map((t) =>
-          t.id === data.id ? data : t
+
+      // Si el evento no trae room.id (ej. updateTableState), inferirlo buscando
+      // la mesa en el caché de salas para mantener tablesByRoom sincronizado.
+      const effectiveRoomId =
+        roomId ??
+        Object.keys(newByRoom).find((rId) =>
+          newByRoom[rId].some((t) => t.id === data.id)
+        );
+
+      if (effectiveRoomId && newByRoom[effectiveRoomId]) {
+        newByRoom[effectiveRoomId] = newByRoom[effectiveRoomId].map((t) =>
+          t.id === data.id ? { ...t, ...data } : t
         );
       }
+
       const tables =
-        state.currentRoomId === roomId
-          ? state.tables.map((t) => (t.id === data.id ? data : t))
+        state.currentRoomId === effectiveRoomId
+          ? state.tables.map((t) => (t.id === data.id ? { ...t, ...data } : t))
           : state.tables;
+
       return { tablesByRoom: newByRoom, tables };
     });
   });
@@ -143,11 +154,22 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
         tables: state.tables.filter((t) => t.id !== id),
       })),
     updateTable: (updatedTable) =>
-      set((state) => ({
-        tables: state.tables.map((t) =>
-          t.id === updatedTable.id ? updatedTable : t
-        ),
-      })),
+      set((state) => {
+        const newByRoom = { ...state.tablesByRoom };
+        for (const rId of Object.keys(newByRoom)) {
+          if (newByRoom[rId].some((t) => t.id === updatedTable.id)) {
+            newByRoom[rId] = newByRoom[rId].map((t) =>
+              t.id === updatedTable.id ? updatedTable : t
+            );
+          }
+        }
+        return {
+          tables: state.tables.map((t) =>
+            t.id === updatedTable.id ? updatedTable : t
+          ),
+          tablesByRoom: newByRoom,
+        };
+      }),
     connectWebSocket: () => {
       webSocketService.connect();
     },
