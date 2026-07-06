@@ -120,8 +120,12 @@ export class OrderService {
     id: string,
     updateData: UpdateOrderDto,
   ): Promise<OrderSummaryResponseDto> {
-    if (!id) throw new BadRequestException('Order ID must be provided.');
-    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
+    if (!id)
+      throw new BadRequestException('Se debe proporcionar el ID del pedido.');
+    if (!isUUID(id))
+      throw new BadRequestException(
+        'El ID del pedido no tiene un formato válido.',
+      );
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -135,22 +139,24 @@ export class OrderService {
         queryRunner,
       );
       if (!order || !order.isActive)
-        throw new NotFoundException('Order not found');
+        throw new NotFoundException('No se encontró el pedido.');
       if (order.state === OrderState.CLOSED)
-        throw new ConflictException('Order is closed');
+        throw new ConflictException('El pedido ya está cerrado.');
       if (order.state === OrderState.PENDING_PAYMENT)
         throw new ConflictException(
-          'Order is pending payment and cannot be modified. Please complete the payment first.',
+          'El pedido está pendiente de pago y no puede modificarse. Por favor, completá el pago primero.',
         );
       if (updateData.state && updateData.state !== OrderState.OPEN) {
-        throw new ConflictException('Only "OPEN" orders can be modified');
+        throw new ConflictException(
+          'Solo se pueden modificar pedidos en estado ABIERTO.',
+        );
       }
 
       if (updateData.tableId) {
         const table = await queryRunner.manager.findOne(Table, {
           where: { id: updateData.tableId, isActive: true },
         });
-        if (!table) throw new NotFoundException('Table not found');
+        if (!table) throw new NotFoundException('No se encontró la mesa.');
         order.table = table;
       }
 
@@ -169,7 +175,7 @@ export class OrderService {
           const product = await queryRunner.manager.findOne(Product, {
             where: { id: pd.productId, isActive: true },
           });
-          if (!product) throw new NotFoundException('Product not found');
+          if (!product) throw new NotFoundException('No se encontró el producto.');
 
           let finalPrice = Number(product.price ?? 0);
           if (isNaN(finalPrice)) {
@@ -207,7 +213,7 @@ export class OrderService {
 
               if (!assignments || assignments.length === 0) {
                 throw new BadRequestException(
-                  `Slot ${slotId} is not assigned to promotion ${product.id}`,
+                  `La promoción "${product.name}" fue modificada. Por favor, cerrá y volvé a armar el pedido.`,
                 );
               }
 
@@ -223,7 +229,7 @@ export class OrderService {
 
               if (totalProductsSelected !== totalRequiredQuantity) {
                 throw new BadRequestException(
-                  `Slot "${slotId}" requires ${totalRequiredQuantity} product(s), but ${totalProductsSelected} were provided`,
+                  `El slot de la promoción requiere ${totalRequiredQuantity} producto(s), pero se enviaron ${totalProductsSelected}.`,
                 );
               }
 
@@ -233,7 +239,9 @@ export class OrderService {
               });
 
               if (!slot) {
-                throw new NotFoundException(`Slot with ID ${slotId} not found`);
+                throw new NotFoundException(
+                  'No se encontró el slot de la promoción. Puede haber sido eliminado.',
+                );
               }
 
               // Guardar en caché para no repetir la consulta al crear selecciones
@@ -248,7 +256,7 @@ export class OrderService {
 
                   if (!option) {
                     throw new BadRequestException(
-                      `Product ${selectedProductId} is not a valid option for slot ${slotId}`,
+                      'El producto seleccionado no es una opción válida para este slot de la promoción.',
                     );
                   }
 
@@ -312,7 +320,7 @@ export class OrderService {
 
                   if (!option) {
                     throw new BadRequestException(
-                      `Product ${selectedProductId} is not a valid option for slot ${slotId}`,
+                      'El producto seleccionado no es una opción válida para este slot de la promoción.',
                     );
                   }
 

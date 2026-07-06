@@ -8,6 +8,7 @@ import { useAuth } from '@/app/context/authContext';
 import ModalStock from './ModalStock';
 import { StockModalType, TypeProduct } from '@/components/Enums/view-products';
 import FilterStock from './filterStock';
+import StockTableHeader from './StockTableHeader';
 import { capitalizeFirstLetterTable } from '@/components/Utils/CapitalizeFirstLetter';
 import { SelectedItem } from '@/components/Interfaces/IStock';
 import { useIngredientsContext } from '@/app/context/ingredientsContext';
@@ -180,6 +181,16 @@ const StockControl = () => {
   const [selectedStockFilter, setSelectedStockFilter] = useState<string | null>(
     null
   );
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [ingredientSearchTerm, setIngredientSearchTerm] = useState('');
+
+  const filterByName = (items: SelectedItem[], term: string) => {
+    const normalizedTerm = term.trim().toLowerCase();
+    if (!normalizedTerm) return items;
+    return items.filter((item) =>
+      (item.name ?? '').toLowerCase().includes(normalizedTerm)
+    );
+  };
 
   const filterByStock = (items: SelectedItem[]) => {
     return items.filter((item: SelectedItem) => {
@@ -196,8 +207,14 @@ const StockControl = () => {
     });
   };
 
-  const filteredProducts = filterByStock(formattedProducts);
-  const filteredIngredients = filterByStock(formattedIngredients);
+  const filteredProducts = filterByName(
+    filterByStock(formattedProducts),
+    productSearchTerm
+  );
+  const filteredIngredients = filterByName(
+    filterByStock(formattedIngredients),
+    ingredientSearchTerm
+  );
 
   useEffect(() => {
     const hasNullStock = filteredProducts.some(
@@ -229,7 +246,7 @@ const StockControl = () => {
   };
 
   return (
-    <Box width="100%" sx={{ p: 2, minHeight: '100vh' }}>
+    <Box width="100%" sx={{ p: 2 }}>
       <Box
         sx={{
           display: 'flex',
@@ -294,24 +311,23 @@ const StockControl = () => {
       <Box display="flex" gap={2} sx={{ mt: 3 }}>
         {/* DataGrid de Productos */}
         <Box flex={1}>
-          <Typography
-            variant="h6"
-            align="center"
-            sx={{ mb: 1, bgcolor: '#856d5e59', p: 1 }}
-          >
-            PRODUCTOS
-          </Typography>
+          <StockTableHeader
+            title="PRODUCTOS"
+            bgColor="#856d5e59"
+            searchTerm={productSearchTerm}
+            onSearchTermChange={setProductSearchTerm}
+          />
           <DataGrid
+            autoHeight
             rows={capitalizeFirstLetterTable(filteredProducts, ['name'])}
             columns={productColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
-              pagination: { paginationModel: { page: 0, pageSize: 5 } },
+              pagination: { paginationModel: { page: 0, pageSize: 15 } },
               sorting: { sortModel: [{ field: 'name', sort: 'asc' }] },
             }}
-            pageSizeOptions={[5, 7, 10]}
+            pageSizeOptions={[5, 10, 15]}
             sx={{
-              height: '100%',
               '& .MuiDataGrid-row': {
                 cursor: 'pointer',
               },
@@ -327,23 +343,22 @@ const StockControl = () => {
 
         {/* DataGrid de Ingredientes */}
         <Box flex={1}>
-          <Typography
-            variant="h6"
-            align="center"
-            sx={{ mb: 1, bgcolor: '#f3d49a66', p: 1 }}
-          >
-            INGREDIENTES
-          </Typography>
+          <StockTableHeader
+            title="INGREDIENTES"
+            bgColor="#f3d49a66"
+            searchTerm={ingredientSearchTerm}
+            onSearchTermChange={setIngredientSearchTerm}
+          />
           <DataGrid
+            autoHeight
             rows={filteredIngredients}
             columns={ingredientColumns}
             localeText={esES.components.MuiDataGrid.defaultProps.localeText}
             initialState={{
-              pagination: { paginationModel: { page: 0, pageSize: 5 } },
+              pagination: { paginationModel: { page: 0, pageSize: 15 } },
               sorting: { sortModel: [{ field: 'name', sort: 'asc' }] },
             }}
-            pageSizeOptions={[5, 7, 10]}
-            sx={{ height: '100%' }}
+            pageSizeOptions={[5, 10, 15]}
             onRowClick={(params) =>
               handleEditProduct(params.row, StockModalType.INGREDIENT)
             }
