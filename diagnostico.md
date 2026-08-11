@@ -26,12 +26,12 @@ La aplicación es usable en producción local, pero presenta **brechas de autori
 
 ### Riesgos más críticos (top 6)
 
-1. **API parcialmente abierta en LAN** — registro de usuarios público, caja/export/impresora sin guard efectivo, `RolesGuard` con bypass si falta `@Roles`.
-2. **Ediciones de orden abierta no se sincronizan bien** — `orderUpdated` solo a sala + `order.context` no lo escucha; cortes LAN pierden `joinTable`.
-3. **Listeners WS duplicados en cada reconexión** — estados inconsistentes y memory leak.
-4. **Cobro / stock sin transacciones atómicas** — riesgo de inconsistencia mesa/pagos/orden/stock.
-5. **Impresión bloqueante + IP hardcodeada** — UI congelada 30–60 s si la impresora falla; comanda puede no salir a cocina.
-6. **Dependencias vulnerables** — Next.js `15.0.3` con CVEs críticas; sin Dependabot.
+1. **API parcialmente abierta en LAN** — registro de usuarios público, caja/export/impresora sin guard efectivo, `RolesGuard` con bypass si falta `@Roles`. *(Fase 0 pendiente)*
+2. ~~**Ediciones de orden abierta no se sincronizan bien**~~ — **Mitigado Fase 1** (`orderUpdated` global + refetch en contexto + re-join).
+3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
+4. **Cobro / stock sin transacciones atómicas** — riesgo de inconsistencia mesa/pagos/orden/stock. *(Fase 3)*
+5. **Impresión bloqueante + IP hardcodeada** — UI congelada 30–60 s si la impresora falla; comanda puede no salir a cocina. *(aviso UI Fase 1; robustez Fase 2)*
+6. **Dependencias vulnerables** — Next.js `15.0.3` con CVEs críticas; sin Dependabot. *(Fase 4)*
 
 ### Severidad agregada (estimado)
 
@@ -159,52 +159,36 @@ Impresora: **no usa Socket.IO**; es TCP raw en `PrinterService`.
 
 ### 3.1 Críticos / altos (impacto diario mozo ↔ encargada)
 
-- [ ] **WS-01 — `orderUpdated` solo a sala `table:{id}` y el mapa de mesas no hace `joinTable`**  
-  **Backend:** `backend/src/Real-time/listeners/order-events.listener.ts` (~L17–24)  
-  **Frontend:** `frontend/app/context/order.context.tsx` (~L198–207) — único `joinTable`  
-  **Problema:** la encargada sin mesa seleccionada **no recibe** ediciones de líneas. Dos mozos en la misma mesa tampoco sincronizan productos confirmados vía UI del contexto.  
-  **Severidad:** Alta · **Esfuerzo:** M
+- [x] **WS-01 — `orderUpdated` solo a sala `table:{id}` y el mapa de mesas no hace `joinTable`**  
+  **Resuelto (Fase 1, 10/08/2026):** `orderUpdated` pasa a **broadcast global** en `OrderWSListener`. El front filtra por mesa seleccionada.
 
-- [ ] **WS-02 — `order.context` no escucha `orderCreated` / `orderUpdated`**  
-  **Archivo:** `frontend/app/context/order.context.tsx` (~L499–704)  
-  **Problema:** solo reacciona a ticket/pending/close/delete (y en ticket hace re-fetch REST). Cambios de productos en orden abierta no refrescan la UI del otro cliente.  
-  **Severidad:** Alta · **Esfuerzo:** M
+- [x] **WS-02 — `order.context` no escucha `orderCreated` / `orderUpdated`**  
+  **Resuelto (Fase 1, 10/08/2026):** el contexto escucha ambos eventos y hace `GET /order/:id` + rehidratación de productos (mismo patrón que ticket).
 
-- [ ] **WS-03 — Sin `joinTable` tras reconexión**  
-  **Archivos:** `frontend/services/websocket.service.ts`, `order.context.tsx`  
-  **Problema:** tras un corte WiFi/LAN se pierde la membresía de sala → dejan de llegar eventos room-scoped.  
-  **Severidad:** Alta · **Esfuerzo:** S–M
+- [x] **WS-03 — Sin `joinTable` tras reconexión**  
+  **Resuelto (Fase 1, 10/08/2026):** `onReconnect` en `websocket.service` + re-`joinTable` desde `order.context`.
 
-- [ ] **WS-04 — Listeners duplicados en cada `reconnect`**  
-  **Archivo:** `frontend/services/websocket.service.ts` (~L53–60)  
-  **Problema:** `socket.on` sin `off` previo → handlers N veces, estados inconsistentes, memory leak.  
-  **También listado en** `mejoras.md` ítem 3.  
-  **Severidad:** Crítica · **Esfuerzo:** S
+- [x] **WS-04 — Listeners duplicados en cada `reconnect`**  
+  **Resuelto (Fase 1, 10/08/2026):** eliminado el re-registro de handlers de dominio en `reconnect`.  
+  **También cerrado en** `mejoras.md` ítem 3.
 
-- [ ] **WS-05 — Riesgo de sockets duplicados si `connected === false`**  
-  **Archivo:** `frontend/services/websocket.service.ts` (~L10–27)  
-  **Problema:** crea un nuevo `io()` sin destruir el anterior.  
-  **Severidad:** Alta · **Esfuerzo:** S
+- [x] **WS-05 — Riesgo de sockets duplicados si `connected === false`**  
+  **Resuelto (Fase 1, 10/08/2026):** `connect()` reutiliza el socket existente y llama a `socket.connect()` si estaba desconectado.
 
 ### 3.2 Payloads y consistencia de estado
 
-- [ ] **WS-06 — `orderDeleted` (admin) emite payload incorrecto**  
-  **Backend:** `order.service.ts` (~L622) emite `{orderId}`; listener usa `event.order` → WS con `undefined`. Front espera `data.id`.  
-  **Severidad:** Media · **Esfuerzo:** S
+- [x] **WS-06 — `orderDeleted` (admin) emite payload incorrecto**  
+  **Resuelto (Fase 1, 10/08/2026):** `deleteOrder` emite `{ order: { id } }`; el listener acepta `order` u `orderId`.
 
-- [ ] **WS-07 — `useOrderStore` escribe `status` en vez de `state`**  
-  **Archivo:** `frontend/components/Order/useOrderStore.ts` (~L38–75)  
-  **Problema:** en `orderUpdatedPending` / `orderUpdatedClose` / `orderTicketPrinted`. La app lee `state`.  
-  **También en** `mejoras.md` ítem 21.  
-  **Severidad:** Media · **Esfuerzo:** S
+- [x] **WS-07 — `useOrderStore` escribe `status` en vez de `state`**  
+  **Resuelto (Fase 1, 10/08/2026):** handlers escriben `state` (`OrderState`).  
+  **También cerrado en** `mejoras.md` ítem 21.
 
-- [ ] **WS-08 — `categoryDeleted` emite `UpdateResult` en lugar de UUID**  
-  **Archivo:** `backend/src/Category/category.service.ts` (~L83–85)  
-  **Severidad:** Media · **Esfuerzo:** S
+- [x] **WS-08 — `categoryDeleted` emite `UpdateResult` en lugar de UUID**  
+  **Resuelto (Fase 1, 10/08/2026):** se emite el UUID de la categoría; el listener WS ya publicaba `{ id }`.
 
-- [ ] **WS-09 — Entidad Order WS vs `IOrderDetails` del front**  
-  **Problema:** backend emite `orderDetails[]`; UI espera `products[]`. El contexto compensa con fetch solo en algunos eventos.  
-  **Severidad:** Media · **Esfuerzo:** M (normalizar payload o siempre re-fetch puntual)
+- [x] **WS-09 — Entidad Order WS vs `IOrderDetails` del front**  
+  **Mitigado (Fase 1, 10/08/2026):** en eventos de sync de mesa seleccionada (`orderUpdated` / `orderCreated` / ticket / pending) el contexto **siempre** hace refetch REST y adapta `products[]`. Queda como mejora futura normalizar el payload WS (evitar el GET extra).
 
 ### 3.3 Eventos faltantes / cadenas rotas
 
@@ -212,9 +196,9 @@ Impresora: **no usa Socket.IO**; es TCP raw en `PrinterService`.
 |------------------|--------|---------|
 | `stock.created/updated/deducted` | Listener espera `createStock`/`updateStock`/`deductStock`; servicio emite `stock.*` → **WS inoperante** | Stock no se sincroniza entre dispositivos |
 | `stock.restored` | Sin listener WS | Ídem |
-| `dailyCashOpened/Updated/Closed` | Backend emite; **front no escucha** | Caja desfasada entre notebook/tablet |
-| Movimientos de caja | **No emiten WS** | Ídem |
-| `printerError` | Backend emite; **front no escucha** | Mozo no ve fallo de impresora salvo HTTP |
+| `dailyCashOpened/Updated/Closed` | **Resuelto (post Fase 1):** front escucha y hace `checkOpenDaily` | Sync caja entre dispositivos |
+| Movimientos de caja | **No emiten WS** | Ídem parcial |
+| `printerError` | **Resuelto (Fase 1):** broadcast global + Swal en `order.context` si afecta la mesa seleccionada | — |
 | `toppingsGroup*` / `toppingUpdated` | Sin listener front | Admin desincronizado |
 | `ingredient*` | Store Zustand existe pero **nunca se importa**; `ingredientsContext` solo REST | Sin sync WS |
 | `orderDetails*` | Listener huérfano; **nadie emite** en dominio | Código muerto |
@@ -223,24 +207,24 @@ Impresora: **no usa Socket.IO**; es TCP raw en `PrinterService`.
 Checkboxes:
 
 - [ ] **WS-10 — Reparar pipeline WS de stock** (nombres de eventos + payload útil + listeners front) · Alta · M  
-- [ ] **WS-11 — Sync de caja diaria vía WS (o resync REST al evento)** · Media · M  
-- [ ] **WS-12 — Escuchar `printerError` en front (Swal / banner)** · Media · S  
+- [x] **WS-11 — Sync de caja diaria vía WS (o resync REST al evento)** · **Resuelto (10/08/2026):** listeners en `dailyCashContext`  
+- [x] **WS-12 — Escuchar `printerError` en front (Swal / banner)** · **Resuelto (Fase 1, 10/08/2026)**  
 - [ ] **WS-13 — Listeners toppings / ingredientes o eliminar código muerto** · Baja · S–M  
 - [ ] **WS-14 — Eliminar listeners/gateway legacy huérfanos** · Baja · S
 
-### 3.4 Estrategia de reconexión actual
+### 3.4 Estrategia de reconexión
 
 | Componente | Tras reconectar |
 |------------|-----------------|
-| `websocket.service` | Re-registra listeners (con bug WS-04); **no** re-join sala |
+| `websocket.service` | **OK (Fase 1):** no re-registra listeners de dominio; dispara `onReconnect` |
 | `useTableStore` | Re-fetch REST de mesas de la sala · OK |
-| `useOrderStore` / `useOrder` | **No** re-fetch de órdenes activas |
-| `order.context` | **No** re-join mesa seleccionada |
-| Productos / categorías | Solo confían en WS |
+| `order.context` | **OK (Fase 1):** re-`joinTable` + `GET /order/active` + refetch de orden seleccionada |
+| `useOrderStore` | Se actualiza vía resync del contexto / eventos WS |
+| Productos / categorías | Solo confían en WS (sin cambio en Fase 1) |
 
-- [ ] **WS-15 — Resync REST de órdenes activas + re-join mesa al reconectar** · Alta · M
+- [x] **WS-15 — Resync REST de órdenes activas + re-join mesa al reconectar** · **Resuelto (Fase 1, 10/08/2026)**
 
-### Diagrama del gap principal (editar orden)
+### Flujo post–Fase 1 (editar orden)
 
 ```mermaid
 sequenceDiagram
@@ -249,11 +233,10 @@ sequenceDiagram
   participant Enc as Notebook_encargada
 
   Mozo->>API: updateOrder
-  API-->>Mozo: orderUpdated sala tableX
-  Note over Enc: Sin joinTable si no tiene mesa X
-  Note over Enc: No recibe orderUpdated
-  Note over Mozo: order.context no escucha orderUpdated
-  Note over Mozo: UI del otro cliente no refresca productos
+  API-->>Mozo: orderUpdated global
+  API-->>Enc: orderUpdated global
+  Note over Mozo,Enc: Si tienen la mesa seleccionada hacen GET order id
+  Note over Mozo,Enc: UI de productos confirmados se rehidrata
 ```
 
 ---
@@ -420,12 +403,12 @@ sequenceDiagram
 
 | Ítem mejoras.md | Relación |
 |-----------------|----------|
-| 3 — listeners WS duplicados | = WS-04 (Fase 1) |
-| 4–10 — críticos React/auth | Mantener en Fase 0/1 según impacto |
+| 3 — listeners WS duplicados | = WS-04 · **cerrado Fase 1** |
+| 4–10 — críticos React/auth | Mantener en Fase 0; ítem 10 cerrado en Fase 1 |
 | 11–20 — performance front | Fase 3 / Fase 4 |
-| 21 — `status` vs `state` | = WS-07 |
+| 21 — `status` vs `state` | = WS-07 · **cerrado Fase 1** |
 
-Ítems ya cerrados en `mejoras.md`: filtro `categoryDeleted` (store), guard anti doble submit en `Pay.tsx`.
+Ítems ya cerrados en `mejoras.md`: filtro `categoryDeleted` (store), guard anti doble submit en `Pay.tsx`, WS duplicados (3), null-guard mesa (10), `state` vs `status` (21).
 
 ---
 
@@ -447,18 +430,21 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 **Esfuerzo estimado:** 1–2 días.
 
-### Fase 1 — Sincronización WS (impacto diario)
+### Fase 1 — Sincronización WS (impacto diario) — COMPLETADA (10/08/2026)
 
 **Objetivo:** mozo y encargada ven el mismo estado de mesas/órdenes tras cortes LAN.
 
-- [ ] WS-04 / WS-05 — Deduplicar listeners; no crear sockets huérfanos
-- [ ] WS-03 / WS-15 — Re-`joinTable` + resync REST de órdenes activas al reconectar
-- [ ] WS-01 / WS-02 — Escuchar `orderUpdated`/`orderCreated` en `order.context` (o emitir también globalmente + invalidar caché de mesas)
-- [ ] WS-06 / WS-07 / WS-08 — Payloads y `state` vs `status`
-- [ ] WS-12 — UI para `printerError`
-- [ ] Smoke: editar pedido en tablet → notebook refleja; cortar WiFi 10 s → rejoin y estado coherente
+- [x] WS-04 / WS-05 — Deduplicar listeners; no crear sockets huérfanos
+- [x] WS-03 / WS-15 — Re-`joinTable` + resync REST de órdenes activas al reconectar
+- [x] WS-01 / WS-02 — `orderUpdated` global + escucha en `order.context` con refetch
+- [x] WS-06 / WS-07 / WS-08 — Payloads y `state` vs `status`
+- [x] WS-12 — UI para `printerError`
+- [ ] Smoke manual LAN (pendiente en producción): editar pedido en tablet → notebook refleja; cortar WiFi 10 s → rejoin y estado coherente
 
-**Esfuerzo estimado:** 2–4 días.
+**Archivos tocados:**  
+`frontend/services/websocket.service.ts`, `frontend/components/Order/useOrderStore.ts`, `frontend/app/context/order.context.tsx`, `backend/src/Real-time/listeners/order-events.listener.ts`, `backend/src/Order/services/order.service.ts`, `backend/src/Category/category.service.ts`.
+
+**Fuera de esta oleada (Fase 1.b):** WS-10 stock, WS-11 caja, WS-13/14 limpieza toppings/legacy.
 
 ### Fase 2 — Robustez de impresión
 
@@ -502,24 +488,58 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 ## 8. Criterios de aceptación globales (post-fases)
 
-1. Sin token válido no se puede registrar usuarios, abrir/cerrar caja, exportar stock ni imprimir.
-2. Con 2 clientes (encargada + mozo), editar una orden abierta actualiza la UI del otro en ≤2 s (o tras resync explícito al reconectar).
-3. Tras reconexión WS no hay handlers duplicados ni sala “perdida”.
-4. Fallo de impresora: pedido/caja no se corrompen; UI responde; hay camino claro de reimpresión.
-5. Cobro y descuento de stock son atómicos (sin estados a medias).
-6. Listados de productos/caja no traen por defecto miles de filas con relaciones profundas.
+1. Sin token válido no se puede registrar usuarios, abrir/cerrar caja, exportar stock ni imprimir. *(Fase 0 pendiente)*
+2. Con 2 clientes (encargada + mozo), editar una orden abierta actualiza la UI del otro en ≤2 s (o tras resync explícito al reconectar). *(código Fase 1 listo; validar smoke LAN)*
+3. Tras reconexión WS no hay handlers duplicados ni sala “perdida”. *(código Fase 1 listo; validar smoke LAN)*
+4. Fallo de impresora: pedido/caja no se corrompen; UI responde; hay camino claro de reimpresión. *(aviso WS Fase 1; cola async = Fase 2)*
+5. Cobro y descuento de stock son atómicos (sin estados a medias). *(Fase 3)*
+6. Listados de productos/caja no traen por defecto miles de filas con relaciones profundas. *(Fase 3)*
 
 ---
 
-## 9. Fuera de alcance de este informe
+## 9. Tests automatizados (flujo de trabajo)
 
-- Implementación de las fases (se hará tras evaluación).
+Infra añadida junto a la Fase 1 para no regresar los fixes de WS:
+
+### Backend (Jest ya existente)
+
+```bash
+cd backend && npm test -- --testPathPattern=Real-time
+```
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| [`backend/src/Real-time/listeners/order-events.listener.spec.ts`](backend/src/Real-time/listeners/order-events.listener.spec.ts) | `orderUpdated`/`printerError` globales; `orderDeleted` con `order` u `orderId`; ticket a sala |
+| [`backend/src/Real-time/broadcast.service.spec.ts`](backend/src/Real-time/broadcast.service.spec.ts) | `broadcast` vs `broadcastToTable` (`table:{id}`) |
+
+### Frontend (Vitest)
+
+```bash
+cd frontend && npm test
+```
+
+| Archivo | Qué cubre |
+|---------|-----------|
+| [`frontend/services/websocket.service.test.ts`](frontend/services/websocket.service.test.ts) | Reuso de socket, `onReconnect`/`offReconnect`, `joinTable` |
+| [`frontend/vitest.config.ts`](frontend/vitest.config.ts) | Config; scripts `test` / `test:watch` en `package.json` |
+
+### E2E / siguientes pasos recomendados
+
+- El e2e Nest en `backend/test/app.e2e-spec.ts` es un stub (`Hello World`) y **no** refleja la app actual: conviene reemplazarlo cuando se aborde Fase 0 (auth) o un humo de `POST /order` + evento WS.
+- Smoke LAN (notebook + tablet) sigue siendo el gate de deploy de esta fase.
+- Opcional: Playwright/Cypress para flujo mesa → productos → pending, cuando haya entorno de CI estable.
+
+---
+
+## 10. Fuera de alcance de este informe
+
 - Rediseño de UX, facturación fiscal electrónica, multi-sucursal.
 - Benchmarks de carga formales (k6/Artillery): recomendable después de Fase 3.
+- Fase 1.b (stock/caja WS) y Fases 0/2/3/4 pendientes de implementación.
 
 ---
 
-## 10. Referencias rápidas de archivos clave
+## 11. Referencias rápidas de archivos clave
 
 | Área | Paths |
 |------|-------|
@@ -529,7 +549,19 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 | Órdenes / stock | `backend/src/Order/services/order.service.ts`, `Order/repositories/order.repository.ts`, `Stock/stock.service.ts` |
 | Impresión | `backend/src/Printer/printer.service.ts`, `printer.controller.ts` |
 | Front críticos previos | [`mejoras.md`](mejoras.md) |
+| Tests WS | `*.listener.spec.ts`, `broadcast.service.spec.ts`, `websocket.service.test.ts` |
 
 ---
 
-*Informe generado para evaluación — 10/08/2026.*
+## 12. Registro de avances
+
+| Fecha | Fase | Notas |
+|-------|------|-------|
+| 10/08/2026 | Informe inicial | Auditoría consolidada |
+| 10/08/2026 | **Fase 1 (código)** | WS sync órdenes/mesas, reconexión, payloads, `printerError`; tests unitarios Real-time + Vitest front |
+| — | Fase 0 | Pendiente (seguridad) |
+| — | Fase 2+ | Pendiente |
+
+---
+
+*Informe actualizado — 10/08/2026 (Fase 1 implementada).*

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import {
   IDailyCash,
@@ -15,12 +15,12 @@ import {
   closeDailyCash,
   deleteDailyCash,
   fetchAllDailyCash,
-  fetchDailyCashByID,
   fetchDailyCashResume,
   newMovement,
   openDailyCash,
 } from '@/api/dailyCash';
 import Swal from 'sweetalert2';
+import { webSocketService } from '@/services/websocket.service';
 
 interface DailyCashContextType {
   allDailyCash: IDailyCash[];
@@ -63,7 +63,7 @@ export const DailyCashProvider = ({
   const { getAccessToken } = useAuth();
   const token = getAccessToken();
 
-  const fetchAllCash = async () => {
+  const fetchAllCash = useCallback(async () => {
     if (!token) return;
     try {
       const allCash = await fetchAllDailyCash(token);
@@ -72,8 +72,9 @@ export const DailyCashProvider = ({
       console.error('Error al obtener todas las cajas', error);
       setAllDailyCash([]);
     }
-  };
-  const checkOpenDaily = async () => {
+  }, [token]);
+
+  const checkOpenDaily = useCallback(async () => {
     if (!token) return false;
     setLoading(true);
     try {
@@ -88,9 +89,9 @@ export const DailyCashProvider = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const fetchCashSummary = async () => {
+  const fetchCashSummary = useCallback(async () => {
     if (!token) return;
     try {
       const currentCash = await fetchDailyCashResume(token);
@@ -98,7 +99,7 @@ export const DailyCashProvider = ({
     } catch (error) {
       console.error('Error al obtener la caja actual', error);
     }
-  };
+  }, [token]);
 
   const selectedCash = (cash: string) => {
     setSelectedDailyCashID(cash);
@@ -141,7 +142,27 @@ export const DailyCashProvider = ({
 
   useEffect(() => {
     checkOpenDaily();
-  }, [token]);
+  }, [checkOpenDaily]);
+
+  // Sync entre dispositivos: el backend ya emite dailyCashOpened/Closed/Updated.
+  useEffect(() => {
+    if (!token) return;
+
+    const refreshFromWs = () => {
+      void checkOpenDaily();
+      void fetchAllCash();
+    };
+
+    webSocketService.on('dailyCashOpened', refreshFromWs);
+    webSocketService.on('dailyCashClosed', refreshFromWs);
+    webSocketService.on('dailyCashUpdated', refreshFromWs);
+
+    return () => {
+      webSocketService.off('dailyCashOpened', refreshFromWs);
+      webSocketService.off('dailyCashClosed', refreshFromWs);
+      webSocketService.off('dailyCashUpdated', refreshFromWs);
+    };
+  }, [token, checkOpenDaily, fetchAllCash]);
 
   const deleteCash = async (id: string) => {
     if (!token) return;
@@ -157,7 +178,7 @@ export const DailyCashProvider = ({
     if (confirm.isConfirmed) {
       try {
         await deleteDailyCash(token, id);
-        Swal.fire('Eliminado', 'Producto eliminado correctamente.', 'success');
+        Swal.fire('Eliminado', 'Caja eliminada correctamente.', 'success');
         await fetchAllCash();
       } catch (error) {
         console.error('Error al eliminar la caja', error);

@@ -619,7 +619,7 @@ export class OrderService {
       throw new NotFoundException(`Order with ID: ${id} not found`);
     }
 
-    this.eventEmitter.emit('order.deleted', { orderId: id });
+    this.eventEmitter.emit('order.deleted', { order: { id } as Order });
 
     return 'Order successfully deleted';
   }

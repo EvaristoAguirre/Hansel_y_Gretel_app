@@ -12,8 +12,9 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [x] **2. `components/Order/Pay.tsx` ~328 — Sin guard de doble click en cobro**
   `handlePayOrder` no tiene estado `isSubmitting`. Un doble click o doble tap puede ejecutar dos llamadas a `orderToClosed`, cerrando la orden dos veces en caja. Crítico en POS de producción.
 
-- [ ] **3. `services/websocket.service.ts` ~53 — Listeners WS duplicados en reconexión**
-  Cada vez que el socket se reconecta se agregan nuevos handlers sin remover los anteriores (`socket.on` sin `socket.off` previo). Con cada reconexión los eventos se procesan N veces → estados inconsistentes de mesas y pedidos, memory leak.
+- [x] **3. `services/websocket.service.ts` ~53 — Listeners WS duplicados en reconexión**
+  ~~Cada vez que el socket se reconecta se agregan nuevos handlers sin remover los anteriores.~~  
+  **Resuelto (Fase 1, 10/08/2026):** se eliminó el re-registro en `reconnect`; API `onReconnect` para resync/re-join.
 
 - [ ] **4. `app/context/authContext.tsx` ~162 — `setTimeout` sin cleanup en expiración de token**
   Al desmontar el componente o cambiar de token, los timers de aviso y logout siguen activos → múltiples Swal de "sesión próxima a vencer" y redirecciones fantasma. Memory leak en sesiones largas.
@@ -33,8 +34,9 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [ ] **9. `app/context/dailyCashContext.tsx` ~119 — `closeCash` con non-null assertion sin validación**
   Usa `selectedDailyCashId!` sin verificar que el valor exista. Si es `undefined`, el PATCH falla silenciosamente o cierra la caja incorrecta.
 
-- [ ] **10. `components/Order/useOrderStore.ts` ~86 — `findOrderByTableId` sin guard de null**
-  Accede a `order.table.id` asumiendo que `table` siempre está populada. Si el backend devuelve una orden sin la relación de mesa → crash en runtime.
+- [x] **10. `components/Order/useOrderStore.ts` ~86 — `findOrderByTableId` sin guard de null**
+  ~~Accede a `order.table.id` asumiendo que `table` siempre está populada.~~  
+  **Resuelto (Fase 1, 10/08/2026):** usa `order.table?.id`.
 
 ---
 
@@ -74,8 +76,9 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 
 ## MEDIOS
 
-- [ ] **21. `components/Order/useOrderStore.ts` ~38 — Campo `status` en lugar de `state`**
-  `orderUpdatedPending` y `orderTicketPrinted` escriben `status` en el store, pero el resto de la app usa `state`. Estado derivado inconsistente.
+- [x] **21. `components/Order/useOrderStore.ts` ~38 — Campo `status` en lugar de `state`**
+  ~~`orderUpdatedPending` y `orderTicketPrinted` escriben `status`.~~  
+  **Resuelto (Fase 1, 10/08/2026):** escriben `state` (`OrderState`).
 
 - [ ] **22. `components/Order/useOrderStore.ts` ~67 — `orderTicketPrinted` usa payload distinto**
   Accede a `data.id` directamente, mientras que otros handlers usan `data.order || data`. Si el formato del payload cambia, la actualización no se aplica.

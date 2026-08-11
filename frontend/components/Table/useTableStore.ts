@@ -3,6 +3,19 @@ import { ITable } from "../Interfaces/ITable";
 import { getTableByRoom } from "@/api/tables";
 import { webSocketService } from "@/services/websocket.service";
 
+/** El backend por REST mapea orders → UUID[], pero por WS puede mandar entidades Order[]. */
+function normalizeTablePayload(data: any): ITable {
+  const orders = Array.isArray(data?.orders)
+    ? data.orders
+        .map((o: string | { id?: string }) =>
+          typeof o === "string" ? o : o?.id
+        )
+        .filter((id: string | undefined): id is string => !!id)
+    : data?.orders ?? null;
+
+  return { ...data, orders };
+}
+
 interface TableStateZustand {
   /** Mesas de la sala actualmente seleccionada (para uso directo en los componentes). */
   tables: ITable[];
@@ -47,22 +60,24 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
   });
 
   webSocketService.on("tableCreated", (data: ITable & { room?: { id: string } }) => {
-    const roomId = (data as any)?.room?.id as string | undefined;
+    const table = normalizeTablePayload(data);
+    const roomId = (table as any)?.room?.id as string | undefined;
     set((state) => {
       const newByRoom = { ...state.tablesByRoom };
       if (roomId && newByRoom[roomId]) {
-        newByRoom[roomId] = [...newByRoom[roomId], data];
+        newByRoom[roomId] = [...newByRoom[roomId], table];
       }
       const tables =
         state.currentRoomId === roomId
-          ? [...state.tables, data]
+          ? [...state.tables, table]
           : state.tables;
       return { tablesByRoom: newByRoom, tables };
     });
   });
 
   webSocketService.on("tableUpdated", (data: ITable & { room?: { id: string } }) => {
-    const roomId = (data as any)?.room?.id as string | undefined;
+    const table = normalizeTablePayload(data);
+    const roomId = (table as any)?.room?.id as string | undefined;
     set((state) => {
       const newByRoom = { ...state.tablesByRoom };
 
@@ -71,18 +86,18 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
       const effectiveRoomId =
         roomId ??
         Object.keys(newByRoom).find((rId) =>
-          newByRoom[rId].some((t) => t.id === data.id)
+          newByRoom[rId].some((t) => t.id === table.id)
         );
 
       if (effectiveRoomId && newByRoom[effectiveRoomId]) {
         newByRoom[effectiveRoomId] = newByRoom[effectiveRoomId].map((t) =>
-          t.id === data.id ? { ...t, ...data } : t
+          t.id === table.id ? { ...t, ...table } : t
         );
       }
 
       const tables =
         state.currentRoomId === effectiveRoomId
-          ? state.tables.map((t) => (t.id === data.id ? { ...t, ...data } : t))
+          ? state.tables.map((t) => (t.id === table.id ? { ...t, ...table } : t))
           : state.tables;
 
       return { tablesByRoom: newByRoom, tables };
