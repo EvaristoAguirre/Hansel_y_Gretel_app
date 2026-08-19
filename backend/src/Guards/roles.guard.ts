@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from 'src/Enums/roles.enum';
+import { ROLES_KEY } from '../Decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -16,9 +17,9 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.get<UserRole[]>(
-      'roles',
-      context.getHandler(),
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
     );
 
     if (!requiredRoles) {
@@ -33,6 +34,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const decodedToken = this.jwtService.verify(token);
+    request.user = decodedToken;
     const userRole = decodedToken.role;
 
     if (!requiredRoles.includes(userRole)) {

@@ -75,7 +75,7 @@
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@types/express": "^5.0.0",
-    "@types/jest": "^29.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.17.30",
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.9",

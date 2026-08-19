@@ -26,7 +26,7 @@ La aplicación es usable en producción local, pero presenta **brechas de autori
 
 ### Riesgos más críticos (top 6)
 
-1. **API parcialmente abierta en LAN** — registro de usuarios público, caja/export/impresora sin guard efectivo, `RolesGuard` con bypass si falta `@Roles`. *(Fase 0 pendiente)*
+1. **API parcialmente abierta en LAN** — registro de usuarios público, caja/export/impresora sin guard efectivo, `RolesGuard` con bypass si falta `@Roles`. *(Fase 0 PR A: register/caja/export/impresora cerrados; bypass S-03 pendiente PR C)*
 2. ~~**Ediciones de orden abierta no se sincronizan bien**~~ — **Mitigado Fase 1** (`orderUpdated` global + refetch en contexto + re-join).
 3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
 4. **Cobro / stock sin transacciones atómicas** — riesgo de inconsistencia mesa/pagos/orden/stock. *(Fase 3)*
@@ -50,35 +50,25 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 
 ### 2.1 Críticos
 
-- [ ] **S-01 — `POST /user/register` público con escalada de rol**  
-  **Archivo:** `backend/src/User/user.controller.ts` (~L12–54)  
-  **Problema:** cualquiera puede crear usuarios con rol `Admin`/`Encargado` sin token. El front envía `Authorization` pero el backend no lo exige.  
-  **Severidad:** Crítica · **Esfuerzo:** S (1–2 h)
+- [x] **S-01 — `POST /user/register` público con escalada de rol**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** requiere JWT + rol Admin o Encargado. Encargado no puede crear Admin/Encargado.
 
-- [ ] **S-02 — `register()` devuelve hash bcrypt**  
-  **Archivo:** `backend/src/User/user.controller.ts` (~L51–53)  
-  **Problema:** la respuesta incluye la entidad `User` con `password` hasheado.  
-  **Severidad:** Crítica · **Esfuerzo:** S
+- [x] **S-02 — `register()` devuelve hash bcrypt**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** la respuesta omite `password`.
 
 - [ ] **S-03 — `RolesGuard` permite acceso anónimo si falta `@Roles`**  
   **Archivo:** `backend/src/Guards/roles.guard.ts` (~L24–26)  
   **Problema:** `if (!requiredRoles) return true`. Además solo lee `getHandler()`, no `getClass()` → `@Roles` a nivel de clase no aplica.  
-  **Severidad:** Crítica · **Esfuerzo:** M (2–4 h)
+  **Severidad:** Crítica · **Esfuerzo:** M (2–4 h) · **Pendiente PR C**
 
-- [ ] **S-04 — Caja diaria sin `@UseGuards(RolesGuard)`**  
-  **Archivo:** `backend/src/daily-cash/daily-cash.controller.ts` (~L37–38)  
-  **Problema:** abrir/cerrar caja, movimientos y métricas accesibles sin JWT. `@Roles` es decorativo.  
-  **Severidad:** Crítica · **Esfuerzo:** S
+- [x] **S-04 — Caja diaria sin `@UseGuards(RolesGuard)`**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** guard + roles Admin/Encargado (métodos ya tenían `@Roles`).
 
-- [ ] **S-05 — Export PDF / impresión de stock sin auth**  
-  **Archivo:** `backend/src/ExportPdf/export.controller.ts` (~L14–60)  
-  **Problema:** inventario descargable/imprimible por cualquiera en la LAN.  
-  **Severidad:** Crítica · **Esfuerzo:** S
+- [x] **S-05 — Export PDF / impresión de stock sin auth**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** Admin / Encargado / Inventario.
 
-- [ ] **S-06 — Impresora sin auth**  
-  **Archivo:** `backend/src/Printer/printer.controller.ts` (~L16–97)  
-  **Problema:** spam de tickets/comandas y manipulación del flujo operativo.  
-  **Severidad:** Crítica · **Esfuerzo:** S
+- [x] **S-06 — Impresora sin auth**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** Admin / Encargado / Mozo / Inventario.
 
 - [ ] **S-07 — Next.js 15.0.3 con CVEs críticas**  
   **Archivo:** `frontend/package.json`  
@@ -92,19 +82,14 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 
 ### 2.2 Altos
 
-- [ ] **S-09 — ToppingsGroup y UnitOfMeasure sin guard**  
-  **Archivos:** `backend/src/ToppingsGroup/toppings-group.controller.ts` (~L27–28), `backend/src/UnitOfMeasure/unitOfMeasure.controller.ts` (~L35–36)  
-  **Severidad:** Alta · **Esfuerzo:** S
+- [x] **S-09 — ToppingsGroup y UnitOfMeasure sin guard**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** `@UseGuards(RolesGuard)` + `@Roles` en `GET conversion`.
 
-- [ ] **S-10 — Endpoints de producto sin `@Roles` pese a tener guard**  
-  **Archivo:** `backend/src/Product/controllers/product.controller.ts` (~L133–187, ~L429–458)  
-  **Problema:** `POST /product/prod-to-prom` y `POST /product/promo-with-slots` accesibles anónimamente por S-03.  
-  **Severidad:** Alta · **Esfuerzo:** S
+- [x] **S-10 — Endpoints de producto sin `@Roles` pese a tener guard**  
+  **Resuelto (Fase 0 PR B, 19/08/2026):** `@Roles(ADMIN, ENCARGADO)` en `POST /product/prod-to-prom` y `POST /product/promo-with-slots`. Fallback de clase en `ProductController` y `PromotionSlotController`. `RolesGuard` lee handler + class (`getAllAndOverride`). Endpoints de slot comentados siguen muertos.
 
-- [ ] **S-11 — `JWT_SECRET` sin fail-fast al arrancar**  
-  **Archivo:** `backend/src/User/user.module.ts` (~L15)  
-  **Problema:** `configService.get()` sin `getOrThrow`; secret `undefined` posible.  
-  **Severidad:** Alta · **Esfuerzo:** S
+- [x] **S-11 — `JWT_SECRET` sin fail-fast al arrancar**  
+  **Resuelto (Fase 0 PR A, 19/08/2026):** `configService.getOrThrow('JWT_SECRET')`.
 
 - [ ] **S-12 — Sin Helmet / headers de seguridad**  
   **Archivo:** `backend/src/main.ts`  
@@ -420,12 +405,13 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 **Objetivo:** la API en LAN deja de estar efectivamente abierta.
 
-- [ ] S-03 — Corregir `RolesGuard` (exigir token; denegar si no hay roles cuando el guard está aplicado; leer también `getClass()`)
-- [ ] S-01 / S-02 — Proteger `POST /user/register` (solo Admin) y no devolver `password`
-- [ ] S-04, S-05, S-06, S-09 — Aplicar `@UseGuards(RolesGuard)` + `@Roles` en daily-cash, export, printer, toppings, unitofmeasure
-- [ ] S-10 — Completar `@Roles` en endpoints de producto huérfanos
-- [ ] S-12 / S-16 — Helmet + `forbidNonWhitelisted: true`
-- [ ] S-11 — `JWT_SECRET` con `getOrThrow` / validación al bootstrap
+- [ ] S-03 — Corregir `RolesGuard` (exigir token; denegar si no hay roles cuando el guard está aplicado; leer también `getClass()`) · **PR C**
+- [x] S-01 / S-02 — Proteger `POST /user/register` (Admin + Encargado; Encargado no crea roles privilegiados) y no devolver `password` · **PR A 19/08/2026**
+- [x] S-04, S-05, S-06, S-09 — Aplicar `@UseGuards(RolesGuard)` + `@Roles` en daily-cash, export, printer, toppings, unitofmeasure · **PR A 19/08/2026** (`check-open` también permite Mozo/Inventario para no bloquear mesas)
+- [x] S-10 — Completar `@Roles` en endpoints de producto huérfanos · **PR B 19/08/2026**
+  (`getAllAndOverride` en RolesGuard; `prod-to-prom` / `promo-with-slots`; fallback de clase)
+- [ ] S-12 / S-16 — Helmet + `forbidNonWhitelisted: true` · **PR D**
+- [x] S-11 — `JWT_SECRET` con `getOrThrow` · **PR A 19/08/2026**
 - [ ] Smoke: intentar llamar caja/impresora/register sin token → 401/403
 
 **Esfuerzo estimado:** 1–2 días.
@@ -559,7 +545,9 @@ cd frontend && npm test
 |-------|------|-------|
 | 10/08/2026 | Informe inicial | Auditoría consolidada |
 | 10/08/2026 | **Fase 1 (código)** | WS sync órdenes/mesas, reconexión, payloads, `printerError`; tests unitarios Real-time + Vitest front |
-| — | Fase 0 | Pendiente (seguridad) |
+| 19/08/2026 | **Fase 0 PR B** | `@Roles` en prod-to-prom y promo-with-slots; reflector handler+clase |
+
+| — | Fase 0 PR B–D | Pendiente (`@Roles` huérfanos, endurecer guard, Helmet) |
 | — | Fase 2+ | Pendiente |
 
 ---

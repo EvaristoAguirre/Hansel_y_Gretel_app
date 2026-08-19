@@ -9,6 +9,7 @@ import {
   Query,
   ParseIntPipe,
   DefaultValuePipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,10 +32,12 @@ import {
 } from 'src/DTOs/create-expense.dto';
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
 
 @ApiTags('Caja Diaria')
 @ApiBearerAuth('JWT-auth')
 @Controller('daily-cash')
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
 export class DailyCashController {
   constructor(private readonly dailyCashService: DailyCashService) {}
@@ -258,7 +261,7 @@ export class DailyCashController {
       example: { isOpen: true, dailyCashId: 'uuid-caja' },
     },
   })
-  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   isAnyDailyCashOpen(): Promise<object> {
     return this.dailyCashService.isAnyDailyCashOpen();
   }

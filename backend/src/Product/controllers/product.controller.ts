@@ -40,6 +40,7 @@ import { CreatePromotionWithSlotsDto } from '../dtos/create-promotion-with-slots
 @ApiBearerAuth('JWT-auth')
 @Controller('product')
 @UseGuards(RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
@@ -170,6 +171,7 @@ export class ProductController {
     status: 200,
     description: 'Lista de productos para promoción',
   })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   async searchProductsToPromotion(
     @Query('isActive') isActive: boolean = true,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
@@ -449,6 +451,7 @@ export class ProductController {
     status: 403,
     description: 'Sin permisos para crear promociones',
   })
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   createPromotionWithSlots(
     @Body() createPromotionWithSlots: CreatePromotionWithSlotsDto,
   ): Promise<ProductResponseDto> {
