@@ -26,7 +26,7 @@ La aplicación es usable en producción local, pero presenta **brechas de autori
 
 ### Riesgos más críticos (top 6)
 
-1. **API parcialmente abierta en LAN** — registro de usuarios público, caja/export/impresora sin guard efectivo, `RolesGuard` con bypass si falta `@Roles`. *(Fase 0 PR A: register/caja/export/impresora cerrados; bypass S-03 pendiente PR C)*
+1. **API parcialmente abierta en LAN** — ~~registro público / caja-export-impresora sin guard~~ mitigado PR A–B. `RolesGuard` ya no bypasea sin `@Roles` (PR C). Queda Helmet / cookie / auth WS (PR D y Fase 4).
 2. ~~**Ediciones de orden abierta no se sincronizan bien**~~ — **Mitigado Fase 1** (`orderUpdated` global + refetch en contexto + re-join).
 3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
 4. **Cobro / stock sin transacciones atómicas** — riesgo de inconsistencia mesa/pagos/orden/stock. *(Fase 3)*
@@ -56,10 +56,8 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 - [x] **S-02 — `register()` devuelve hash bcrypt**  
   **Resuelto (Fase 0 PR A, 19/08/2026):** la respuesta omite `password`.
 
-- [ ] **S-03 — `RolesGuard` permite acceso anónimo si falta `@Roles`**  
-  **Archivo:** `backend/src/Guards/roles.guard.ts` (~L24–26)  
-  **Problema:** `if (!requiredRoles) return true`. Además solo lee `getHandler()`, no `getClass()` → `@Roles` a nivel de clase no aplica.  
-  **Severidad:** Crítica · **Esfuerzo:** M (2–4 h) · **Pendiente PR C**
+- [x] **S-03 — `RolesGuard` permite acceso anónimo si falta `@Roles`**  
+  **Resuelto (Fase 0 PR C, 19/08/2026):** sin `@Roles` (handler ni clase) → 403. Sin token / token inválido o vencido → 401. Rol no permitido → 403. Mensajes en español.
 
 - [x] **S-04 — Caja diaria sin `@UseGuards(RolesGuard)`**  
   **Resuelto (Fase 0 PR A, 19/08/2026):** guard + roles Admin/Encargado (métodos ya tenían `@Roles`).
@@ -405,14 +403,14 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 **Objetivo:** la API en LAN deja de estar efectivamente abierta.
 
-- [ ] S-03 — Corregir `RolesGuard` (exigir token; denegar si no hay roles cuando el guard está aplicado; leer también `getClass()`) · **PR C**
+- [x] S-03 — Corregir `RolesGuard` (exigir token; denegar si no hay roles cuando el guard está aplicado; leer también `getClass()`) · **PR C 19/08/2026**
 - [x] S-01 / S-02 — Proteger `POST /user/register` (Admin + Encargado; Encargado no crea roles privilegiados) y no devolver `password` · **PR A 19/08/2026**
 - [x] S-04, S-05, S-06, S-09 — Aplicar `@UseGuards(RolesGuard)` + `@Roles` en daily-cash, export, printer, toppings, unitofmeasure · **PR A 19/08/2026** (`check-open` también permite Mozo/Inventario para no bloquear mesas)
 - [x] S-10 — Completar `@Roles` en endpoints de producto huérfanos · **PR B 19/08/2026**
   (`getAllAndOverride` en RolesGuard; `prod-to-prom` / `promo-with-slots`; fallback de clase)
 - [ ] S-12 / S-16 — Helmet + `forbidNonWhitelisted: true` · **PR D**
 - [x] S-11 — `JWT_SECRET` con `getOrThrow` · **PR A 19/08/2026**
-- [ ] Smoke: intentar llamar caja/impresora/register sin token → 401/403
+- [ ] Smoke LAN (PR C): login público OK; sin token o token vencido en caja/productos → 401; rol incorrecto → 403; Encargada y Mozo operan como siempre
 
 **Esfuerzo estimado:** 1–2 días.
 

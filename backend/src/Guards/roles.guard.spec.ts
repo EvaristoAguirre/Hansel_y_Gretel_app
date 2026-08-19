@@ -1,4 +1,8 @@
-import { ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { RolesGuard } from './roles.guard';
@@ -30,13 +34,18 @@ describe('RolesGuard', () => {
     );
   });
 
-  it('permite acceso si no hay @Roles en handler ni en clase (bypass PR C pendiente)', () => {
+  it('deniega si no hay @Roles en handler ni en clase', () => {
     reflector.getAllAndOverride.mockReturnValue(undefined);
-    expect(guard.canActivate(mockContext())).toBe(true);
+    expect(() => guard.canActivate(mockContext())).toThrow(ForbiddenException);
     expect(reflector.getAllAndOverride).toHaveBeenCalledWith(ROLES_KEY, [
       expect.anything(),
       expect.anything(),
     ]);
+  });
+
+  it('deniega si @Roles está vacío', () => {
+    reflector.getAllAndOverride.mockReturnValue([]);
+    expect(() => guard.canActivate(mockContext())).toThrow(ForbiddenException);
   });
 
   it('usa roles de clase cuando el handler no define @Roles', () => {
@@ -46,14 +55,36 @@ describe('RolesGuard', () => {
     ]);
     jwtService.verify.mockReturnValue({ role: UserRole.ENCARGADO });
 
-    expect(
-      guard.canActivate(mockContext('Bearer token-valido')),
-    ).toBe(true);
+    expect(guard.canActivate(mockContext('Bearer token-valido'))).toBe(true);
   });
 
-  it('rechaza sin token cuando hay roles requeridos', () => {
+  it('rechaza sin token con 401', () => {
     reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
-    expect(() => guard.canActivate(mockContext())).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(mockContext())).toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('rechaza token inválido con 401', () => {
+    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    jwtService.verify.mockImplementation(() => {
+      throw new Error('invalid token');
+    });
+    expect(() =>
+      guard.canActivate(mockContext('Bearer token-falso')),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it('rechaza token vencido con 401', () => {
+    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    const expired = new Error('jwt expired');
+    expired.name = 'TokenExpiredError';
+    jwtService.verify.mockImplementation(() => {
+      throw expired;
+    });
+    expect(() =>
+      guard.canActivate(mockContext('Bearer token-vencido')),
+    ).toThrow(UnauthorizedException);
   });
 
   it('rechaza si el rol del token no está permitido', () => {

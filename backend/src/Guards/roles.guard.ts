@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -22,24 +23,37 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredRoles) {
-      return true;
+    // @UseGuards(RolesGuard) sin @Roles no es público: hay que declarar roles.
+    if (!requiredRoles || requiredRoles.length === 0) {
+      throw new ForbiddenException(
+        'Acceso denegado: el endpoint no tiene roles configurados.',
+      );
     }
 
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.split(' ')[1];
 
     if (!token) {
-      throw new ForbiddenException('Token not found');
+      throw new UnauthorizedException('Token no encontrado.');
     }
 
-    const decodedToken = this.jwtService.verify(token);
+    let decodedToken: { role?: UserRole };
+    try {
+      decodedToken = this.jwtService.verify(token);
+    } catch (error) {
+      const name = (error as { name?: string })?.name;
+      if (name === 'TokenExpiredError') {
+        throw new UnauthorizedException('El token expiró. Iniciá sesión de nuevo.');
+      }
+      throw new UnauthorizedException('Token inválido.');
+    }
+
     request.user = decodedToken;
     const userRole = decodedToken.role;
 
-    if (!requiredRoles.includes(userRole)) {
+    if (!userRole || !requiredRoles.includes(userRole)) {
       throw new ForbiddenException(
-        'You do not have permission to access this resource',
+        'No tenés permiso para acceder a este recurso.',
       );
     }
 
