@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -13,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
@@ -44,14 +48,16 @@ export class StockController {
     description:
       'Devuelve una lista de todo el inventario (productos e ingredientes)',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
     description: 'Lista de stock obtenida exitosamente',
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getAllStock(
-    @Param('page') page: number = 1,
-    @Param('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<StockSummaryResponseDTO[]> {
     return await this.stockService.getAllStocks(page, limit);
   }

@@ -299,7 +299,7 @@ export class PromotionSlotService {
       // Verificar que el slot existe y cargar con opciones
       const existingSlot = await queryRunner.manager.findOne(PromotionSlot, {
         where: { id },
-        relations: ['options'],
+        relations: ['options', 'options.product'],
       });
 
       if (!existingSlot) {

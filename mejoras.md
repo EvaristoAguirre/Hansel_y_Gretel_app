@@ -42,14 +42,14 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 
 ## PERFORMANCE
 
-- [ ] **11. `useOrderStore.ts` + 4 stores — Listeners WS registrados al importar el módulo**
-  5 stores + 1 contexto + `websocket.service` = hasta 7 capas de handlers para el mismo evento WS. Los listeners se registran al importar el módulo y nunca se pueden remover.
+- [x] **11. `useOrderStore.ts` + 4 stores — Listeners WS registrados al importar el módulo**  
+  **Resuelto (Fase 3, 24/09/2026):** listeners en `connectWebSocket` con flag de módulo.
 
-- [ ] **12. Todos los contextos (`authContext`, `dailyCashContext`, `room.context`, `ingredientsContext`, `unitOfMeasureContext`) — Context `value` sin `useMemo`**
-  El objeto `value` se crea inline en cada render → todos los consumidores del contexto se re-renderizan ante cualquier cambio de estado interno del provider, sin importar si el dato que usan cambió.
+- [x] **12. Todos los contextos (`authContext`, `dailyCashContext`, `room.context`, `ingredientsContext`, `unitOfMeasureContext`) — Context `value` sin `useMemo`**  
+  **Resuelto (Fase 3, 24/09/2026):** `useMemo` del `value` + `useCallback` de los handlers.
 
-- [ ] **13. `app/context/order.context.tsx` ~133 — `useTableStore()` y `useOrderStore()` sin selector**
-  El provider de pedidos se suscribe al store completo. Se re-renderiza ante cualquier cambio de mesas u órdenes globales. Debería usar `useTableStore(s => s.tables)`.
+- [x] **13. `app/context/order.context.tsx` ~133 — `useTableStore()` y `useOrderStore()` sin selector**  
+  **Resuelto (Fase 3, 24/09/2026):** selectores por dato/acción.
 
 - [ ] **14. `components/Utils/DataGridComponent.tsx` ~21 — `console.log` + transformación en cada render**
   `console.log(rows)` en cada render + `capitalizeFirstLetterTable(rows)` crea un nuevo array en cada render → el DataGrid recibe siempre una referencia nueva de `rows` y se re-renderiza completo.
@@ -57,11 +57,11 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [ ] **15. `components/Order/Order.tsx` ~57 — Total calculado con `useEffect + setState` en lugar de `useMemo`**
   Provoca un flash de `$0` y un render extra innecesario en cada cambio de productos confirmados.
 
-- [ ] **16. `components/Hooks/useTable.ts` ~61 — `useEffect` depende de `orders`**
-  Cada cambio en el store de pedidos re-ejecuta `updateTablesByRoom` + `connectWebSocket` → fetches en cascada hacia el backend.
+- [x] **16. `components/Hooks/useTable.ts` ~61 — `useEffect` depende de `orders`**  
+  **Resuelto (Fase 3, 24/09/2026):** el efecto depende de `salaId` y token.
 
-- [ ] **17. `components/Table/Table.tsx` ~50 — Fetch de mesas duplicado**
-  Llama `updateTablesByRoom` además del que ya hace `useTable` → doble request al backend cada vez que cambia la sala.
+- [x] **17. `components/Table/Table.tsx` ~50 — Fetch de mesas duplicado**  
+  **Resuelto (Fase 3, 24/09/2026):** un solo fetch desde `useTable`.
 
 - [ ] **18. Toda la codebase `components/` — Cero usos de `React.memo`**
   En 105 archivos no hay ningún `React.memo`. Componentes de lista (`TableCard`, filas de pedido, DataGrid) se re-renderizan en cada cambio del contexto padre.
@@ -138,5 +138,5 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 3. ⬜ `websocket.service.ts` — deduplicar listeners en reconexión
 4. ⬜ `authContext.tsx` — cleanup de `setTimeout`
 5. ⬜ `order.context.tsx` — completar dependencias del `useMemo` y fix del DELETE sin token
-6. ⬜ Context values — `useMemo` en los 5 contextos restantes
-7. ⬜ Zustand — selectores para reducir re-renders del provider de pedidos
+6. ✅ Context values — `useMemo` en los 5 contextos restantes
+7. ✅ Zustand — selectores para reducir re-renders del provider de pedidos

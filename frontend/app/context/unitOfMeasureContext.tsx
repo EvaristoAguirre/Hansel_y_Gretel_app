@@ -1,7 +1,7 @@
 'use client';
 import { FormType } from '@/components/Enums/Ingredients';
 import { IUnitOfMeasureForm, IUnitOfMeasureResponse } from '@/components/Interfaces/IUnitOfMeasure';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import { createUnit, editUnit, deleteUnit, fetchUnits, allUnitsConventional, fetchUnitsNoConventional, fetchUnitOfMass, fetchUnitOfVolume, fetchUnitOfUnit } from '../../api/unitOfMeasure';
 import { useAuth } from './authContext';
@@ -119,7 +119,7 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   const removeUnit = (id: string) => {
     setNoConventionalUnits(noConventionalUnits.filter((unit) => unit.id !== id));
   }
-  const handleCreateUnit = async () => {
+  const handleCreateUnit = useCallback(async () => {
     try {
       const newUnit = await createUnit(formUnit, token as string);
       addUnit(newUnit);
@@ -129,9 +129,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       Swal.fire("Error", "No se pudo crear la unidad de medida.", "error");
       console.error(error);
     }
-  };
+  }, [formUnit, token]);
 
-  const fetchUnitsMass = async () => {
+  const fetchUnitsMass = useCallback(async () => {
     try {
       const response = await fetchUnitOfMass(token as string);
       setUnitsOfMass(response);
@@ -139,9 +139,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     } catch (error) {
       console.error("Error al obtener las unidades de masa:", error);
     }
-  };
+  }, [token]);
 
-  const fetchUnitsVolume = async () => {
+  const fetchUnitsVolume = useCallback(async () => {
     try {
       const response = await fetchUnitOfVolume(token as string);
       setUnitsOfVolume(response);
@@ -149,9 +149,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     } catch (error) {
       console.error("Error al obtener las unidades de masa:", error);
     }
-  };
+  }, [token]);
 
-  const fetchUnitsUnit = async () => {
+  const fetchUnitsUnit = useCallback(async () => {
     try {
       const response = await fetchUnitOfUnit(token as string);
       setUnitsOfUnit(response);
@@ -159,9 +159,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     } catch (error) {
       console.error("Error al obtener las unidades de masa:", error);
     }
-  };
+  }, [token]);
 
-  const handleEditUnit = async () => {
+  const handleEditUnit = useCallback(async () => {
     /**
      * Estamos editando la unidad de medida, por lo tanto, debemos
      * convertir los factores de conversión a dos decimales y asignarlos al objeto
@@ -186,9 +186,9 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       Swal.fire("Error", "No se pudo editar la unidad de medida.", "error");
       console.error(error);
     }
-  };
+  }, [formUnit, token]);
 
-  const handleDeleteUnit = async (id: string) => {
+  const handleDeleteUnit = useCallback(async (id: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -210,42 +210,61 @@ const UnitProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         console.error(error);
       }
     }
-  };
-  const handleCloseFormUnit = () => {
+  }, [token]);
+
+  const handleCloseFormUnit = useCallback(() => {
     setFormOpenUnit(false);
     setFormUnit({
       name: "",
       abbreviation: "",
       conversions: []
     });
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      units,
+      unitsOfMass,
+      unitsOfVolume,
+      unitsOfUnit,
+      formUnit,
+      conventionalUnits,
+      noConventionalUnits,
+      formOpenUnit,
+      formTypeUnit,
+      fetchUnitsMass,
+      fetchUnitsVolume,
+      fetchUnitsUnit,
+      setFormUnit,
+      setFormOpenUnit,
+      setFormTypeUnit,
+      handleDeleteUnit,
+      handleCreateUnit,
+      handleEditUnit,
+      handleCloseFormUnit,
+    }),
+    [
+      units,
+      unitsOfMass,
+      unitsOfVolume,
+      unitsOfUnit,
+      formUnit,
+      conventionalUnits,
+      noConventionalUnits,
+      formOpenUnit,
+      formTypeUnit,
+      fetchUnitsMass,
+      fetchUnitsVolume,
+      fetchUnitsUnit,
+      handleDeleteUnit,
+      handleCreateUnit,
+      handleEditUnit,
+      handleCloseFormUnit,
+    ],
+  );
 
   return (
-    <UnitContext.Provider
-      value={{
-        units,
-        unitsOfMass,
-        unitsOfVolume,
-        unitsOfUnit,
-        formUnit,
-        conventionalUnits,
-        noConventionalUnits,
-        formOpenUnit,
-        formTypeUnit,
-        fetchUnitsMass,
-        fetchUnitsVolume,
-        fetchUnitsUnit,
-        setFormUnit,
-        setFormOpenUnit,
-        setFormTypeUnit,
-        handleDeleteUnit,
-        handleCreateUnit,
-        handleEditUnit,
-        handleCloseFormUnit,
-
-
-      }}
-    >
+    <UnitContext.Provider value={value}>
       {children}
     </UnitContext.Provider>
   );

@@ -15,17 +15,17 @@ export class DailyCashRepository {
 
   async getAllDailysCash(
     page: number = 1,
-    limit: number = 1000,
+    limit: number = 100,
   ): Promise<DailyCash[]> {
     if (page < 1 || limit < 1) {
       throw new BadRequestException('Page and limit must be greater than 0');
     }
+    const safeLimit = Math.min(limit, 200);
     try {
       return await this.dailyCashRepository.find({
-        skip: (page - 1) * limit,
-        take: limit,
-        relations: ['movements', 'orders', 'orders.payments'],
-        // ✅ Asegurar que las relaciones opcionales no causen problemas
+        skip: (page - 1) * safeLimit,
+        take: safeLimit,
+        order: { date: 'DESC' },
       });
     } catch (error) {
       this.logger.error('getAllDailysCash', error);

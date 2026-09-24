@@ -20,94 +20,101 @@ interface OrderStateZustand {
   connectWebSocket: () => void;
 }
 
+let orderListenersBound = false;
+
 export const useOrderStore = create<OrderStateZustand>((set, get) => {
-  const socket = webSocketService.connect();
+  const bindOrderListeners = () => {
+    if (orderListenersBound) return;
+    orderListenersBound = true;
 
-  socket.on('connect', () => {
-    console.log('✅ Conectado a WebSocket - Pedidos');
-  });
+    const socket = webSocketService.connect();
 
-  webSocketService.on('orderCreated', (data) => {
-    const order = normalizeOrderPayload(data);
-    if (!order?.id) return;
-    set((state) => {
-      if (state.orders.some((o) => o.id === order.id)) {
-        return {
-          orders: state.orders.map((o) => (o.id === order.id ? { ...o, ...order } : o)),
-        };
-      }
-      return { orders: [...state.orders, order] };
+    socket.on('connect', () => {
+      console.log('✅ Conectado a WebSocket - Pedidos');
     });
-  });
 
-  webSocketService.on('orderUpdated', (data) => {
-    const order = normalizeOrderPayload(data);
-    if (!order?.id) return;
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id ? { ...o, ...order } : o
-      ),
-    }));
-  });
+    webSocketService.on('orderCreated', (data) => {
+      const order = normalizeOrderPayload(data);
+      if (!order?.id) return;
+      set((state) => {
+        if (state.orders.some((o) => o.id === order.id)) {
+          return {
+            orders: state.orders.map((o) => (o.id === order.id ? { ...o, ...order } : o)),
+          };
+        }
+        return { orders: [...state.orders, order] };
+      });
+    });
 
-  webSocketService.on('orderUpdatedPending', (data) => {
-    const order = normalizeOrderPayload(data);
-    if (!order?.id) return;
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id
-          ? { ...o, ...order, state: OrderState.PENDING_PAYMENT }
-          : o
-      ),
-    }));
-  });
+    webSocketService.on('orderUpdated', (data) => {
+      const order = normalizeOrderPayload(data);
+      if (!order?.id) return;
+      set((state) => ({
+        orders: state.orders.map((o) =>
+          o.id === order.id ? { ...o, ...order } : o
+        ),
+      }));
+    });
 
-  webSocketService.on('orderUpdatedClose', (data) => {
-    const order = normalizeOrderPayload(data);
-    if (!order?.id) return;
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id ? { ...o, ...order, state: OrderState.CLOSED } : o
-      ),
-    }));
-    if (order.table?.id) {
-      const { tables, updateTable } = useTableStore.getState();
-      const tableInStore = tables.find((t) => t.id === order.table.id);
-      if (tableInStore) {
-        updateTable({ ...tableInStore, ...order.table });
+    webSocketService.on('orderUpdatedPending', (data) => {
+      const order = normalizeOrderPayload(data);
+      if (!order?.id) return;
+      set((state) => ({
+        orders: state.orders.map((o) =>
+          o.id === order.id
+            ? { ...o, ...order, state: OrderState.PENDING_PAYMENT }
+            : o
+        ),
+      }));
+    });
+
+    webSocketService.on('orderUpdatedClose', (data) => {
+      const order = normalizeOrderPayload(data);
+      if (!order?.id) return;
+      set((state) => ({
+        orders: state.orders.map((o) =>
+          o.id === order.id ? { ...o, ...order, state: OrderState.CLOSED } : o
+        ),
+      }));
+      if (order.table?.id) {
+        const { tables, updateTable } = useTableStore.getState();
+        const tableInStore = tables.find((t) => t.id === order.table.id);
+        if (tableInStore) {
+          updateTable({ ...tableInStore, ...order.table });
+        }
       }
-    }
-  });
+    });
 
-  webSocketService.on('orderDeleted', (data) => {
-    const order = normalizeOrderPayload(data);
-    const id = order?.id || data?.orderId || data?.id;
-    if (!id) return;
-    set((state) => ({
-      orders: state.orders.filter((o) => o.id !== id),
-    }));
-  });
+    webSocketService.on('orderDeleted', (data) => {
+      const order = normalizeOrderPayload(data);
+      const id = order?.id || data?.orderId || data?.id;
+      if (!id) return;
+      set((state) => ({
+        orders: state.orders.filter((o) => o.id !== id),
+      }));
+    });
 
-  webSocketService.on('orderTicketPrinted', (data) => {
-    const order = normalizeOrderPayload(data);
-    if (!order?.id) return;
-    set((state) => ({
-      orders: state.orders.map((o) =>
-        o.id === order.id
-          ? {
-              ...o,
-              ...order,
-              ticketPrinted: true,
-              state: OrderState.PENDING_PAYMENT,
-            }
-          : o
-      ),
-    }));
-  });
+    webSocketService.on('orderTicketPrinted', (data) => {
+      const order = normalizeOrderPayload(data);
+      if (!order?.id) return;
+      set((state) => ({
+        orders: state.orders.map((o) =>
+          o.id === order.id
+            ? {
+                ...o,
+                ...order,
+                ticketPrinted: true,
+                state: OrderState.PENDING_PAYMENT,
+              }
+            : o
+        ),
+      }));
+    });
 
-  socket.on('disconnect', () => {
-    console.log('❌ Desconectado del servidor WebSocket - Pedidos');
-  });
+    socket.on('disconnect', () => {
+      console.log('❌ Desconectado del servidor WebSocket - Pedidos');
+    });
+  };
 
   return {
     orders: [],
@@ -132,6 +139,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
       })),
     connectWebSocket: () => {
       webSocketService.connect();
+      bindOrderListeners();
     },
   };
 });

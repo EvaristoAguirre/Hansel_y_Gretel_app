@@ -15,7 +15,7 @@ import { CancelOrderDetailDto } from '../dtos/cancel-order-detail.dto';
 import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { ProductLineDto } from 'src/DTOs/productSummary.dto';
 import { buildProductLines } from '../helpers/order-response.helper';
@@ -171,11 +171,16 @@ export class OrderService {
         let total = 0;
         const detailsToSave: OrderDetails[] = [];
         const printProducts: any[] = [];
+        const productIds = [
+          ...new Set(updateData.productsDetails.map((pd) => pd.productId)),
+        ];
+        const loadedProducts = await queryRunner.manager.find(Product, {
+          where: { id: In(productIds), isActive: true },
+        });
+        const productById = new Map(loadedProducts.map((p) => [p.id, p]));
 
         for (const pd of updateData.productsDetails) {
-          const product = await queryRunner.manager.findOne(Product, {
-            where: { id: pd.productId, isActive: true },
-          });
+          const product = productById.get(pd.productId);
           if (!product) throw new NotFoundException('Product not found');
 
           let finalPrice = Number(product.price ?? 0);
@@ -268,12 +273,12 @@ export class OrderService {
             finalPrice = Number(finalPrice) + Number(extraCost);
           }
 
-          //------------------- Deducción de stock con soporte para promociones con slots
           await this.stockService.deductStock(
             product.id,
             pd.quantity,
             pd.toppingsPerUnit,
             pd.promotionSelections,
+            queryRunner,
           );
 
           // Construir el OrderDetail real con el precio correcto.

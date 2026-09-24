@@ -22,46 +22,52 @@ export const mapIngredientResponseToForm = (
   extraCost: ingredient.extraCost ?? 0,
 });
 
+let productListenersBound = false;
+
 export const useProductStore = create<ProductState>((set) => {
-  // Conectar al servicio centralizado de WebSocket
-  const socket = webSocketService.connect();
+  const bindProductListeners = () => {
+    if (productListenersBound) return;
+    productListenersBound = true;
 
-  socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket - Productos");
-  });
+    const socket = webSocketService.connect();
 
-  webSocketService.on("productCreated", (data) => {
-    set((state) => {
-      const exists = state.products.some((product) => product.id === data.id);
-      if (!exists) {
-        const parsedProduct = {
-          ...data,
-          promotionDetails: data.promotionDetails ?? null,
-        };
-
-        return { products: [...state.products, parsedProduct] };
-      }
-      return state;
+    socket.on("connect", () => {
+      console.log("✅ Conectado a WebSocket - Productos");
     });
-  });
 
-  webSocketService.on("productUpdated", (data) => {
-    set((state) => ({
-      products: state.products.map((product) =>
-        product.id === data.id ? data : product
-      ),
-    }));
-  });
+    webSocketService.on("productCreated", (data) => {
+      set((state) => {
+        const exists = state.products.some((product) => product.id === data.id);
+        if (!exists) {
+          const parsedProduct = {
+            ...data,
+            promotionDetails: data.promotionDetails ?? null,
+          };
 
-  webSocketService.on("productDeleted", (data) => {
-    set((state) => ({
-      products: state.products.filter((product) => product.id !== data.id),
-    }));
-  });
+          return { products: [...state.products, parsedProduct] };
+        }
+        return state;
+      });
+    });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Productos");
-  });
+    webSocketService.on("productUpdated", (data) => {
+      set((state) => ({
+        products: state.products.map((product) =>
+          product.id === data.id ? data : product
+        ),
+      }));
+    });
+
+    webSocketService.on("productDeleted", (data) => {
+      set((state) => ({
+        products: state.products.filter((product) => product.id !== data.id),
+      }));
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Desconectado del servidor WebSocket - Productos");
+    });
+  };
 
   return {
     products: [],
@@ -84,8 +90,8 @@ export const useProductStore = create<ProductState>((set) => {
       }));
     },
     connectWebSocket: () => {
-      // La conexión se establece automáticamente al cargar el store
       webSocketService.connect();
+      bindProductListeners();
     },
   };
 });

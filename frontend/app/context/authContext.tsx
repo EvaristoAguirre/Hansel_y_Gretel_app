@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "jwt-decode";
 import Swal from "sweetalert2";
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const getAccessToken = (): string | null => {
+  const getAccessToken = useCallback((): string | null => {
     if (typeof window === "undefined") return null;
     const userSession = localStorage.getItem("user");
     if (!userSession) return null;
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Failed to retrieve token", error);
       return null;
     }
-  };
+  }, []);
 
   const removeAccessToken = useCallback((): void => {
     localStorage.removeItem("user");
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAccessToken(null);
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     Swal.fire({
       icon: "warning",
       title: "Cerrar sesión",
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         window.location.href = "/views/login";
       }
     });
-  };
+  }, [removeAccessToken]);
 
   const userRoleFromToken = useCallback((): UserRole | null => {
     if (typeof window === "undefined") {
@@ -135,9 +135,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
 
-  const validateUserSession = () => {
+  const validateUserSession = useCallback(() => {
     return !!accessToken;
-  };
+  }, [accessToken]);
 
   // 🔹 Verifica si el token ha expirado y programa alertas
   useEffect(() => {
@@ -191,21 +191,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [accessToken]);
 
+  const value = useMemo(
+    () => ({
+      user,
+      accessToken,
+      isAuthLoaded,
+      getAccessToken,
+      setUser,
+      validateUserSession,
+      userRoleFromToken,
+      handleSignOut,
+      usernameFromToken,
+      removeAccessToken,
+    }),
+    [
+      user,
+      accessToken,
+      isAuthLoaded,
+      getAccessToken,
+      validateUserSession,
+      userRoleFromToken,
+      handleSignOut,
+      usernameFromToken,
+      removeAccessToken,
+    ],
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        isAuthLoaded,
-        getAccessToken,
-        setUser,
-        validateUserSession,
-        userRoleFromToken,
-        handleSignOut,
-        usernameFromToken,
-        removeAccessToken,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

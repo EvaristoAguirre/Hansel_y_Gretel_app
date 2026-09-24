@@ -133,8 +133,12 @@ const OrderProvider = ({
   const { getAccessToken } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
-  const { tables } = useTableStore();
-  const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
+  const tables = useTableStore((s) => s.tables);
+  const orders = useOrderStore((s) => s.orders);
+  const addOrder = useOrderStore((s) => s.addOrder);
+  const updateOrder = useOrderStore((s) => s.updateOrder);
+  const removeOrder = useOrderStore((s) => s.removeOrder);
+  const connectOrderStore = useOrderStore((s) => s.connectWebSocket);
   const { selectedTable, setSelectedTable, handleSelectTable } =
     useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
@@ -184,13 +188,13 @@ const OrderProvider = ({
       setToken(token);
     }
 
-    // Asegurar que el WebSocket esté conectado
     try {
       webSocketService.connect();
+      connectOrderStore();
     } catch (error) {
       console.error("Error al conectar WebSocket:", error);
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, connectOrderStore]);
 
   // Rastrea el ID de la mesa anterior para distinguir entre cambio de mesa
   // (requiere reset completo) vs. cambio de estado de la misma mesa (no requiere reset).

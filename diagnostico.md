@@ -15,7 +15,7 @@ Complementa (no reemplaza) el listado de frontend en [`mejoras.md`](mejoras.md) 
 | **Fase 0 PR A–C — auth HTTP** | Hecha (19/08/2026) | Register, caja, export, impresora, toppings, UoM, productos; `RolesGuard` endurecido |
 | **Fase 0 PR D — Helmet + `forbidNonWhitelisted`** | **Diferido** (análisis 19/08/2026) | S-16 puede romper caja/productos/unidades; Helmet aporta poco en LAN |
 | **Fase 2 — impresora** | Hecha (24/09/2026) | Env `PRINTER_*`, print post-commit, timeout 4s / 1 intento, reprint ticket por id, avisos unificados |
-| **Fase 3 — TX/consultas** | **Siguiente** | Cobro y `deductStock` siguen sin atomicidad completa |
+| **Fase 3 — TX/consultas** | **Hecha (código 24/09/2026)** | Cobro y `deductStock` en la misma TX; índices; listados livianos; pool; front 11–13 y 16–17 |
 | **Fase 4 — deps / auth WS / cookie** | Pendiente | Next 15.0.3; WS sin JWT; token en `localStorage` |
 
 ---
@@ -34,14 +34,14 @@ Stack: NestJS + TypeORM + PostgreSQL + Socket.IO (backend) · Next.js 15 + Zusta
 
 ## 1. Resumen ejecutivo
 
-La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C) y sync WS de órdenes (Fase 1) ya están en código.** Siguen abiertos: **impresión bloqueante**, **cobro/stock no atómicos**, **deps (Next 15.0.3)** y **auth WS / cookie**.
+La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C), sync WS de órdenes (Fase 1), impresión (Fase 2) y TX/consultas (Fase 3) ya están en código.** Siguen abiertos: **deps (Next 15.0.3)** y **auth WS / cookie**.
 
 ### Riesgos más críticos (top 6)
 
 1. ~~**API parcialmente abierta en LAN**~~ — **Mitigado PR A–C.** Quedan Helmet (diferido), cookie httpOnly y auth WS (Fase 4).
 2. ~~**Ediciones de orden abierta no se sincronizan bien**~~ — **Mitigado Fase 1** (`orderUpdated` global + refetch en contexto + re-join).
 3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
-4. **Cobro / stock sin transacciones atómicas** — riesgo de inconsistencia mesa/pagos/orden/stock. *(Fase 3)*
+4. ~~**Cobro / stock sin transacciones atómicas**~~ — **Mitigado Fase 3:** `closeOrder` y `deductStock` usan `QueryRunner` (mismo patrón que `restoreStock`).
 5. ~~**Impresión bloqueante + IP hardcodeada**~~ — **Mitigado Fase 2:** env `PRINTER_*`, print después del commit, timeout 4 s / 1 intento, reprint de ticket por id, aviso + reimpresión manual. Queda I-07 (contador en BD).
 6. **Dependencias vulnerables** — Next.js `15.0.3` con CVEs críticas; sin Dependabot. *(Fase 4)*
 
@@ -245,7 +245,8 @@ sequenceDiagram
 
 Hoy casi no hay índices explícitos más allá de uniques y el índice parcial `UQ_active_order_per_table` (`migration/1780790400000-AddUniqueActiveOrderPerTable.ts`). PostgreSQL **no indexa FKs automáticamente**.
 
-- [ ] **P-01 — Migración de índices prioritarios**  
+- [x] **P-01 — Migración de índices prioritarios**  
+  **Resuelto (Fase 3, 24/09/2026):** `1782800000000-AddPhase3PerformanceIndexes.ts`.  
   Candidatos:  
   - `orders(state, isActive)`, `orders(dailyCashId)`, `orders(date)`  
   - `order_details(orderId)` (parcial `WHERE isActive`), `order_payments(orderId)`  
@@ -260,12 +261,14 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
 
 ### 4.2 Listados y N+1
 
-- [ ] **P-03 — `getAllProducts` con ~14 relaciones**  
+- [x] **P-03 — `getAllProducts` con ~14 relaciones**  
+  **Resuelto (Fase 3, 24/09/2026):** listado con `categories` + `stock`; edición carga `GET /product/:id`.  
   **Archivo:** `backend/src/Product/repositories/product.repository.ts` (~L56–84)  
   **Front:** `useProducts` pide `limit=500` (`mejoras.md` ítem 19).  
   **Severidad:** Alta · **Esfuerzo:** M (DTOs livianos / vistas admin vs ordering)
 
-- [ ] **P-04 — `GET /daily-cash` con `limit=1000` + `movements` + `orders` + `payments`**  
+- [x] **P-04 — `GET /daily-cash` con `limit=1000` + `movements` + `orders` + `payments`**  
+  **Resuelto (Fase 3, 24/09/2026):** listado sin esas relaciones; default `limit=100`, tope 200.  
   **Archivos:** `daily-cash.controller.ts` (~L194–195), `daily-cash.repository.ts` (~L24–28)  
   **Severidad:** Alta · **Esfuerzo:** M
 
@@ -273,7 +276,8 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   **Archivo:** `order.repository.ts` (~L38–47) — hoy liviano (solo `table`), pero crece con el día.  
   **Severidad:** Media · **Esfuerzo:** S
 
-- [ ] **P-06 — N+1 en `buildOrderDetailWithToppings` y `updateOrder`**  
+- [x] **P-06 — N+1 en `buildOrderDetailWithToppings` y `updateOrder`**  
+  **Resuelto (Fase 3, 24/09/2026):** productos y toppings precargados con `In`.  
   **Archivos:** `order.repository.ts` (~L246–390), `order.service.ts` (~L168–270)  
   **Severidad:** Alta · **Esfuerzo:** L
 
@@ -285,23 +289,23 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   **Archivo:** `table.repository.ts` (~L155–159)  
   **Severidad:** Media · **Esfuerzo:** S
 
-- [ ] **P-09 — Bug paginación Stock: `@Param` en vez de `@Query`**  
+- [x] **P-09 — Bug paginación Stock: `@Param` en vez de `@Query`**  
+  **Resuelto (Fase 3, 24/09/2026):** `@Query` + `DefaultValuePipe`.  
   **Archivo:** `backend/src/Stock/stock.controller.ts` (~L52–56)  
   **Severidad:** Media · **Esfuerzo:** S
 
-- [ ] **P-10 — `eager: true` oculto**  
+- [x] **P-10 — `eager: true` oculto**  
+  **Resuelto (Fase 3, 24/09/2026):** `dailyCash`, conversiones UoM, `toppingGroup` y `slot.product` pasan a `eager: false` con join explícito.  
   **Archivos:** `order.entity.ts` (dailyCash), `unitOfMesure.entity.ts`, `promotion-slot-option.entity.ts`, etc.  
   **Severidad:** Media · **Esfuerzo:** M
 
 ### 4.3 Transacciones y consistencia
 
-- [ ] **P-11 — Cerrar orden (cobrar) sin transacción**  
-  **Archivo:** `order.repository.ts` (~L54–177) — saves separados de payments / table / order.  
-  **Severidad:** Crítica · **Esfuerzo:** M
+- [x] **P-11 — Cerrar orden (cobrar) sin transacción**  
+  **Resuelto (Fase 3, 24/09/2026):** pagos + mesa + orden en un `QueryRunner`; eventos después del commit.
 
-- [ ] **P-12 — `deductStock` fuera de la transacción de `updateOrder`**  
-  **Archivo:** `order.service.ts` (~L265–270) — rollback de orden no revierte stock.  
-  **Severidad:** Crítica · **Esfuerzo:** M–L
+- [x] **P-12 — `deductStock` fuera de la transacción de `updateOrder`**  
+  **Resuelto (Fase 3, 24/09/2026):** `deductStock` acepta `QueryRunner` (espejo de `restoreStock`); `updateOrder` lo reutiliza.
 
 - [ ] **P-13 — `markOrderAsPendingPayment` y cierre de caja con updates sueltos**  
   **Archivos:** `order.service.ts` (~L643–680), `daily-cash.service.ts` (~L156+)  
@@ -309,7 +313,8 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
 
 ### 4.4 Configuración TypeORM / pool
 
-- [ ] **P-14 — Pool de conexiones sin tuning**  
+- [x] **P-14 — Pool de conexiones sin tuning**  
+  **Resuelto (Fase 3, 24/09/2026):** `DB_POOL_MAX` (default 20).  
   **Archivos:** `backend/config/typeORMconfig.ts`, `app.module.ts`  
   **Problema:** defaults (~10); bajo WS + mozos + caja puede saturar.  
   **Severidad:** Media · **Esfuerzo:** S
@@ -459,16 +464,16 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 **Esfuerzo estimado:** 2–3 días.
 
-### Fase 3 — Performance y consultas
+### Fase 3 — Performance y consultas — **COMPLETADA (código 24/09/2026)**
 
 **Objetivo:** respuesta estable con 2 clientes + caja + stock.
 
-- [ ] P-11 / P-12 — Transacciones en cobro y stock acoplado al pedido
-- [ ] P-01 — Migración de índices
-- [ ] P-03 / P-04 / P-09 — Aligerar listados y arreglar paginación stock
-- [ ] P-06 / P-10 — Reducir N+1 y `eager` innecesarios
-- [ ] P-14 — Tuning de pool
-- [ ] Front: selectores Zustand / `useMemo` en contextos (`mejoras.md` 11–13, 16–17)
+- [x] P-11 / P-12 — Transacciones en cobro y stock acoplado al pedido
+- [x] P-01 — Migración de índices
+- [x] P-03 / P-04 / P-09 — Aligerar listados y arreglar paginación stock
+- [x] P-06 / P-10 — Reducir N+1 y `eager` innecesarios
+- [x] P-14 — Tuning de pool
+- [x] Front: selectores Zustand / `useMemo` en contextos (`mejoras.md` 11–13, 16–17)
 - [ ] Smoke: abrir sala + editar 3 mesas + cobro + listar productos sin demoras notables
 
 **Esfuerzo estimado:** 3–5 días.
@@ -492,8 +497,8 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 2. Con 2 clientes (encargada + mozo), editar una orden abierta actualiza la UI del otro en ≤2 s (o tras resync explícito al reconectar). *(Fase 1 hecha y testeada en LAN)*
 3. Tras reconexión WS no hay handlers duplicados ni sala “perdida”. *(Fase 1 hecha y testeada en LAN)*
 4. Fallo de impresora: pedido/caja no se corrompen; UI responde en ~4 s; hay camino claro de reimpresión. *(Fase 2 hecha; validar smoke LAN)*
-5. Cobro y descuento de stock son atómicos (sin estados a medias). *(Fase 3)*
-6. Listados de productos/caja no traen por defecto miles de filas con relaciones profundas. *(Fase 3)*
+5. Cobro y descuento de stock son atómicos (sin estados a medias). *(Fase 3 hecha; validar smoke LAN)*
+6. Listados de productos/caja no traen por defecto miles de filas con relaciones profundas. *(Fase 3 hecha)*
 
 ---
 
@@ -511,6 +516,8 @@ cd backend && npm test -- --testPathPattern=Real-time
 |---------|-----------|
 | [`backend/src/Real-time/listeners/order-events.listener.spec.ts`](backend/src/Real-time/listeners/order-events.listener.spec.ts) | `orderUpdated`/`printerError` globales; `orderDeleted` con `order` u `orderId`; ticket a sala |
 | [`backend/src/Real-time/broadcast.service.spec.ts`](backend/src/Real-time/broadcast.service.spec.ts) | `broadcast` vs `broadcastToTable` (`table:{id}`) |
+| [`backend/src/Order/repositories/order.repository.spec.ts`](backend/src/Order/repositories/order.repository.spec.ts) | Fase 3: `closeOrder` rollback si falla el save de la orden |
+| [`backend/src/Stock/stock.service.deduct.spec.ts`](backend/src/Stock/stock.service.deduct.spec.ts) | Fase 3: `deductStock` con runner externo no commitea |
 
 ### Frontend (Vitest)
 
@@ -536,7 +543,7 @@ cd frontend && npm test
 
 - Rediseño de UX, facturación fiscal electrónica, multi-sucursal.
 - Benchmarks de carga formales (k6/Artillery): recomendable después de Fase 3.
-- Fase 1.b (stock WS) y Fases 3/4 pendientes. Fase 0 auth HTTP hecha (PR D diferido). Fase 2 impresión hecha (smoke LAN al redeployar). Caja WS (WS-11) hecha.
+- Fase 1.b (stock WS) y Fase 4 pendientes. Fase 0 auth HTTP hecha (PR D diferido). Fase 2 impresión y Fase 3 TX/consultas hechas (smoke LAN al redeployar). Caja WS (WS-11) hecha.
 
 ---
 
@@ -566,7 +573,8 @@ cd frontend && npm test
 | 19/08/2026 | **Fase 0 PR D** | Analizado y **diferido** (Helmet + `forbidNonWhitelisted`) |
 | 24/09/2026 | Conciliación doc | Marcado lo hecho vs código/git |
 | 24/09/2026 | **Fase 2 (código)** | `PRINTER_*` por env; print post-commit; timeout 4s/1 intento; reprint ticket por id; avisos; `.env.example` + checklist LAN |
+| 24/09/2026 | **Fase 3 (código)** | TX cobro/stock; índices; listados livianos; N+1/eager; pool 20; front 11–13 y 16–17 |
 
 ---
 
-*Informe actualizado — 24/09/2026 (Fase 1 + Fase 0 PR A–C + Fase 2 código; PR D diferido; siguiente Fase 3).*
+*Informe actualizado — 24/09/2026 (Fase 1 + Fase 0 PR A–C + Fase 2 + Fase 3 código; PR D diferido; siguiente Fase 4).*

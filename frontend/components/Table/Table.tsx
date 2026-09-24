@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import useTable from "../Hooks/useTable";
 import { useTableStore } from "./useTableStore";
 import { Button } from "@mui/material";
@@ -12,7 +12,6 @@ import { useNameTableForm } from "./useNameTableForm";
 import TableModal from "./TableModal";
 import { TableModalType } from "../Enums/table";
 import { ITable } from "../Interfaces/ITable";
-import { getTableByRoom } from "@/api/tables";
 
 interface TableProps {
   salaId: string;
@@ -34,7 +33,7 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
     handleDelete,
   } = useTable(salaId, setNameTable);
 
-  const { tables, updateTablesByRoom } = useTableStore();
+  const tables = useTableStore((s) => s.tables);
 
   const [filterState, setFilterState] = useState<string | null>(null);
   const { userRoleFromToken } = useAuth();
@@ -47,9 +46,6 @@ const Table: React.FC<TableProps> = ({ salaId, onSelectTable }) => {
   const mesasFiltradas = filterState
     ? tables.filter((table: ITable) => table.state === filterState)
     : tables;
-  useEffect(() => {
-    token && updateTablesByRoom(salaId, token);
-  }, [salaId, token]);
 
   const { selectedRoom } = useRoomContext();
 

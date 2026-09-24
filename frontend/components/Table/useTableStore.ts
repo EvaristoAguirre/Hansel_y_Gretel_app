@@ -35,89 +35,89 @@ interface TableStateZustand {
   updateTablesByRoom: (salaId: string, token: string) => Promise<void>;
 }
 
+let tableListenersBound = false;
+
 export const useTableStore = create<TableStateZustand>((set, get) => {
-  const socket = webSocketService.connect();
+  const bindTableListeners = () => {
+    if (tableListenersBound) return;
+    tableListenersBound = true;
 
-  // Detecta reconexión: el primer "connect" es la conexión inicial; los siguientes son reconexiones.
-  let hasConnectedBefore = false;
+    const socket = webSocketService.connect();
+    let hasConnectedBefore = false;
 
-  socket.on("connect", () => {
-    if (hasConnectedBefore) {
-      // Reconexión WS: invalida la caché de la sala actual y re-fetchea para recuperar
-      // eventos que se hayan perdido durante el corte de conexión.
-      const { currentRoomId, lastUsedToken, updateTablesByRoom } = get();
-      if (currentRoomId && lastUsedToken) {
-        set((s) => {
-          const newByRoom = { ...s.tablesByRoom };
-          delete newByRoom[currentRoomId];
-          return { tablesByRoom: newByRoom };
-        });
-        updateTablesByRoom(currentRoomId, lastUsedToken);
+    socket.on("connect", () => {
+      if (hasConnectedBefore) {
+        const { currentRoomId, lastUsedToken, updateTablesByRoom } = get();
+        if (currentRoomId && lastUsedToken) {
+          set((s) => {
+            const newByRoom = { ...s.tablesByRoom };
+            delete newByRoom[currentRoomId];
+            return { tablesByRoom: newByRoom };
+          });
+          updateTablesByRoom(currentRoomId, lastUsedToken);
+        }
       }
-    }
-    hasConnectedBefore = true;
-    console.log("✅ Conectado a WebSocket - Mesas");
-  });
-
-  webSocketService.on("tableCreated", (data: ITable & { room?: { id: string } }) => {
-    const table = normalizeTablePayload(data);
-    const roomId = (table as any)?.room?.id as string | undefined;
-    set((state) => {
-      const newByRoom = { ...state.tablesByRoom };
-      if (roomId && newByRoom[roomId]) {
-        newByRoom[roomId] = [...newByRoom[roomId], table];
-      }
-      const tables =
-        state.currentRoomId === roomId
-          ? [...state.tables, table]
-          : state.tables;
-      return { tablesByRoom: newByRoom, tables };
+      hasConnectedBefore = true;
+      console.log("✅ Conectado a WebSocket - Mesas");
     });
-  });
 
-  webSocketService.on("tableUpdated", (data: ITable & { room?: { id: string } }) => {
-    const table = normalizeTablePayload(data);
-    const roomId = (table as any)?.room?.id as string | undefined;
-    set((state) => {
-      const newByRoom = { ...state.tablesByRoom };
-
-      // Si el evento no trae room.id (ej. updateTableState), inferirlo buscando
-      // la mesa en el caché de salas para mantener tablesByRoom sincronizado.
-      const effectiveRoomId =
-        roomId ??
-        Object.keys(newByRoom).find((rId) =>
-          newByRoom[rId].some((t) => t.id === table.id)
-        );
-
-      if (effectiveRoomId && newByRoom[effectiveRoomId]) {
-        newByRoom[effectiveRoomId] = newByRoom[effectiveRoomId].map((t) =>
-          t.id === table.id ? { ...t, ...table } : t
-        );
-      }
-
-      const tables =
-        state.currentRoomId === effectiveRoomId
-          ? state.tables.map((t) => (t.id === table.id ? { ...t, ...table } : t))
-          : state.tables;
-
-      return { tablesByRoom: newByRoom, tables };
+    webSocketService.on("tableCreated", (data: ITable & { room?: { id: string } }) => {
+      const table = normalizeTablePayload(data);
+      const roomId = (table as any)?.room?.id as string | undefined;
+      set((state) => {
+        const newByRoom = { ...state.tablesByRoom };
+        if (roomId && newByRoom[roomId]) {
+          newByRoom[roomId] = [...newByRoom[roomId], table];
+        }
+        const tables =
+          state.currentRoomId === roomId
+            ? [...state.tables, table]
+            : state.tables;
+        return { tablesByRoom: newByRoom, tables };
+      });
     });
-  });
 
-  webSocketService.on("tableDeleted", (data: { id: string }) => {
-    set((state) => {
-      const newByRoom: Record<string, ITable[]> = {};
-      for (const [rId, tables] of Object.entries(state.tablesByRoom)) {
-        newByRoom[rId] = tables.filter((t) => t.id !== data.id);
-      }
-      const tables = state.tables.filter((t) => t.id !== data.id);
-      return { tablesByRoom: newByRoom, tables };
+    webSocketService.on("tableUpdated", (data: ITable & { room?: { id: string } }) => {
+      const table = normalizeTablePayload(data);
+      const roomId = (table as any)?.room?.id as string | undefined;
+      set((state) => {
+        const newByRoom = { ...state.tablesByRoom };
+        const effectiveRoomId =
+          roomId ??
+          Object.keys(newByRoom).find((rId) =>
+            newByRoom[rId].some((t) => t.id === table.id)
+          );
+
+        if (effectiveRoomId && newByRoom[effectiveRoomId]) {
+          newByRoom[effectiveRoomId] = newByRoom[effectiveRoomId].map((t) =>
+            t.id === table.id ? { ...t, ...table } : t
+          );
+        }
+
+        const tables =
+          state.currentRoomId === effectiveRoomId
+            ? state.tables.map((t) => (t.id === table.id ? { ...t, ...table } : t))
+            : state.tables;
+
+        return { tablesByRoom: newByRoom, tables };
+      });
     });
-  });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Mesas");
-  });
+    webSocketService.on("tableDeleted", (data: { id: string }) => {
+      set((state) => {
+        const newByRoom: Record<string, ITable[]> = {};
+        for (const [rId, tables] of Object.entries(state.tablesByRoom)) {
+          newByRoom[rId] = tables.filter((t) => t.id !== data.id);
+        }
+        const tables = state.tables.filter((t) => t.id !== data.id);
+        return { tablesByRoom: newByRoom, tables };
+      });
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Desconectado del servidor WebSocket - Mesas");
+    });
+  };
 
   const updateTablesByRoom = async (salaId: string, token: string) => {
     const state = get();
@@ -187,6 +187,7 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
       }),
     connectWebSocket: () => {
       webSocketService.connect();
+      bindTableListeners();
     },
     updateTablesByRoom,
   };

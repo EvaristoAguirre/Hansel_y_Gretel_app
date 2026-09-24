@@ -194,8 +194,8 @@ export class DailyCashController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getAllDailysCash(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(1000), ParseIntPipe)
-    limit: number = 1000,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
   ): Promise<DailyCash[]> {
     return this.dailyCashService.getAllDailyCash(page, limit);
   }

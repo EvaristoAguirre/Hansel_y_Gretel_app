@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   IDailyCash,
@@ -101,11 +101,11 @@ export const DailyCashProvider = ({
     }
   }, [token]);
 
-  const selectedCash = (cash: string) => {
+  const selectedCash = useCallback((cash: string) => {
     setSelectedDailyCashID(cash);
-  };
+  }, []);
 
-  const openCash = async (data: I_DC_Open_Close) => {
+  const openCash = useCallback(async (data: I_DC_Open_Close) => {
     if (!token) return;
     const opened = await openDailyCash(token, data);
     if (opened) {
@@ -115,17 +115,17 @@ export const DailyCashProvider = ({
     }
     await fetchAllCash();
     await checkOpenDaily();
-  };
+  }, [token, fetchAllCash, checkOpenDaily]);
 
-  const closeCash = async (data: I_DC_Open_Close) => {
+  const closeCash = useCallback(async (data: I_DC_Open_Close) => {
     if (!token) return;
     await closeDailyCash(token, selectedDailyCashId!, data);
     Swal.fire('Éxito', 'Caja cerrada correctamente.', 'success');
     await checkOpenDaily();
     await fetchAllCash();
-  };
+  }, [token, selectedDailyCashId, checkOpenDaily, fetchAllCash]);
 
-  const registerMovement = async (data: INewMovement) => {
+  const registerMovement = useCallback(async (data: INewMovement) => {
     if (!token) return;
     const body = {
       dailyCashId: dailyCash?.dailyCashOpenId || '',
@@ -138,7 +138,7 @@ export const DailyCashProvider = ({
     await fetchAllCash();
     await fetchCashSummary();
     return response;
-  };
+  }, [token, dailyCash?.dailyCashOpenId, checkOpenDaily, fetchAllCash, fetchCashSummary]);
 
   useEffect(() => {
     checkOpenDaily();
@@ -164,7 +164,7 @@ export const DailyCashProvider = ({
     };
   }, [token, checkOpenDaily, fetchAllCash]);
 
-  const deleteCash = async (id: string) => {
+  const deleteCash = useCallback(async (id: string) => {
     if (!token) return;
 
     const confirm = await Swal.fire({
@@ -185,26 +185,43 @@ export const DailyCashProvider = ({
         Swal.fire('Error', 'No se pudo eliminar la caja.', 'error');
       }
     }
-  };
+  }, [token, fetchAllCash]);
+
+  const value = useMemo(
+    () => ({
+      allDailyCash,
+      dailyCash,
+      loading,
+      dailyCashSummary,
+      fetchAllCash,
+      checkOpenDaily,
+      selectedCash,
+      openCash,
+      closeCash,
+      registerMovement,
+      fetchCashSummary,
+      deleteCash,
+      isCashOpenToday,
+    }),
+    [
+      allDailyCash,
+      dailyCash,
+      loading,
+      dailyCashSummary,
+      fetchAllCash,
+      checkOpenDaily,
+      selectedCash,
+      openCash,
+      closeCash,
+      registerMovement,
+      fetchCashSummary,
+      deleteCash,
+      isCashOpenToday,
+    ],
+  );
 
   return (
-    <DailyCashContext.Provider
-      value={{
-        allDailyCash,
-        dailyCash,
-        loading,
-        dailyCashSummary,
-        fetchAllCash,
-        checkOpenDaily,
-        selectedCash,
-        openCash,
-        closeCash,
-        registerMovement,
-        fetchCashSummary,
-        deleteCash,
-        isCashOpenToday,
-      }}
-    >
+    <DailyCashContext.Provider value={value}>
       {children}
     </DailyCashContext.Provider>
   );

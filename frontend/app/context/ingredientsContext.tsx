@@ -1,6 +1,6 @@
 'use client';
 import { Iingredient } from '@/components/Interfaces/Ingredients';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import {
   createIngredient,
@@ -99,7 +99,7 @@ const IngredientsProvider = ({
     }
   };
 
-  const updateIngredient = (ingredient: Iingredient) => {
+  const updateIngredient = useCallback((ingredient: Iingredient) => {
     setIngredientsAndToppings((prevIngredients) =>
       prevIngredients.map((prevIngredient) =>
         prevIngredient.id === ingredient.id ? ingredient : prevIngredient
@@ -113,7 +113,7 @@ const IngredientsProvider = ({
         )
       );
     }
-  };
+  }, []);
 
   const removeIngredient = (id: string) => {
     setIngredientsAndToppings((prevIngredients) =>
@@ -126,7 +126,7 @@ const IngredientsProvider = ({
     }
   };
 
-  const handleCreateIngredient = async () => {
+  const handleCreateIngredient = useCallback(async () => {
     const token = getAccessToken();
     if (!token) return;
     try {
@@ -147,9 +147,9 @@ const IngredientsProvider = ({
       Swal.fire('Error', 'No se pudo crear el ingrediente.', 'error');
       console.error(error);
     }
-  };
+  }, [formIngredients, getAccessToken]);
 
-  const handleEditIngredient = async () => {
+  const handleEditIngredient = useCallback(async () => {
     const token = getAccessToken();
     if (!token) return;
     try {
@@ -173,9 +173,9 @@ const IngredientsProvider = ({
       Swal.fire('Error', 'No se pudo editar el ingrediente.', 'error');
       console.error(error);
     }
-  };
+  }, [formIngredients, getAccessToken, updateIngredient]);
 
-  const handleDeleteIngredient = async (id: string) => {
+  const handleDeleteIngredient = useCallback(async (id: string) => {
     const token = getAccessToken();
     if (!token) return;
 
@@ -200,8 +200,9 @@ const IngredientsProvider = ({
         console.error(error);
       }
     }
-  };
-  const handleCloseForm = () => {
+  }, [getAccessToken]);
+
+  const handleCloseForm = useCallback(() => {
     setFormOpen(false);
     setFormIngredients({
       id: '',
@@ -212,26 +213,40 @@ const IngredientsProvider = ({
       stock: null,
       type: null,
     });
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      formIngredients,
+      formOpen,
+      formType,
+      ingredients,
+      ingredientsAndToppings,
+      updateIngredient,
+      setFormIngredients,
+      setFormOpen,
+      setFormType,
+      handleDeleteIngredient,
+      handleCreateIngredient,
+      handleEditIngredient,
+      handleCloseForm,
+    }),
+    [
+      formIngredients,
+      formOpen,
+      formType,
+      ingredients,
+      ingredientsAndToppings,
+      updateIngredient,
+      handleDeleteIngredient,
+      handleCreateIngredient,
+      handleEditIngredient,
+      handleCloseForm,
+    ],
+  );
 
   return (
-    <IngredientsContext.Provider
-      value={{
-        formIngredients,
-        formOpen,
-        formType,
-        ingredients,
-        ingredientsAndToppings,
-        updateIngredient,
-        setFormIngredients,
-        setFormOpen,
-        setFormType,
-        handleDeleteIngredient,
-        handleCreateIngredient,
-        handleEditIngredient,
-        handleCloseForm,
-      }}
-    >
+    <IngredientsContext.Provider value={value}>
       {children}
     </IngredientsContext.Provider>
   );
