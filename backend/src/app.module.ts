@@ -52,6 +52,7 @@ import { MonitoringModule } from './Monitoring/monitoring-logger.module';
           schema: dbConfig.schema,
           entities: dbConfig.entities,
           migrations: dbConfig.migrations,
+          extra: dbConfig.extra,
         };
       },
     }),

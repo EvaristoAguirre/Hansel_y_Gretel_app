@@ -3,6 +3,8 @@ import * as path from 'path';
 import { DataSource } from 'typeorm';
 import 'dotenv/config';
 
+const poolMax = Number(process.env.DB_POOL_MAX) || 20;
+
 export default registerAs('typeorm', () => ({
   type: 'postgres',
   host: process.env.DB_HOST,
@@ -17,6 +19,7 @@ export default registerAs('typeorm', () => ({
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
+  extra: { max: poolMax },
 
   // migrationsRun: true, // para activar las migraciones automáticamente al iniciar la aplicación
 }));
@@ -32,4 +35,5 @@ export const connectionSource = new DataSource({
   migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
   schema: 'public',
   logging: ['error', 'warn'],
+  extra: { max: poolMax },
 });

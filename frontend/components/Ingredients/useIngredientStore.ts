@@ -6,50 +6,56 @@ import {
 } from '../Interfaces/IIngredients';
 import { webSocketService } from '@/services/websocket.service';
 
+let ingredientListenersBound = false;
+
 export const useIngredientStore = create<IngredientState>((set) => {
-  // Conectar al servicio centralizado de WebSocket
-  const socket = webSocketService.connect();
+  const bindIngredientListeners = () => {
+    if (ingredientListenersBound) return;
+    ingredientListenersBound = true;
 
-  socket.on('connect', () => {
-    console.log('✅ Conectado a WebSocket - Ingredientes');
-  });
+    const socket = webSocketService.connect();
 
-  webSocketService.on('ingredientCreated', (data) => {
-    set((state) => {
-      const exists = state.ingredients.some(
-        (ingredient) => ingredient.id === data.id
-      );
-      if (!exists) {
-        const parsedIngredient: IngredientCreated = {
-          ...data,
-          unitOfMeasure: data.unitOfMeasure ?? null,
-          stock: data.stock ?? null,
-        };
-        return { ingredients: [...state.ingredients, parsedIngredient] };
-      }
-      return state;
+    socket.on('connect', () => {
+      console.log('✅ Conectado a WebSocket - Ingredientes');
     });
-  });
 
-  webSocketService.on('ingredientUpdated', (data) => {
-    set((state) => ({
-      ingredients: state.ingredients.map((ingredient) =>
-        ingredient.id === data.id ? data : ingredient
-      ),
-    }));
-  });
+    webSocketService.on('ingredientCreated', (data) => {
+      set((state) => {
+        const exists = state.ingredients.some(
+          (ingredient) => ingredient.id === data.id
+        );
+        if (!exists) {
+          const parsedIngredient: IngredientCreated = {
+            ...data,
+            unitOfMeasure: data.unitOfMeasure ?? null,
+            stock: data.stock ?? null,
+          };
+          return { ingredients: [...state.ingredients, parsedIngredient] };
+        }
+        return state;
+      });
+    });
 
-  webSocketService.on('ingredientDeleted', (data) => {
-    set((state) => ({
-      ingredients: state.ingredients.filter(
-        (ingredient) => ingredient.id !== data.id
-      ),
-    }));
-  });
+    webSocketService.on('ingredientUpdated', (data) => {
+      set((state) => ({
+        ingredients: state.ingredients.map((ingredient) =>
+          ingredient.id === data.id ? data : ingredient
+        ),
+      }));
+    });
 
-  socket.on('disconnect', () => {
-    console.log('❌ Desconectado del servidor WebSocket - Ingredientes');
-  });
+    webSocketService.on('ingredientDeleted', (data) => {
+      set((state) => ({
+        ingredients: state.ingredients.filter(
+          (ingredient) => ingredient.id !== data.id
+        ),
+      }));
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Desconectado del servidor WebSocket - Ingredientes');
+    });
+  };
 
   return {
     ingredients: [],
@@ -81,8 +87,8 @@ export const useIngredientStore = create<IngredientState>((set) => {
       }));
     },
     connectWebSocket: () => {
-      // La conexión se establece automáticamente al cargar el store
       webSocketService.connect();
+      bindIngredientListeners();
     },
   };
 });

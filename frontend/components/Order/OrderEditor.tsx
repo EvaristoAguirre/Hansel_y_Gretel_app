@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import { Box } from '@mui/system';
 import { useOrderContext } from '../../app/context/order.context';
-import '../../styles/pedidoEditor.css';
+// import '../../styles/pedidoEditor.css';
 import { useProducts } from '../Hooks/useProducts';
 import useOrder from '../Hooks/useOrder';
 import LoadingLottie from '../Loader/Loading';
@@ -49,6 +49,7 @@ import { PromotionSlotSelector } from './PromotionSlotSelector';
 import { getSlotsByPromotionId } from '@/api/promotionSlot';
 import { newOrderLineId } from '../Utils/newOrderLineId';
 import { cancelOrderDetail, reprintComanda } from '@/api/order';
+import Swal from 'sweetalert2';
 // import ToppingsGroupsViewer from "./ToppingsSection.tsx/ToppingsGroupsViewer";
 
 export interface Product {
@@ -135,6 +136,12 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       await reprintComanda(selectedOrderByTable.id, token);
     } catch (error) {
       console.error('Error al reimprimir comanda:', error);
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Impresora no disponible',
+        text: 'No se pudo reimprimir la comanda. El pedido sigue guardado. Intentá de nuevo cuando la impresora esté lista.',
+        confirmButtonText: 'Entendido',
+      });
     } finally {
       setIsPrintingComanda(false);
     }
@@ -149,9 +156,9 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       const toppingsPerUnit =
         rawToppings.length > 0
           ? Array.from(
-              { length: product.quantity },
-              (_, i) => rawToppings[i] ?? [],
-            )
+            { length: product.quantity },
+            (_, i) => rawToppings[i] ?? [],
+          )
           : [];
 
       const draftComment =
@@ -1043,10 +1050,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
         promotion={
           promotionSlotModal.promotion
             ? {
-                id: promotionSlotModal.promotion.id,
-                name: promotionSlotModal.promotion.name,
-                price: parseFloat(promotionSlotModal.promotion.price),
-              }
+              id: promotionSlotModal.promotion.id,
+              name: promotionSlotModal.promotion.name,
+              price: parseFloat(promotionSlotModal.promotion.price),
+            }
             : { id: '', name: '', price: 0 }
         }
         quantity={promotionSlotModal.quantity}
@@ -1199,7 +1206,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
                           item,
                           item.quantity,
                           toppingsByProductGroup[
-                            item.internalId ?? item.productId
+                          item.internalId ?? item.productId
                           ] ?? [],
                         )}
                       </Typography>

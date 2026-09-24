@@ -8,12 +8,14 @@ import { ToppingsGroup } from './toppings-group.entity';
 import { Ingredient } from 'src/Ingredient/ingredient.entity';
 import { ToppingsGroupsService } from './toppings-group.service';
 import { ToppingsGroupRepository } from './toppings-group.repository';
+import { UserModule } from 'src/User/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ToppingsGroup, Product, Ingredient]),
     ProductModule,
     IngredientModule,
+    UserModule,
   ],
   controllers: [ToppingsGroupsController],
   providers: [ToppingsGroupsService, ToppingsGroupRepository],

@@ -9,7 +9,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  use,
 } from "react";
 import Swal from "sweetalert2";
 import {
@@ -29,6 +28,10 @@ import { TableState } from "@/components/Enums/table";
 import { OrderState } from "@/components/Enums/order";
 import { editTable } from "@/api/tables";
 import { webSocketService } from "@/services/websocket.service";
+import {
+  markPrinterAlertShown,
+  wasPrinterAlertShown,
+} from "@/lib/printerAlertGuard";
 import { newOrderLineId } from "@/components/Utils/newOrderLineId";
 
 type OrderContextType = {
@@ -130,8 +133,12 @@ const OrderProvider = ({
   const { getAccessToken } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
-  const { tables } = useTableStore();
-  const { orders, addOrder, updateOrder, removeOrder } = useOrderStore();
+  const tables = useTableStore((s) => s.tables);
+  const orders = useOrderStore((s) => s.orders);
+  const addOrder = useOrderStore((s) => s.addOrder);
+  const updateOrder = useOrderStore((s) => s.updateOrder);
+  const removeOrder = useOrderStore((s) => s.removeOrder);
+  const connectOrderStore = useOrderStore((s) => s.connectWebSocket);
   const { selectedTable, setSelectedTable, handleSelectTable } =
     useRoomContext();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductsI[]>(
@@ -181,13 +188,13 @@ const OrderProvider = ({
       setToken(token);
     }
 
-    // Asegurar que el WebSocket esté conectado
     try {
       webSocketService.connect();
+      connectOrderStore();
     } catch (error) {
       console.error("Error al conectar WebSocket:", error);
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, connectOrderStore]);
 
   // Rastrea el ID de la mesa anterior para distinguir entre cambio de mesa
   // (requiere reset completo) vs. cambio de estado de la misma mesa (no requiere reset).
@@ -266,17 +273,27 @@ const OrderProvider = ({
 
     // Obtener orderId: primero desde tabla del store, luego desde orders store.
     // Eliminado el doble-fetch a GET /order?tableId= que generaba cascada de requests.
+    // Defensa: por WS a veces orders llega como entidades { id } en lugar de UUID[].
     let orderId: string | undefined;
     const tableWithOrders = updatedTable || currentSelectedTable;
+
+    const resolveOrderId = (raw: unknown): string | undefined => {
+      if (typeof raw === "string" && raw.length > 0) return raw;
+      if (raw && typeof raw === "object" && "id" in raw) {
+        const id = (raw as { id?: unknown }).id;
+        return typeof id === "string" ? id : undefined;
+      }
+      return undefined;
+    };
 
     if (tableWithOrders?.orders && tableWithOrders.orders.length > 0) {
       if (tableWithOrders.orders.length > 1) {
         console.warn(
           `[OrderContext] La mesa ${tableWithOrders.id} tiene ${tableWithOrders.orders.length} órdenes activas. ` +
-          `Se carga la primera (${tableWithOrders.orders[0]}). Revisar consistencia en base de datos.`
+            `Se carga la primera. Revisar consistencia en base de datos.`
         );
       }
-      orderId = tableWithOrders.orders[0];
+      orderId = resolveOrderId(tableWithOrders.orders[0]);
     } else {
       const orderInStore = currentOrders.find(
         (o) => o.table?.id === currentSelectedTable.id
@@ -339,7 +356,12 @@ const OrderProvider = ({
       if (err instanceof Error && err.message === "TIMEOUT") {
         Swal.fire("Sin respuesta", "El servidor no respondió. Reintentá en un momento.", "warning");
       } else {
-        console.error("Error al obtener el pedido:", err);
+        // Mensaje string: evita que Next.js muestre overlay de "Unhandled Runtime Error"
+        // al loguear un Error lanzado por apiFetch (ej. HTTP 400).
+        console.error(
+          "Error al obtener el pedido:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
       setSelectedOrderByTable(null);
       setConfirmedProducts([]);
@@ -493,32 +515,53 @@ const OrderProvider = ({
   };
 
   // Listeners de WebSocket registrados UNA SOLA VEZ al montar el provider.
-  // Usan refs para acceder al estado actual sin requerir ser re-registrados,
-  // eliminando la "ventana ciega" que ocurría al desregistrar/re-registrar
-  // en cada cambio de orders, tables, selectedTable, etc.
+  // Usan refs para acceder al estado actual sin requerir ser re-registrados.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const socket = webSocketService.connect();
+    webSocketService.connect();
 
-    const handleTicketPrinted = async (data: any) => {
-      // No interrumpir la vista de cobro con actualizaciones externas
-      if (isPaymentInProgressRef.current) return;
-
-      const orderData = data.order || data;
-      const orderId = orderData.id;
-      const orderTableId = orderData.table?.id || orderData.tableId;
-
+    const orderBelongsToSelectedTable = (
+      orderId: string | undefined,
+      orderTableId: string | undefined
+    ) => {
       const currentSelectedTable = selectedTableRef.current;
       const currentSelectedOrderByTable = selectedOrderByTableRef.current;
+      return (
+        (!!orderId && currentSelectedOrderByTable?.id === orderId) ||
+        (!!orderTableId && currentSelectedTable?.id === orderTableId) ||
+        (!!orderId && !!currentSelectedTable?.orders?.includes(orderId))
+      );
+    };
+
+    const applyFullOrderToSelectedUi = (fullOrderData: IOrderDetails) => {
+      setSelectedOrderByTable({
+        ...fullOrderData,
+        state: fullOrderData.state || OrderState.OPEN,
+      });
+
+      if (fullOrderData.products && fullOrderData.products.length > 0) {
+        const adaptedProducts: SelectedProductsI[] = fullOrderData.products.map(
+          (product: any) => ({
+            detailId: product.detailId,
+            productId: product.productId,
+            productName: product.productName,
+            quantity: product.quantity,
+            unitaryPrice:
+              product.unitaryPrice != null ? String(product.unitaryPrice) : null,
+            commentOfProduct: product.commentOfProduct || null,
+            allowsToppings: product.allowsToppings,
+          })
+        );
+        handleSetProductsByOrder(adaptedProducts);
+      } else {
+        setConfirmedProducts([]);
+      }
+    };
+
+    const refetchOrderForSelectedTable = async (orderId: string) => {
       const currentToken = tokenRef.current;
-
-      const belongsToSelectedTable =
-        currentSelectedOrderByTable?.id === orderId ||
-        currentSelectedTable?.id === orderTableId ||
-        currentSelectedTable?.orders?.includes(orderId);
-
-      if (!belongsToSelectedTable || !currentToken) return;
+      if (!orderId || !currentToken) return;
 
       try {
         const response = await fetch(`${URI_ORDER}/${orderId}`, {
@@ -527,45 +570,30 @@ const OrderProvider = ({
         });
 
         if (!response.ok) {
-          console.error("Error en respuesta orderTicketPrinted:", response.status);
+          console.error("Error al refetch de orden:", response.status);
           return;
         }
 
         const fullOrderData: IOrderDetails = await response.json();
-
-        // Reutilizar la misma condición del filtro inicial para decidir si actualizar
-        const shouldUpdate = belongsToSelectedTable;
-
-        if (shouldUpdate) {
-          const newState =
-            fullOrderData.state === OrderState.PENDING_PAYMENT
-              ? OrderState.PENDING_PAYMENT
-              : fullOrderData.state || OrderState.PENDING_PAYMENT;
-          setSelectedOrderByTable({ ...fullOrderData, state: newState });
-        }
-
-        if (fullOrderData.products && fullOrderData.products.length > 0 && shouldUpdate) {
-          const adaptedProducts: SelectedProductsI[] = fullOrderData.products.map(
-            (product: any) => ({
-              detailId: product.detailId,
-              productId: product.productId,
-              productName: product.productName,
-              quantity: product.quantity,
-              unitaryPrice:
-                product.unitaryPrice != null ? String(product.unitaryPrice) : null,
-              commentOfProduct: product.commentOfProduct || null,
-              allowsToppings: product.allowsToppings,
-            })
-          );
-          handleSetProductsByOrder(adaptedProducts);
-        }
+        applyFullOrderToSelectedUi(fullOrderData);
       } catch (error) {
         console.error("Error al obtener la orden actualizada:", error);
       }
     };
 
+    const handleOrderSyncEvent = async (data: any) => {
+      if (isPaymentInProgressRef.current) return;
+
+      const orderData = data.order || data;
+      const orderId = orderData.id;
+      const orderTableId = orderData.table?.id || orderData.tableId;
+
+      if (!orderBelongsToSelectedTable(orderId, orderTableId) || !orderId) return;
+
+      await refetchOrderForSelectedTable(orderId);
+    };
+
     const handleOrderClosed = (data: any) => {
-      // No interrumpir la vista de cobro con actualizaciones externas
       if (isPaymentInProgressRef.current) return;
 
       const orderData = data.order || data;
@@ -593,11 +621,10 @@ const OrderProvider = ({
     };
 
     const handleOrderDeleted = async (data: any) => {
-      // No interrumpir la vista de cobro con actualizaciones externas
       if (isPaymentInProgressRef.current) return;
 
       const orderData = data.order || data;
-      const orderId = orderData.id;
+      const orderId = orderData.id || data.orderId || data.id;
       const orderTableId = orderData.table?.id || orderData.tableId;
 
       const currentSelectedTable = selectedTableRef.current;
@@ -606,7 +633,7 @@ const OrderProvider = ({
       const currentToken = tokenRef.current;
 
       let tableId = orderTableId;
-      if (!tableId) {
+      if (!tableId && orderId) {
         const orderInStore = currentOrders.find((o) => o.id === orderId);
         tableId = orderInStore?.table?.id;
       }
@@ -616,8 +643,8 @@ const OrderProvider = ({
       const belongsToSelectedTable =
         currentSelectedTable?.id === tableId ||
         currentSelectedOrderByTable?.id === orderId ||
-        currentSelectedTable?.orders?.includes(orderId) ||
-        currentOrders.some((o) => o.id === orderId) ||
+        (!!orderId && !!currentSelectedTable?.orders?.includes(orderId)) ||
+        (!!orderId && currentOrders.some((o) => o.id === orderId)) ||
         !!tableInStore;
 
       if (!belongsToSelectedTable) return;
@@ -634,7 +661,10 @@ const OrderProvider = ({
         if (currentSelectedTable && currentSelectedTable.id === tableId) {
           const updatedTable = {
             ...currentSelectedTable,
-            orders: currentSelectedTable.orders?.filter((oId: string) => oId !== orderId) || [],
+            orders:
+              currentSelectedTable.orders?.filter(
+                (oId: string) => oId !== orderId
+              ) || [],
             state: TableState.AVAILABLE,
           } as ITable;
           setSelectedTable(updatedTable);
@@ -643,7 +673,9 @@ const OrderProvider = ({
         if (tableInStore) {
           const finalUpdatedTable = {
             ...tableInStore,
-            orders: tableInStore.orders?.filter((oId: string) => oId !== orderId) || [],
+            orders:
+              tableInStore.orders?.filter((oId: string) => oId !== orderId) ||
+              [],
             state: TableState.AVAILABLE,
           } as ITable;
           updateTable(finalUpdatedTable);
@@ -655,15 +687,17 @@ const OrderProvider = ({
           if (!roomId) return;
 
           try {
-            const response = await fetch(
-              `${URI_TABLE}/by-room/${roomId}`,
-              { method: "GET", headers: { Authorization: `Bearer ${currentToken}` } }
-            );
+            const response = await fetch(`${URI_TABLE}/by-room/${roomId}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${currentToken}` },
+            });
             if (response.ok) {
               const tableData = await response.json();
               const updatedTable = {
                 ...tableData,
-                orders: tableData.orders?.filter((oId: string) => oId !== orderId) || [],
+                orders:
+                  tableData.orders?.filter((oId: string) => oId !== orderId) ||
+                  [],
                 state: TableState.AVAILABLE,
               } as ITable;
               updateTable(updatedTable);
@@ -678,31 +712,79 @@ const OrderProvider = ({
       }
     };
 
-    const registerListeners = () => {
-      if (webSocketService.isConnected()) {
-        webSocketService.on("orderTicketPrinted", handleTicketPrinted);
-        webSocketService.on("orderUpdatedPending", handleTicketPrinted);
-        webSocketService.on("orderDeleted", handleOrderDeleted);
-        webSocketService.on("orderUpdatedClose", handleOrderClosed);
-      } else {
-        socket.once("connect", () => {
-          webSocketService.on("orderTicketPrinted", handleTicketPrinted);
-          webSocketService.on("orderUpdatedPending", handleTicketPrinted);
-          webSocketService.on("orderDeleted", handleOrderDeleted);
-          webSocketService.on("orderUpdatedClose", handleOrderClosed);
+    const handlePrinterError = (data: any) => {
+      const orderData = data?.order || data;
+      const orderId = orderData?.id;
+      const orderTableId = orderData?.table?.id || orderData?.tableId;
+      const message =
+        data?.message ||
+        "El pedido quedó guardado, pero no se pudo imprimir. Usá Reimprimir comanda o Reimprimir ticket.";
+
+      if (!orderBelongsToSelectedTable(orderId, orderTableId)) return;
+      if (wasPrinterAlertShown(orderId)) return;
+
+      markPrinterAlertShown(orderId);
+      Swal.fire({
+        icon: "warning",
+        title: "Impresora no disponible",
+        text: message,
+      });
+    };
+
+    const handleReconnect = async () => {
+      const tableId = selectedTableRef.current?.id;
+      if (tableId) {
+        webSocketService.joinTable(tableId);
+      }
+
+      if (isPaymentInProgressRef.current) return;
+
+      const currentToken = tokenRef.current;
+      if (!currentToken) return;
+
+      try {
+        const activeResponse = await fetch(`${URI_ORDER}/active`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${currentToken}` },
         });
+        if (activeResponse.ok) {
+          const activeOrders = await activeResponse.json();
+          useOrderStore.getState().setOrders(activeOrders);
+        }
+      } catch (error) {
+        console.error("Error al resync de órdenes activas:", error);
+      }
+
+      const selectedOrderId = selectedOrderByTableRef.current?.id;
+      if (selectedOrderId) {
+        await refetchOrderForSelectedTable(selectedOrderId);
       }
     };
 
-    registerListeners();
+    const domainEvents = [
+      ["orderTicketPrinted", handleOrderSyncEvent],
+      ["orderUpdatedPending", handleOrderSyncEvent],
+      ["orderUpdated", handleOrderSyncEvent],
+      ["orderCreated", handleOrderSyncEvent],
+      ["orderDeleted", handleOrderDeleted],
+      ["orderUpdatedClose", handleOrderClosed],
+      ["printerError", handlePrinterError],
+    ] as const;
+
+    domainEvents.forEach(([event, handler]) => {
+      webSocketService.on(event, handler);
+    });
+    webSocketService.onReconnect(handleReconnect);
 
     return () => {
-      webSocketService.off("orderTicketPrinted", handleTicketPrinted);
-      webSocketService.off("orderUpdatedPending", handleTicketPrinted);
-      webSocketService.off("orderDeleted", handleOrderDeleted);
-      webSocketService.off("orderUpdatedClose", handleOrderClosed);
+      domainEvents.forEach(([event, handler]) => {
+        webSocketService.off(event, handler);
+      });
+      webSocketService.offReconnect(handleReconnect);
     };
-  }, []); // Sin dependencias: se registra una sola vez al montar y usa refs para el estado actual.
+    // Intencional: una sola suscripción al montar; el estado vivo va por refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDeleteSelectedProduct = (lineId: string) => {
     setSelectedProducts((prev) => prev.filter((p) => p.internalId !== lineId));
@@ -906,9 +988,10 @@ const OrderProvider = ({
       clearToppings();
 
       if (updatedOrder.comandaWarning) {
+        markPrinterAlertShown(updatedOrder.id);
         await Swal.fire({
           title: "Impresora no disponible",
-          text: "El pedido fue confirmado correctamente, pero la comanda no pudo imprimirse. Avisá a cocina de forma manual.",
+          text: updatedOrder.comandaWarning,
           icon: "warning",
           confirmButtonText: "Entendido",
         });

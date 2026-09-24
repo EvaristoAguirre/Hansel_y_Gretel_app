@@ -24,6 +24,7 @@ import { normalizeNumber } from "../Utils/NormalizeNumber";
 import { formatNumber } from "../Utils/FormatNumber";
 import { UserRole } from "../Enums/user";
 import LoadingLottie from "../Loader/Loading";
+import { markPrinterAlertShown } from "@/lib/printerAlertGuard";
 
 export interface OrderProps {
   imprimirComanda: any;
@@ -102,9 +103,10 @@ const Order: React.FC<OrderProps> = ({
         }
 
         if (ordenPendingPay.printerWarning) {
+          markPrinterAlertShown(ordenPendingPay.id);
           await Swal.fire({
             title: "Impresora no disponible",
-            text: `${ordenPendingPay.printerWarning}. El ticket no fue impreso, pero la cuenta quedó registrada. Podés reimprimirlo cuando la impresora esté lista.`,
+            text: ordenPendingPay.printerWarning,
             icon: "warning",
             confirmButtonText: "Entendido",
           });
@@ -130,7 +132,7 @@ const Order: React.FC<OrderProps> = ({
       console.error("handlePayOrder:", error?.message);
       Swal.fire({
         title: "Impresora no disponible",
-        text: "No se pudo imprimir el ticket. La cuenta quedó registrada correctamente. Podés reimprimirlo cuando la impresora esté lista.",
+        text: "La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.",
         icon: "warning",
         confirmButtonText: "Entendido",
       });
@@ -139,39 +141,33 @@ const Order: React.FC<OrderProps> = ({
     }
   };
 
-  const handleReprintOrder = async (selectedTable: ITable) => {
+  const handleReprintOrder = async (_selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
     setIsPrinting(true);
     try {
       if (selectedOrderByTable) {
-        const ordenPendingPay = await orderToReprint(selectedOrderByTable.id, token);
+        const reprintResult = await orderToReprint(
+          selectedOrderByTable.id,
+          token
+        );
 
-        setSelectedOrderByTable(ordenPendingPay);
-        setOrderSelectedTable(ordenPendingPay.id);
-        addOrder(ordenPendingPay);
-
-        if (ordenPendingPay.products) {
-          setConfirmedProducts(expandOrderProducts(ordenPendingPay.products));
+        if (reprintResult?.printerWarning) {
+          markPrinterAlertShown(selectedOrderByTable.id);
+          await Swal.fire({
+            title: "Impresora no disponible",
+            text: reprintResult.printerWarning,
+            icon: "warning",
+            confirmButtonText: "Entendido",
+          });
         }
       }
-
-      const tableEdited = await editTable(
-        { ...selectedTable, state: TableState.PENDING_PAYMENT },
-        token
-      );
-      if (tableEdited) {
-        setSelectedTable({ ...selectedTable, state: tableEdited.state });
-        updateTable(tableEdited);
-      }
-      handleCompleteStep();
-      handleNextStep();
     } catch (error: any) {
       console.error("handleReprintOrder:", error?.message);
       Swal.fire({
         title: "Impresora no disponible",
-        text: "No se pudo conectar con la impresora. Intentá de nuevo en unos segundos.",
+        text: "No se pudo reimprimir el ticket. La cuenta sigue registrada. Intentá de nuevo cuando la impresora esté lista.",
         icon: "warning",
         confirmButtonText: "Cerrar",
       });

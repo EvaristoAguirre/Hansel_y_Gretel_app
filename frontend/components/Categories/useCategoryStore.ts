@@ -11,37 +11,43 @@ interface CategoryState {
   connectWebSocket: () => void;
 }
 
+let categoryListenersBound = false;
+
 export const useCategoryStore = create<CategoryState>((set) => {
-  // Conectar al servicio centralizado de WebSocket
-  const socket = webSocketService.connect();
+  const bindCategoryListeners = () => {
+    if (categoryListenersBound) return;
+    categoryListenersBound = true;
 
-  socket.on("connect", () => {
-    console.log("✅ Conectado a WebSocket - Categorías");
-  });
+    const socket = webSocketService.connect();
 
-  webSocketService.on("categoryCreated", (data) => {
-    set((state) => ({ categories: [...state.categories, data] }));
-  });
+    socket.on("connect", () => {
+      console.log("✅ Conectado a WebSocket - Categorías");
+    });
 
-  webSocketService.on("categoryUpdated", (data) => {
-    set((state) => ({
-      categories: state.categories.map((category) =>
-        category.id === data.id ? data : category
-      ),
-    }));
-  });
+    webSocketService.on("categoryCreated", (data) => {
+      set((state) => ({ categories: [...state.categories, data] }));
+    });
 
-  webSocketService.on("categoryDeleted", (data) => {
-    set((state) => ({
-      categories: state.categories.filter(
-        (category) => category.id === data.id
-      ),
-    }));
-  });
+    webSocketService.on("categoryUpdated", (data) => {
+      set((state) => ({
+        categories: state.categories.map((category) =>
+          category.id === data.id ? data : category
+        ),
+      }));
+    });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Desconectado del servidor WebSocket - Categorías");
-  });
+    webSocketService.on("categoryDeleted", (data) => {
+      set((state) => ({
+        categories: state.categories.filter(
+          (category) => category.id !== data.id
+        ),
+      }));
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Desconectado del servidor WebSocket - Categorías");
+    });
+  };
 
   return {
     categories: [],
@@ -59,8 +65,8 @@ export const useCategoryStore = create<CategoryState>((set) => {
         ),
       })),
     connectWebSocket: () => {
-      // La conexión se establece automáticamente al cargar el store
       webSocketService.connect();
+      bindCategoryListeners();
     },
   };
 });

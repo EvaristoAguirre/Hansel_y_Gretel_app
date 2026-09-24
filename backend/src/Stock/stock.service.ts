@@ -314,6 +314,55 @@ export class StockService {
     quantity: number,
     toppingsPerUnit?: string[][],
     promotionSelections?: PromotionSelectionDto[],
+    queryRunner?: QueryRunner,
+  ) {
+    const isExternal = !!queryRunner;
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+
+    if (!isExternal) {
+      await qr.connect();
+      await qr.startTransaction();
+    }
+
+    try {
+      await this.deductStockCore(
+        productId,
+        quantity,
+        toppingsPerUnit,
+        promotionSelections,
+        qr,
+      );
+
+      if (!isExternal) {
+        await qr.commitTransaction();
+      }
+
+      this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
+      return 'Stock deducted successfully.';
+    } catch (error) {
+      if (!isExternal) {
+        await qr.rollbackTransaction();
+      }
+      this.logger.error('[deductStock]', error);
+      throw error;
+    } finally {
+      if (!isExternal) {
+        await qr.release();
+      }
+    }
+  }
+
+  /**
+   * Núcleo de deducción. Siempre corre sobre el QueryRunner recibido
+   * (propio o externo) para que updateOrder y las promociones recursivas
+   * participen en la misma transacción.
+   */
+  private async deductStockCore(
+    productId: string,
+    quantity: number,
+    toppingsPerUnit: string[][] | undefined,
+    promotionSelections: PromotionSelectionDto[] | undefined,
+    qr: QueryRunner,
   ) {
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
@@ -331,37 +380,32 @@ export class StockService {
     }
 
     if (product.type === 'simple') {
-      await this.deductSimpleStock(product, quantity, unidadId);
+      await this.deductSimpleStock(product, quantity, unidadId, qr);
     } else if (product.type === 'product') {
-      await this.deductCompositeStock(product, quantity);
+      await this.deductCompositeStock(product, quantity, qr);
     } else if (product.type === 'promotion') {
-      // Si hay selecciones, usar el nuevo método con slots
       if (promotionSelections && promotionSelections.length > 0) {
         await this.deductPromotionStockWithSelections(
           product,
           quantity,
           promotionSelections,
+          qr,
         );
       } else {
-        // Fallback: usar método legacy para promociones sin slots
-        // (mantener compatibilidad temporal durante migración)
-        await this.deductPromotionStockLegacy(product, quantity);
+        await this.deductPromotionStockLegacy(product, quantity, qr);
       }
     }
 
     if (toppingsPerUnit?.length) {
-      await this.deductToppingsStock(toppingsPerUnit, quantity, product);
+      await this.deductToppingsStock(toppingsPerUnit, quantity, product, qr);
     }
-
-    this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
-
-    return 'Stock deducted successfully.';
   }
 
   private async deductSimpleStock(
     product: Product,
     quantity: number,
     unidadId: string,
+    qr: QueryRunner,
   ) {
     if (!product.stock) {
       throw new BadRequestException(
@@ -384,23 +428,28 @@ export class StockService {
     }
 
     product.stock.quantityInStock -= quantityToDeduct;
-    await this.stockRepository.saveStock(product.stock);
+    await qr.manager.save(product.stock);
   }
 
-  private async deductCompositeStock(product: Product, quantity: number) {
+  private async deductCompositeStock(
+    product: Product,
+    quantity: number,
+    qr: QueryRunner,
+  ) {
     for (const pi of product.productIngredients) {
       await this.deductIngredientStock(
         pi.ingredient.id,
         pi.quantityOfIngredient * quantity,
         pi.unitOfMeasure.id,
+        qr,
       );
     }
   }
 
-  // Renombrar método antiguo para claridad
   private async deductPromotionStockLegacy(
     promotion: Product,
     quantity: number,
+    qr: QueryRunner,
   ) {
     const promotionProducts =
       await this.productService.getPromotionProductsToAnotherService(
@@ -408,9 +457,12 @@ export class StockService {
       );
 
     for (const promotionProduct of promotionProducts) {
-      await this.deductStock(
+      await this.deductStockCore(
         promotionProduct.product.id,
         promotionProduct.quantity * quantity,
+        undefined,
+        undefined,
+        qr,
       );
     }
   }
@@ -425,19 +477,16 @@ export class StockService {
     promotion: Product,
     quantity: number,
     selections: PromotionSelectionDto[],
+    qr: QueryRunner,
   ) {
     this.logger.log(
       `[deductPromotionStockWithSelections] Deducción de stock para promoción: ${promotion.name}, Cantidad: ${quantity}`,
     );
 
-    // Cargar asignaciones de slots de la promoción
-    const assignments = await this.promotionSlotRepository.manager.find(
-      PromotionSlotAssignment,
-      {
-        where: { promotionId: promotion.id },
-        relations: ['slot', 'slot.options', 'slot.options.product'],
-      },
-    );
+    const assignments = await qr.manager.find(PromotionSlotAssignment, {
+      where: { promotionId: promotion.id },
+      relations: ['slot', 'slot.options', 'slot.options.product'],
+    });
 
     // Validar que existan asignaciones
     if (!assignments || assignments.length === 0) {
@@ -539,11 +588,12 @@ export class StockService {
           // Obtener toppings para este producto específico (si hay)
           const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
 
-          // Deducir stock del producto seleccionado
-          await this.deductStock(
+          await this.deductStockCore(
             selectedProductId,
-            quantity, // Cantidad de promociones
-            [toppingsForThisProduct], // Toppings para este producto específico
+            quantity,
+            [toppingsForThisProduct],
+            undefined,
+            qr,
           );
         }
       }
@@ -558,6 +608,7 @@ export class StockService {
     ingredientId: string,
     quantity: number,
     unitOfMeasureId: string,
+    qr: QueryRunner,
   ) {
     const ingredient =
       await this.ingredientService.getIngredientByIdToAnotherService(
@@ -585,13 +636,14 @@ export class StockService {
     }
 
     ingredient.stock.quantityInStock -= quantityToDeduct;
-    await this.stockRepository.saveStock(ingredient.stock);
+    await qr.manager.save(ingredient.stock);
   }
 
   private async deductToppingsStock(
     toppingsPerUnit: string[][],
     productQuantity: number,
     product: Product,
+    qr: QueryRunner,
   ) {
     this.logger.log(
       `🧾 Toppings por unidad: ${JSON.stringify(toppingsPerUnit)} | Cantidad de producto: ${productQuantity}`,
@@ -610,8 +662,10 @@ export class StockService {
     );
 
     for (const [toppingId, totalUses] of Object.entries(toppingCountMap)) {
-      const toppingStock =
-        await this.stockRepository.getStockByToppingId(toppingId);
+      const toppingStock = await qr.manager.findOne(Stock, {
+        where: { ingredient: { id: toppingId } },
+        relations: ['ingredient', 'unitOfMeasure'],
+      });
       if (!toppingStock) {
         throw new NotFoundException(
           `No se encontró stock para el agregado con ID ${toppingId}.`,
@@ -665,7 +719,7 @@ export class StockService {
 
       toppingStock.quantityInStock -= quantityToDeduct;
 
-      await this.stockRepository.saveStock(toppingStock);
+      await qr.manager.save(toppingStock);
 
       this.logger.log(
         `✅ Descontado ${quantityToDeduct} ${toppingStock.unitOfMeasure.abbreviation} del topping ${topping.name} (${toppingId}). Stock restante: ${toppingStock.quantityInStock}`,

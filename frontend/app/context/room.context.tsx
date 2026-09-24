@@ -2,7 +2,7 @@
 import { IRoom } from '@/components/Interfaces/IRooms';
 import { ITable } from '@/components/Interfaces/ITable';
 import { URI_ROOM } from '@/components/URI/URI';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from './authContext';
 import { apiFetch } from '@/lib/apiClient';
@@ -96,12 +96,12 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
     fetchRooms();
   }, []);
 
-  const handleSelectRoom = (room: IRoom | null) => {
+  const handleSelectRoom = useCallback((room: IRoom | null) => {
     setSelectedTable(null);
     setSelectedRoom(room);
-  }
+  }, []);
 
-  const handleSaveRoom = async (room: { id?: string; name: string }) => {
+  const handleSaveRoom = useCallback(async (room: { id?: string; name: string }) => {
     if (room.id) {
       // Editar sala existente
       try {
@@ -147,9 +147,9 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
         Swal.fire("Error", "No se pudo crear la sala.", "error");
       }
     }
-  };
+  }, [token]);
 
-  const handleDeleteRoom = async () => {
+  const handleDeleteRoom = useCallback(async () => {
     if (!menuRoom) return;
 
     //agrego una confirmacion antes de eliminar
@@ -191,52 +191,46 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       } catch (error) {
         Swal.fire("Error", "No se pudo eliminar la sala.", "error");
       } finally {
-        handleMenuClose();
+        setMenuAnchorEl(null);
+        setMenuRoom(null);
       }
     }
-  };
+  }, [menuRoom, token, selectedRoom]);
 
-  /**
-   * @param table - Es la Table que se selecciona.
-   * Se setea la table seleccionada en `selectedTable`.
-   * Se setea la orden de la table en `selectedOrderByTable`.
-   * Se limpia la información de la table saliente mediante `handleResetSelectedOrder`.
-   */
-  const handleSelectTable = async (table: ITable | null) => {
+  const handleSelectTable = useCallback(async (table: ITable | null) => {
     setSelectedTable(table);
-  };
+  }, []);
 
-  const setOrderSelectedTable = (order: string) => {
-    const newOrder = [order];
-    setSelectedTable({
-      ...selectedTable,
-      orders: newOrder,
-    } as ITable);
-  };
+  const setOrderSelectedTable = useCallback((order: string) => {
+    setSelectedTable((current) => ({
+      ...current,
+      orders: [order],
+    } as ITable));
+  }, []);
 
-  const handleAbrirPedido = () => {
+  const handleAbrirPedido = useCallback(() => {
     setView("pedidoEditor");
-  };
+  }, []);
 
-  const handleVolverATableEditor = () => {
+  const handleVolverATableEditor = useCallback(() => {
     setView("mesaEditor");
-  };
+  }, []);
 
-  const handleMenuOpen = (
+  const handleMenuOpen = useCallback((
     event: React.MouseEvent<SVGSVGElement>,
     sala: IRoom
   ) => {
     setMenuAnchorEl(event.currentTarget as unknown as HTMLElement);
     setMenuRoom(sala);
-  };
+  }, []);
 
-  const handleMenuClose = () => {
+  const handleMenuClose = useCallback(() => {
     setMenuAnchorEl(null);
     setMenuRoom(null);
-  };
+  }, []);
 
-  return (
-    <RoomContext.Provider value={{
+  const value = useMemo(
+    () => ({
       rooms,
       selectedRoom,
       selectedTable,
@@ -256,8 +250,31 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
       handleAbrirPedido,
       handleVolverATableEditor,
       handleMenuOpen,
-      handleMenuClose
-    }}>
+      handleMenuClose,
+    }),
+    [
+      rooms,
+      selectedRoom,
+      selectedTable,
+      setOrderSelectedTable,
+      view,
+      modalOpen,
+      editingRoom,
+      menuAnchorEl,
+      menuRoom,
+      handleSelectRoom,
+      handleSaveRoom,
+      handleDeleteRoom,
+      handleSelectTable,
+      handleAbrirPedido,
+      handleVolverATableEditor,
+      handleMenuOpen,
+      handleMenuClose,
+    ],
+  );
+
+  return (
+    <RoomContext.Provider value={value}>
       {children}
     </RoomContext.Provider>
   );

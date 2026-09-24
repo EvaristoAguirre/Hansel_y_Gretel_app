@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from '../entities/order.entity';
-import { QueryRunner, Repository } from 'typeorm';
+import { DataSource, In, QueryRunner, Repository } from 'typeorm';
 import { OrderDetails } from '../entities/order_details.entity';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
@@ -29,10 +29,7 @@ export class OrderRepository {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
-    @InjectRepository(Table)
-    private readonly tableRepository: Repository<Table>,
-    @InjectRepository(OrderPayment)
-    private readonly orderPaymentRepository: Repository<OrderPayment>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
@@ -56,8 +53,37 @@ export class OrderRepository {
     closeOrderDto: CloseOrderDto,
     openDailyCash: DailyCash,
   ): Promise<OrderSummaryResponseDto> {
+    if (!closeOrderDto.total || closeOrderDto.total <= 0) {
+      throw new BadRequestException(`Total amount must be greater than 0`);
+    }
+
+    if (!closeOrderDto.payments || !closeOrderDto.payments.length) {
+      throw new BadRequestException(`At least one payment must be provided`);
+    }
+
+    if (!openDailyCash) {
+      throw new ConflictException(
+        'No open daily cash report found. Cannot close the order.',
+      );
+    }
+
+    const totalPayments = closeOrderDto.payments.reduce(
+      (acc, payment) => acc + payment.amount,
+      0,
+    );
+
+    if (totalPayments !== closeOrderDto.total) {
+      throw new BadRequestException(
+        `Total amount of payments (${totalPayments}) does not match the order total (${closeOrderDto.total})`,
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const order = await this.orderRepository.findOne({
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: ['orderDetails', 'table', 'orderDetails.product'],
       });
@@ -72,38 +98,13 @@ export class OrderRepository {
         );
       }
 
-      if (!closeOrderDto.total || closeOrderDto.total <= 0) {
-        throw new BadRequestException(`Total amount must be greater than 0`);
-      }
-
-      if (!closeOrderDto.payments || !closeOrderDto.payments.length) {
-        throw new BadRequestException(`At least one payment must be provided`);
-      }
-
-      if (!openDailyCash) {
-        throw new ConflictException(
-          'No open daily cash report found. Cannot close the order.',
-        );
-      }
-
-      const totalPayments = closeOrderDto.payments.reduce(
-        (acc, payment) => acc + payment.amount,
-        0,
-      );
-
-      if (totalPayments !== closeOrderDto.total) {
-        throw new BadRequestException(
-          `Total amount of payments (${totalPayments}) does not match the order total (${closeOrderDto.total})`,
-        );
-      }
-
       order.dailyCash = openDailyCash;
       order.state = OrderState.CLOSED;
       order.closedAt = new Date();
       order.table.state = TableState.AVAILABLE;
 
       const orderPayments = closeOrderDto.payments.map((p) =>
-        this.orderPaymentRepository.create({
+        queryRunner.manager.create(OrderPayment, {
           order,
           amount: p.amount,
           methodOfPayment: p.methodOfPayment,
@@ -153,12 +154,11 @@ export class OrderRepository {
       order.discountPercent = discountPercent;
       order.discountAmount = discountAmount;
 
-      await this.orderPaymentRepository.save(orderPayments);
+      await queryRunner.manager.save(orderPayments);
+      await queryRunner.manager.save(order.table);
+      await queryRunner.manager.save(order);
 
-      await this.tableRepository.save(order.table);
-      await this.orderRepository.save(order);
-
-      const updatedOrder = await this.orderRepository.findOne({
+      const updatedOrder = await queryRunner.manager.findOne(Order, {
         where: { id: order.id },
         relations: [
           'orderDetails',
@@ -169,11 +169,17 @@ export class OrderRepository {
           'payments',
         ],
       });
-      const responseAdapted = await this.adaptResponse(updatedOrder);
-      return responseAdapted;
+
+      await queryRunner.commitTransaction();
+      return await this.adaptResponse(updatedOrder);
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('closeOrder', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -231,6 +237,18 @@ export class OrderRepository {
         );
       }
 
+      const toppingIds = this.collectToppingIds(detailData);
+      const selectedProductIds = this.collectSelectedProductIds(detailData);
+      const toppingById = await this.loadToppingsById(qr, toppingIds);
+      const selectedProductById = await this.loadProductsById(
+        qr,
+        selectedProductIds,
+      );
+      const configByKey = await this.loadToppingConfigsByProduct(
+        qr,
+        [product.id, ...selectedProductIds],
+      );
+
       if (product.allowsToppings && detailData.toppingsPerUnit?.length) {
         const normalizedToppings: string[][] = Array.from(
           { length: quantity },
@@ -244,11 +262,7 @@ export class OrderRepository {
           );
 
           for (const toppingId of toppingsForUnit) {
-            const topping = await qr.manager.findOne(Ingredient, {
-              where: { id: toppingId, isActive: true },
-              relations: ['toppingsGroups'],
-            });
-
+            const topping = toppingById.get(toppingId);
             if (!topping) {
               throw new NotFoundException(
                 `Topping con ID ${toppingId} no encontrado`,
@@ -262,17 +276,7 @@ export class OrderRepository {
               );
             }
 
-            const config = await qr.manager.findOne(
-              ProductAvailableToppingGroup,
-              {
-                where: {
-                  product: { id: product.id },
-                  toppingGroup: { id: toppingGroup.id },
-                },
-                relations: ['unitOfMeasure'],
-              },
-            );
-
+            const config = configByKey.get(`${product.id}:${toppingGroup.id}`);
             if (!config) {
               throw new BadRequestException(
                 `El producto ${product.name} no tiene configuración para el grupo de topping del ingrediente ${topping.name}`,
@@ -305,7 +309,6 @@ export class OrderRepository {
         }
       }
 
-      // Procesar toppings de productos dentro de slots (promotionSelections)
       if (
         detailData.promotionSelections &&
         detailData.promotionSelections.length > 0
@@ -314,12 +317,8 @@ export class OrderRepository {
           `[buildOrderDetailWithToppings] Procesando toppings de productos dentro de slots`,
         );
 
-        // Iterar sobre cada unidad del producto principal (la promoción)
         for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
-          // Para cada selección de slot (cada selección es un producto individual con sus toppings)
           for (const selection of detailData.promotionSelections) {
-            // Cada selección tiene 1 producto con sus toppings en toppingsPerUnit[0]
-            // Validar que tenga toppings antes de procesar
             if (
               !selection.toppingsPerUnit ||
               selection.toppingsPerUnit.length === 0
@@ -327,8 +326,6 @@ export class OrderRepository {
               continue;
             }
 
-            // Iterar sobre cada producto en la selección
-            // En la estructura del frontend, cada selección tiene 1 producto
             for (
               let productIndex = 0;
               productIndex < selection.selectedProductIds.length;
@@ -343,11 +340,7 @@ export class OrderRepository {
                 continue;
               }
 
-              // Obtener el producto seleccionado para obtener su configuración de toppings
-              const selectedProduct = await qr.manager.findOne(Product, {
-                where: { id: selectedProductId, isActive: true },
-              });
-
+              const selectedProduct = selectedProductById.get(selectedProductId);
               if (!selectedProduct) {
                 this.logger.warn(
                   `[buildOrderDetailWithToppings] Producto seleccionado ${selectedProductId} no encontrado`,
@@ -355,13 +348,8 @@ export class OrderRepository {
                 continue;
               }
 
-              // Procesar cada topping
               for (const toppingId of toppingsForThisProduct) {
-                const topping = await qr.manager.findOne(Ingredient, {
-                  where: { id: toppingId, isActive: true },
-                  relations: ['toppingsGroups'],
-                });
-
+                const topping = toppingById.get(toppingId);
                 if (!topping) {
                   this.logger.warn(
                     `[buildOrderDetailWithToppings] Topping ${toppingId} no encontrado`,
@@ -377,18 +365,9 @@ export class OrderRepository {
                   continue;
                 }
 
-                // Obtener la configuración de toppings del PRODUCTO SELECCIONADO (no de la promoción)
-                const config = await qr.manager.findOne(
-                  ProductAvailableToppingGroup,
-                  {
-                    where: {
-                      product: { id: selectedProduct.id },
-                      toppingGroup: { id: toppingGroup.id },
-                    },
-                    relations: ['unitOfMeasure'],
-                  },
+                const config = configByKey.get(
+                  `${selectedProduct.id}:${toppingGroup.id}`,
                 );
-
                 if (!config) {
                   this.logger.warn(
                     `[buildOrderDetailWithToppings] El producto ${selectedProduct.name} no tiene configuración para el grupo de topping ${toppingGroup.name}`,
@@ -460,6 +439,68 @@ export class OrderRepository {
       this.logger.error('buildOrderDetailWithToppings', error);
       throw error;
     }
+  }
+
+  private collectToppingIds(detailData: OrderDetailsDto): string[] {
+    const ids = new Set<string>();
+    for (const unit of detailData.toppingsPerUnit ?? []) {
+      for (const id of unit) ids.add(id);
+    }
+    for (const selection of detailData.promotionSelections ?? []) {
+      for (const unit of selection.toppingsPerUnit ?? []) {
+        for (const id of unit) ids.add(id);
+      }
+    }
+    return [...ids];
+  }
+
+  private collectSelectedProductIds(detailData: OrderDetailsDto): string[] {
+    const ids = new Set<string>();
+    for (const selection of detailData.promotionSelections ?? []) {
+      for (const id of selection.selectedProductIds ?? []) ids.add(id);
+    }
+    return [...ids];
+  }
+
+  private async loadToppingsById(
+    qr: QueryRunner,
+    toppingIds: string[],
+  ): Promise<Map<string, Ingredient>> {
+    if (!toppingIds.length) return new Map();
+    const toppings = await qr.manager.find(Ingredient, {
+      where: { id: In(toppingIds), isActive: true },
+      relations: ['toppingsGroups'],
+    });
+    return new Map(toppings.map((topping) => [topping.id, topping]));
+  }
+
+  private async loadProductsById(
+    qr: QueryRunner,
+    productIds: string[],
+  ): Promise<Map<string, Product>> {
+    if (!productIds.length) return new Map();
+    const products = await qr.manager.find(Product, {
+      where: { id: In(productIds), isActive: true },
+    });
+    return new Map(products.map((product) => [product.id, product]));
+  }
+
+  private async loadToppingConfigsByProduct(
+    qr: QueryRunner,
+    productIds: string[],
+  ): Promise<Map<string, ProductAvailableToppingGroup>> {
+    const uniqueIds = [...new Set(productIds.filter(Boolean))];
+    if (!uniqueIds.length) return new Map();
+    const configs = await qr.manager.find(ProductAvailableToppingGroup, {
+      where: { productId: In(uniqueIds) },
+      relations: ['unitOfMeasure', 'toppingGroup'],
+    });
+    return new Map(
+      configs.map((config) => [
+        `${config.productId}:${config.toppingGroup.id}`,
+        config,
+      ]),
+    );
   }
 
   async adaptResponse(order: Order): Promise<OrderSummaryResponseDto> {

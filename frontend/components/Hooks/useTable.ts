@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { useTableStore } from "../Table/useTableStore";
-import { useOrderStore } from "../Order/useOrderStore";
 import { editTable } from "@/api/tables";
 import { useAuth } from "@/app/context/authContext";
 import { ITable, TableForm } from "../Interfaces/ITable";
@@ -28,7 +27,6 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
     updateTablesByRoom
   } = useTableStore();
 
-  const { orders } = useOrderStore();
   const handleOpenModal = (type: TableModalType, table?: ITable) => {
     setModalType(type);
     if (type === TableModalType.EDIT && table && table.state) {
@@ -59,17 +57,13 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
   };
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      setToken(token);
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      setToken(accessToken);
+      updateTablesByRoom(salaId, accessToken);
     }
-    async function fetchTables() {
-      token && updateTablesByRoom(salaId, token);
-    }
-
-    fetchTables();
     connectWebSocket();
-  }, [setTables, connectWebSocket, orders]);
+  }, [salaId, connectWebSocket, getAccessToken, updateTablesByRoom]);
 
   const handleCreateTable = async (name: string, roomId: string) => {
     try {

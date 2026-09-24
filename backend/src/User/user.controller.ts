@@ -1,8 +1,17 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './user.service';
 import { RegisterUserDto } from 'src/DTOs/register-user.dto';
 import { User } from './user.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { RolesGuard } from 'src/Guards/roles.guard';
+import { Roles } from 'src/Decorators/roles.decorator';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @ApiTags('Auth')
 @Controller('user')
@@ -10,10 +19,13 @@ export class UserController {
   constructor(private readonly userService: AuthService) {}
 
   @Post('register')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Registrar nuevo usuario',
     description:
-      'Crea un nuevo usuario en el sistema con el rol especificado. Solo usuarios autorizados pueden crear cuentas.',
+      'Crea un nuevo usuario. Requiere Admin o Encargado. Encargado no puede crear Admin ni Encargado.',
   })
   @ApiBody({
     type: RegisterUserDto,
@@ -48,9 +60,21 @@ export class UserController {
     status: 400,
     description: 'Datos de registro inválidos',
   })
-  async register(@Body() dataRegister: RegisterUserDto): Promise<User> {
+  @ApiResponse({
+    status: 403,
+    description: 'Sin token o sin permiso para registrar',
+  })
+  async register(
+    @Body() dataRegister: RegisterUserDto,
+    @Req() req: { user?: { role?: UserRole } },
+  ): Promise<Omit<User, 'password'>> {
     const { username, password, role } = dataRegister;
-    return await this.userService.register(username, password, role);
+    return await this.userService.register(
+      username,
+      password,
+      role ?? UserRole.MOZO,
+      req.user?.role,
+    );
   }
 
   @Post('login')

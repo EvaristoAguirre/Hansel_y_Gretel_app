@@ -1,20 +1,9 @@
-// EN PRODUCCION/CAFETERIA
-// REEMPLAZAR:
-// 'API_URL_DEV'
-// POR 'API_URL'
-// y NEXT_PUBLIC_API_URL_DEV por NEXT_PUBLIC_API_URL
-
-// const API_URL_DEV =
-//   process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL;
-// if (!API_URL_DEV) {
-//   throw new Error('Falta la variable de entorno NEXT_PUBLIC_API_URL');
-// }
-let API_URL = '';
-if(process.env.NODE_ENV === 'production') {
-  API_URL = process.env.NEXT_PUBLIC_API_URL;
-} else {
-  API_URL = process.env.NEXT_PUBLIC_API_URL_DEV;
-}
+// next build corre con NODE_ENV=production. Si solo está *_DEV (típico de
+// .env.local), se usa como fallback para que el prerender no falle.
+const API_URL =
+  process.env.NODE_ENV === 'production'
+    ? process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL_DEV
+    : process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL;
 
 if (!API_URL) {
   throw new Error(
