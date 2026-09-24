@@ -52,7 +52,13 @@ describe('StockService.deductStock', () => {
     };
     const service = createService(dataSource);
 
-    await service.deductStock('prod-1', 2, undefined, undefined, queryRunner as any);
+    const changes = await service.deductStock(
+      'prod-1',
+      2,
+      undefined,
+      undefined,
+      queryRunner as any,
+    );
 
     expect(dataSource.createQueryRunner).not.toHaveBeenCalled();
     expect(queryRunner.manager.save).toHaveBeenCalledWith(
@@ -61,9 +67,15 @@ describe('StockService.deductStock', () => {
     expect(queryRunner.commitTransaction).not.toHaveBeenCalled();
     expect(queryRunner.rollbackTransaction).not.toHaveBeenCalled();
     expect(queryRunner.release).not.toHaveBeenCalled();
-    expect(eventEmitter.emit).toHaveBeenCalledWith('stock.deducted', {
-      stockDeducted: true,
-    });
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(changes).toEqual([
+      {
+        id: 'stock-1',
+        productId: 'prod-1',
+        ingredientId: undefined,
+        quantityInStock: 8,
+      },
+    ]);
   });
 
   it('sin QueryRunner abre su propia transacción y commitea', async () => {
@@ -87,6 +99,16 @@ describe('StockService.deductStock', () => {
     expect(queryRunner.manager.save).toHaveBeenCalled();
     expect(queryRunner.commitTransaction).toHaveBeenCalled();
     expect(queryRunner.release).toHaveBeenCalled();
+    expect(eventEmitter.emit).toHaveBeenCalledWith('stock.deducted', {
+      stocks: [
+        {
+          id: 'stock-1',
+          productId: 'prod-1',
+          ingredientId: undefined,
+          quantityInStock: 8,
+        },
+      ],
+    });
   });
 
   it('sin QueryRunner hace rollback si falla el save', async () => {

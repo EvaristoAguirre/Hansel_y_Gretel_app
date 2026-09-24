@@ -472,10 +472,10 @@ const OrderProvider = ({
     );
   };
 
-  const clearToppings = () => {
+  const clearToppings = useCallback(() => {
     setToppingsByProductGroup({});
     setSelectedToppingsByProduct({});
-  };
+  }, []);
 
   const updateToppingForUnit = (
     lineId: string,
@@ -847,7 +847,7 @@ const OrderProvider = ({
     );
   };
 
-  const handleCreateOrder = async (
+  const handleCreateOrder = useCallback(async (
     selectedTable: ITable,
     cantidadPersonas: number,
     comentario: string
@@ -933,9 +933,9 @@ const OrderProvider = ({
       );
       return false;
     }
-  };
+  }, [token, addOrder, handleSelectTable]);
 
-  const handleEditOrder = async (
+  const handleEditOrder = useCallback(async (
     id: string,
     selectedProducts: SelectedProductsI[],
     numberCustomers: number,
@@ -1002,9 +1002,9 @@ const OrderProvider = ({
       console.error(error);
       throw error;
     }
-  };
+  }, [token, handleSetProductsByOrder, updateOrder, clearToppings]);
 
-  const handleCancelOrder = async (id: string) => {
+  const handleCancelOrder = useCallback(async (id: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -1029,9 +1029,10 @@ const OrderProvider = ({
           setToppingsByProductGroup({});
 
           // Actualizar la mesa a AVAILABLE y limpiar las órdenes
-          if (selectedTable) {
+          const currentTable = selectedTableRef.current;
+          if (currentTable) {
             const updatedTable = {
-              ...selectedTable,
+              ...currentTable,
               orders: [],
               state: TableState.AVAILABLE,
             } as ITable;
@@ -1048,8 +1049,8 @@ const OrderProvider = ({
             try {
               const tableEdited = await editTable(
                 {
-                  id: selectedTable.id,
-                  name: selectedTable.name,
+                  id: currentTable.id,
+                  name: currentTable.name,
                   state: TableState.AVAILABLE,
                 },
                 token!
@@ -1082,9 +1083,9 @@ const OrderProvider = ({
         });
       }
     }
-  };
+  }, [token, removeOrder, setSelectedTable]);
 
-  const handleDeleteOrder = async (id: string | null) => {
+  const handleDeleteOrder = useCallback(async (id: string | null) => {
     if (!id) {
       return;
     }
@@ -1100,7 +1101,13 @@ const OrderProvider = ({
 
     if (confirm.isConfirmed) {
       try {
-        await fetch(`${URI_ORDER}/${id}`, { method: "DELETE" });
+        const response = await fetch(`${URI_ORDER}/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error("No se pudo eliminar el pedido.");
+        }
         removeOrder(id);
         Swal.fire("Eliminado", "Pedido eliminado correctamente.", "success");
       } catch (error) {
@@ -1108,7 +1115,7 @@ const OrderProvider = ({
         console.error(error);
       }
     }
-  };
+  }, [token, removeOrder]);
 
   // useMemo evita que el objeto de contexto se recree en cada render del provider
   // cuando los datos no cambiaron, previniendo re-renders innecesarios en los consumidores.
@@ -1154,6 +1161,10 @@ const OrderProvider = ({
       fetchOrderBySelectedTable,
       token,
       isPaymentInProgress,
+      handleCreateOrder,
+      handleEditOrder,
+      handleDeleteOrder,
+      handleCancelOrder,
     ]
   );
 

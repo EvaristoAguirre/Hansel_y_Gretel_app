@@ -163,10 +163,11 @@ async function bootstrap() {
   app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  await app.listen(3000);
+  const port = Number(configService.get(EnvNames.PORT) ?? 3000);
+  const host = configService.get(EnvNames.HOST) ?? '0.0.0.0';
+  await app.listen(port, host);
 
-  const port = app.getHttpServer().address().port;
-  console.log(`Server listening on http://localhost:${port}`);
+  console.log(`Server listening on http://${host}:${port}`);
   console.log(
     `📚 Swagger docs disponible en: http://localhost:${port}/api/docs`,
   );

@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { useAuth } from './authContext';
 import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
 import { FormType } from '@/components/Enums/Ingredients';
+import { webSocketService } from '@/services/websocket.service';
 
 type IngredientsContextType = {
   formIngredients: Iingredient;
@@ -87,6 +88,51 @@ const IngredientsProvider = ({
     fetchIngredientsAll(token).then((dataIngredients) => {
       if (dataIngredients) setIngredients(dataIngredients);
     });
+  }, []);
+
+  useEffect(() => {
+    const applyStockChanges = (payload: {
+      stocks?: {
+        id: string;
+        ingredientId?: string;
+        quantityInStock: number;
+      }[];
+    }) => {
+      const stocks = payload?.stocks ?? [];
+      if (!stocks.length) return;
+
+      const patchList = (list: Iingredient[]) =>
+        list.map((ingredient) => {
+          const change = stocks.find(
+            (stock) =>
+              stock.ingredientId === ingredient.id ||
+              stock.id === ingredient.stock?.id
+          );
+          if (!change || !ingredient.stock) return ingredient;
+          return {
+            ...ingredient,
+            stock: {
+              ...ingredient.stock,
+              quantityInStock: String(change.quantityInStock),
+            },
+          };
+        });
+
+      setIngredientsAndToppings(patchList);
+      setIngredients(patchList);
+    };
+
+    webSocketService.on('stock.created', applyStockChanges);
+    webSocketService.on('stock.updated', applyStockChanges);
+    webSocketService.on('stock.deducted', applyStockChanges);
+    webSocketService.on('stock.restored', applyStockChanges);
+
+    return () => {
+      webSocketService.off('stock.created', applyStockChanges);
+      webSocketService.off('stock.updated', applyStockChanges);
+      webSocketService.off('stock.deducted', applyStockChanges);
+      webSocketService.off('stock.restored', applyStockChanges);
+    };
   }, []);
 
   const addIngredient = (ingredient: Iingredient) => {

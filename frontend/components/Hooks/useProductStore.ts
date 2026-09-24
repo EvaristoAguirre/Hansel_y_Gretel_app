@@ -64,6 +64,38 @@ export const useProductStore = create<ProductState>((set) => {
       }));
     });
 
+    const applyStockChanges = (payload: {
+      stocks?: {
+        id: string;
+        productId?: string;
+        quantityInStock: number;
+      }[];
+    }) => {
+      const stocks = payload?.stocks ?? [];
+      if (!stocks.length) return;
+      set((state) => ({
+        products: state.products.map((product) => {
+          const change = stocks.find(
+            (stock) =>
+              stock.productId === product.id || stock.id === product.stock?.id
+          );
+          if (!change || !product.stock) return product;
+          return {
+            ...product,
+            stock: {
+              ...product.stock,
+              quantityInStock: String(change.quantityInStock),
+            },
+          };
+        }),
+      }));
+    };
+
+    webSocketService.on("stock.created", applyStockChanges);
+    webSocketService.on("stock.updated", applyStockChanges);
+    webSocketService.on("stock.deducted", applyStockChanges);
+    webSocketService.on("stock.restored", applyStockChanges);
+
     socket.on("disconnect", () => {
       console.log("❌ Desconectado del servidor WebSocket - Productos");
     });

@@ -1,24 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Stock } from 'src/Stock/stock.entity';
+import { StockWsPayload } from 'src/Stock/stock-ws.payload';
 
 @Injectable()
 export class StockWSListener {
   constructor(private readonly broadcastService: BroadcastService) {}
 
-  @OnEvent('createStock')
-  handleCreateStock(event: { stock: Stock }) {
-    this.broadcastService.broadcast('stock.created', event.stock);
+  @OnEvent('stock.created')
+  handleStockCreated(event: StockWsPayload) {
+    this.broadcastService.broadcast('stock.created', event);
   }
 
-  @OnEvent('updateStock')
-  handleUpdateStock(event: { stock: Stock }) {
-    this.broadcastService.broadcast('stock.updated', event.stock);
+  @OnEvent('stock.updated')
+  handleStockUpdated(event: StockWsPayload) {
+    this.broadcastService.broadcast('stock.updated', event);
   }
 
-  @OnEvent('deductStock')
-  handleDeductStock(event: { stock: Stock }) {
-    this.broadcastService.broadcast('stock.deducted', event.stock);
+  @OnEvent('stock.deducted')
+  handleStockDeducted(event: StockWsPayload) {
+    this.broadcastService.broadcast('stock.deducted', event);
+  }
+
+  @OnEvent('stock.restored')
+  handleStockRestored(event: StockWsPayload) {
+    this.broadcastService.broadcast('stock.restored', event);
   }
 }

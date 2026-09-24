@@ -16,7 +16,7 @@ Complementa (no reemplaza) el listado de frontend en [`mejoras.md`](mejoras.md) 
 | **Fase 0 PR D — Helmet + `forbidNonWhitelisted`** | **Diferido** (análisis 19/08/2026) | S-16 puede romper caja/productos/unidades; Helmet aporta poco en LAN |
 | **Fase 2 — impresora** | Hecha (24/09/2026) | Env `PRINTER_*`, print post-commit, timeout 4s / 1 intento, reprint ticket por id, avisos unificados |
 | **Fase 3 — TX/consultas** | **Hecha (código 24/09/2026)** | Cobro y `deductStock` en la misma TX; índices; listados livianos; pool; front 11–13 y 16–17 |
-| **Fase 4 — deps / auth WS / cookie** | Pendiente | Next 15.0.3; WS sin JWT; token en `localStorage` |
+| **Fase 4 — deps / auth WS / higiene** | **Hecha (código 24/09/2026)** | Next 15.5.26; JWT en handshake WS; stock WS; contador BD; bugs 4–9. Cookie httpOnly (S-14) fuera de esta oleada |
 
 ---
 
@@ -34,7 +34,7 @@ Stack: NestJS + TypeORM + PostgreSQL + Socket.IO (backend) · Next.js 15 + Zusta
 
 ## 1. Resumen ejecutivo
 
-La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C), sync WS de órdenes (Fase 1), impresión (Fase 2) y TX/consultas (Fase 3) ya están en código.** Siguen abiertos: **deps (Next 15.0.3)** y **auth WS / cookie**.
+La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C), sync WS de órdenes (Fase 1), impresión (Fase 2), TX/consultas (Fase 3) y Fase 4 (deps, auth WS, stock WS, higiene) ya están en código.** Queda fuera de esta oleada: cookie httpOnly (S-14).
 
 ### Riesgos más críticos (top 6)
 
@@ -43,7 +43,7 @@ La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C),
 3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
 4. ~~**Cobro / stock sin transacciones atómicas**~~ — **Mitigado Fase 3:** `closeOrder` y `deductStock` usan `QueryRunner` (mismo patrón que `restoreStock`).
 5. ~~**Impresión bloqueante + IP hardcodeada**~~ — **Mitigado Fase 2:** env `PRINTER_*`, print después del commit, timeout 4 s / 1 intento, reprint de ticket por id, aviso + reimpresión manual. Queda I-07 (contador en BD).
-6. **Dependencias vulnerables** — Next.js `15.0.3` con CVEs críticas; sin Dependabot. *(Fase 4)*
+6. ~~**Dependencias vulnerables**~~ — **Mitigado Fase 4:** Next `15.5.26`; audit backend sin majors de Nest; Dependabot semanal. Quedan CVEs que exigen Nest 12 / nodemailer 10.
 
 ### Severidad agregada (estimado)
 
@@ -80,15 +80,11 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 - [x] **S-06 — Impresora sin auth**  
   **Resuelto (Fase 0 PR A, 19/08/2026):** Admin / Encargado / Mozo / Inventario.
 
-- [ ] **S-07 — Next.js 15.0.3 con CVEs críticas**  
-  **Archivo:** `frontend/package.json`  
-  **Problema:** RCE / SSRF / bypass documentados en esa línea de versión.  
-  **Severidad:** Crítica · **Esfuerzo:** M–L (actualizar y verificar build)
+- [x] **S-07 — Next.js 15.0.3 con CVEs críticas**  
+  **Resuelto (Fase 4, 24/09/2026):** `next` 15.5.26 (React 18). Sin salto a Next 16.
 
-- [ ] **S-08 — Backend con decenas de vulnerabilidades en lockfile**  
-  **Archivo:** `backend/package-lock.json`  
-  **Problema:** critical/high en dependencias transitivas (`fast-xml-parser`, `handlebars`, etc.).  
-  **Severidad:** Crítica / Alta · **Esfuerzo:** M–L
+- [x] **S-08 — Backend con decenas de vulnerabilidades en lockfile**  
+  **Mitigado (Fase 4, 24/09/2026):** Nest 10.4.22, TypeORM 0.3.31, nodemailer 7.0.13, overrides `socket.io-parser` / `ws` / `qs`. Sin majors de Nest 12 ni nodemailer 10.
 
 ### 2.2 Altos
 
@@ -106,20 +102,17 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
   **Severidad:** Alta · **Esfuerzo:** S  
   **Diferido (PR D, 19/08/2026):** valor bajo en LAN HTTP; un default de Helmet puede romper tablet (`:3001`→`:3000`) y Swagger. Solo con config de API/CORS (CSP off, CORP `cross-origin`).
 
-- [ ] **S-13 — WebSocket sin autenticación**  
-  **Archivos:** `backend/src/Real-time/real-time.gateway.ts` (~L40–57), `backend/src/Real-time/middleware/ws-auth.middleware.ts` (desactivado), `backend/src/Real-time/real-time.module.ts` (~L43–44)  
-  **Problema:** cualquiera en la LAN puede unirse a salas `table:{id}` y recibir eventos.  
-  **Severidad:** Alta · **Esfuerzo:** M
+- [x] **S-13 — WebSocket sin autenticación**  
+  **Resuelto (Fase 4, 24/09/2026):** `server.use` verifica `handshake.auth.token` con `JwtService`. El front envía el JWT y corta el socket al logout.
 
 - [ ] **S-14 — Token JWT en `localStorage`**  
   **Archivos:** `frontend/app/context/authContext.tsx` (~L46–61), `frontend/app/views/login/page.tsx` (~L35)  
   **Problema:** vulnerable a XSS → robo de sesión.  
-  **Severidad:** Alta · **Esfuerzo:** M–L (httpOnly cookie + ajustes CORS)
+  **Severidad:** Alta · **Esfuerzo:** M–L (httpOnly cookie + ajustes CORS)  
+  **Fuera de Fase 4** (alcance acordado).
 
-- [ ] **S-15 — Gateway legacy con `cors: true`**  
-  **Archivo:** `backend/src/Gateways/events.gateway.ts` (~L11)  
-  **Problema:** no está en `AppModule` hoy, pero es riesgo si se reactiva.  
-  **Severidad:** Alta (latente) · **Esfuerzo:** S (eliminar o asegurar)
+- [x] **S-15 — Gateway legacy con `cors: true`**  
+  **Resuelto (Fase 4, 24/09/2026):** eliminados `events.gateway.ts` y `events.module.ts`.
 
 ### 2.3 Medios / bajos (selección)
 
@@ -128,7 +121,7 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 - [ ] **S-17 — Body sin DTO en impresión** · `printer.controller.ts` (~L51, L68) · Media · S  
 - [ ] **S-18 — `UpdateDailyCashDto` permite mutar totales financieros** · `backend/src/DTOs/update-daily-cash.dto.ts` · Media · S (combinado con S-04)  
 - [ ] **S-19 — Protección de rutas solo client-side; token no se valida expiración en `ProtectedRoute`** · `frontend/components/ProtectedRoute/ProtectedRoute.tsx` · Media · M  
-- [ ] **S-20 — Sin Dependabot / CI de auditoría** · `.github/` · Media · S  
+- [x] **S-20 — Sin Dependabot / CI de auditoría** · **Resuelto (Fase 4, 24/09/2026):** `.github/dependabot.yml` npm semanal en `/frontend` y `/backend`  
 - [ ] **S-21 — Sin refresh token; JWT 120m** · `user.module.ts` · Media · M  
 - [ ] **S-22 — Payload JWT sin `sub`/`userId`** · `user.service.ts` (~L71–72) · Media · S  
 - [ ] **S-23 — Contraseña sin `@MinLength` en DTO** · `register-user.dto.ts` · Baja · S  
@@ -192,8 +185,8 @@ Impresora: **no usa Socket.IO**; es TCP raw en `PrinterService`.
 
 | Evento / dominio | Estado | Impacto |
 |------------------|--------|---------|
-| `stock.created/updated/deducted` | Listener espera `createStock`/`updateStock`/`deductStock`; servicio emite `stock.*` → **WS inoperante** | Stock no se sincroniza entre dispositivos |
-| `stock.restored` | Sin listener WS | Ídem |
+| `stock.created/updated/deducted` | **Resuelto (Fase 4):** listener alineado a `stock.*`; payload `{ stocks[] }` post-commit | Sync stock entre dispositivos |
+| `stock.restored` | **Resuelto (Fase 4):** listener + emit post-commit | Ídem |
 | `dailyCashOpened/Updated/Closed` | **Resuelto (post Fase 1):** front escucha y hace `checkOpenDaily` | Sync caja entre dispositivos |
 | Movimientos de caja | **No emiten WS** | Ídem parcial |
 | `printerError` | **Resuelto (Fase 1):** broadcast global + Swal en `order.context` si afecta la mesa seleccionada | — |
@@ -204,11 +197,11 @@ Impresora: **no usa Socket.IO**; es TCP raw en `PrinterService`.
 
 Checkboxes:
 
-- [ ] **WS-10 — Reparar pipeline WS de stock** (nombres de eventos + payload útil + listeners front) · Alta · M  
+- [x] **WS-10 — Reparar pipeline WS de stock** · **Resuelto (Fase 4, 24/09/2026):** una emisión post-commit; payload `{ stocks: [{ id, productId|ingredientId, quantityInStock }] }`; parche en product store e ingredientsContext  
 - [x] **WS-11 — Sync de caja diaria vía WS (o resync REST al evento)** · **Resuelto (10/08/2026):** listeners en `dailyCashContext`  
 - [x] **WS-12 — Escuchar `printerError` en front (Swal / banner)** · **Resuelto (Fase 1, 10/08/2026)**  
-- [ ] **WS-13 — Listeners toppings / ingredientes o eliminar código muerto** · Baja · S–M  
-- [ ] **WS-14 — Eliminar listeners/gateway legacy huérfanos** · Baja · S
+- [x] **WS-13 — Listeners toppings / ingredientes o eliminar código muerto** · **Resuelto (Fase 4, 24/09/2026):** listeners y store huérfanos eliminados  
+- [x] **WS-14 — Eliminar listeners/gateway legacy huérfanos** · **Resuelto (Fase 4, 24/09/2026):** `EventsGateway` y `orderDetails` listener eliminados
 
 ### 3.4 Estrategia de reconexión
 
@@ -346,19 +339,16 @@ Buenas prácticas ya presentes: `synchronize: false`, `searchForOrdering` con re
 - [x] **I-05 — Reimpresión de ticket `POST /printer/printTicket/:id` probablemente rota**  
   **Resuelto (Fase 2, 24/09/2026):** carga la orden por id; 404 si no existe; warning si falla el TCP.
 
-- [ ] **I-06 — Dependencias ESC/POS instaladas pero no usadas; USB constants muertas**  
-  **Archivos:** `package.json` (`escpos*`, `serialport`), `printer.constants.ts`  
-  **Severidad:** Baja · **Esfuerzo:** S (limpiar o documentar)
+- [x] **I-06 — Dependencias ESC/POS instaladas pero no usadas; USB constants muertas**  
+  **Resuelto (Fase 4, 24/09/2026):** quitados `escpos*`, `serialport`, `net` y `printer.constants.ts`.
 
-- [ ] **I-07 — Contador de comandas en `print-counter.json`**  
-  **Riesgo:** se resetea según despliegue/build.  
-  **Severidad:** Media · **Esfuerzo:** M (persistir en BD)
+- [x] **I-07 — Contador de comandas en `print-counter.json`**  
+  **Resuelto (Fase 4, 24/09/2026):** tabla `print_counter`; `UPDATE ... RETURNING` en TX; importa el JSON solo si la fila está en 0.
 
 ### 5.2 Despliegue / red
 
-- [ ] **I-08 — `PORT`/`HOST` documentados pero no usados; listen hardcodeado a 3000**  
-  **Archivo:** `backend/src/main.ts` (~L166)  
-  **Severidad:** Media · **Esfuerzo:** S
+- [x] **I-08 — `PORT`/`HOST` documentados pero no usados; listen hardcodeado a 3000**  
+  **Resuelto (Fase 4, 24/09/2026):** `app.listen(PORT, HOST)` con defaults `3000` / `0.0.0.0`.
 
 - [x] **I-09 — Sin `.env.example` (backend y frontend)**  
   **Resuelto (Fase 2, 24/09/2026):** `backend/.env.example` y `frontend/.env.example`.
@@ -406,8 +396,8 @@ sequenceDiagram
 | Ítem mejoras.md | Relación |
 |-----------------|----------|
 | 3 — listeners WS duplicados | = WS-04 · **cerrado Fase 1** |
-| 4–10 — críticos React/auth | Auth HTTP (Fase 0) hecha; ítem 10 cerrado en Fase 1; 4–9 siguen en `mejoras.md` |
-| 11–20 — performance front | Fase 3 / Fase 4 |
+| 4–10 — críticos React/auth | Auth HTTP (Fase 0) hecha; ítem 10 cerrado en Fase 1; **4–9 cerrados Fase 4** |
+| 11–20 — performance front | 11–13 y 16–17 cerrados Fase 3; 14–15 y 18–20 siguen en `mejoras.md` |
 | 21 — `status` vs `state` | = WS-07 · **cerrado Fase 1** |
 
 Ítems ya cerrados en `mejoras.md`: filtro `categoryDeleted` (store), guard anti doble submit en `Pay.tsx`, WS duplicados (3), null-guard mesa (10), `state` vs `status` (21).
@@ -478,14 +468,16 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 
 **Esfuerzo estimado:** 3–5 días.
 
-### Fase 4 — Higiene, dependencias y deuda restante
+### Fase 4 — Higiene, dependencias y deuda restante — **COMPLETADA (código 24/09/2026; sin cookie)**
 
-- [ ] S-07 / S-08 / S-20 — Actualizar Next.js y deps; Dependabot
-- [ ] S-13 / S-14 — Auth WS y (opcional) cookie httpOnly
-- [ ] WS-10 / WS-13 / WS-14 — Stock sync o limpieza toppings/legacy (WS-11 caja ya hecha)
-- [ ] I-06 / I-07 / I-08 — Limpieza impresora, contador en BD, PORT/HOST
-- [ ] Cerrar ítems abiertos de `mejoras.md` (4–10, 14–36) no absorbidos arriba
-- [ ] Eliminar gateway legacy `EventsGateway` / listeners muertos
+- [x] S-07 / S-08 / S-20 — Next 15.5.26; audit backend sin majors; Dependabot
+- [x] S-13 — Auth WS con el JWT actual
+- [ ] S-14 — cookie httpOnly · **fuera de esta oleada**
+- [x] WS-10 / WS-13 / WS-14 — Stock sync + limpieza toppings/legacy
+- [x] I-06 / I-07 / I-08 — Limpieza impresora, contador en BD, PORT/HOST
+- [x] `mejoras.md` 4–9 (el 10 ya estaba cerrado)
+- [x] Eliminar gateway legacy `EventsGateway` / listeners muertos
+- [ ] Ítems 14–36 de `mejoras.md` · **fuera de esta oleada**
 
 **Esfuerzo estimado:** 3–6 días (depende del alcance de upgrades).
 
@@ -530,6 +522,8 @@ cd frontend && npm test
 | [`frontend/services/websocket.service.test.ts`](frontend/services/websocket.service.test.ts) | Reuso de socket, `onReconnect`/`offReconnect`, `joinTable` |
 | [`frontend/vitest.config.ts`](frontend/vitest.config.ts) | Config; scripts `test` / `test:watch` en `package.json` |
 | [`backend/src/Guards/roles.guard.spec.ts`](backend/src/Guards/roles.guard.spec.ts) | Fase 0 PR B–C: `getAllAndOverride`, deny sin `@Roles`, 401/403 |
+| [`backend/src/Real-time/real-time.gateway.spec.ts`](backend/src/Real-time/real-time.gateway.spec.ts) | Fase 4: handshake WS sin token / token inválido / JWT válido |
+| [`backend/src/Real-time/listeners/stock-events.listener.spec.ts`](backend/src/Real-time/listeners/stock-events.listener.spec.ts) | Fase 4: broadcast de `stock.created|updated|deducted|restored` |
 
 ### E2E / siguientes pasos recomendados
 
@@ -543,7 +537,7 @@ cd frontend && npm test
 
 - Rediseño de UX, facturación fiscal electrónica, multi-sucursal.
 - Benchmarks de carga formales (k6/Artillery): recomendable después de Fase 3.
-- Fase 1.b (stock WS) y Fase 4 pendientes. Fase 0 auth HTTP hecha (PR D diferido). Fase 2 impresión y Fase 3 TX/consultas hechas (smoke LAN al redeployar). Caja WS (WS-11) hecha.
+- Cookie httpOnly (S-14) y pulido `mejoras.md` 14–36. Fase 0 auth HTTP hecha (PR D diferido). Fases 1–4 en código (smoke LAN al redeployar).
 
 ---
 
@@ -574,7 +568,8 @@ cd frontend && npm test
 | 24/09/2026 | Conciliación doc | Marcado lo hecho vs código/git |
 | 24/09/2026 | **Fase 2 (código)** | `PRINTER_*` por env; print post-commit; timeout 4s/1 intento; reprint ticket por id; avisos; `.env.example` + checklist LAN |
 | 24/09/2026 | **Fase 3 (código)** | TX cobro/stock; índices; listados livianos; N+1/eager; pool 20; front 11–13 y 16–17 |
+| 24/09/2026 | **Fase 4 (código)** | Next 15.5.26; Dependabot; auth WS JWT; stock WS; limpieza legacy/ESC-POS; contador BD; PORT/HOST; bugs front 4–9 |
 
 ---
 
-*Informe actualizado — 24/09/2026 (Fase 1 + Fase 0 PR A–C + Fase 2 + Fase 3 código; PR D diferido; siguiente Fase 4).*
+*Informe actualizado — 24/09/2026 (Fases 0–4 en código; PR D Helmet diferido; S-14 cookie fuera de Fase 4).*

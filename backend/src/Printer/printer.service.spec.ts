@@ -22,11 +22,14 @@ describe('PrinterService', () => {
 
   const validOrderId = '550e8400-e29b-41d4-a716-446655440000';
 
+  const dataSource = { transaction: jest.fn() };
+
   const createService = () =>
     new PrinterService(
       loggerService,
       configService as unknown as ConfigService,
       orderRepo as any,
+      dataSource as any,
     );
 
   beforeEach(() => {
@@ -53,6 +56,24 @@ describe('PrinterService', () => {
       timeout: 4000,
       retries: 1,
     });
+  });
+
+  it('nextCommandSequence incrementa en transacción y no reescribe el archivo', async () => {
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ counter: 4 }])
+        .mockResolvedValueOnce([{ counter: 5 }]),
+    };
+    dataSource.transaction.mockImplementation(async (cb: any) => cb(manager));
+    const service = createService();
+    const value = await (service as any).nextCommandSequence();
+    expect(value).toBe(4);
+    expect(manager.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE "print_counter"'),
+      [5],
+    );
   });
 
   it('reprintTicketById lanza 404 si la orden no existe', async () => {

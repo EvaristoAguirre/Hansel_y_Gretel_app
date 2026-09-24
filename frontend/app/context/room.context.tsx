@@ -202,10 +202,13 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   }, []);
 
   const setOrderSelectedTable = useCallback((order: string) => {
-    setSelectedTable((current) => ({
-      ...current,
-      orders: [order],
-    } as ITable));
+    setSelectedTable((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        orders: [order],
+      };
+    });
   }, []);
 
   const handleAbrirPedido = useCallback(() => {

@@ -16,23 +16,23 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
   ~~Cada vez que el socket se reconecta se agregan nuevos handlers sin remover los anteriores.~~  
   **Resuelto (Fase 1, 10/08/2026):** se eliminó el re-registro en `reconnect`; API `onReconnect` para resync/re-join.
 
-- [ ] **4. `app/context/authContext.tsx` ~162 — `setTimeout` sin cleanup en expiración de token**
-  Al desmontar el componente o cambiar de token, los timers de aviso y logout siguen activos → múltiples Swal de "sesión próxima a vencer" y redirecciones fantasma. Memory leak en sesiones largas.
+- [x] **4. `app/context/authContext.tsx` ~162 — `setTimeout` sin cleanup en expiración de token**
+  **Resuelto (Fase 4, 24/09/2026):** los timers se guardan y se limpian en el cleanup del efecto.
 
-- [ ] **5. `app/context/order.context.tsx` ~1032 — `useMemo` del contexto con closures obsoletos**
-  `handleCreateOrder`, `handleCancelOrder`, `handleEditOrder` no están en las dependencias del `useMemo`. Los handlers capturan `selectedTable` viejo si este cambió entre renders → mesa incorrecta al cancelar o actualizar.
+- [x] **5. `app/context/order.context.tsx` ~1032 — `useMemo` del contexto con closures obsoletos**
+  **Resuelto (Fase 4, 24/09/2026):** handlers en `useCallback` + deps del `useMemo`; cancelar usa `selectedTableRef`.
 
-- [ ] **6. `app/context/order.context.tsx` ~1018 — `handleDeleteOrder` sin header `Authorization`**
-  El `fetch` de `DELETE` no incluye el header `Bearer token`. El backend debería rechazarlo; si no lo hace, es una vulnerabilidad de autorización.
+- [x] **6. `app/context/order.context.tsx` ~1018 — `handleDeleteOrder` sin header `Authorization`**
+  **Resuelto (Fase 4, 24/09/2026):** `DELETE` con `Bearer` y chequeo de `response.ok`.
 
-- [ ] **7. `components/Table/TableEditor.tsx` ~189 — `handleEditOrder` fire-and-forget sin `await`**
-  No usa `await`, muestra "Cambios Guardados" antes de que termine el PATCH. Doble click guarda dos veces y un error de red muestra éxito falso.
+- [x] **7. `components/Table/TableEditor.tsx` ~189 — `handleEditOrder` fire-and-forget sin `await`**
+  **Resuelto (Fase 4, 24/09/2026):** `await` + Swal de éxito solo si termina bien; botón deshabilitado mientras guarda.
 
-- [ ] **8. `app/context/room.context.tsx` ~210 — `setOrderSelectedTable` sin guard de null**
-  Hace `{ ...selectedTable, orders: newOrder }` sin validar que `selectedTable` no sea `null`. Si se llama antes de seleccionar mesa → crash por spread de null.
+- [x] **8. `app/context/room.context.tsx` ~210 — `setOrderSelectedTable` sin guard de null**
+  **Resuelto (Fase 4, 24/09/2026):** si `current` es `null`, no hace spread.
 
-- [ ] **9. `app/context/dailyCashContext.tsx` ~119 — `closeCash` con non-null assertion sin validación**
-  Usa `selectedDailyCashId!` sin verificar que el valor exista. Si es `undefined`, el PATCH falla silenciosamente o cierra la caja incorrecta.
+- [x] **9. `app/context/dailyCashContext.tsx` ~119 — `closeCash` con non-null assertion sin validación**
+  **Resuelto (Fase 4, 24/09/2026):** Swal y return si no hay caja seleccionada.
 
 - [x] **10. `components/Order/useOrderStore.ts` ~86 — `findOrderByTableId` sin guard de null**
   ~~Accede a `order.table.id` asumiendo que `table` siempre está populada.~~  
@@ -135,8 +135,8 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 
 1. ✅ `useCategoryStore.ts` — filtro invertido (rompe la UI en producción)
 2. ✅ `Pay.tsx` — guard anti-doble-submit (impacto económico directo)
-3. ⬜ `websocket.service.ts` — deduplicar listeners en reconexión
-4. ⬜ `authContext.tsx` — cleanup de `setTimeout`
-5. ⬜ `order.context.tsx` — completar dependencias del `useMemo` y fix del DELETE sin token
+3. ✅ `websocket.service.ts` — deduplicar listeners en reconexión
+4. ✅ `authContext.tsx` — cleanup de `setTimeout`
+5. ✅ `order.context.tsx` — completar dependencias del `useMemo` y fix del DELETE sin token
 6. ✅ Context values — `useMemo` en los 5 contextos restantes
 7. ✅ Zustand — selectores para reducir re-renders del provider de pedidos

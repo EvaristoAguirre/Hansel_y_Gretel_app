@@ -11,7 +11,7 @@ import { isUUID } from 'class-validator';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
@@ -22,7 +22,6 @@ import { EnvNames } from 'src/common/names.env';
 @Injectable()
 export class PrinterService {
   readonly logger = new Logger(PrinterService.name);
-  private counter: number = 0;
   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
   private readonly printerConfig: {
     host: string;
@@ -36,6 +35,7 @@ export class PrinterService {
     private readonly configService: ConfigService,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
+    private readonly dataSource: DataSource,
   ) {
     this.printerConfig = {
       host:
@@ -50,42 +50,49 @@ export class PrinterService {
         this.configService.get<string>(EnvNames.PRINTER.RETRIES) ?? 1,
       ),
     };
-    this.initializeCounter();
   }
 
-  private initializeCounter(): void {
+  private readLegacyCounterFile(): number {
     try {
-      if (fs.existsSync(this.counterFilePath)) {
-        const data = fs.readFileSync(this.counterFilePath, 'utf8');
-        this.counter = JSON.parse(data).counter || 0;
-      }
+      if (!fs.existsSync(this.counterFilePath)) return 0;
+      const data = fs.readFileSync(this.counterFilePath, 'utf8');
+      return Number(JSON.parse(data).counter) || 0;
     } catch (error) {
-      this.logger.error('initializeCounter', error);
-      this.counter = 0;
-      throw error;
+      this.logger.error('readLegacyCounterFile', error);
+      return 0;
     }
   }
 
-  private saveCounter(): void {
-    try {
-      fs.writeFileSync(
-        this.counterFilePath,
-        JSON.stringify({
-          counter: this.counter,
-          lastUpdated: new Date().toISOString(),
-        }),
+  private async nextCommandSequence(): Promise<number> {
+    return this.dataSource.transaction(async (manager) => {
+      await manager.query(`
+        INSERT INTO "print_counter" ("id", "counter")
+        VALUES (1, 0)
+        ON CONFLICT ("id") DO NOTHING
+      `);
+      const rows: { counter: number }[] = await manager.query(
+        `SELECT "counter" FROM "print_counter" WHERE "id" = 1 FOR UPDATE`,
       );
-    } catch (error) {
-      this.logger.error('saveCounter', error);
-      throw error;
-    }
+      let current = Number(rows[0]?.counter ?? 0);
+      if (current === 0) {
+        const imported = this.readLegacyCounterFile();
+        if (imported > 0) {
+          current = imported;
+        }
+      }
+      const next = current + 1;
+      await manager.query(
+        `UPDATE "print_counter" SET "counter" = $1, "updatedAt" = NOW() WHERE "id" = 1 RETURNING "counter"`,
+        [next],
+      );
+      return current;
+    });
   }
 
-  private generateOrderCode(): string {
+  private async generateOrderCode(): Promise<string> {
     const now = new Date();
     const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
-    const count = String(this.counter++).padStart(4, '0');
-    this.saveCounter();
+    const count = String(await this.nextCommandSequence()).padStart(4, '0');
     return `${datePart}-${count}`;
   }
 
@@ -172,7 +179,7 @@ export class PrinterService {
 
     try {
       const now = new Date();
-      const orderCode = this.generateOrderCode();
+      const orderCode = await this.generateOrderCode();
 
       const commands = [
         '\x1B\x40', // Inicializar impresora

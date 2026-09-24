@@ -119,7 +119,11 @@ export const DailyCashProvider = ({
 
   const closeCash = useCallback(async (data: I_DC_Open_Close) => {
     if (!token) return;
-    await closeDailyCash(token, selectedDailyCashId!, data);
+    if (!selectedDailyCashId) {
+      Swal.fire('Error', 'No hay una caja seleccionada.', 'error');
+      return;
+    }
+    await closeDailyCash(token, selectedDailyCashId, data);
     Swal.fire('Éxito', 'Caja cerrada correctamente.', 'success');
     await checkOpenDaily();
     await fetchAllCash();

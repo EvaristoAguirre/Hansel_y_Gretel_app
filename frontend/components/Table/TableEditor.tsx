@@ -203,24 +203,32 @@ const TableEditor = ({
                   }
 
                   if (selectedOrderByTable?.id) {
-                    handleEditOrder(
-                      selectedOrderByTable.id,
-                      selectedProducts,
-                      cantidadPersonas,
-                      comentario
-                    );
-
-                    Swal.fire(
-                      "Cambios Guardados",
-                      "Los cambios se han guardado correctamente.",
-                      "success"
-                    );
-                    handleNextStep();
+                    setIsOpening(true);
+                    try {
+                      await handleEditOrder(
+                        selectedOrderByTable.id,
+                        selectedProducts,
+                        cantidadPersonas,
+                        comentario
+                      );
+                      Swal.fire(
+                        "Cambios Guardados",
+                        "Los cambios se han guardado correctamente.",
+                        "success"
+                      );
+                      handleNextStep();
+                    } catch {
+                      // handleEditOrder ya muestra el error
+                    } finally {
+                      setIsOpening(false);
+                    }
                   }
                 }}
               >
                 {isOpening
-                  ? "Abriendo..."
+                  ? effectiveTableState === TableState.OPEN
+                    ? "Guardando..."
+                    : "Abriendo..."
                   : effectiveTableState === TableState.OPEN
                     ? "Guardar Cambios"
                     : "Abrir Mesa"}
