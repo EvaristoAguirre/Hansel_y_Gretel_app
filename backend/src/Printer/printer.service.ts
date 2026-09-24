@@ -1,29 +1,55 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Repository } from 'typeorm';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
+import { EnvNames } from 'src/common/names.env';
 
 @Injectable()
 export class PrinterService {
   readonly logger = new Logger(PrinterService.name);
   private counter: number = 0;
   private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
-  private readonly printerConfig = {
-    host: '192.168.70.3',
-    port: 9100,
-    timeout: 9000,
+  private readonly printerConfig: {
+    host: string;
+    port: number;
+    timeout: number;
+    retries: number;
   };
 
-  constructor(private readonly loggerService: LoggerService) {
+  constructor(
+    private readonly loggerService: LoggerService,
+    private readonly configService: ConfigService,
+    @InjectRepository(Order)
+    private readonly orderRepo: Repository<Order>,
+  ) {
+    this.printerConfig = {
+      host:
+        this.configService.get<string>(EnvNames.PRINTER.HOST) ?? '192.168.70.3',
+      port: Number(
+        this.configService.get<string>(EnvNames.PRINTER.PORT) ?? 9100,
+      ),
+      timeout: Number(
+        this.configService.get<string>(EnvNames.PRINTER.TIMEOUT) ?? 4000,
+      ),
+      retries: Number(
+        this.configService.get<string>(EnvNames.PRINTER.RETRIES) ?? 1,
+      ),
+    };
     this.initializeCounter();
   }
 
@@ -65,7 +91,10 @@ export class PrinterService {
 
   private async sendRawCommand(command: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      const socket = net.createConnection(this.printerConfig);
+      const socket = net.createConnection({
+        host: this.printerConfig.host,
+        port: this.printerConfig.port,
+      });
 
       socket.setTimeout(this.printerConfig.timeout);
 
@@ -112,7 +141,7 @@ export class PrinterService {
 
   private async sendRawCommandWithRetry(
     command: string,
-    retries = 3,
+    retries = this.printerConfig.retries,
     delayMs = 2000,
   ): Promise<boolean> {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -223,17 +252,15 @@ export class PrinterService {
         throw new Error('Print command failed');
       }
 
-      let secondCopyWarning = '';
       try {
         await this.sendRawCommandWithRetry(commands);
       } catch {
         this.logger.warn(
           `[printKitchenOrder] ⚠️ La primera copia se imprimió correctamente, pero falló la segunda copia`,
         );
-        secondCopyWarning = ' (segunda copia no impresa)';
       }
 
-      return `Comanda impresa: ${orderCode}${secondCopyWarning}`;
+      return orderCode;
     } catch (error) {
       this.logger.error('printKitchenOrder', error);
       throw error;
@@ -398,80 +425,49 @@ export class PrinterService {
     }
   }
 
+  async reprintTicketById(
+    id: string,
+  ): Promise<{ message: string; printerWarning?: string }> {
+    if (!isUUID(id)) {
+      throw new BadRequestException('El ID del pedido no es un UUID válido.');
+    }
+
+    const order = await this.orderRepo.findOne({
+      where: { id, isActive: true },
+      relations: [
+        'table',
+        'orderDetails',
+        'orderDetails.product',
+        'orderDetails.orderDetailToppings',
+        'orderDetails.orderDetailToppings.topping',
+      ],
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Pedido ${id} no encontrado`);
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[DEV] Simulando reimpresión de ticket para pedido ${id}`);
+      return { message: 'reimpresion-ticket-simulada-dev' };
+    }
+
+    try {
+      const message = await this.printTicketOrder(order);
+      return { message };
+    } catch (error) {
+      this.logger.error('reprintTicketById', error);
+      return {
+        message: 'No se pudo imprimir el ticket.',
+        printerWarning:
+          'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.',
+      };
+    }
+  }
+
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
-
-  // private splitCommentWithPrefix(
-  //   comment: string,
-  //   maxLineLength: number,
-  //   prefix: string,
-  // ): string[] {
-  //   const prefixLength = prefix.length;
-  //   const remainingLineLength = maxLineLength - prefixLength;
-  //   const normalizedComment = this.normalizeText(comment);
-
-  //   if (!normalizedComment) return [prefix];
-
-  //   const lines: string[] = [];
-  //   let firstLineContent = '';
-  //   const words = normalizedComment.split(/(\s+)/);
-
-  //   for (const word of words) {
-  //     if ((firstLineContent + word).length <= remainingLineLength) {
-  //       firstLineContent += word;
-  //     } else {
-  //       break;
-  //     }
-  //   }
-
-  //   lines.push(`${prefix}${firstLineContent.trim()}`);
-
-  //   const remainingText = normalizedComment
-  //     .substring(firstLineContent.length)
-  //     .trim();
-  //   if (remainingText) {
-  //     const remainingLines = this.splitTextIntoLines(
-  //       remainingText,
-  //       maxLineLength,
-  //     );
-  //     lines.push(...remainingLines);
-  //   }
-
-  //   return lines;
-  // }
-
-  // private splitTextIntoLines(
-  //   text: string,
-  //   maxLength: number,
-  //   prefix: string = '',
-  // ): string[] {
-  //   const words = this.normalizeText(text).split(/(\s+)/);
-  //   let currentLine = prefix;
-  //   const lines = [];
-
-  //   for (let word of words) {
-  //     if ((currentLine + word).length > maxLength) {
-  //       if (currentLine === prefix) {
-  //         while (word.length > 0) {
-  //           const chunk = word.substring(0, maxLength - prefix.length);
-  //           lines.push(prefix + chunk);
-  //           word = word.substring(maxLength - prefix.length);
-  //         }
-  //         continue;
-  //       }
-  //       lines.push(currentLine.trim());
-  //       currentLine = prefix;
-  //     }
-  //     currentLine += word;
-  //   }
-
-  //   if (currentLine !== prefix) {
-  //     lines.push(currentLine.trim());
-  //   }
-
-  //   return lines;
-  // }
 
   async printerStock(stockData: ProductsToExportDto[]) {
     try {

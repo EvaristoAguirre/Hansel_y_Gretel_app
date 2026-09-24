@@ -128,6 +128,13 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     let comandaWarning: string | null = null;
+    let pendingPrintData: {
+      numberCustomers: number;
+      table: string;
+      products: any[];
+      isPriority?: boolean;
+    } | null = null;
+    let savedDetailIds: string[] = [];
 
     try {
       const order = await this.orderRepository.getOrderWithRelations(
@@ -442,47 +449,22 @@ export class OrderService {
           }
         }
 
-        // 🖨️ Generar número de comanda (una sola vez)
-        const printData = {
+        pendingPrintData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
           products: printProducts,
           isPriority: updateData.isPriority,
         };
 
-        let commandNumber: string | null = null;
-
-        try {
-          if (process.env.NODE_ENV === 'production') {
-            commandNumber =
-              await this.printerService.printKitchenOrder(printData);
-          } else {
-            console.debug(
-              `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-            );
-            commandNumber = 'grabandoTextFijo - 1111111111';
-          }
-          this.printerService.logger.log(
-            `✅ Comanda impresa, número: ${commandNumber}`,
-          );
-        } catch (printError) {
-          this.printerService.logger.error(
-            '❌ Falló la impresión de la comanda',
-            printError.stack,
-          );
-          comandaWarning = 'No se pudo conectar con la impresora. La comanda no fue impresa.';
-        }
-
-        // 💾 Guardar detalles (cascade: true en orderDetailToppings persiste los toppings automáticamente)
         this.logger.log(
           `[updateOrder] Guardando ${detailsToSave.length} detalle(s) de pedido`,
         );
         for (const detail of detailsToSave) {
-          detail.commandNumber = commandNumber;
           this.logger.log(
             `[updateOrder] Guardando detail: producto="${detail.product?.name}", cantidad=${detail.quantity}, toppings asignados=${detail.orderDetailToppings?.length ?? 0}`,
           );
           const savedDetail = await queryRunner.manager.save(detail);
+          savedDetailIds.push(savedDetail.id);
           this.logger.log(
             `[updateOrder] Detail guardado con id=${savedDetail.id} | toppings en DB: ${savedDetail.orderDetailToppings?.length ?? 'no cargados aún'}`,
           );
@@ -512,15 +494,75 @@ export class OrderService {
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
 
+      if (pendingPrintData) {
+        const printResult = await this.tryPrintKitchenOrder(
+          pendingPrintData,
+          updatedOrder,
+        );
+        comandaWarning = printResult.comandaWarning;
+        if (printResult.commandNumber && savedDetailIds.length) {
+          await this.dataSource
+            .createQueryBuilder()
+            .update(OrderDetails)
+            .set({ commandNumber: printResult.commandNumber })
+            .whereInIds(savedDetailIds)
+            .execute();
+        }
+      }
+
       const responseAdapted = await this.adaptResponse(updatedOrder);
       responseAdapted.comandaWarning = comandaWarning;
       return responseAdapted;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('updateOrder', error);
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async tryPrintKitchenOrder(
+    printData: {
+      numberCustomers: number;
+      table: string;
+      products: any[];
+      isPriority?: boolean;
+    },
+    orderForEvent?: Order | null,
+  ): Promise<{ commandNumber: string | null; comandaWarning: string | null }> {
+    const failMessage =
+      'El pedido quedó guardado, pero la comanda no se imprimió. Usá Reimprimir comanda cuando la impresora esté lista.';
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const commandNumber =
+          await this.printerService.printKitchenOrder(printData);
+        this.printerService.logger.log(
+          `✅ Comanda impresa, número: ${commandNumber}`,
+        );
+        return { commandNumber, comandaWarning: null };
+      }
+      console.debug(
+        `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+      );
+      return {
+        commandNumber: 'DEV-0001',
+        comandaWarning: null,
+      };
+    } catch (printError) {
+      this.printerService.logger.error(
+        '❌ Falló la impresión de la comanda',
+        printError.stack,
+      );
+      if (orderForEvent) {
+        this.eventEmitter.emit('order.printerError', {
+          order: orderForEvent,
+          message: failMessage,
+        });
+      }
+      return { commandNumber: null, comandaWarning: failMessage };
     }
   }
 
@@ -686,7 +728,8 @@ export class OrderService {
           await this.printerService.printTicketOrder(order);
         } catch (error) {
           this.logger.error('printTicketOrder', error);
-          printerWarning = 'Tiempo de espera agotado al conectar con la impresora';
+          printerWarning =
+            'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.';
           // Notificar el fallo de impresora por WebSocket (sin bloquear el flujo)
           this.eventEmitter.emit('order.printerError', {
             order: orderPending,

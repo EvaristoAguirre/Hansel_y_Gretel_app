@@ -68,11 +68,10 @@ export class PrinterController {
     type: String,
     description: 'UUID del pedido a reimprimir',
   })
-  @ApiBody({ description: 'Datos adicionales del pedido (opcional)' })
   @ApiResponse({ status: 200, description: 'Ticket reenviado a imprimir' })
   @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
-  async rePrintSampleTicket(@Param('id') id: string, @Body() orderData) {
-    return await this.printerService.printTicketOrder(orderData);
+  async rePrintSampleTicket(@Param('id') id: string) {
+    return await this.printerService.reprintTicketById(id);
   }
 
   @Post('printComanda')

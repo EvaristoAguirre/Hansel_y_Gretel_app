@@ -28,6 +28,10 @@ import { TableState } from "@/components/Enums/table";
 import { OrderState } from "@/components/Enums/order";
 import { editTable } from "@/api/tables";
 import { webSocketService } from "@/services/websocket.service";
+import {
+  markPrinterAlertShown,
+  wasPrinterAlertShown,
+} from "@/lib/printerAlertGuard";
 import { newOrderLineId } from "@/components/Utils/newOrderLineId";
 
 type OrderContextType = {
@@ -710,13 +714,15 @@ const OrderProvider = ({
       const orderTableId = orderData?.table?.id || orderData?.tableId;
       const message =
         data?.message ||
-        "No se pudo conectar con la impresora. El estado del pedido se guardó.";
+        "El pedido quedó guardado, pero no se pudo imprimir. Usá Reimprimir comanda o Reimprimir ticket.";
 
       if (!orderBelongsToSelectedTable(orderId, orderTableId)) return;
+      if (wasPrinterAlertShown(orderId)) return;
 
+      markPrinterAlertShown(orderId);
       Swal.fire({
         icon: "warning",
-        title: "Error de impresora",
+        title: "Impresora no disponible",
         text: message,
       });
     };
@@ -978,9 +984,10 @@ const OrderProvider = ({
       clearToppings();
 
       if (updatedOrder.comandaWarning) {
+        markPrinterAlertShown(updatedOrder.id);
         await Swal.fire({
           title: "Impresora no disponible",
-          text: "El pedido fue confirmado correctamente, pero la comanda no pudo imprimirse. Avisá a cocina de forma manual.",
+          text: updatedOrder.comandaWarning,
           icon: "warning",
           confirmButtonText: "Entendido",
         });

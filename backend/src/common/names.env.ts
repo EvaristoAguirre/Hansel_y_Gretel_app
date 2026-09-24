@@ -11,4 +11,10 @@ export const EnvNames = {
   HOST: 'HOST',
   PATH_LOG: 'PATH_LOG',
   JWT_SECRET: 'JWT_SECRET',
+  PRINTER: {
+    HOST: 'PRINTER_HOST',
+    PORT: 'PRINTER_PORT',
+    TIMEOUT: 'PRINTER_TIMEOUT',
+    RETRIES: 'PRINTER_RETRIES',
+  },
 };
