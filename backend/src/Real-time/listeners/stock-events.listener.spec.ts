@@ -8,7 +8,7 @@ describe('StockWSListener', () => {
 
   const payload: StockWsPayload = {
     stocks: [
-      { id: 'stock-1', productId: 'prod-1', quantityInStock: 8 },
+      { id: 'stock-1', productId: 'prod-1', quantityInStock: 8, updatedAt: 1 },
     ],
   };
 

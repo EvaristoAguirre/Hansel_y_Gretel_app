@@ -14,6 +14,10 @@ import { useAuth } from './authContext';
 import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
 import { FormType } from '@/components/Enums/Ingredients';
 import { webSocketService } from '@/services/websocket.service';
+import {
+  patchStockQuantity,
+  StockChange,
+} from '@/components/Hooks/stockSnapshot';
 
 type IngredientsContextType = {
   formIngredients: Iingredient;
@@ -91,32 +95,15 @@ const IngredientsProvider = ({
   }, []);
 
   useEffect(() => {
-    const applyStockChanges = (payload: {
-      stocks?: {
-        id: string;
-        ingredientId?: string;
-        quantityInStock: number;
-      }[];
-    }) => {
+    const applyStockChanges = (payload: { stocks?: StockChange[] }) => {
       const stocks = payload?.stocks ?? [];
       if (!stocks.length) return;
 
       const patchList = (list: Iingredient[]) =>
-        list.map((ingredient) => {
-          const change = stocks.find(
-            (stock) =>
-              stock.ingredientId === ingredient.id ||
-              stock.id === ingredient.stock?.id
-          );
-          if (!change || !ingredient.stock) return ingredient;
-          return {
-            ...ingredient,
-            stock: {
-              ...ingredient.stock,
-              quantityInStock: String(change.quantityInStock),
-            },
-          };
-        });
+        patchStockQuantity(list, stocks, (ingredient, stock) =>
+          stock.ingredientId === ingredient.id ||
+          stock.id === ingredient.stock?.id,
+        );
 
       setIngredientsAndToppings(patchList);
       setIngredients(patchList);

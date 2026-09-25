@@ -74,6 +74,7 @@ describe('StockService.deductStock', () => {
         productId: 'prod-1',
         ingredientId: undefined,
         quantityInStock: 8,
+        updatedAt: expect.any(Number),
       },
     ]);
   });
@@ -106,6 +107,7 @@ describe('StockService.deductStock', () => {
           productId: 'prod-1',
           ingredientId: undefined,
           quantityInStock: 8,
+          updatedAt: expect.any(Number),
         },
       ],
     });

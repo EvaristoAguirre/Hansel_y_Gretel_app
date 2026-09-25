@@ -29,6 +29,7 @@ import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { PromotionSelectionDto } from 'src/Product/dtos/promotion-selection.dto';
 import {
+  latestStockChanges,
   StockWsChange,
   toStockWsChange,
 } from './stock-ws.payload';
@@ -1422,7 +1423,8 @@ export class StockService {
       | 'stock.restored',
     stocks: StockWsChange[],
   ) {
-    if (!stocks.length) return;
-    this.eventEmitter.emit(event, { stocks });
+    const latest = latestStockChanges(stocks);
+    if (!latest.length) return;
+    this.eventEmitter.emit(event, { stocks: latest });
   }
 }

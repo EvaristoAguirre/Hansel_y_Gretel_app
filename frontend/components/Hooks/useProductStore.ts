@@ -6,6 +6,7 @@ import { create } from "zustand";
 import { ICategory } from "../Interfaces/ICategories";
 import { ProductState } from "../Interfaces/IProducts";
 import { webSocketService } from "@/services/websocket.service";
+import { patchStockQuantity, StockChange } from "./stockSnapshot";
 
 const parseCategories = (categories: ICategory[]): string[] =>
   categories.map((category) => category.id);
@@ -64,30 +65,13 @@ export const useProductStore = create<ProductState>((set) => {
       }));
     });
 
-    const applyStockChanges = (payload: {
-      stocks?: {
-        id: string;
-        productId?: string;
-        quantityInStock: number;
-      }[];
-    }) => {
+    const applyStockChanges = (payload: { stocks?: StockChange[] }) => {
       const stocks = payload?.stocks ?? [];
       if (!stocks.length) return;
       set((state) => ({
-        products: state.products.map((product) => {
-          const change = stocks.find(
-            (stock) =>
-              stock.productId === product.id || stock.id === product.stock?.id
-          );
-          if (!change || !product.stock) return product;
-          return {
-            ...product,
-            stock: {
-              ...product.stock,
-              quantityInStock: String(change.quantityInStock),
-            },
-          };
-        }),
+        products: patchStockQuantity(state.products, stocks, (product, stock) =>
+          stock.productId === product.id || stock.id === product.stock?.id
+        ),
       }));
     };
 

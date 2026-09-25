@@ -6,6 +6,7 @@ export class CreatePrintCounter1782900000000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS "print_counter" (
         "id" integer PRIMARY KEY,
         "counter" integer NOT NULL DEFAULT 0,
+        "legacyImported" boolean NOT NULL DEFAULT false,
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
       )
     `);

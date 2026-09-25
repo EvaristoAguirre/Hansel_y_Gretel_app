@@ -22,7 +22,6 @@ import { EnvNames } from 'src/common/names.env';
 @Injectable()
 export class PrinterService {
   readonly logger = new Logger(PrinterService.name);
-  private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
   private readonly printerConfig: {
     host: string;
     port: number;
@@ -52,37 +51,57 @@ export class PrinterService {
     };
   }
 
+  /**
+   * El JSON histórico vivía junto al compilado. Un build borra `dist/`,
+   * así que la copia que sobrevive al deploy está en el directorio de trabajo.
+   * `__dirname` queda como respaldo por si el proceso todavía no se reconstruyó.
+   */
+  private legacyCounterCandidates(): string[] {
+    return [
+      path.join(process.cwd(), 'print-counter.json'),
+      path.join(__dirname, 'print-counter.json'),
+    ];
+  }
+
   private readLegacyCounterFile(): number {
-    try {
-      if (!fs.existsSync(this.counterFilePath)) return 0;
-      const data = fs.readFileSync(this.counterFilePath, 'utf8');
-      return Number(JSON.parse(data).counter) || 0;
-    } catch (error) {
-      this.logger.error('readLegacyCounterFile', error);
-      return 0;
+    for (const filePath of this.legacyCounterCandidates()) {
+      try {
+        if (!fs.existsSync(filePath)) continue;
+        const data = fs.readFileSync(filePath, 'utf8');
+        const value = Number(JSON.parse(data).counter);
+        if (Number.isFinite(value) && value > 0) return value;
+      } catch (error) {
+        this.logger.error('readLegacyCounterFile', error);
+      }
     }
+    return 0;
+  }
+
+  private isLegacyImported(value: unknown): boolean {
+    return value === true || value === 't' || value === 'true';
   }
 
   private async nextCommandSequence(): Promise<number> {
     return this.dataSource.transaction(async (manager) => {
       await manager.query(`
-        INSERT INTO "print_counter" ("id", "counter")
-        VALUES (1, 0)
+        INSERT INTO "print_counter" ("id", "counter", "legacyImported")
+        VALUES (1, 0, false)
         ON CONFLICT ("id") DO NOTHING
       `);
-      const rows: { counter: number }[] = await manager.query(
-        `SELECT "counter" FROM "print_counter" WHERE "id" = 1 FOR UPDATE`,
-      );
+      const rows: { counter: number; legacyImported: unknown }[] =
+        await manager.query(
+          `SELECT "counter", "legacyImported" FROM "print_counter" WHERE "id" = 1 FOR UPDATE`,
+        );
       let current = Number(rows[0]?.counter ?? 0);
-      if (current === 0) {
+      if (!this.isLegacyImported(rows[0]?.legacyImported)) {
         const imported = this.readLegacyCounterFile();
-        if (imported > 0) {
+        if (imported > current) {
           current = imported;
         }
       }
       const next = current + 1;
       await manager.query(
-        `UPDATE "print_counter" SET "counter" = $1, "updatedAt" = NOW() WHERE "id" = 1 RETURNING "counter"`,
+        `UPDATE "print_counter" SET "counter" = $1, "legacyImported" = true, "updatedAt" = NOW() WHERE "id" = 1`,
         [next],
       );
       return current;

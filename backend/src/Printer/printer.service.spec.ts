@@ -1,5 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { PrinterService } from './printer.service';
 import { EnvNames } from '../common/names.env';
 
@@ -59,21 +61,93 @@ describe('PrinterService', () => {
   });
 
   it('nextCommandSequence incrementa en transacción y no reescribe el archivo', async () => {
+    const exists = jest.spyOn(fs, 'existsSync');
     const manager = {
       query: jest
         .fn()
         .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce([{ counter: 4 }])
-        .mockResolvedValueOnce([{ counter: 5 }]),
+        .mockResolvedValueOnce([{ counter: 4, legacyImported: true }])
+        .mockResolvedValueOnce(undefined),
     };
     dataSource.transaction.mockImplementation(async (cb: any) => cb(manager));
     const service = createService();
     const value = await (service as any).nextCommandSequence();
     expect(value).toBe(4);
+    expect(exists).not.toHaveBeenCalled();
     expect(manager.query).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE "print_counter"'),
       [5],
     );
+    exists.mockRestore();
+  });
+
+  it('nextCommandSequence sin archivo legado arranca en 0 y marca el import', async () => {
+    const exists = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ counter: 0, legacyImported: false }])
+        .mockResolvedValueOnce(undefined),
+    };
+    dataSource.transaction.mockImplementation(async (cb: any) => cb(manager));
+    const service = createService();
+    const value = await (service as any).nextCommandSequence();
+    expect(value).toBe(0);
+    expect(manager.query).toHaveBeenCalledWith(
+      expect.stringContaining('"legacyImported" = true'),
+      [1],
+    );
+    exists.mockRestore();
+  });
+
+  it('no relee el archivo si el contador ya fue importado aunque esté en 0', async () => {
+    const exists = jest.spyOn(fs, 'existsSync');
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ counter: 0, legacyImported: true }])
+        .mockResolvedValueOnce(undefined),
+    };
+    dataSource.transaction.mockImplementation(async (cb: any) => cb(manager));
+    const service = createService();
+    const value = await (service as any).nextCommandSequence();
+    expect(value).toBe(0);
+    expect(exists).not.toHaveBeenCalled();
+    expect(manager.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE "print_counter"'),
+      [1],
+    );
+    exists.mockRestore();
+  });
+
+  it('importa el contador legado desde process.cwd() una sola vez', async () => {
+    const cwdFile = path.join(process.cwd(), 'print-counter.json');
+    const exists = jest
+      .spyOn(fs, 'existsSync')
+      .mockImplementation((candidate) => String(candidate) === cwdFile);
+    const read = jest
+      .spyOn(fs, 'readFileSync')
+      .mockReturnValue(JSON.stringify({ counter: 12 }) as any);
+    const manager = {
+      query: jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ counter: 0, legacyImported: false }])
+        .mockResolvedValueOnce(undefined),
+    };
+    dataSource.transaction.mockImplementation(async (cb: any) => cb(manager));
+    const service = createService();
+    const value = await (service as any).nextCommandSequence();
+    expect(value).toBe(12);
+    expect(read).toHaveBeenCalledWith(cwdFile, 'utf8');
+    expect(manager.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE "print_counter"'),
+      [13],
+    );
+    exists.mockRestore();
+    read.mockRestore();
   });
 
   it('reprintTicketById lanza 404 si la orden no existe', async () => {

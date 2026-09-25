@@ -8,6 +8,9 @@ export class PrintCounter {
   @Column({ type: 'int', default: 0 })
   counter: number;
 
+  @Column({ type: 'boolean', default: false })
+  legacyImported: boolean;
+
   @UpdateDateColumn()
   updatedAt: Date;
 }

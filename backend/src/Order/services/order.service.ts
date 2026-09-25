@@ -25,6 +25,10 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
+import {
+  latestStockChanges,
+  StockWsChange,
+} from 'src/Stock/stock-ws.payload';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
@@ -139,7 +143,7 @@ export class OrderService {
       isPriority?: boolean;
     } | null = null;
     let savedDetailIds: string[] = [];
-    const deductedStocks: { id: string; productId?: string; ingredientId?: string; quantityInStock: number }[] = [];
+    const deductedStocks: StockWsChange[] = [];
 
     try {
       const order = await this.orderRepository.getOrderWithRelations(
@@ -508,8 +512,9 @@ export class OrderService {
       });
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
-      if (deductedStocks.length) {
-        this.eventEmitter.emit('stock.deducted', { stocks: deductedStocks });
+      const deductedLatest = latestStockChanges(deductedStocks);
+      if (deductedLatest.length) {
+        this.eventEmitter.emit('stock.deducted', { stocks: deductedLatest });
       }
 
       if (pendingPrintData) {
@@ -858,7 +863,7 @@ export class OrderService {
       }
 
       // Restituir stock de cada ítem activo dentro de la misma transacción
-      const restoredStocks: { id: string; productId?: string; ingredientId?: string; quantityInStock: number }[] = [];
+      const restoredStocks: StockWsChange[] = [];
       const activeDetails = (order.orderDetails ?? []).filter(
         (d) => d.isActive,
       );
@@ -940,8 +945,9 @@ export class OrderService {
 
       // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
-      if (restoredStocks.length) {
-        this.eventEmitter.emit('stock.restored', { stocks: restoredStocks });
+      const restoredLatest = latestStockChanges(restoredStocks);
+      if (restoredLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredLatest });
       }
 
       // Emitir tableUpdated después del commit para que el frontend actualice el color.
@@ -984,7 +990,7 @@ export class OrderService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    const restoredDetailStocks: { id: string; productId?: string; ingredientId?: string; quantityInStock: number }[] = [];
+    const restoredDetailStocks: StockWsChange[] = [];
 
     try {
       // 1) Cargar la orden con todas las relaciones necesarias
@@ -1137,8 +1143,9 @@ export class OrderService {
       await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
-      if (restoredDetailStocks.length) {
-        this.eventEmitter.emit('stock.restored', { stocks: restoredDetailStocks });
+      const restoredDetailLatest = latestStockChanges(restoredDetailStocks);
+      if (restoredDetailLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredDetailLatest });
       }
 
       // 12) Reimprimir comanda de cocina con el estado actualizado (fuera de la transacción)
