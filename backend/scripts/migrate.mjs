@@ -48,17 +48,17 @@ function main() {
   switch (command) {
     case 'run':
       log(`${colors.yellow}Ejecutando migraciones...${colors.reset}`);
-      runCommand('npm run migration:run', 'Ejecutando migraciones');
+      runCommand('pnpm run migration:run', 'Ejecutando migraciones');
       break;
 
     case 'revert':
       log(`${colors.yellow}Revirtiendo última migración...${colors.reset}`);
-      runCommand('npm run migration:revert', 'Revirtiendo migración');
+      runCommand('pnpm run migration:revert', 'Revirtiendo migración');
       break;
 
     case 'show':
       log(`${colors.yellow}Mostrando estado de migraciones...${colors.reset}`);
-      runCommand('npm run migration:show', 'Mostrando estado');
+      runCommand('pnpm run migration:show', 'Mostrando estado');
       break;
 
     case 'generate': {
@@ -78,7 +78,7 @@ function main() {
         `${colors.yellow}Generando migración: ${migrationName}${colors.reset}`,
       );
       runCommand(
-        `npm run migration:generate -- migration/${migrationName}`,
+        `pnpm run migration:generate -- migration/${migrationName}`,
         `Generando migración: ${migrationName}`,
       );
       break;
@@ -101,7 +101,7 @@ function main() {
         `${colors.yellow}Creando migración vacía: ${createName}${colors.reset}`,
       );
       runCommand(
-        `npm run migration:create -- migration/${createName}`,
+        `pnpm run migration:create -- migration/${createName}`,
         `Creando migración: ${createName}`,
       );
       break;

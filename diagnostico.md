@@ -501,7 +501,7 @@ Infra añadida junto a la Fase 1 para no regresar los fixes de WS:
 ### Backend (Jest ya existente)
 
 ```bash
-cd backend && npm test -- --testPathPattern=Real-time
+cd backend && pnpm test -- --testPathPattern=Real-time
 ```
 
 | Archivo | Qué cubre |
@@ -514,7 +514,7 @@ cd backend && npm test -- --testPathPattern=Real-time
 ### Frontend (Vitest)
 
 ```bash
-cd frontend && npm test
+cd frontend && pnpm test
 ```
 
 | Archivo | Qué cubre |
