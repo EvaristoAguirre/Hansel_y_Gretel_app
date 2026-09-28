@@ -119,7 +119,8 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 - [ ] **S-16 — `forbidNonWhitelisted: false`** · `backend/src/main.ts` (~L148–154) · Media · S  
   **Diferido (PR D, 19/08/2026):** `whitelist: true` ya descarta extras. Activar el 400 rompe flujos actuales (cerrar caja con `initialCash`, editar unidad/`id`, crear/editar producto e ingrediente). No hacer sin alinear DTOs/front.
 - [ ] **S-17 — Body sin DTO en impresión** · `printer.controller.ts` (~L51, L68) · Media · S  
-- [ ] **S-18 — `UpdateDailyCashDto` permite mutar totales financieros** · `backend/src/DTOs/update-daily-cash.dto.ts` · Media · S (combinado con S-04)  
+- [x] **S-18 — `UpdateDailyCashDto` permite mutar totales financieros**  
+  **Resuelto (28/09/2026):** el PATCH solo acepta `comment` e `initialCash`. El servicio persiste esa lista blanca; `initialCash` se rechaza si la caja no está abierta.  
 - [ ] **S-19 — Protección de rutas solo client-side; token no se valida expiración en `ProtectedRoute`** · `frontend/components/ProtectedRoute/ProtectedRoute.tsx` · Media · M  
 - [x] **S-20 — Sin Dependabot / CI de auditoría** · **Resuelto (Fase 4, 24/09/2026):** `.github/dependabot.yml` npm semanal en `/frontend` y `/backend`  
 - [ ] **S-21 — Sin refresh token; JWT 120m** · `user.module.ts` · Media · M  
@@ -300,9 +301,8 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
 - [x] **P-12 — `deductStock` fuera de la transacción de `updateOrder`**  
   **Resuelto (Fase 3, 24/09/2026):** `deductStock` acepta `QueryRunner` (espejo de `restoreStock`); `updateOrder` lo reutiliza.
 
-- [ ] **P-13 — `markOrderAsPendingPayment` y cierre de caja con updates sueltos**  
-  **Archivos:** `order.service.ts` (~L643–680), `daily-cash.service.ts` (~L156+)  
-  **Severidad:** Media · **Esfuerzo:** M
+- [x] **P-13 — `markOrderAsPendingPayment` y cierre de caja con updates sueltos**  
+  **Resuelto (28/09/2026):** mesa + orden del pendiente de cobro en un `QueryRunner` (lock + commit antes de imprimir). Cierre de caja con lock y save en la misma TX; el evento `dailyCash.closed` sale después del commit.
 
 ### 4.4 Configuración TypeORM / pool
 
@@ -569,6 +569,7 @@ cd frontend && pnpm test
 | 24/09/2026 | **Fase 2 (código)** | `PRINTER_*` por env; print post-commit; timeout 4s/1 intento; reprint ticket por id; avisos; `.env.example` + checklist LAN |
 | 24/09/2026 | **Fase 3 (código)** | TX cobro/stock; índices; listados livianos; N+1/eager; pool 20; front 11–13 y 16–17 |
 | 24/09/2026 | **Fase 4 (código)** | Next 15.5.26; Dependabot; auth WS JWT; stock WS; limpieza legacy/ESC-POS; contador BD; PORT/HOST; bugs front 4–9 |
+| 28/09/2026 | **P-13 / S-18** | Pendiente de cobro y cierre de caja en una TX; PATCH de caja sin totales calculados |
 
 ---
 
