@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending, orderToReprint } from "@/api/order";
@@ -25,6 +25,7 @@ import { formatNumber } from "../Utils/FormatNumber";
 import { UserRole } from "../Enums/user";
 import LoadingLottie from "../Loader/Loading";
 import { markPrinterAlertShown } from "@/lib/printerAlertGuard";
+import { sumOrderLines } from "./orderTotal";
 
 export interface OrderProps {
   imprimirComanda: any;
@@ -50,23 +51,13 @@ const Order: React.FC<OrderProps> = ({
   } = useOrderContext();
   const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
-  const [total, setTotal] = useState(0);
   const [isPrinting, setIsPrinting] = useState(false);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
-
-  useEffect(() => {
-    const calcularTotal = () => {
-      if (confirmedProducts?.length > 0) {
-        setTotal(
-          confirmedProducts?.reduce((acc: number, item: SelectedProductsI) => {
-            return acc + (normalizeNumber(item.unitaryPrice ?? 0)) * item.quantity;
-          }, 0)
-        );
-      }
-    };
-    calcularTotal();
-  }, [confirmedProducts]);
+  const total = useMemo(
+    () => sumOrderLines(confirmedProducts),
+    [confirmedProducts],
+  );
 
   const expandOrderProducts = (products: SelectedProductsI[]): SelectedProductsI[] => {
     const expanded: SelectedProductsI[] = [];
