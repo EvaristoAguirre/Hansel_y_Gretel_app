@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "jwt-decode";
 import Swal from "sweetalert2";
 import { UserRole } from "@/components/Enums/user";
+import { webSocketService } from "@/services/websocket.service";
 
 interface AuthContextProps {
   user: any;
@@ -69,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("user");
     setUser(null);
     setAccessToken(null);
+    webSocketService.disconnect();
   }, []);
 
   const handleSignOut = useCallback(async () => {
@@ -143,6 +145,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!accessToken) return;
 
+    let warningTimer: ReturnType<typeof setTimeout> | undefined;
+    let expirationTimer: ReturnType<typeof setTimeout> | undefined;
+
     try {
       const decoded: { exp: number } = jwtDecode(accessToken);
       const expirationTime = decoded.exp * 1000 - Date.now(); // En milisegundos
@@ -162,7 +167,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 🔔 Notificar 1 minuto antes de la expiración
       const warningTime = expirationTime - 60000;
       if (warningTime > 0) {
-        setTimeout(() => {
+        warningTimer = setTimeout(() => {
           Swal.fire({
             icon: "warning",
             title: "Sesión por expirar",
@@ -173,7 +178,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // 🔴 Cerrar sesión automáticamente cuando el token expire
-      setTimeout(() => {
+      expirationTimer = setTimeout(() => {
         Swal.fire({
           icon: "error",
           title: "Sesión expirada",
@@ -189,7 +194,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       removeAccessToken();
       window.location.href = "/views/login";
     }
-  }, [accessToken]);
+
+    return () => {
+      if (warningTimer) clearTimeout(warningTimer);
+      if (expirationTimer) clearTimeout(expirationTimer);
+    };
+  }, [accessToken, removeAccessToken]);
 
   const value = useMemo(
     () => ({

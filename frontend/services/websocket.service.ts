@@ -17,6 +17,7 @@ export class WebSocketService {
     // Reutilizar el socket existente (aunque esté desconectado/reconectando)
     // para no crear conexiones huérfanas.
     if (this.socket) {
+      this.refreshAuth();
       if (!this.socket.connected) {
         this.socket.connect();
       }
@@ -41,6 +42,7 @@ export class WebSocketService {
       // En red local (LAN) se conecta directamente por WebSocket sin el
       // handshake inicial de polling, reduciendo latencia en la primera conexión.
       transports: ['websocket'],
+      auth: { token: this.getAuthToken() },
     });
 
     this.bindLifecycleHandlers();
@@ -62,6 +64,7 @@ export class WebSocketService {
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
+      this.refreshAuth();
       console.log(
         `🔄 Intento de reconexión ${attemptNumber}/${this.maxReconnectAttempts}`
       );
@@ -84,6 +87,22 @@ export class WebSocketService {
     this.socket.on('reconnect_failed', () => {
       console.error('❌ Falló la reconexión al servidor WebSocket');
     });
+  }
+
+  private getAuthToken(): string | null {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      const userSession = localStorage.getItem('user');
+      if (!userSession) return null;
+      return JSON.parse(userSession).accessToken ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private refreshAuth() {
+    if (!this.socket) return;
+    this.socket.auth = { token: this.getAuthToken() };
   }
 
   private getWebSocketUrl(): string | null {

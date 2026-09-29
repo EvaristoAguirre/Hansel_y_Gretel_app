@@ -25,6 +25,10 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
+import {
+  latestStockChanges,
+  StockWsChange,
+} from 'src/Stock/stock-ws.payload';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
@@ -139,6 +143,7 @@ export class OrderService {
       isPriority?: boolean;
     } | null = null;
     let savedDetailIds: string[] = [];
+    const deductedStocks: StockWsChange[] = [];
 
     try {
       const order = await this.orderRepository.getOrderWithRelations(
@@ -281,13 +286,14 @@ export class OrderService {
             finalPrice = Number(finalPrice) + Number(extraCost);
           }
 
-          await this.stockService.deductStock(
+          const deducted = await this.stockService.deductStock(
             product.id,
             pd.quantity,
             pd.toppingsPerUnit,
             pd.promotionSelections,
             queryRunner,
           );
+          deductedStocks.push(...deducted);
 
           // Construir el OrderDetail real con el precio correcto.
           // Para promociones con extra cost, se pasa finalPrice como overrideBasePrice
@@ -506,6 +512,10 @@ export class OrderService {
       });
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
+      const deductedLatest = latestStockChanges(deductedStocks);
+      if (deductedLatest.length) {
+        this.eventEmitter.emit('stock.deducted', { stocks: deductedLatest });
+      }
 
       if (pendingPrintData) {
         const printResult = await this.tryPrintKitchenOrder(
@@ -853,6 +863,7 @@ export class OrderService {
       }
 
       // Restituir stock de cada ítem activo dentro de la misma transacción
+      const restoredStocks: StockWsChange[] = [];
       const activeDetails = (order.orderDetails ?? []).filter(
         (d) => d.isActive,
       );
@@ -889,13 +900,14 @@ export class OrderService {
         }
 
         try {
-          await this.stockService.restoreStock(
+          const restored = await this.stockService.restoreStock(
             detail.product.id,
             detail.quantity,
             toppingsPerUnit.length ? toppingsPerUnit : undefined,
             promotionSelections,
             queryRunner,
           );
+          restoredStocks.push(...restored);
           this.logger.log(
             `[cancelOrder] Stock restituido: producto "${detail.product.name}" x${detail.quantity}`,
           );
@@ -933,6 +945,10 @@ export class OrderService {
 
       // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
+      const restoredLatest = latestStockChanges(restoredStocks);
+      if (restoredLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredLatest });
+      }
 
       // Emitir tableUpdated después del commit para que el frontend actualice el color.
       if (previousTableId) {
@@ -974,6 +990,7 @@ export class OrderService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+    const restoredDetailStocks: StockWsChange[] = [];
 
     try {
       // 1) Cargar la orden con todas las relaciones necesarias
@@ -1066,13 +1083,14 @@ export class OrderService {
 
       // 9) Restituir stock (modo lenient: loguear y continuar si falla)
       try {
-        await this.stockService.restoreStock(
+        const restored = await this.stockService.restoreStock(
           detail.product.id,
           quantityToCancel,
           toppingsPerUnit.length ? toppingsPerUnit : undefined,
           promotionSelections,
           queryRunner,
         );
+        restoredDetailStocks.push(...restored);
         this.logger.log(
           `[cancelOrderDetail] Stock restituido: "${detail.product.name}" x${quantityToCancel}`,
         );
@@ -1125,6 +1143,10 @@ export class OrderService {
       await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
+      const restoredDetailLatest = latestStockChanges(restoredDetailStocks);
+      if (restoredDetailLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredDetailLatest });
+      }
 
       // 12) Reimprimir comanda de cocina con el estado actualizado (fuera de la transacción)
       try {

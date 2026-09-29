@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const lifecycleHandlers: Record<string, Function[]> = {};
 const mockSocket = {
   connected: true,
+  auth: {} as { token?: string | null },
   connect: vi.fn(),
   disconnect: vi.fn(),
   on: vi.fn((event: string, cb: Function) => {
@@ -26,11 +27,24 @@ describe('WebSocketService', () => {
     vi.resetModules();
     Object.keys(lifecycleHandlers).forEach((k) => delete lifecycleHandlers[k]);
     mockSocket.connected = true;
+    mockSocket.auth = {};
     mockSocket.connect.mockClear();
     mockSocket.disconnect.mockClear();
     mockSocket.on.mockClear();
     mockSocket.off.mockClear();
     mockSocket.emit.mockClear();
+
+    const store = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      clear: () => store.clear(),
+    });
 
     process.env.NEXT_PUBLIC_API_URL_DEV = 'http://localhost:3000';
     process.env.NODE_ENV = 'development';
@@ -81,5 +95,34 @@ describe('WebSocketService', () => {
     expect(mockSocket.emit).toHaveBeenCalledWith('joinTable', {
       tableId: 'mesa-1',
     });
+  });
+
+  it('pasa el JWT en auth.token al crear el socket', async () => {
+    const { io } = await import('socket.io-client');
+    localStorage.setItem('user', JSON.stringify({ accessToken: 'jwt-test' }));
+    service.connect();
+    expect(io).toHaveBeenCalledWith(
+      'http://localhost:3000',
+      expect.objectContaining({
+        auth: { token: 'jwt-test' },
+        transports: ['websocket'],
+      }),
+    );
+  });
+
+  it('actualiza socket.auth antes de reconectar', () => {
+    service.connect();
+    localStorage.setItem('user', JSON.stringify({ accessToken: 'jwt-nuevo' }));
+    mockSocket.connected = false;
+    service.connect();
+    expect(mockSocket.auth).toEqual({ token: 'jwt-nuevo' });
+    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshAuth en reconnect_attempt', () => {
+    service.connect();
+    localStorage.setItem('user', JSON.stringify({ accessToken: 'jwt-reconn' }));
+    (lifecycleHandlers['reconnect_attempt'] || []).forEach((h) => h(1));
+    expect(mockSocket.auth).toEqual({ token: 'jwt-reconn' });
   });
 });

@@ -19,8 +19,6 @@
     "noFallthroughCasesInSwitch": false,
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "paths": {
-      "escpos": ["node_modules/escpos"],
-      "escpos-usb": ["node_modules/escpos-usb"],
       "@/*": ["src/*"],
       "@modules/*": ["src/modules/*"],
       "@common/*": ["src/common/*"],
