@@ -119,7 +119,8 @@ Severidad orientada a red LAN (router del local). Aunque no esté expuesta a Int
 - [ ] **S-16 — `forbidNonWhitelisted: false`** · `backend/src/main.ts` (~L148–154) · Media · S  
   **Diferido (PR D, 19/08/2026):** `whitelist: true` ya descarta extras. Activar el 400 rompe flujos actuales (cerrar caja con `initialCash`, editar unidad/`id`, crear/editar producto e ingrediente). No hacer sin alinear DTOs/front.
 - [ ] **S-17 — Body sin DTO en impresión** · `printer.controller.ts` (~L51, L68) · Media · S  
-- [ ] **S-18 — `UpdateDailyCashDto` permite mutar totales financieros** · `backend/src/DTOs/update-daily-cash.dto.ts` · Media · S (combinado con S-04)  
+- [x] **S-18 — `UpdateDailyCashDto` permite mutar totales financieros**  
+  **Resuelto (28/09/2026):** el PATCH solo acepta `comment` e `initialCash`. El servicio persiste esa lista blanca; `initialCash` se rechaza si la caja no está abierta.  
 - [ ] **S-19 — Protección de rutas solo client-side; token no se valida expiración en `ProtectedRoute`** · `frontend/components/ProtectedRoute/ProtectedRoute.tsx` · Media · M  
 - [x] **S-20 — Sin Dependabot / CI de auditoría** · **Resuelto (Fase 4, 24/09/2026):** `.github/dependabot.yml` npm semanal en `/frontend` y `/backend`  
 - [ ] **S-21 — Sin refresh token; JWT 120m** · `user.module.ts` · Media · M  
@@ -300,9 +301,8 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
 - [x] **P-12 — `deductStock` fuera de la transacción de `updateOrder`**  
   **Resuelto (Fase 3, 24/09/2026):** `deductStock` acepta `QueryRunner` (espejo de `restoreStock`); `updateOrder` lo reutiliza.
 
-- [ ] **P-13 — `markOrderAsPendingPayment` y cierre de caja con updates sueltos**  
-  **Archivos:** `order.service.ts` (~L643–680), `daily-cash.service.ts` (~L156+)  
-  **Severidad:** Media · **Esfuerzo:** M
+- [x] **P-13 — `markOrderAsPendingPayment` y cierre de caja con updates sueltos**  
+  **Resuelto (28/09/2026):** mesa + orden del pendiente de cobro en un `QueryRunner` (lock + commit antes de imprimir). Cierre de caja con lock y save en la misma TX; el evento `dailyCash.closed` sale después del commit.
 
 ### 4.4 Configuración TypeORM / pool
 
@@ -397,7 +397,7 @@ sequenceDiagram
 |-----------------|----------|
 | 3 — listeners WS duplicados | = WS-04 · **cerrado Fase 1** |
 | 4–10 — críticos React/auth | Auth HTTP (Fase 0) hecha; ítem 10 cerrado en Fase 1; **4–9 cerrados Fase 4** |
-| 11–20 — performance front | 11–13 y 16–17 cerrados Fase 3; 14–15 y 18–20 siguen en `mejoras.md` |
+| 11–20 — performance front | 11–17 y 20 cerrados; **18 y 19** siguen en `mejoras.md` |
 | 21 — `status` vs `state` | = WS-07 · **cerrado Fase 1** |
 
 Ítems ya cerrados en `mejoras.md`: filtro `categoryDeleted` (store), guard anti doble submit en `Pay.tsx`, WS duplicados (3), null-guard mesa (10), `state` vs `status` (21).
@@ -477,7 +477,7 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 - [x] I-06 / I-07 / I-08 — Limpieza impresora, contador en BD, PORT/HOST
 - [x] `mejoras.md` 4–9 (el 10 ya estaba cerrado)
 - [x] Eliminar gateway legacy `EventsGateway` / listeners muertos
-- [ ] Ítems 14–36 de `mejoras.md` · **fuera de esta oleada**
+- [ ] Ítems de `mejoras.md` que siguen abiertos (18, 19, 22, 25–29, 31–36) · **fuera de las fases 0–4**. 14, 15, 20, 23 y 30 cerrados el 28/09/2026.
 
 **Esfuerzo estimado:** 3–6 días (depende del alcance de upgrades).
 
@@ -537,7 +537,7 @@ cd frontend && pnpm test
 
 - Rediseño de UX, facturación fiscal electrónica, multi-sucursal.
 - Benchmarks de carga formales (k6/Artillery): recomendable después de Fase 3.
-- Cookie httpOnly (S-14) y pulido `mejoras.md` 14–36. Fase 0 auth HTTP hecha (PR D diferido). Fases 1–4 en código (smoke LAN al redeployar).
+- Cookie httpOnly (S-14) y el resto de `mejoras.md` (18, 19, 22, 25–29, 31–36). 14, 15, 20, 23 y 30 cerrados el 28/09/2026. Fase 0 auth HTTP hecha (PR D diferido). Fases 1–4 en código (smoke LAN al redeployar).
 
 ---
 
@@ -569,6 +569,8 @@ cd frontend && pnpm test
 | 24/09/2026 | **Fase 2 (código)** | `PRINTER_*` por env; print post-commit; timeout 4s/1 intento; reprint ticket por id; avisos; `.env.example` + checklist LAN |
 | 24/09/2026 | **Fase 3 (código)** | TX cobro/stock; índices; listados livianos; N+1/eager; pool 20; front 11–13 y 16–17 |
 | 24/09/2026 | **Fase 4 (código)** | Next 15.5.26; Dependabot; auth WS JWT; stock WS; limpieza legacy/ESC-POS; contador BD; PORT/HOST; bugs front 4–9 |
+| 28/09/2026 | **P-13 / S-18** | Pendiente de cobro y cierre de caja en una TX; PATCH de caja sin totales calculados |
+| 28/09/2026 | **mejoras 14, 15, 20, 23, 30** | Borrado de ingrediente por `isTopping` real; carga de ingredientes/unidades al tener token; total del pedido en `useMemo`; DataGrid sin transformar filas en cada render |
 
 ---
 

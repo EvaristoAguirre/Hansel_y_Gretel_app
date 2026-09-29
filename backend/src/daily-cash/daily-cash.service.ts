@@ -17,7 +17,7 @@ import {
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { DailyCashState, TableState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
@@ -41,6 +41,7 @@ export class DailyCashService {
     private readonly eventEmitter: EventEmitter2,
     private readonly monitoringLogger: LoggerService,
     private readonly tableService: TableService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async openDailyCash(
@@ -135,16 +136,38 @@ export class DailyCashService {
     }
 
     try {
-      await this.dailyCashRepo.update(id, updateDailyCashDto);
+      const current = await this.dailyCashRepo.findOne({ where: { id } });
+      if (!current) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+
+      const patch: { comment?: string; initialCash?: number } = {};
+      if (updateDailyCashDto.comment !== undefined) {
+        patch.comment = updateDailyCashDto.comment;
+      }
+      if (updateDailyCashDto.initialCash !== undefined) {
+        if (current.state !== DailyCashState.OPEN) {
+          throw new ConflictException(
+            'No se puede modificar el efectivo inicial de una caja cerrada.',
+          );
+        }
+        patch.initialCash = Number(updateDailyCashDto.initialCash);
+      }
+
+      if (Object.keys(patch).length > 0) {
+        await this.dailyCashRepo.update(id, patch);
+      }
 
       const updatedDailyCash = await this.getDailyCashById(id);
       if (!updatedDailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
 
-      this.eventEmitter.emit('dailyCash.updated', {
-        dailyCash: updatedDailyCash,
-      });
+      if (Object.keys(patch).length > 0) {
+        this.eventEmitter.emit('dailyCash.updated', {
+          dailyCash: updatedDailyCash,
+        });
+      }
 
       return DailyCashMapper.toResponse(updatedDailyCash);
     } catch (error) {
@@ -166,14 +189,21 @@ export class DailyCashService {
       );
     }
 
-    try {
-      const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      if (!dailyCash) {
+    try {
+      const locked = await queryRunner.manager.findOne(DailyCash, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!locked) {
         throw new NotFoundException('Daily cash report not found.');
       }
 
-      if (dailyCash.state === DailyCashState.CLOSED) {
+      if (locked.state === DailyCashState.CLOSED) {
         throw new ConflictException('Daily cash report is already closed.');
       }
 
@@ -196,29 +226,34 @@ export class DailyCashService {
         );
       }
 
+      const dailyCash = await queryRunner.manager.findOne(DailyCash, {
+        where: { id },
+        relations: ['movements', 'orders', 'orders.payments'],
+      });
+
+      if (!dailyCash) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+
       dailyCash.state = DailyCashState.CLOSED;
       dailyCash.comment = closeDailyCashDto.comment || '';
 
-      // --- Separar movimientos por tipo ---
-      const incomes = dailyCash.movements.filter(
+      const incomes = (dailyCash.movements || []).filter(
         (mov) => mov.type === DailyCashMovementType.INCOME,
       );
-      const expenses = dailyCash.movements.filter(
+      const expenses = (dailyCash.movements || []).filter(
         (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
 
-      // --- Guardar TOTALES de ventas, propinas, ingresos y egresos directos ---
-      dailyCash.totalSales = this.sumGrossTotalOrders(dailyCash.orders);
-      dailyCash.totalDiscounts = this.sumDiscountsOrders(dailyCash.orders);
+      dailyCash.totalSales = this.sumGrossTotalOrders(dailyCash.orders || []);
+      dailyCash.totalDiscounts = this.sumDiscountsOrders(dailyCash.orders || []);
       dailyCash.totalNetSales = dailyCash.totalSales - dailyCash.totalDiscounts;
-      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders);
+      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders || []);
       dailyCash.totalIncomes = this.sumTotal(incomes);
       dailyCash.totalExpenses = this.sumTotal(expenses);
 
-      // --- Agrupación por método de pago ---
-
       const orderPayments = this.groupRecordsByPaymentMethod(
-        dailyCash.orders.flatMap((order) =>
+        (dailyCash.orders || []).flatMap((order) =>
           (order.payments || []).map((p) => ({
             amount: Number(p.amount),
             methodOfPayment: p.methodOfPayment,
@@ -228,7 +263,6 @@ export class DailyCashService {
       const incomePayments = this.groupRecordsByPaymentMethod(incomes);
       const expensePayments = this.groupRecordsByPaymentMethod(expenses);
 
-      // --- Totales netos por método de pago ---
       dailyCash.totalCash =
         (orderPayments[PaymentMethod.CASH] || 0) +
         (incomePayments[PaymentMethod.CASH] || 0) -
@@ -254,7 +288,6 @@ export class DailyCashService {
         (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
         (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
 
-      // Cierre por lote: tarjeta de crédito + débito + transferencias
       dailyCash.totalBatchClose =
         dailyCash.totalCreditCard +
         dailyCash.totalDebitCard +
@@ -267,7 +300,8 @@ export class DailyCashService {
 
       dailyCash.finalCash = Number(closeDailyCashDto.finalCash);
 
-      const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
+      const dailyCashClosed = await queryRunner.manager.save(dailyCash);
+      await queryRunner.commitTransaction();
 
       this.eventEmitter.emit('dailyCash.closed', {
         dailyCash: dailyCashClosed,
@@ -275,8 +309,13 @@ export class DailyCashService {
 
       return DailyCashMapper.toResponse(dailyCashClosed);
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('closeDailyCash', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 

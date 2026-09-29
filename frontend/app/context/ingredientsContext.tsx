@@ -11,6 +11,8 @@ import {
 } from '../../api/ingredients';
 import { useEffect } from 'react';
 import { useAuth } from './authContext';
+import { listsAfterRemovingIngredient } from './ingredientLists';
+import { InflightSlot, shareInflight } from '@/lib/inflightByToken';
 import { IUnitOfMeasureStandard } from '@/components/Interfaces/IUnitOfMeasure';
 import { FormType } from '@/components/Enums/Ingredients';
 import { webSocketService } from '@/services/websocket.service';
@@ -64,6 +66,33 @@ export const useIngredientsContext = () => {
   return context;
 };
 
+type LoadedIngredients = {
+  combined: Iingredient[] | null;
+  ingredients: Iingredient[] | null;
+};
+
+let ingredientsSlot: InflightSlot<LoadedIngredients> = null;
+
+function loadIngredientLists(token: string) {
+  return shareInflight(
+    () => ingredientsSlot,
+    (slot) => {
+      ingredientsSlot = slot;
+    },
+    token,
+    async () => {
+      const [combined, ingredients] = await Promise.all([
+        fetchIngredientsAndToppings(token),
+        fetchIngredientsAll(token),
+      ]);
+      return {
+        combined: combined ?? null,
+        ingredients: ingredients ?? null,
+      };
+    },
+  );
+}
+
 const IngredientsProvider = ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
@@ -81,18 +110,24 @@ const IngredientsProvider = ({
     Iingredient[]
   >([]);
   const [ingredients, setIngredients] = useState<Iingredient[]>([]);
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, accessToken, isAuthLoaded } = useAuth();
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
-    fetchIngredientsAndToppings(token).then((dataIngredients) => {
-      if (dataIngredients) setIngredientsAndToppings(dataIngredients);
-    });
-    fetchIngredientsAll(token).then((dataIngredients) => {
-      if (dataIngredients) setIngredients(dataIngredients);
-    });
-  }, []);
+    if (!isAuthLoaded || !accessToken) return;
+    let active = true;
+    loadIngredientLists(accessToken)
+      .then((data) => {
+        if (!active) return;
+        if (data.combined) setIngredientsAndToppings(data.combined);
+        if (data.ingredients) setIngredients(data.ingredients);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoaded, accessToken]);
 
   useEffect(() => {
     const applyStockChanges = (payload: { stocks?: StockChange[] }) => {
@@ -148,16 +183,15 @@ const IngredientsProvider = ({
     }
   }, []);
 
-  const removeIngredient = (id: string) => {
-    setIngredientsAndToppings((prevIngredients) =>
-      prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
+  const removeIngredient = useCallback((id: string) => {
+    const next = listsAfterRemovingIngredient(
+      ingredientsAndToppings,
+      ingredients,
+      id,
     );
-    if (!formIngredients.isTopping) {
-      setIngredients((prevIngredients) =>
-        prevIngredients.filter((prevIngredient) => prevIngredient.id !== id)
-      );
-    }
-  };
+    setIngredientsAndToppings(next.ingredientsAndToppings);
+    setIngredients(next.ingredients);
+  }, [ingredientsAndToppings, ingredients]);
 
   const handleCreateIngredient = useCallback(async () => {
     const token = getAccessToken();
@@ -227,13 +261,13 @@ const IngredientsProvider = ({
         if (deletedIngredient) {
           removeIngredient(id);
         }
-        Swal.fire('Eliminado', 'Producto eliminado correctamente.', 'success');
+        Swal.fire('Eliminado', 'Ingrediente eliminado correctamente.', 'success');
       } catch (error) {
-        Swal.fire('Error', 'No se pudo eliminar el producto.', 'error');
+        Swal.fire('Error', 'No se pudo eliminar el ingrediente.', 'error');
         console.error(error);
       }
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, removeIngredient]);
 
   const handleCloseForm = useCallback(() => {
     setFormOpen(false);

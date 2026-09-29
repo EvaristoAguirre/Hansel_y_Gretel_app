@@ -713,8 +713,31 @@ export class OrderService {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let orderPending: Order;
     try {
-      const order = await this.orderRepo.findOne({
+      const locked = await queryRunner.manager
+        .createQueryBuilder(Order, 'order')
+        .setLock('pessimistic_write')
+        .where('order.id = :id', { id })
+        .andWhere('order.isActive = :isActive', { isActive: true })
+        .getOne();
+
+      if (!locked) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (locked.state !== OrderState.OPEN) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in an open state`,
+        );
+      }
+
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
           'orderDetails',
@@ -726,60 +749,57 @@ export class OrderService {
         ],
       });
 
-      if (!order) {
+      if (!order?.table) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
 
-      if (order.state !== OrderState.OPEN) {
-        throw new BadRequestException(
-          `Order with ID: ${id} is not in an open state`,
-        );
-      }
-
+      await queryRunner.manager.update(Table, order.table.id, {
+        state: TableState.PENDING_PAYMENT,
+      });
       order.state = OrderState.PENDING_PAYMENT;
       order.table.state = TableState.PENDING_PAYMENT;
-      await this.tableService.updateTableState(
-        order.table.id,
-        TableState.PENDING_PAYMENT,
-      );
-      const orderPending = await this.orderRepo.save(order);
-
-      let printerWarning: string | null = null;
-
-      if (process.env.NODE_ENV === 'production') {
-        try {
-          await this.printerService.printTicketOrder(order);
-        } catch (error) {
-          this.logger.error('printTicketOrder', error);
-          printerWarning =
-            'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.';
-          // Notificar el fallo de impresora por WebSocket (sin bloquear el flujo)
-          this.eventEmitter.emit('order.printerError', {
-            order: orderPending,
-            message: printerWarning,
-          });
-        }
-      } else {
-        console.log('simulando impresion de ticket');
-        console.log('orderPending to print ticket', orderPending);
-      }
-
-      // Emitir siempre: el estado de negocio cambió correctamente aunque la impresora falle
-      this.eventEmitter.emit('order.ticketPrinted', {
-        order: orderPending,
-      });
-      this.eventEmitter.emit('order.updatePending', {
-        order: orderPending,
-      });
-
-      const responseAdapted = await this.adaptResponse(orderPending);
-      responseAdapted.printerWarning = printerWarning;
-
-      return responseAdapted;
+      orderPending = await queryRunner.manager.save(order);
+      await queryRunner.commitTransaction();
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('markOrderAsPendingPayment', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
+
+    let printerWarning: string | null = null;
+
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await this.printerService.printTicketOrder(orderPending);
+      } catch (error) {
+        this.logger.error('printTicketOrder', error);
+        printerWarning =
+          'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.';
+        this.eventEmitter.emit('order.printerError', {
+          order: orderPending,
+          message: printerWarning,
+        });
+      }
+    } else {
+      console.log('simulando impresion de ticket');
+      console.log('orderPending to print ticket', orderPending);
+    }
+
+    this.eventEmitter.emit('order.ticketPrinted', {
+      order: orderPending,
+    });
+    this.eventEmitter.emit('order.updatePending', {
+      order: orderPending,
+    });
+
+    const responseAdapted = await this.adaptResponse(orderPending);
+    responseAdapted.printerWarning = printerWarning;
+
+    return responseAdapted;
   }
 
   async closeOrder(

@@ -51,11 +51,11 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [x] **13. `app/context/order.context.tsx` ~133 — `useTableStore()` y `useOrderStore()` sin selector**  
   **Resuelto (Fase 3, 24/09/2026):** selectores por dato/acción.
 
-- [ ] **14. `components/Utils/DataGridComponent.tsx` ~21 — `console.log` + transformación en cada render**
-  `console.log(rows)` en cada render + `capitalizeFirstLetterTable(rows)` crea un nuevo array en cada render → el DataGrid recibe siempre una referencia nueva de `rows` y se re-renderiza completo.
+- [x] **14. `components/Utils/DataGridComponent.tsx` ~21 — `console.log` + transformación en cada render**
+  **Resuelto (28/09/2026):** se quitó el `console.log` y las filas capitalizadas se memorizan con `useMemo`.
 
-- [ ] **15. `components/Order/Order.tsx` ~57 — Total calculado con `useEffect + setState` en lugar de `useMemo`**
-  Provoca un flash de `$0` y un render extra innecesario en cada cambio de productos confirmados.
+- [x] **15. `components/Order/Order.tsx` ~57 — Total calculado con `useEffect + setState` en lugar de `useMemo`**
+  **Resuelto (28/09/2026):** el total sale de `sumOrderLines` en `useMemo`. Lista vacía queda en `$0` sin un render intermedio.
 
 - [x] **16. `components/Hooks/useTable.ts` ~61 — `useEffect` depende de `orders`**  
   **Resuelto (Fase 3, 24/09/2026):** el efecto depende de `salaId` y token.
@@ -69,8 +69,8 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [ ] **19. `components/Hooks/useProducts.ts` ~30 — Carga de 500 productos de inicio**
   `fetchProducts('1','500')` en vistas de administración. Pesado en dispositivos lentos o redes lentas.
 
-- [ ] **20. `ingredientsContext.tsx` + `unitOfMeasureContext.tsx` — Múltiples fetches paralelos en mount sin deduplicación**
-  2-3 fetches solapados al montar el contexto, sin verificar si los datos ya están disponibles.
+- [x] **20. `ingredientsContext.tsx` + `unitOfMeasureContext.tsx` — Múltiples fetches paralelos en mount sin deduplicación**
+  **Resuelto (28/09/2026):** cada contexto pide sus listas en un solo `Promise.all` y reutiliza la promesa en curso para el mismo token. El efecto depende de `accessToken` / `isAuthLoaded`.
 
 ---
 
@@ -83,8 +83,8 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [ ] **22. `components/Order/useOrderStore.ts` ~67 — `orderTicketPrinted` usa payload distinto**
   Accede a `data.id` directamente, mientras que otros handlers usan `data.order || data`. Si el formato del payload cambia, la actualización no se aplica.
 
-- [ ] **23. `app/context/ingredientsContext.tsx` ~118 — `removeIngredient` con lógica incorrecta**
-  Usa `formIngredients.isTopping` (del formulario activo) para decidir qué lista actualizar, en lugar del atributo `isTopping` del ingrediente eliminado.
+- [x] **23. `app/context/ingredientsContext.tsx` ~118 — `removeIngredient` con lógica incorrecta**
+  **Resuelto (28/09/2026):** la lista de ingredientes se actualiza según `isTopping` del ítem borrado, no del formulario abierto.
 
 - [ ] **24. `app/context/dailyCashContext.tsx` ~160 — Mensaje Swal incorrecto**
   Al eliminar una caja dice "Producto eliminado" (copy-paste).
@@ -104,8 +104,8 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [ ] **29. `app/context/authContext.tsx` ~138 — `validateUserSession` y `handleSignOut` sin `useCallback`**
   El `value` del Provider recrea estas funciones en cada render → re-renders masivos de todo el árbol bajo `AuthProvider`.
 
-- [ ] **30. `app/context/ingredientsContext.tsx` ~81 — `useEffect` sin dependencia de auth**
-  Con `[]` como deps, si el token no está disponible al montar, los ingredientes nunca se cargan en sesiones tardías.
+- [x] **30. `app/context/ingredientsContext.tsx` ~81 — `useEffect` sin dependencia de auth**
+  **Resuelto (28/09/2026):** ingredientes y unidades esperan `isAuthLoaded` y `accessToken`. Si el token llega después del primer render, las listas se piden en ese momento.
 
 ---
 

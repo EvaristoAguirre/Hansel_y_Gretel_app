@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { esES } from '@mui/x-data-grid/locales';
@@ -12,17 +12,23 @@ interface DataGridComponentProps {
   capitalize: string[];
   bgColor?: string;
 }
+const EMPTY_CAPITALIZE: string[] = [];
+
 const DataGridComponent: React.FC<DataGridComponentProps> = ({
   rows,
   columns,
-  capitalize = [],
+  capitalize = EMPTY_CAPITALIZE,
   bgColor = '#fff',
 }) => {
-  console.log(rows);
+  const displayRows = useMemo(
+    () => capitalizeFirstLetterTable(rows, capitalize),
+    [rows, capitalize],
+  );
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
       <DataGrid
-        rows={capitalizeFirstLetterTable(rows, capitalize)}
+        rows={displayRows}
         columns={columns}
         localeText={esES.components.MuiDataGrid.defaultProps.localeText}
         initialState={{
