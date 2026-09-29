@@ -35,3 +35,14 @@ export async function apiFetch(
     clearTimeout(timeoutId);
   }
 }
+
+/** Parsea JSON solo si el status es exitoso. Un error HTTP no se trata como dato. */
+export async function readJson<T = any>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const message =
+      (err as { message?: string }).message ?? `Error HTTP ${response.status}`;
+    throw new Error(message);
+  }
+  return response.json() as Promise<T>;
+}

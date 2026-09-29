@@ -27,11 +27,7 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
     if (orderListenersBound) return;
     orderListenersBound = true;
 
-    const socket = webSocketService.connect();
-
-    socket.on('connect', () => {
-      console.log('✅ Conectado a WebSocket - Pedidos');
-    });
+    webSocketService.connect();
 
     webSocketService.on('orderCreated', (data) => {
       const order = normalizeOrderPayload(data);
@@ -109,10 +105,6 @@ export const useOrderStore = create<OrderStateZustand>((set, get) => {
             : o
         ),
       }));
-    });
-
-    socket.on('disconnect', () => {
-      console.log('❌ Desconectado del servidor WebSocket - Pedidos');
     });
   };
 

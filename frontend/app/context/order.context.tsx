@@ -482,24 +482,20 @@ const OrderProvider = ({
     unitIndex: number,
     updatedGroup: { [groupId: string]: string[] }
   ) => {
+    let flattened: string[][] = [];
     setToppingsByProductGroup((prev) => {
       const productData = [...(prev[lineId] || [])];
       productData[unitIndex] = updatedGroup;
-
-      const flattened = productData.map((groupMap) => {
-        return Object.values(groupMap || {}).flat();
-      });
-
-      setSelectedToppingsByProduct((prevFlat) => ({
-        ...prevFlat,
-        [lineId]: flattened,
-      }));
-
+      flattened = productData.map((groupMap) => Object.values(groupMap || {}).flat());
       return {
         ...prev,
         [lineId]: productData,
       };
     });
+    setSelectedToppingsByProduct((prevFlat) => ({
+      ...prevFlat,
+      [lineId]: flattened,
+    }));
   };
 
   const addHighlightedProduct = (id: string) => {

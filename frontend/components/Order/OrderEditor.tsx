@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   List,
@@ -321,12 +321,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   // Ref del timer de debounce: evita llamar al backend en cada letra tecleada.
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSeq = useRef(0);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
+    const seq = ++searchSeq.current;
     const trimmedTerm = term.trim();
-    const results =
-      token &&
-      (await searchProductsForOrdering(trimmedTerm, token, categories.join(',')));
+    if (!token) return;
+    const results = await searchProductsForOrdering(
+      trimmedTerm,
+      token,
+      categories.join(',')
+    );
+    if (seq !== searchSeq.current) return;
     if (results) setProductosDisponibles(results);
   };
 
@@ -348,10 +354,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     }, 350);
   };
 
-  // Solo busca si hay al menos un criterio (categoría seleccionada o término escrito).
+  // La categoría también espera 350 ms y descarta la respuesta si llegó otra búsqueda después.
   useEffect(() => {
-    if (selectedCats.length === 0 && !searchTerm) return;
-    searchProductsFiltered(searchTerm, selectedCats);
+    if (selectedCats.length === 0 && !searchTerm) {
+      searchSeq.current += 1;
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      void searchProductsFiltered(searchTerm, selectedCats);
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
   }, [selectedCats]);
 
   const [visibleToppings, setVisibleToppings] = useState<{

@@ -125,9 +125,7 @@ const CashTable = () => {
                 <Tooltip title="Editar">
                   <IconButton
                     size="small"
-                    onClick={() => {
-                      console.log('Editar caja:', params.row.id);
-                    }}
+                    onClick={() => undefined}
                   >
                     <EditIcon fontSize="small" color="primary" />
                   </IconButton>

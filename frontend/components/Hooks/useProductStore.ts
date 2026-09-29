@@ -30,11 +30,7 @@ export const useProductStore = create<ProductState>((set) => {
     if (productListenersBound) return;
     productListenersBound = true;
 
-    const socket = webSocketService.connect();
-
-    socket.on("connect", () => {
-      console.log("✅ Conectado a WebSocket - Productos");
-    });
+    webSocketService.connect();
 
     webSocketService.on("productCreated", (data) => {
       set((state) => {
@@ -79,10 +75,6 @@ export const useProductStore = create<ProductState>((set) => {
     webSocketService.on("stock.updated", applyStockChanges);
     webSocketService.on("stock.deducted", applyStockChanges);
     webSocketService.on("stock.restored", applyStockChanges);
-
-    socket.on("disconnect", () => {
-      console.log("❌ Desconectado del servidor WebSocket - Productos");
-    });
   };
 
   return {

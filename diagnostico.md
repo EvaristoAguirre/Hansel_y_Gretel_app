@@ -477,7 +477,7 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 - [x] I-06 / I-07 / I-08 — Limpieza impresora, contador en BD, PORT/HOST
 - [x] `mejoras.md` 4–9 (el 10 ya estaba cerrado)
 - [x] Eliminar gateway legacy `EventsGateway` / listeners muertos
-- [ ] Ítems de `mejoras.md` que siguen abiertos (18, 19, 22, 25–29, 31–36) · **fuera de las fases 0–4**. 14, 15, 20, 23 y 30 cerrados el 28/09/2026.
+- [x] Ítems de `mejoras.md` 18, 19, 22, 24–29 y 31–36 · **cerrados el 28/09/2026**. Cookie httpOnly (S-14) sigue fuera.
 
 **Esfuerzo estimado:** 3–6 días (depende del alcance de upgrades).
 
@@ -537,7 +537,7 @@ cd frontend && pnpm test
 
 - Rediseño de UX, facturación fiscal electrónica, multi-sucursal.
 - Benchmarks de carga formales (k6/Artillery): recomendable después de Fase 3.
-- Cookie httpOnly (S-14) y el resto de `mejoras.md` (18, 19, 22, 25–29, 31–36). 14, 15, 20, 23 y 30 cerrados el 28/09/2026. Fase 0 auth HTTP hecha (PR D diferido). Fases 1–4 en código (smoke LAN al redeployar).
+- Cookie httpOnly (S-14) sigue fuera de alcance. El resto de `mejoras.md` quedó cerrado el 28/09/2026. Fase 0 auth HTTP hecha (PR D diferido). Fases 1–4 en código (smoke LAN al redeployar).
 
 ---
 

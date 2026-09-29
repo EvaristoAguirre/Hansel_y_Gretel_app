@@ -39,8 +39,12 @@ const DailyLineChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
-      const response = await getDailyIncomeExpense(token, month, year);
-      setData(response);
+      try {
+        const response = await getDailyIncomeExpense(token, month, year);
+        if (Array.isArray(response)) setData(response);
+      } catch (error) {
+        console.error('Error al cargar ingresos y egresos', error);
+      }
     };
     fetchData();
   }, [token, month, year]);
