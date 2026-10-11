@@ -709,44 +709,9 @@ export class DailyCashService {
     const startDate = new Date(`${year}-01-01T00:00:00`);
     const endDate = new Date(`${year}-12-31T23:59:59`);
 
-    // Total ventas del año
-    const cashes = await this.dailyCashRepo.find({
-      where: {
-        date: Between(startDate, endDate),
-      },
-      select: ['totalSales'], // solo ventas
-    });
-
-    const totalSales = cashes.reduce(
-      (acc, cash) => acc + Number(cash.totalSales),
-      0,
-    );
-
-    // Ingresos del año
-    const incomeMovements = await this.cashMovementRepo.find({
-      where: {
-        type: DailyCashMovementType.INCOME,
-        createdAt: Between(startDate, endDate),
-      },
-    });
-
-    const totalIncomes = incomeMovements.reduce(
-      (acc, m) => acc + Number(m.amount),
-      0,
-    );
-
-    // Egresos del año
-    const expenseMovements = await this.cashMovementRepo.find({
-      where: {
-        type: DailyCashMovementType.EXPENSE,
-        createdAt: Between(startDate, endDate),
-      },
-    });
-
-    const totalExpenses = expenseMovements.reduce(
-      (acc, m) => acc + Number(m.amount),
-      0,
-    );
+    const totalSales = await this.sumSalesBetween(startDate, endDate);
+    const { incomes: totalIncomes, expenses: totalExpenses } =
+      await this.sumMovementsBetween(startDate, endDate);
 
     const income = totalSales + totalIncomes;
     const profit = income - totalExpenses;
@@ -775,57 +740,20 @@ export class DailyCashService {
       'noviembre',
       'diciembre',
     ];
+    const start = new Date(year, 0, 1, 0, 0, 0, 0);
+    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+    const sales = await this.salesByCalendarPart(start, end, 'MONTH');
+    const movements = await this.movementsByCalendarPart(start, end, 'MONTH');
 
-    const results = [];
-
-    for (let month = 0; month < 12; month++) {
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
-
-      const cashes = await this.dailyCashRepo.find({
-        where: {
-          date: Between(start, end),
-        },
-        select: ['totalSales'],
-      });
-
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
-
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-
-      const totalIncomes = incomes.reduce(
-        (acc, i) => acc + Number(i.amount),
-        0,
-      );
-
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-
-      const totalExpenses = expenses.reduce(
-        (acc, e) => acc + Number(e.amount),
-        0,
-      );
-
-      results.push({
-        mes: months[month],
-        income: totalSales + totalIncomes,
-        expenses: totalExpenses,
-      });
-    }
-
-    return results;
+    return months.map((mes, index) => {
+      const bucket = index + 1;
+      return {
+        mes,
+        income:
+          (sales.get(bucket) ?? 0) + (movements.incomes.get(bucket) ?? 0),
+        expenses: movements.expenses.get(bucket) ?? 0,
+      };
+    });
   }
 
   async getDailyMetrics(
@@ -833,47 +761,17 @@ export class DailyCashService {
     year: number,
   ): Promise<{ day: string; income: number; expenses: number }[]> {
     const daysInMonth = new Date(year, month, 0).getDate();
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const sales = await this.salesByCalendarPart(start, end, 'DAY');
+    const movements = await this.movementsByCalendarPart(start, end, 'DAY');
+
     const results = [];
-
     for (let day = 1; day <= daysInMonth; day++) {
-      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
-      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-      const cashes = await this.dailyCashRepo.find({
-        where: { date: Between(start, end) },
-        select: ['totalSales'],
-      });
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
-
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalIncomes = incomes.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalExpenses = expenses.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
       results.push({
         day: String(day).padStart(2, '0'),
-        income: totalSales + totalIncomes,
-        expenses: totalExpenses,
+        income: (sales.get(day) ?? 0) + (movements.incomes.get(day) ?? 0),
+        expenses: movements.expenses.get(day) ?? 0,
       });
     }
 
@@ -884,50 +782,95 @@ export class DailyCashService {
     month: number,
     year: number,
   ): Promise<{ day: string; profit: number }[]> {
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const results = [];
+    const metrics = await this.getDailyMetrics(month, year);
+    return metrics.map(({ day, income, expenses }) => ({
+      day,
+      profit: income - expenses,
+    }));
+  }
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
-      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+  private async sumSalesBetween(start: Date, end: Date): Promise<number> {
+    const row = await this.dailyCashRepo
+      .createQueryBuilder('cash')
+      .select('COALESCE(SUM(cash."totalSales"), 0)', 'total')
+      .where('cash.date BETWEEN :start AND :end', { start, end })
+      .getRawOne<{ total: string }>();
+    return Number(row?.total ?? 0);
+  }
 
-      const cashes = await this.dailyCashRepo.find({
-        where: { date: Between(start, end) },
-        select: ['totalSales'],
-      });
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
+  private async sumMovementsBetween(
+    start: Date,
+    end: Date,
+  ): Promise<{ incomes: number; expenses: number }> {
+    const rows = await this.cashMovementRepo
+      .createQueryBuilder('movement')
+      .select('movement.type', 'type')
+      .addSelect('COALESCE(SUM(movement.amount), 0)', 'total')
+      .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
+      .groupBy('movement.type')
+      .getRawMany<{ type: string; total: string }>();
+    return this.splitMovementTotals(rows);
+  }
 
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalIncomes = incomes.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
+  private async salesByCalendarPart(
+    start: Date,
+    end: Date,
+    part: 'MONTH' | 'DAY',
+  ): Promise<Map<number, number>> {
+    const rows = await this.dailyCashRepo
+      .createQueryBuilder('cash')
+      .select(`EXTRACT(${part} FROM cash.date)`, 'bucket')
+      .addSelect('COALESCE(SUM(cash."totalSales"), 0)', 'total')
+      .where('cash.date BETWEEN :start AND :end', { start, end })
+      .groupBy('bucket')
+      .getRawMany<{ bucket: string; total: string }>();
 
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalExpenses = expenses.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
-      results.push({
-        day: String(day).padStart(2, '0'),
-        profit: totalSales + totalIncomes - totalExpenses,
-      });
+    const totals = new Map<number, number>();
+    for (const row of rows) {
+      totals.set(Number(row.bucket), Number(row.total));
     }
+    return totals;
+  }
 
-    return results;
+  private async movementsByCalendarPart(
+    start: Date,
+    end: Date,
+    part: 'MONTH' | 'DAY',
+  ): Promise<{ incomes: Map<number, number>; expenses: Map<number, number> }> {
+    const rows = await this.cashMovementRepo
+      .createQueryBuilder('movement')
+      .select(`EXTRACT(${part} FROM movement."createdAt")`, 'bucket')
+      .addSelect('movement.type', 'type')
+      .addSelect('COALESCE(SUM(movement.amount), 0)', 'total')
+      .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
+      .groupBy('bucket')
+      .addGroupBy('movement.type')
+      .getRawMany<{ bucket: string; type: string; total: string }>();
+
+    const incomes = new Map<number, number>();
+    const expenses = new Map<number, number>();
+    for (const row of rows) {
+      const bucket = Number(row.bucket);
+      const total = Number(row.total);
+      if (row.type === DailyCashMovementType.INCOME) {
+        incomes.set(bucket, total);
+      } else if (row.type === DailyCashMovementType.EXPENSE) {
+        expenses.set(bucket, total);
+      }
+    }
+    return { incomes, expenses };
+  }
+
+  private splitMovementTotals(
+    rows: { type: string; total: string }[],
+  ): { incomes: number; expenses: number } {
+    let incomes = 0;
+    let expenses = 0;
+    for (const row of rows) {
+      const total = Number(row.total);
+      if (row.type === DailyCashMovementType.INCOME) incomes = total;
+      else if (row.type === DailyCashMovementType.EXPENSE) expenses = total;
+    }
+    return { incomes, expenses };
   }
 }

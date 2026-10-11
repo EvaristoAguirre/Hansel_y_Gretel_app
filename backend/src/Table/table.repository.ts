@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Table } from './table.entity';
 import { CreateTableDto } from 'src/DTOs/create-table.dto';
 import { UpdateTableDto } from 'src/DTOs/update-table.dto';
@@ -143,20 +143,22 @@ export class TableRepository {
     }
 
     try {
-      const table = await this.tableRepository.findOne({
-        where: { id, isActive: true },
-        relations: ['orders', 'room'],
-      });
+      const table = await this.tableRepository
+        .createQueryBuilder('table')
+        .leftJoinAndSelect('table.room', 'room')
+        .leftJoinAndSelect(
+          'table.orders',
+          'order',
+          'order.state IN (:...states)',
+          { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
+        )
+        .where('table.id = :id', { id })
+        .andWhere('table.isActive = :isActive', { isActive: true })
+        .getOne();
 
       if (!table) {
         throw new NotFoundException(`Table with ID: ${id} not found`);
       }
-
-      table.orders = table.orders.filter(
-        (order) =>
-          order.state === OrderState.OPEN ||
-          order.state === OrderState.PENDING_PAYMENT,
-      );
 
       return table;
     } catch (error) {
@@ -170,18 +172,19 @@ export class TableRepository {
       throw new BadRequestException('Either name must be provided.');
     }
     try {
-      const table = await this.tableRepository.findOne({
-        where: { name: ILike(name) },
-        relations: ['orders'],
-      });
+      const table = await this.tableRepository
+        .createQueryBuilder('table')
+        .leftJoinAndSelect(
+          'table.orders',
+          'order',
+          'order.state IN (:...states)',
+          { states: [OrderState.OPEN, OrderState.PENDING_PAYMENT] },
+        )
+        .where('table.name ILIKE :name', { name })
+        .getOne();
       if (!table) {
         throw new NotFoundException(`Table with ID: ${name} not found`);
       }
-      table.orders = table.orders.filter(
-        (order) =>
-          order.state === OrderState.OPEN ||
-          order.state === OrderState.PENDING_PAYMENT,
-      );
       return table;
     } catch (error) {
       this.logger.error('getTableByName', error);

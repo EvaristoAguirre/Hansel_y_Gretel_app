@@ -319,12 +319,30 @@ export class OrderController {
   @ApiOperation({
     summary: 'Obtener pedidos activos',
     description:
-      'Devuelve todos los pedidos de mesas abiertas o pendientes de pago',
+      'Devuelve los pedidos abiertos o pendientes de pago, paginados',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Cantidad por página (tope 200)',
+    example: 100,
   })
   @ApiResponse({ status: 200, description: 'Lista de pedidos activos' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
-  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.orderService.getOrdersForOpenOrPendingTables();
+  async getOrdersForOpenOrPendingTables(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(100), ParseIntPipe)
+    limit: number = 100,
+  ): Promise<Order[]> {
+    return await this.orderService.getOrdersForOpenOrPendingTables(page, limit);
   }
 
   @Get('order_detail')

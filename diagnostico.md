@@ -1,7 +1,7 @@
 # Diagnóstico general — Hansel y Gretel App
 
 Auditoría realizada el **10/08/2026**.  
-Última conciliación con código/git: **24/09/2026**.  
+Última conciliación con código/git: **11/10/2026**.  
 Alcance: performance/consultas, WebSockets, seguridad, impresión y despliegue LAN.  
 Este documento es un **informe para evaluación**. No implica cambios de código hasta que se apruebe cada fase.
 
@@ -11,11 +11,11 @@ Complementa (no reemplaza) el listado de frontend en [`mejoras.md`](mejoras.md) 
 
 | Frente | Estado | Notas |
 |--------|--------|--------|
-| **Fase 1 — WS órdenes/mesas** | Hecha y testeada en LAN (10/08/2026) | Queda WS-10 stock; caja (WS-11) ya sync |
+| **Fase 1 — WS órdenes/mesas** | Hecha y testeada en LAN (10/08/2026) | Caja (WS-11) ya sync. Stock (WS-10) cerrado en Fase 4 |
 | **Fase 0 PR A–C — auth HTTP** | Hecha (19/08/2026) | Register, caja, export, impresora, toppings, UoM, productos; `RolesGuard` endurecido |
 | **Fase 0 PR D — Helmet + `forbidNonWhitelisted`** | **Diferido** (análisis 19/08/2026) | S-16 puede romper caja/productos/unidades; Helmet aporta poco en LAN |
 | **Fase 2 — impresora** | Hecha (24/09/2026) | Env `PRINTER_*`, print post-commit, timeout 4s / 1 intento, reprint ticket por id, avisos unificados |
-| **Fase 3 — TX/consultas** | **Hecha (código 24/09/2026)** | Cobro y `deductStock` en la misma TX; índices; listados livianos; pool; front 11–13 y 16–17 |
+| **Fase 3 — TX/consultas** | **Hecha** | TX, índices y listados el 24/09. P-02, P-05, P-07, P-08 y P-15 cerrados el 11/10/2026 |
 | **Fase 4 — deps / auth WS / higiene** | **Hecha (código 24/09/2026)** | Next 15.5.26; JWT en handshake WS; stock WS; contador BD; bugs 4–9. Cookie httpOnly (S-14) fuera de esta oleada |
 
 ---
@@ -26,7 +26,7 @@ Complementa (no reemplaza) el listado de frontend en [`mejoras.md`](mejoras.md) 
 |-------------|-----|-------------|
 | Notebook (servidor) | Encargada | Levanta backend `:3000` + frontend `:3001`; stock, cobro, caja |
 | Tablet (navegador LAN) | Mozo | Consume el front vía router; pedidos y mesas |
-| Impresora comandera | — | Ethernet TCP raw puerto `9100` (IP hoy hardcodeada) |
+| Impresora comandera | — | Ethernet TCP raw. Host y puerto por `PRINTER_HOST` / `PRINTER_PORT` (default `192.168.70.3:9100`) |
 
 Stack: NestJS + TypeORM + PostgreSQL + Socket.IO (backend) · Next.js 15 + Zustand + MUI (frontend).
 
@@ -38,11 +38,11 @@ La aplicación es usable en producción local. **Auth HTTP de Fase 0 (PR A–C),
 
 ### Riesgos más críticos (top 6)
 
-1. ~~**API parcialmente abierta en LAN**~~ — **Mitigado PR A–C.** Quedan Helmet (diferido), cookie httpOnly y auth WS (Fase 4).
+1. ~~**API parcialmente abierta en LAN**~~ — **Mitigado PR A–C.** Auth WS hecha en Fase 4. Quedan Helmet (diferido) y cookie httpOnly.
 2. ~~**Ediciones de orden abierta no se sincronizan bien**~~ — **Mitigado Fase 1** (`orderUpdated` global + refetch en contexto + re-join).
 3. ~~**Listeners WS duplicados en cada reconexión**~~ — **Resuelto Fase 1**.
 4. ~~**Cobro / stock sin transacciones atómicas**~~ — **Mitigado Fase 3:** `closeOrder` y `deductStock` usan `QueryRunner` (mismo patrón que `restoreStock`).
-5. ~~**Impresión bloqueante + IP hardcodeada**~~ — **Mitigado Fase 2:** env `PRINTER_*`, print después del commit, timeout 4 s / 1 intento, reprint de ticket por id, aviso + reimpresión manual. Queda I-07 (contador en BD).
+5. ~~**Impresión bloqueante + IP hardcodeada**~~ — **Mitigado Fase 2 y 4:** env `PRINTER_*`, print después del commit, timeout 4 s / 1 intento, reprint de ticket por id, aviso + reimpresión manual, contador en tabla `print_counter`.
 6. ~~**Dependencias vulnerables**~~ — **Mitigado Fase 4:** Next `15.5.26`; audit backend sin majors de Nest; Dependabot semanal. Quedan CVEs que exigen Nest 12 / nodemailer 10.
 
 ### Severidad agregada (estimado)
@@ -237,7 +237,7 @@ sequenceDiagram
 
 ### 4.1 Índices
 
-Hoy casi no hay índices explícitos más allá de uniques y el índice parcial `UQ_active_order_per_table` (`migration/1780790400000-AddUniqueActiveOrderPerTable.ts`). PostgreSQL **no indexa FKs automáticamente**.
+Además de uniques y el índice parcial `UQ_active_order_per_table` (`migration/1780790400000-AddUniqueActiveOrderPerTable.ts`), P-01 agregó índices de FKs y filtros (`1782800000000-AddPhase3PerformanceIndexes.ts`) y P-02 agregó `pg_trgm` sobre productos (`1783200000000-AddProductNameTrgmIndex.ts`). PostgreSQL **no indexa FKs automáticamente**.
 
 - [x] **P-01 — Migración de índices prioritarios**  
   **Resuelto (Fase 3, 24/09/2026):** `1782800000000-AddPhase3PerformanceIndexes.ts`.  
@@ -249,8 +249,9 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   - `tables(roomId, isActive)`, `product_categories(categoryId)`, `promotion_slot_assignments(promotionId)`  
   **Severidad:** Alta · **Esfuerzo:** M
 
-- [ ] **P-02 — Evaluar `pg_trgm` para búsquedas `ILIKE '%...%'`**  
-  **Archivos:** `product.repository.ts`, `table.repository.ts`  
+- [x] **P-02 — Evaluar `pg_trgm` para búsquedas `ILIKE '%...%'`**  
+  **Resuelto (11/10/2026):** extensión `pg_trgm` e índices GIN sobre `products.name` y `CAST(code AS text)`. La búsqueda de mesas es `ILIKE` exacto sobre un catálogo chico con unique en `name`; no lleva índice trigram.  
+  **Archivos:** `migration/1783200000000-AddProductNameTrgmIndex.ts`, `product.repository.ts`, `table.repository.ts`  
   **Severidad:** Media · **Esfuerzo:** M
 
 ### 4.2 Listados y N+1
@@ -258,7 +259,7 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
 - [x] **P-03 — `getAllProducts` con ~14 relaciones**  
   **Resuelto (Fase 3, 24/09/2026):** listado con `categories` + `stock`; edición carga `GET /product/:id`.  
   **Archivo:** `backend/src/Product/repositories/product.repository.ts` (~L56–84)  
-  **Front:** `useProducts` pide `limit=500` (`mejoras.md` ítem 19).  
+  **Front:** `useProducts` pide páginas de 50, con tope de 500 (`mejoras.md` ítem 19, cerrado el 28/09/2026).  
   **Severidad:** Alta · **Esfuerzo:** M (DTOs livianos / vistas admin vs ordering)
 
 - [x] **P-04 — `GET /daily-cash` con `limit=1000` + `movements` + `orders` + `payments`**  
@@ -266,8 +267,9 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   **Archivos:** `daily-cash.controller.ts` (~L194–195), `daily-cash.repository.ts` (~L24–28)  
   **Severidad:** Alta · **Esfuerzo:** M
 
-- [ ] **P-05 — `GET /order/active` sin paginación**  
-  **Archivo:** `order.repository.ts` (~L38–47) — hoy liviano (solo `table`), pero crece con el día.  
+- [x] **P-05 — `GET /order/active` sin paginación**  
+  **Resuelto (11/10/2026):** `page` (default 1) y `limit` (default 100, tope 200). La respuesta sigue siendo un array. El front pide `limit=200` al cargar y al reconectar.  
+  **Archivo:** `order.repository.ts`, `order.controller.ts`, `useOrder.ts`, `order.context.tsx`  
   **Severidad:** Media · **Esfuerzo:** S
 
 - [x] **P-06 — N+1 en `buildOrderDetailWithToppings` y `updateOrder`**  
@@ -275,12 +277,14 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   **Archivos:** `order.repository.ts` (~L246–390), `order.service.ts` (~L168–270)  
   **Severidad:** Alta · **Esfuerzo:** L
 
-- [ ] **P-07 — Métricas anuales ~36 queries (loop mensual)**  
-  **Archivo:** `daily-cash.service.ts` (~L742–875)  
+- [x] **P-07 — Métricas anuales ~36 queries (loop mensual)**  
+  **Resuelto (11/10/2026):** el reparto anual y el detalle diario agrupan con `SUM` + `EXTRACT` (2 consultas cada uno). El resumen anual suma en SQL. El profit diario reutiliza el detalle.  
+  **Archivo:** `daily-cash.service.ts`  
   **Severidad:** Media · **Esfuerzo:** M
 
-- [ ] **P-08 — `GET /tables/:id` carga historial completo de órdenes y filtra en JS**  
-  **Archivo:** `table.repository.ts` (~L155–159)  
+- [x] **P-08 — `GET /tables/:id` carga historial completo de órdenes y filtra en JS**  
+  **Resuelto (11/10/2026):** el join de órdenes filtra `open` y `pending_payment` en SQL. La búsqueda por nombre hace lo mismo.  
+  **Archivo:** `table.repository.ts`  
   **Severidad:** Media · **Esfuerzo:** S
 
 - [x] **P-09 — Bug paginación Stock: `@Param` en vez de `@Query`**  
@@ -312,8 +316,9 @@ Hoy casi no hay índices explícitos más allá de uniques y el índice parcial 
   **Problema:** defaults (~10); bajo WS + mozos + caja puede saturar.  
   **Severidad:** Media · **Esfuerzo:** S
 
-- [ ] **P-15 — Observabilidad de queries lentas**  
-  **Problema:** logging solo `error`/`warn`; sin métricas de duración.  
+- [x] **P-15 — Observabilidad de queries lentas**  
+  **Resuelto (11/10/2026):** `maxQueryExecutionTime` vía `DB_SLOW_QUERY_MS` (default 500). TypeORM escribe la query y la duración cuando supera el umbral. El log general sigue en `error` / `warn`.  
+  **Archivos:** `config/typeORMconfig.ts`, `app.module.ts`, `.env.example`  
   **Severidad:** Baja · **Esfuerzo:** S–M
 
 Buenas prácticas ya presentes: `synchronize: false`, `searchForOrdering` con relaciones acotadas, QueryBuilder de mesas con join condicional, índice único parcial de orden activa por mesa.
@@ -439,7 +444,7 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 **Archivos tocados:**  
 `frontend/services/websocket.service.ts`, `frontend/components/Order/useOrderStore.ts`, `frontend/app/context/order.context.tsx`, `backend/src/Real-time/listeners/order-events.listener.ts`, `backend/src/Order/services/order.service.ts`, `backend/src/Category/category.service.ts`.
 
-**Fuera de esta oleada (Fase 1.b):** WS-10 stock; WS-13/14 limpieza toppings/legacy. **WS-11 caja ya está.**
+**Cerrado en Fase 4:** WS-10 stock y WS-13/14 limpieza toppings/legacy. **WS-11 caja ya estaba en Fase 1.**
 
 ### Fase 2 — Robustez de impresión — **COMPLETADA (código 24/09/2026)**
 
@@ -463,6 +468,7 @@ Orden **mixto por severidad e impacto operativo**. Cada fase debería cerrarse c
 - [x] P-03 / P-04 / P-09 — Aligerar listados y arreglar paginación stock
 - [x] P-06 / P-10 — Reducir N+1 y `eager` innecesarios
 - [x] P-14 — Tuning de pool
+- [x] P-02 / P-05 / P-07 / P-08 / P-15 — Trigram, paginación de activas, métricas agrupadas, filtro de órdenes en SQL, log de queries lentas · **11/10/2026**
 - [x] Front: selectores Zustand / `useMemo` en contextos (`mejoras.md` 11–13, 16–17)
 - [ ] Smoke: abrir sala + editar 3 mesas + cobro + listar productos sin demoras notables
 
@@ -571,7 +577,9 @@ cd frontend && pnpm test
 | 24/09/2026 | **Fase 4 (código)** | Next 15.5.26; Dependabot; auth WS JWT; stock WS; limpieza legacy/ESC-POS; contador BD; PORT/HOST; bugs front 4–9 |
 | 28/09/2026 | **P-13 / S-18** | Pendiente de cobro y cierre de caja en una TX; PATCH de caja sin totales calculados |
 | 28/09/2026 | **mejoras 14, 15, 20, 23, 30** | Borrado de ingrediente por `isTopping` real; carga de ingredientes/unidades al tener token; total del pedido en `useMemo`; DataGrid sin transformar filas en cada render |
+| 28/09/2026 | **mejoras 18–36** | Cerrados en código (memo de listados, catálogo en páginas de 50). Cookie httpOnly (S-14) sigue fuera |
+| 11/10/2026 | **P-02 / P-05 / P-07 / P-08 / P-15** | `pg_trgm` en productos; `GET /order/active` paginado; métricas con `SUM`; órdenes activas de la mesa en SQL; log de queries lentas |
 
 ---
 
-*Informe actualizado — 24/09/2026 (Fases 0–4 en código; PR D Helmet diferido; S-14 cookie fuera de Fase 4).*
+*Informe actualizado — 11/10/2026 (Fases 0–4 en código; consultas P-02/05/07/08/15 cerradas; PR D Helmet diferido; S-14 cookie fuera).*

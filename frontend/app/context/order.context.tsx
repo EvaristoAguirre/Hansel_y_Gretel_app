@@ -739,7 +739,7 @@ const OrderProvider = ({
       if (!currentToken) return;
 
       try {
-        const activeResponse = await fetch(`${URI_ORDER}/active`, {
+        const activeResponse = await fetch(`${URI_ORDER}/active?page=1&limit=200`, {
           method: "GET",
           headers: { Authorization: `Bearer ${currentToken}` },
         });

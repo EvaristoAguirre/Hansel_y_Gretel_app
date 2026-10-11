@@ -32,7 +32,16 @@ export class OrderRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
+  async getOrdersForOpenOrPendingTables(
+    page: number,
+    limit: number,
+  ): Promise<Order[]> {
+    if (page <= 0 || limit <= 0) {
+      throw new BadRequestException(
+        'Page and limit must be positive integers.',
+      );
+    }
+    const safeLimit = Math.min(limit, 200);
     try {
       return this.orderRepository
         .createQueryBuilder('order')
@@ -41,6 +50,9 @@ export class OrderRepository {
           states: ['open', 'pending_payment'],
         })
         .andWhere('order.isActive = :isActive', { isActive: true })
+        .orderBy('order.date', 'DESC')
+        .skip((page - 1) * safeLimit)
+        .take(safeLimit)
         .getMany();
     } catch (error) {
       this.logger.error('getOrdersForOpenOrPendingTables', error);
