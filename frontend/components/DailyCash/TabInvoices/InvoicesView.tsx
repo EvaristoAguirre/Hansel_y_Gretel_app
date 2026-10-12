@@ -1,10 +1,19 @@
 "use client";
 
-import { getInvoice, listInvoices, retryInvoice, InvoiceRow } from "@/api/invoices";
+import {
+  downloadInvoicePdf,
+  getInvoice,
+  listInvoices,
+  printInvoice,
+  retryInvoice,
+  InvoiceRow,
+} from "@/api/invoices";
 import { useAuth } from "@/app/context/authContext";
 import { formatNumber } from "@/components/Utils/FormatNumber";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import PrintIcon from "@mui/icons-material/Print";
 import ReplayIcon from "@mui/icons-material/Replay";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Box,
   Button,
@@ -70,6 +79,27 @@ export default function InvoicesView() {
     setDetail(await getInvoice(token, id));
   };
 
+  const download = async (id: string) => {
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      await downloadInvoicePdf(token, id);
+    } catch (error) {
+      Swal.fire("No se pudo descargar el PDF", String(error), "error");
+    }
+  };
+
+  const reprint = async (id: string) => {
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      await printInvoice(token, id);
+      Swal.fire("Ticket enviado a la impresora", "", "success");
+    } catch (error) {
+      Swal.fire("No se pudo reimprimir", String(error), "error");
+    }
+  };
+
   const retry = async (row: InvoiceRow) => {
     const confirm = await Swal.fire({
       title: "Reintentar factura",
@@ -129,17 +159,33 @@ export default function InvoicesView() {
     {
       field: "actions",
       headerName: "",
-      width: 120,
+      width: 210,
       sortable: false,
       renderCell: (params) => {
         const row = params.row as InvoiceRow;
         const canRetry = row.status === "pending" || row.status === "rejected";
+        const authorized = row.status === "authorized";
+        const locked = "Disponible cuando la factura está autorizada";
         return (
           <>
             <Tooltip title="Ver detalle">
               <IconButton onClick={() => openDetail(row.id)}>
                 <VisibilityIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+            <Tooltip title={authorized ? "Descargar PDF" : locked}>
+              <span>
+                <IconButton disabled={!authorized} onClick={() => download(row.id)}>
+                  <PictureAsPdfIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={authorized ? "Reimprimir" : locked}>
+              <span>
+                <IconButton disabled={!authorized} onClick={() => reprint(row.id)}>
+                  <PrintIcon fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
             <Tooltip title={canRetry ? "Reintentar" : "Solo pendiente o rechazada"}>
               <span>

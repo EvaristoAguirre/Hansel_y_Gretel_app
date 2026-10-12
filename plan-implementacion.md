@@ -285,3 +285,9 @@ No se recorrió el cobro en el navegador: hace falta una caja abierta y una orde
 La pestaña Facturas está en la caja diaria: mes y año (default el mes actual), grilla, detalle y reintento con confirmación. El detalle muestra la fila completa (foto, CAE, IVA y observaciones).
 
 Verificación: los 8 tests de `InvoiceService` pasan, incluido el reintento y el 409 por modo distinto. `tsc` del frontend no marca los archivos de la pestaña. No se abrió la pestaña en el navegador.
+
+### Paso 10 — hecho en código
+
+`GET /invoices/:id/pdf` arma el PDF con pdfkit y un QR (librería `qrcode`) a partir del snapshot y las columnas fiscales. `POST /invoices/:id/print` reimprime con `printFiscalTicket` y no llama a `ArcaClient`. Pendiente o rechazada responden 409; en la grilla PDF y reimpresión quedan deshabilitados con tooltip. La descarga manda el token en el header. El comprobante simulado lleva la leyenda sin validez fiscal.
+
+Verificación: 3 tests del PDF (leyenda, CAE, payload del QR con tipo 6 y doc 99) y de la reimpresión. No se descargó el archivo en el navegador.

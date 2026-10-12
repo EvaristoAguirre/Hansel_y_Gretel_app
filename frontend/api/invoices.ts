@@ -38,6 +38,29 @@ export async function getInvoice(token: string, id: string) {
   return response.json();
 }
 
+export async function downloadInvoicePdf(token: string, id: string) {
+  const response = await fetch(`${URI_INVOICES}/${id}/pdf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) await readError(response);
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "factura-b.pdf";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function printInvoice(token: string, id: string) {
+  const response = await fetch(`${URI_INVOICES}/${id}/print`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) await readError(response);
+  return response.json();
+}
+
 export async function retryInvoice(token: string, id: string) {
   const response = await fetch(`${URI_INVOICES}/${id}/retry`, {
     method: "POST",
