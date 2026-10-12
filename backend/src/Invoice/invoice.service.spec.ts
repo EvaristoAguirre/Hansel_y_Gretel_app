@@ -312,6 +312,33 @@ describe('InvoiceService.emitForOrder', () => {
     expect(decoded).toContain('10.5%');
   });
 
+  it('una factura manual no abre orden ni mueve la caja', async () => {
+    const { service, rows } = harness({
+      solicitar: async (cbteNro) => ({
+        outcome: 'authorized',
+        cae: String(cbteNro).padStart(14, '0'),
+        caeFchVto: '20261022',
+        reproceso: false,
+      }),
+    });
+
+    const view = await service.emitManual({
+      lines: [
+        { concept: 'Café de paso', quantity: 2, unitPrice: 500, alicQuota: 21 },
+      ],
+      discountAmount: 100,
+      customerEmail: 'mesa@example.com',
+    });
+
+    expect(view.status).toBe('authorized');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].origin).toBe('manual');
+    expect(rows[0].orderId).toBeNull();
+    expect(rows[0].tipExcluded).toBe('0.00');
+    expect(rows[0].impTotal).toBe('900.00');
+    expect(rows[0].customerEmail).toBe('mesa@example.com');
+  });
+
   it('un importe cero no crea fila', async () => {
     const { service, rows } = harness({
       solicitar: async () => ({ outcome: 'timeout' }),

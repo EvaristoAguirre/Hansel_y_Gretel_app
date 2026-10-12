@@ -11,6 +11,7 @@ import { AfipConfig } from './afip-config';
 import { ArcaClient, ArcaSolicitarResult } from './arca-client';
 import {
   calculateInvoice,
+  InvoiceAmounts,
   InvoiceCalculationError,
 } from './invoice-calculator';
 import { Invoice, InvoiceAfipEnv } from './invoice.entity';
@@ -132,16 +133,109 @@ export class InvoiceService {
     }
 
     const built = this.buildFromOrder(order);
-    const cbteNro = await this.nextNumber(afipEnv, ptoVta, 6);
-    const settings = this.config.settings;
-    const today = localIsoDate();
-
-    const row = this.invoices.create({
+    return this.persistAndRequest({
       origin: 'order',
       orderId: order.id,
       afipEnv,
-      status: 'pending',
       ptoVta,
+      tipExcluded: Number(order.tip ?? 0),
+      customerEmail: customerEmail ?? null,
+      amounts: built.amounts,
+      snapshot: built.snapshot,
+    });
+  }
+
+  async emitManual(input: {
+    lines: {
+      concept: string;
+      quantity: number;
+      unitPrice: number;
+      alicQuota?: number | null;
+    }[];
+    discountAmount?: number;
+    customerEmail?: string;
+  }): Promise<InvoiceCloseView> {
+    const settings = this.config.settings;
+    const lines = input.lines.map((line) => ({
+      name: line.concept.trim(),
+      quantity: line.quantity,
+      unitaryPrice: line.unitPrice,
+      subtotal: Math.round(line.quantity * line.unitPrice * 100) / 100,
+      alicQuota: line.alicQuota ?? null,
+    }));
+
+    let amounts: InvoiceAmounts;
+    try {
+      amounts = calculateInvoice({
+        lines: lines.map((line) => ({
+          subtotal: line.subtotal,
+          alicQuota: line.alicQuota,
+        })),
+        discountAmount: input.discountAmount ?? 0,
+        defaultAlicuotaPct: settings.alicuotaDefaultPct,
+      });
+    } catch (error) {
+      if (error instanceof InvoiceCalculationError) {
+        throw new ConflictException(error.message);
+      }
+      throw error;
+    }
+
+    const snapshot: InvoiceSnapshot = {
+      origin: 'manual',
+      tableName: null,
+      lines: lines.map((line) => ({
+        ...line,
+        alicQuota: line.alicQuota ?? settings.alicuotaDefaultPct,
+      })),
+      consumption: amounts.consumption,
+      discountAmount: amounts.discountAmount,
+      tipExcluded: 0,
+      emitter: {
+        cuit: settings.cuit,
+        razonSocial: settings.razonSocial,
+        domicilio: settings.domicilio,
+        condicionIva: 'Responsable Inscripto',
+        iibb: settings.iibb,
+        inicioActividades: settings.inicioActividades,
+      },
+    };
+
+    const afipEnv = settings.mode as InvoiceAfipEnv;
+    const ptoVta = settings.ptoVta ?? 1;
+    return this.withLock(`${afipEnv}:${ptoVta}:6`, () =>
+      this.persistAndRequest({
+        origin: 'manual',
+        orderId: null,
+        afipEnv,
+        ptoVta,
+        tipExcluded: 0,
+        customerEmail: input.customerEmail?.trim() || null,
+        amounts,
+        snapshot,
+      }),
+    );
+  }
+
+  private async persistAndRequest(input: {
+    origin: 'order' | 'manual';
+    orderId: string | null;
+    afipEnv: InvoiceAfipEnv;
+    ptoVta: number;
+    tipExcluded: number;
+    customerEmail: string | null;
+    amounts: InvoiceAmounts;
+    snapshot: InvoiceSnapshot;
+  }): Promise<InvoiceCloseView> {
+    const settings = this.config.settings;
+    const cbteNro = await this.nextNumber(input.afipEnv, input.ptoVta, 6);
+    const today = localIsoDate();
+    const row = this.invoices.create({
+      origin: input.origin,
+      orderId: input.orderId,
+      afipEnv: input.afipEnv,
+      status: 'pending',
+      ptoVta: input.ptoVta,
       cbteTipo: 6,
       cbteNro,
       cbteFch: today,
@@ -149,17 +243,17 @@ export class InvoiceService {
       docTipo: 99,
       docNro: 0,
       condicionIvaReceptorId: settings.condicionIvaReceptorId ?? 0,
-      impTotal: money(built.amounts.impTotal),
-      impNeto: money(built.amounts.impNeto),
-      impIva: money(built.amounts.impIva),
+      impTotal: money(input.amounts.impTotal),
+      impNeto: money(input.amounts.impNeto),
+      impIva: money(input.amounts.impIva),
       impTotConc: '0.00',
       impOpEx: '0.00',
       impTrib: '0.00',
-      iva: built.amounts.iva,
-      discountAmount: money(built.amounts.discountAmount),
-      tipExcluded: money(Number(order.tip ?? 0)),
-      customerEmail: customerEmail ?? null,
-      snapshot: built.snapshot as unknown as Record<string, unknown>,
+      iva: input.amounts.iva,
+      discountAmount: money(input.amounts.discountAmount),
+      tipExcluded: money(input.tipExcluded),
+      customerEmail: input.customerEmail,
+      snapshot: input.snapshot as unknown as Record<string, unknown>,
       attemptCount: 1,
       lastAttemptAt: new Date(),
     });
@@ -168,7 +262,7 @@ export class InvoiceService {
     let result: ArcaSolicitarResult;
     try {
       result = await this.arca.solicitar({
-        ptoVta,
+        ptoVta: input.ptoVta,
         cbteTipo: 6,
         cbteNro,
         cbteFch: today.replace(/-/g, ''),
@@ -176,13 +270,13 @@ export class InvoiceService {
         docTipo: 99,
         docNro: 0,
         condicionIvaReceptorId: settings.condicionIvaReceptorId ?? 0,
-        impTotal: built.amounts.impTotal,
+        impTotal: input.amounts.impTotal,
         impTotConc: 0,
-        impNeto: built.amounts.impNeto,
+        impNeto: input.amounts.impNeto,
         impOpEx: 0,
         impTrib: 0,
-        impIva: built.amounts.impIva,
-        iva: built.amounts.iva.map((item) => ({
+        impIva: input.amounts.impIva,
+        iva: input.amounts.iva.map((item) => ({
           id: item.id,
           baseImp: item.baseImp,
           importe: item.importe,
@@ -194,7 +288,7 @@ export class InvoiceService {
 
     if (result.outcome === 'timeout') {
       try {
-        const consulted = await this.arca.consultar(ptoVta, 6, cbteNro);
+        const consulted = await this.arca.consultar(input.ptoVta, 6, cbteNro);
         if (consulted?.cae) {
           result = {
             outcome: 'authorized',

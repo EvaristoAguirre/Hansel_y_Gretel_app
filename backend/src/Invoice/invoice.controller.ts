@@ -15,6 +15,7 @@ import {
 import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
+import { CreateManualInvoiceDto } from './create-manual-invoice.dto';
 import { InvoiceDocumentService } from './invoice-document.service';
 import { UpdateInvoiceEmailDto } from './invoice-email.dto';
 import { InvoiceMailService } from './invoice-mail.service';
@@ -29,6 +30,11 @@ export class InvoiceController {
     private readonly documents: InvoiceDocumentService,
     private readonly mail: InvoiceMailService,
   ) {}
+
+  @Post()
+  create(@Body() body: CreateManualInvoiceDto) {
+    return this.invoices.emitManual(body);
+  }
 
   @Get()
   list(@Query('month') month?: string, @Query('year') year?: string) {

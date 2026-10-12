@@ -303,3 +303,17 @@ Verificación: el test de SMTP caído no guarda la fila; el de envío exitoso ad
 El alta y la edición de producto aceptan `alicQuota` (0, 2,5, 5, 10,5, 21 o 27). Vacío queda null y la emisión usa el default. El modal tiene el selector. Una orden con 21 % y 10,5 % guarda dos ítems en `iva` y el PDF nombra las dos alícuotas.
 
 Verificación: test de `InvoiceService`. No se abrió el modal de productos en el navegador.
+
+### Paso 13 — hecho en código
+
+`POST /invoices` emite una Factura B con líneas, descuento en pesos y email opcional. Usa el mismo mutex de numeración. No busca orden, no toca la mesa y no escribe en la caja diaria. En la pestaña Facturas, “Nueva factura” deja cargar una línea desde el catálogo y editarla antes de emitir. El aviso usa el mismo criterio que el cobro (autorizada, pendiente o rechazada) y el origen queda Manual.
+
+Verificación: el test deja una fila `manual` de $900, sin `orderId` y con propina 0. No se emitió una desde el navegador.
+
+### Paso 8 — no hecho
+
+Sigue `ArcaClientNotReady`. Sin certificado de homologación, CUIT y punto de venta no se puede cumplir el “listo cuando” (TA reutilizado y `FEDummy` OK). Las pantallas y las tablas no dependen de este paso.
+
+### Paso 14 — no hecho
+
+Producción queda bloqueada hasta el certificado real y la validación del contador. `.env.example` sigue con `AFIP_SIMULATE=true`.

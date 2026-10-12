@@ -12,6 +12,7 @@ import {
 } from "@/api/invoices";
 import { useAuth } from "@/app/context/authContext";
 import { formatNumber } from "@/components/Utils/FormatNumber";
+import ManualInvoiceDialog from "./ManualInvoiceDialog";
 import EmailIcon from "@mui/icons-material/Email";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import SendIcon from "@mui/icons-material/Send";
@@ -61,6 +62,7 @@ export default function InvoicesView() {
   const [year, setYear] = useState(now.getFullYear());
   const [rows, setRows] = useState<InvoiceRow[]>([]);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
   const { getAccessToken } = useAuth();
 
   const load = useCallback(async () => {
@@ -280,6 +282,9 @@ export default function InvoicesView() {
         <Button variant="outlined" onClick={load}>
           Buscar
         </Button>
+        <Button variant="contained" onClick={() => setManualOpen(true)}>
+          Nueva factura
+        </Button>
       </Box>
       {rows.length === 0 ? (
         <Typography>No hay facturas en ese mes</Typography>
@@ -292,6 +297,11 @@ export default function InvoicesView() {
           disableRowSelectionOnClick
         />
       )}
+      <ManualInvoiceDialog
+        open={manualOpen}
+        onClose={() => setManualOpen(false)}
+        onCreated={load}
+      />
       <Dialog open={Boolean(detail)} onClose={() => setDetail(null)} maxWidth="sm" fullWidth>
         <DialogTitle>Detalle de factura</DialogTitle>
         <DialogContent>

@@ -17,6 +17,31 @@ async function readError(response: Response) {
   throw new Error(data.message || "No se pudo completar la operación");
 }
 
+export async function createManualInvoice(
+  token: string,
+  body: {
+    lines: {
+      concept: string;
+      quantity: number;
+      unitPrice: number;
+      alicQuota?: number | null;
+    }[];
+    discountAmount?: number;
+    customerEmail?: string;
+  }
+) {
+  const response = await fetch(URI_INVOICES, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) await readError(response);
+  return response.json();
+}
+
 export async function listInvoices(
   token: string,
   month: number,
