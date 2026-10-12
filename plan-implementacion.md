@@ -277,3 +277,11 @@ El 12/10 se aplicó con `pnpm run migrate:run` y el script terminó bien. No se 
 En el cobro hay switch «Emitir Factura B» (apagado por defecto), el importe sin propina y un ícono que abre el email. El aviso distingue factura autorizada, pendiente y rechazada. `tsc` del frontend pasa.
 
 No se recorrió el cobro en el navegador: hace falta una caja abierta y una orden en pago. Los tres textos salen del bloque `invoice` que ya cubren los tests del paso 5.
+
+### Paso 9 — hecho en código
+
+`GET /invoices`, `GET /invoices/:id` y `POST /invoices/:id/retry` para Admin y Encargado. El reintento de una rechazada vuelve a pedir el mismo número; si el modo de la fila no es el del proceso, responde 409. Una pendiente consulta antes de solicitar de nuevo.
+
+La pestaña Facturas está en la caja diaria: mes y año (default el mes actual), grilla, detalle y reintento con confirmación. El detalle muestra la fila completa (foto, CAE, IVA y observaciones).
+
+Verificación: los 8 tests de `InvoiceService` pasan, incluido el reintento y el 409 por modo distinto. `tsc` del frontend no marca los archivos de la pestaña. No se abrió la pestaña en el navegador.

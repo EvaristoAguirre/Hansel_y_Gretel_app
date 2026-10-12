@@ -5,6 +5,7 @@ import { useState } from 'react';
 import DailyCashSection from './TabDailyCash/DailyCashSection';
 import MetricsContainer from './TabMetrics/ MetricsContainer';
 import DailySalesView from './TabSales/DailySalesView';
+import InvoicesView from './TabInvoices/InvoicesView';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
@@ -25,6 +26,7 @@ const DailyCash = () => {
         <Tab label="Caja Diaria" />
         <Tab label="Ventas" />
         <Tab label="Métricas" />
+        <Tab label="Facturas" />
       </Tabs>
 
       <TabPanel value={tabIndex} index={0}>
@@ -37,6 +39,9 @@ const DailyCash = () => {
       </TabPanel>
       <TabPanel value={tabIndex} index={2}>
         <MetricsContainer />
+      </TabPanel>
+      <TabPanel value={tabIndex} index={3}>
+        <InvoicesView />
       </TabPanel>
     </Box>
   );

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Order } from 'src/Order/entities/order.entity';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
 import { AfipConfig } from './afip-config';
@@ -37,6 +37,56 @@ export class InvoiceService {
     private readonly config: AfipConfig,
     private readonly arca: ArcaClient,
   ) {}
+
+  async list(month: number, year: number) {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0);
+    const from = isoDate(start);
+    const to = isoDate(end);
+    const rows = await this.invoices.find({
+      where: { cbteFch: Between(from, to) },
+      order: { cbteFch: 'DESC', createdAt: 'DESC' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      cbteFch: row.cbteFch,
+      createdAt: row.createdAt,
+      ptoVta: row.ptoVta,
+      cbteNro: row.cbteNro,
+      origin: row.origin,
+      impTotal: Number(row.impTotal),
+      status: row.status,
+      customerEmail: row.customerEmail,
+      afipEnv: row.afipEnv,
+    }));
+  }
+
+  async detail(id: string) {
+    const invoice = await this.invoices.findOne({ where: { id } });
+    if (!invoice) {
+      throw new NotFoundException('No se encontró la factura.');
+    }
+    return invoice;
+  }
+
+  async retry(id: string): Promise<InvoiceCloseView> {
+    const invoice = await this.invoices.findOne({ where: { id } });
+    if (!invoice) {
+      throw new NotFoundException('No se encontró la factura.');
+    }
+    if (invoice.status !== 'pending' && invoice.status !== 'rejected') {
+      throw new ConflictException(
+        'Solo se reintenta una factura pendiente o rechazada.',
+      );
+    }
+    if (invoice.afipEnv !== this.config.settings.mode) {
+      throw new ConflictException(
+        'Esta factura se emitió en otro modo y no se reenvía a ARCA.',
+      );
+    }
+    const lockKey = `${invoice.afipEnv}:${invoice.ptoVta}:${invoice.cbteTipo}`;
+    return this.withLock(lockKey, () => this.retryLocked(invoice));
+  }
 
   async fiscalTicket(id: string) {
     const invoice = await this.invoices.findOne({ where: { id } });
@@ -178,6 +228,86 @@ export class InvoiceService {
     return this.toView(updated);
   }
 
+  private async retryLocked(invoice: Invoice): Promise<InvoiceCloseView> {
+    invoice.attemptCount = Number(invoice.attemptCount ?? 0) + 1;
+    invoice.lastAttemptAt = new Date();
+
+    if (invoice.status === 'pending' && invoice.cbteNro != null) {
+      try {
+        const consulted = await this.arca.consultar(
+          invoice.ptoVta,
+          invoice.cbteTipo,
+          invoice.cbteNro,
+        );
+        if (consulted?.cae) {
+          invoice.status = 'authorized';
+          invoice.cae = consulted.cae;
+          invoice.caeFchVto = isoFromCompact(consulted.caeFchVto);
+          invoice.resultado = 'A';
+          invoice.authorizedAt = new Date();
+          const saved = await this.invoices.save(invoice);
+          return this.toView(saved);
+        }
+      } catch {
+        // Sigue el reintento de solicitud.
+      }
+    }
+
+    let result: ArcaSolicitarResult;
+    try {
+      result = await this.arca.solicitar(this.solicitudFromInvoice(invoice));
+    } catch {
+      result = { outcome: 'timeout' };
+    }
+    this.applyResult(invoice, result);
+    const saved = await this.invoices.save(invoice);
+    return this.toView(saved);
+  }
+
+  private solicitudFromInvoice(invoice: Invoice) {
+    return {
+      ptoVta: invoice.ptoVta,
+      cbteTipo: invoice.cbteTipo,
+      cbteNro: invoice.cbteNro ?? 0,
+      cbteFch: String(invoice.cbteFch).slice(0, 10).replace(/-/g, ''),
+      concepto: invoice.concepto,
+      docTipo: invoice.docTipo,
+      docNro: invoice.docNro,
+      condicionIvaReceptorId: invoice.condicionIvaReceptorId,
+      impTotal: Number(invoice.impTotal),
+      impTotConc: Number(invoice.impTotConc ?? 0),
+      impNeto: Number(invoice.impNeto),
+      impOpEx: Number(invoice.impOpEx ?? 0),
+      impTrib: Number(invoice.impTrib ?? 0),
+      impIva: Number(invoice.impIva),
+      iva: (invoice.iva ?? []).map((item) => ({
+        id: item.id,
+        baseImp: item.baseImp,
+        importe: item.importe,
+      })),
+    };
+  }
+
+  private applyResult(invoice: Invoice, result: ArcaSolicitarResult) {
+    if (result.outcome === 'authorized') {
+      invoice.status = 'authorized';
+      invoice.cae = result.cae;
+      invoice.caeFchVto = isoFromCompact(result.caeFchVto);
+      invoice.resultado = 'A';
+      invoice.authorizedAt = new Date();
+      invoice.arcaErrors = null;
+      return;
+    }
+    if (result.outcome === 'rejected') {
+      invoice.status = 'rejected';
+      invoice.resultado = 'R';
+      invoice.arcaErrors = { errors: result.errors };
+      return;
+    }
+    invoice.status = 'pending';
+    invoice.resultado = null;
+  }
+
   private buildFromOrder(order: Order) {
     const settings = this.config.settings;
     const lines = [];
@@ -299,6 +429,13 @@ function messageFor(invoice: Invoice): string {
 
 function money(value: number): string {
   return value.toFixed(2);
+}
+
+function isoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function localIsoDate(date = new Date()): string {

@@ -92,8 +92,10 @@ function harness(behavior: {
       return row;
     }),
     findOne: jest.fn(
-      async ({ where }: { where: { orderId?: string } }) =>
-        rows.find((row) => row.orderId === where.orderId) ?? null,
+      async ({ where }: { where: { orderId?: string; id?: string } }) => {
+        if (where.id) return rows.find((row) => row.id === where.id) ?? null;
+        return rows.find((row) => row.orderId === where.orderId) ?? null;
+      },
     ),
     createQueryBuilder: () => {
       const api = {
@@ -233,6 +235,37 @@ describe('InvoiceService.emitForOrder', () => {
     await service.emitForOrder(ORDER_A);
     await service.emitForOrder(ORDER_A);
     expect(rows).toHaveLength(1);
+  });
+
+  it('reintenta una rechazada y, si el modo no coincide, no la reenvía', async () => {
+    let calls = 0;
+    const { service, rows } = harness({
+      solicitar: async (cbteNro) => {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            outcome: 'rejected',
+            errors: [{ code: '1', msg: 'mal' }],
+          };
+        }
+        return {
+          outcome: 'authorized',
+          cae: String(cbteNro).padStart(14, '0'),
+          caeFchVto: '20261022',
+          reproceso: false,
+        };
+      },
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    const retried = await service.retry(first.id);
+    expect(retried.status).toBe('authorized');
+
+    rows[0].afipEnv = 'homologacion';
+    rows[0].status = 'rejected';
+    await expect(service.retry(first.id)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
   });
 
   it('un importe cero no crea fila', async () => {
