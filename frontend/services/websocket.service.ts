@@ -7,8 +7,6 @@ export class WebSocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
   private reconnectCallbacks: Set<ReconnectCallback> = new Set();
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = Infinity;
   private connectionUrl: string | null = null;
   /** Evita registrar los handlers de ciclo de vida más de una vez en el mismo socket. */
   private lifecycleBound = false;
@@ -54,27 +52,13 @@ export class WebSocketService {
     if (!this.socket || this.lifecycleBound) return;
     this.lifecycleBound = true;
 
-    this.socket.on('connect', () => {
-      console.log('✅ Conectado a WebSocket');
-      this.reconnectAttempts = 0;
-    });
-
-    this.socket.on('disconnect', (reason) => {
-      console.log('❌ Desconectado del servidor WebSocket:', reason);
-    });
-
-    this.socket.on('reconnect_attempt', (attemptNumber) => {
+    this.socket.on('reconnect_attempt', () => {
       this.refreshAuth();
-      console.log(
-        `🔄 Intento de reconexión ${attemptNumber}/${this.maxReconnectAttempts}`
-      );
-      this.reconnectAttempts = attemptNumber;
     });
 
     // Los listeners de dominio registrados con socket.on sobreviven a la
     // reconexión del mismo socket; no re-registrarlos (evita handlers N veces).
     this.socket.on('reconnect', () => {
-      console.log('✅ Reconectado al servidor WebSocket');
       this.reconnectCallbacks.forEach((cb) => {
         try {
           cb();

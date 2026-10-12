@@ -63,11 +63,11 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 - [x] **17. `components/Table/Table.tsx` ~50 — Fetch de mesas duplicado**  
   **Resuelto (Fase 3, 24/09/2026):** un solo fetch desde `useTable`.
 
-- [ ] **18. Toda la codebase `components/` — Cero usos de `React.memo`**
-  En 105 archivos no hay ningún `React.memo`. Componentes de lista (`TableCard`, filas de pedido, DataGrid) se re-renderizan en cada cambio del contexto padre.
+- [x] **18. Toda la codebase `components/` — Cero usos de `React.memo`**
+  **Resuelto (28/09/2026):** `memo` en los componentes de lista que el ítem nombra: `TableCard`, la fila de pedido confirmado y `DataGridComponent`. Los callbacks de mesa que reciben esas tarjetas van en `useCallback`.
 
-- [ ] **19. `components/Hooks/useProducts.ts` ~30 — Carga de 500 productos de inicio**
-  `fetchProducts('1','500')` en vistas de administración. Pesado en dispositivos lentos o redes lentas.
+- [x] **19. `components/Hooks/useProducts.ts` ~30 — Carga de 500 productos de inicio**
+  **Resuelto (28/09/2026):** el catálogo de administración llega en páginas de 50 (tope 500) y la petición en curso se comparte. Quien solo necesita el socket o un refresh posterior no dispara la carga al montar.
 
 - [x] **20. `ingredientsContext.tsx` + `unitOfMeasureContext.tsx` — Múltiples fetches paralelos en mount sin deduplicación**
   **Resuelto (28/09/2026):** cada contexto pide sus listas en un solo `Promise.all` y reutiliza la promesa en curso para el mismo token. El efecto depende de `accessToken` / `isAuthLoaded`.
@@ -80,29 +80,29 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
   ~~`orderUpdatedPending` y `orderTicketPrinted` escriben `status`.~~  
   **Resuelto (Fase 1, 10/08/2026):** escriben `state` (`OrderState`).
 
-- [ ] **22. `components/Order/useOrderStore.ts` ~67 — `orderTicketPrinted` usa payload distinto**
-  Accede a `data.id` directamente, mientras que otros handlers usan `data.order || data`. Si el formato del payload cambia, la actualización no se aplica.
+- [x] **22. `components/Order/useOrderStore.ts` ~67 — `orderTicketPrinted` usa payload distinto**
+  **Resuelto:** `orderTicketPrinted` pasa por `normalizeOrderPayload` (`data.order || data`), igual que el resto de los handlers.
 
 - [x] **23. `app/context/ingredientsContext.tsx` ~118 — `removeIngredient` con lógica incorrecta**
   **Resuelto (28/09/2026):** la lista de ingredientes se actualiza según `isTopping` del ítem borrado, no del formulario abierto.
 
-- [ ] **24. `app/context/dailyCashContext.tsx` ~160 — Mensaje Swal incorrecto**
-  Al eliminar una caja dice "Producto eliminado" (copy-paste).
+- [x] **24. `app/context/dailyCashContext.tsx` ~160 — Mensaje Swal incorrecto**
+  **Resuelto:** al eliminar una caja el aviso dice "Caja eliminada correctamente."
 
-- [ ] **25. `app/context/order.context.tsx` ~463 — `setState` anidado en updater**
-  `setSelectedToppingsByProduct` es llamado dentro del updater de `setToppingsByProductGroup` → doble render y batching inconsistente en React 18.
+- [x] **25. `app/context/order.context.tsx` ~463 — `setState` anidado en updater**
+  **Resuelto (28/09/2026):** `updateToppingForUnit` calcula el grupo y después actualiza la lista plana, fuera del updater.
 
-- [ ] **26. `components/Order/OrderEditor.tsx` ~345 — Búsqueda sin debounce**
-  El `useEffect` en `selectedCats` lanza una búsqueda sin debounce ni cleanup de request anterior → race condition si el usuario cambia categoría rápido.
+- [x] **26. `components/Order/OrderEditor.tsx` ~345 — Búsqueda sin debounce**
+  **Resuelto (28/09/2026):** el cambio de categoría espera 350 ms y una búsqueda más nueva descarta la respuesta anterior.
 
-- [ ] **27. `app/context/room.context.tsx` ~108 — `handleSaveRoom` usa `fetch` directo**
-  No usa `apiFetch` (sin timeout, sin manejo unificado de errores), inconsistente con el resto del proyecto.
+- [x] **27. `app/context/room.context.tsx` ~108 — `handleSaveRoom` usa `fetch` directo**
+  **Resuelto (28/09/2026):** crear y editar sala usan `apiFetch` (timeout y error unificado).
 
-- [ ] **28. `api/dailyCash.ts`, `api/metrics.ts`, `api/categories.ts` — `response.json()` sin verificar `response.ok`**
-  Múltiples funciones parsean la respuesta sin verificar el status HTTP, tratando respuestas de error como datos válidos.
+- [x] **28. `api/dailyCash.ts`, `api/metrics.ts`, `api/categories.ts` — `response.json()` sin verificar `response.ok`**
+  **Resuelto (28/09/2026):** `readJson` rechaza el body si el status no es exitoso. Las métricas no pintan ese error como datos.
 
-- [ ] **29. `app/context/authContext.tsx` ~138 — `validateUserSession` y `handleSignOut` sin `useCallback`**
-  El `value` del Provider recrea estas funciones en cada render → re-renders masivos de todo el árbol bajo `AuthProvider`.
+- [x] **29. `app/context/authContext.tsx` ~138 — `validateUserSession` y `handleSignOut` sin `useCallback`**
+  **Resuelto:** ambas funciones ya están en `useCallback` y entran al `useMemo` del provider.
 
 - [x] **30. `app/context/ingredientsContext.tsx` ~81 — `useEffect` sin dependencia de auth**
   **Resuelto (28/09/2026):** ingredientes y unidades esperan `isAuthLoaded` y `accessToken`. Si el token llega después del primer render, las listas se piden en ese momento.
@@ -111,23 +111,23 @@ Auditoría realizada el 23/06/2026. Cada ítem incluye archivo, descripción del
 
 ## BAJOS / MEJORAS
 
-- [ ] **31. `console.log` de debug en producción**
-  Presentes en: `websocket.service.ts`, `useOrderStore.ts`, `useTableStore.ts`, `useProductStore.ts`, `useIngredientStore.ts`, `useCategoryStore.ts`, `DataGridComponent.tsx`, `Products.tsx`, `CashTable.tsx`.
+- [x] **31. `console.log` de debug en producción**
+  **Resuelto (28/09/2026):** se quitaron los logs de conexión WS y el de editar caja. Los `console.error` de fallos reales se mantienen.
 
-- [ ] **32. Imports sin usar**
-  `getTableByRoom` en `Table.tsx`, `LoadingLottie` en `Rooms.tsx`, `use` de React en `order.context.tsx`, `fetchDailyCashByID` en `dailyCashContext.tsx`.
+- [x] **32. Imports sin usar**
+  **Resuelto (28/09/2026):** se quitó `LoadingLottie` en `Rooms.tsx` y `use` en `OrderEditor.tsx`. `getTableByRoom`, `fetchDailyCashByID` y `use` en `order.context` ya no estaban importados.
 
-- [ ] **33. `components/Table/StepperTable.tsx` ~105 — `imprimirComanda()` función vacía (dead code)**
-  Función declarada pero sin implementación.
+- [x] **33. `components/Table/StepperTable.tsx` ~105 — `imprimirComanda()` función vacía (dead code)**
+  **Resuelto (28/09/2026):** se eliminó la función y la prop que `Order` no usaba.
 
-- [ ] **34. `tsconfig.json` — `allowJs: true`**
-  Permite mezclar JS sin tipos (como `URI.js`) con TS estricto, anulando parte de la seguridad de tipos.
+- [x] **34. `tsconfig.json` — `allowJs: true`**
+  **Resuelto (28/09/2026):** `URI.js` pasó a `URI.ts` y `allowJs` quedó en `false`.
 
-- [ ] **35. `next.config.ts` — Configuración `i18n` de Pages Router en App Router (Next 15)**
-  Patrón heredado de Pages Router que puede causar warnings o comportamiento inesperado.
+- [x] **35. `next.config.ts` — Configuración `i18n` de Pages Router en App Router (Next 15)**
+  **Resuelto (28/09/2026):** se quitó `i18n` (Next avisaba que no aplica en App Router) y `next-i18next.config.js`.
 
-- [ ] **36. `components/Table/StepperTable.tsx` ~89 — `handleCompleteStep` con closure no funcional**
-  `setCompleted({ ...completed, [activeStep]: true })` no usa la forma funcional del setter → con clicks rápidos se pueden perder pasos completados.
+- [x] **36. `components/Table/StepperTable.tsx` ~89 — `handleCompleteStep` con closure no funcional**
+  **Resuelto (28/09/2026):** `setCompleted` usa la forma funcional del setter.
 
 ---
 

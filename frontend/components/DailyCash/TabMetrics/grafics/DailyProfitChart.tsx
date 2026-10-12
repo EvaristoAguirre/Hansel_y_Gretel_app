@@ -39,8 +39,12 @@ const DailyProfitChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
-      const response = await getDailyProfit(token, month, year);
-      setData(response);
+      try {
+        const response = await getDailyProfit(token, month, year);
+        if (Array.isArray(response)) setData(response);
+      } catch (error) {
+        console.error('Error al cargar la ganancia diaria', error);
+      }
     };
     fetchData();
   }, [token, month, year]);

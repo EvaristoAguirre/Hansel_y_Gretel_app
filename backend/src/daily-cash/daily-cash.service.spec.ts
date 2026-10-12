@@ -238,3 +238,80 @@ describe('DailyCashService.closeDailyCash', () => {
     expect(result.state).toBe(DailyCashState.CLOSED);
   });
 });
+
+describe('DailyCashService.getAnnualDistribution', () => {
+  it('arma los 12 meses con dos consultas agrupadas', async () => {
+    const salesQb = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        { bucket: '1', total: '100' },
+        { bucket: '3', total: '50.5' },
+      ]),
+    };
+    const movementQb = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        { bucket: '1', type: 'ingreso', total: '20' },
+        { bucket: '1', type: 'egreso', total: '5' },
+      ]),
+    };
+    const service = new DailyCashService(
+      { createQueryBuilder: () => salesQb } as any,
+      { createQueryBuilder: () => movementQb } as any,
+      {} as any,
+      { emit: jest.fn() } as any,
+      { log: jest.fn() } as any,
+      {} as any,
+      {} as any,
+    );
+
+    const result = await service.getAnnualDistribution(2026);
+
+    expect(result).toHaveLength(12);
+    expect(result[0]).toEqual({ mes: 'enero', income: 120, expenses: 5 });
+    expect(result[1]).toEqual({ mes: 'febrero', income: 0, expenses: 0 });
+    expect(result[2]).toEqual({ mes: 'marzo', income: 50.5, expenses: 0 });
+    expect(salesQb.getRawMany).toHaveBeenCalledTimes(1);
+    expect(movementQb.getRawMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DailyCashService.getAnnualSummary', () => {
+  it('no propaga un totalSales NaN al ingreso del año', async () => {
+    const salesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ total: 'NaN' }),
+    };
+    const movementQb = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        { type: 'ingreso', total: '1000' },
+        { type: 'egreso', total: '400' },
+      ]),
+    };
+    const service = new DailyCashService(
+      { createQueryBuilder: () => salesQb } as any,
+      { createQueryBuilder: () => movementQb } as any,
+      {} as any,
+      { emit: jest.fn() } as any,
+      { log: jest.fn() } as any,
+      {} as any,
+      {} as any,
+    );
+
+    const result = await service.getAnnualSummary(2026);
+
+    expect(result).toEqual({ income: 1000, expenses: 400, profit: 600 });
+  });
+});

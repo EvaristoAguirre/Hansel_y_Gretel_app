@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending, orderToReprint } from "@/api/order";
@@ -28,13 +28,64 @@ import { markPrinterAlertShown } from "@/lib/printerAlertGuard";
 import { sumOrderLines } from "./orderTotal";
 
 export interface OrderProps {
-  imprimirComanda: any;
   handleDeleteOrder: any;
   selectedTable: ITable;
   handleNextStep: () => void;
   handleCompleteStep: () => void;
   handleReset: () => void;
 }
+
+const OrderLine = memo(function OrderLine({ item }: { item: SelectedProductsI }) {
+  return (
+    <ListItem
+      style={{
+        backgroundColor: "#eceae8",
+        margin: "0.3rem 0",
+        display: "flex",
+        alignItems: "center",
+        borderRadius: "5px",
+        height: "3rem",
+        justifyContent: "space-between",
+      }}
+    >
+      <Typography
+        sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
+        style={{
+          color: "black",
+          width: "2rem",
+          textAlign: "center",
+          borderRadius: "5px",
+        }}
+      >
+        {item.quantity}
+      </Typography>
+      <Tooltip title={item.productName} arrow>
+        <ListItemText
+          style={{
+            margin: "0 1rem 0 0.5rem",
+            fontSize: "1rem",
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 1,
+            overflow: "hidden",
+          }}
+          primary={item.productName}
+        />
+      </Tooltip>
+      <Typography
+        style={{
+          margin: "0 1rem 0 0.5rem",
+          fontSize: "1rem",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {`$ ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}`}
+      </Typography>
+    </ListItem>
+  );
+});
 
 const Order: React.FC<OrderProps> = ({
   handleNextStep,
@@ -231,55 +282,11 @@ const Order: React.FC<OrderProps> = ({
                 marginTop: "0.5rem",
               }}
             >
-              {confirmedProducts?.map((item: any, index: number) => (
-                <ListItem
-                  key={index}
-                  style={{
-                    backgroundColor: "#eceae8",
-                    margin: "0.3rem 0",
-                    display: "flex",
-                    alignItems: "center",
-                    borderRadius: "5px",
-                    height: "3rem",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography
-                    sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                    style={{
-                      color: "black",
-                      width: "2rem",
-                      textAlign: "center",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    {item.quantity}
-                  </Typography>
-                  <Tooltip title={item.productName} arrow>
-                    <ListItemText
-                      style={{
-                        margin: "0 1rem 0 0.5rem",
-                        fontSize: "1rem",
-                        display: "-webkit-box",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 1,
-                        overflow: "hidden",
-                      }}
-                      primary={item.productName}
-                    />
-                  </Tooltip>
-                  <Typography
-                    style={{
-                      margin: "0 1rem 0 0.5rem",
-                      fontSize: "1rem",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {`$ ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}`}
-                  </Typography>
-                </ListItem>
+              {confirmedProducts?.map((item, index) => (
+                <OrderLine
+                  key={item.internalId ?? `${item.productId}-${index}`}
+                  item={item}
+                />
               ))}
             </List>
             <Typography

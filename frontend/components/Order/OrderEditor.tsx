@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   List,
@@ -43,10 +43,11 @@ import { fetchToppingsGroupById } from '@/api/topping';
 import ToppingsGroupsViewer from './ToppingsSection.tsx/ToppingsGroupsViewer';
 import { formatNumber } from '../Utils/FormatNumber';
 import { normalizeNumber } from '../Utils/NormalizeNumber';
-import { ProductResponse, SelectedProductsI } from '../Interfaces/IProducts';
+import { ProductResponse, SelectedProductsI, SlotSelection } from '../Interfaces/IProducts';
 import { TypeProduct } from '../Enums/view-products';
 import { PromotionSlotSelector } from './PromotionSlotSelector';
 import { getSlotsByPromotionId } from '@/api/promotionSlot';
+import { lineTotalWithExtras } from './orderTotal';
 import { newOrderLineId } from '../Utils/newOrderLineId';
 import { cancelOrderDetail, reprintComanda } from '@/api/order';
 import Swal from 'sweetalert2';
@@ -234,14 +235,12 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
       });
     }
 
-    // Primero normalizar unitaryPrice a número
     const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
-
-    const basePrice = unitaryPriceNum * quantity;
-    const totalPrice = basePrice + toppingExtra;
-    const formattedPrice = formatNumber(totalPrice);
-
-    return formattedPrice;
+    const totalPrice = lineTotalWithExtras(
+      { ...product, quantity, unitaryPrice: unitaryPriceNum },
+      toppingExtra,
+    );
+    return formatNumber(totalPrice);
   };
 
   const calcularPrecioConToppingsNumero = (
@@ -266,7 +265,10 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
 
     const unitaryPriceNum = normalizeNumber(product.unitaryPrice);
 
-    return unitaryPriceNum * quantity + toppingExtra;
+    return lineTotalWithExtras(
+      { ...product, quantity, unitaryPrice: unitaryPriceNum },
+      toppingExtra,
+    );
   };
 
   useEffect(() => {
@@ -321,12 +323,18 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   // Ref del timer de debounce: evita llamar al backend en cada letra tecleada.
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSeq = useRef(0);
 
   const searchProductsFiltered = async (term: string, categories: string[]) => {
+    const seq = ++searchSeq.current;
     const trimmedTerm = term.trim();
-    const results =
-      token &&
-      (await searchProductsForOrdering(trimmedTerm, token, categories.join(',')));
+    if (!token) return;
+    const results = await searchProductsForOrdering(
+      trimmedTerm,
+      token,
+      categories.join(',')
+    );
+    if (seq !== searchSeq.current) return;
     if (results) setProductosDisponibles(results);
   };
 
@@ -348,10 +356,19 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
     }, 350);
   };
 
-  // Solo busca si hay al menos un criterio (categoría seleccionada o término escrito).
+  // La categoría también espera 350 ms y descarta la respuesta si llegó otra búsqueda después.
   useEffect(() => {
-    if (selectedCats.length === 0 && !searchTerm) return;
-    searchProductsFiltered(searchTerm, selectedCats);
+    if (selectedCats.length === 0 && !searchTerm) {
+      searchSeq.current += 1;
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      void searchProductsFiltered(searchTerm, selectedCats);
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
   }, [selectedCats]);
 
   const [visibleToppings, setVisibleToppings] = useState<{
@@ -429,15 +446,7 @@ const OrderEditor = ({ handleNextStep, handleCompleteStep }: Props) => {
   };
 
   // Función para manejar la confirmación de selección de slots
-  const handleConfirmSlotSelection = async (
-    selections: {
-      slotId: string;
-      selectedProductId: string;
-      selectedProductName?: string;
-      toppingsPerUnit?: string[];
-      toppingNames?: string[];
-    }[],
-  ) => {
+  const handleConfirmSlotSelection = async (selections: SlotSelection[]) => {
     if (!promotionSlotModal.promotion) return;
 
     const promotion = promotionSlotModal.promotion;

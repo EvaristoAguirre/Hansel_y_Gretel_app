@@ -58,7 +58,6 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
         }
       }
       hasConnectedBefore = true;
-      console.log("✅ Conectado a WebSocket - Mesas");
     });
 
     webSocketService.on("tableCreated", (data: ITable & { room?: { id: string } }) => {
@@ -112,10 +111,6 @@ export const useTableStore = create<TableStateZustand>((set, get) => {
         const tables = state.tables.filter((t) => t.id !== data.id);
         return { tablesByRoom: newByRoom, tables };
       });
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ Desconectado del servidor WebSocket - Mesas");
     });
   };
 

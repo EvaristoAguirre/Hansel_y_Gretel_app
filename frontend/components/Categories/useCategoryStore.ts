@@ -18,11 +18,7 @@ export const useCategoryStore = create<CategoryState>((set) => {
     if (categoryListenersBound) return;
     categoryListenersBound = true;
 
-    const socket = webSocketService.connect();
-
-    socket.on("connect", () => {
-      console.log("✅ Conectado a WebSocket - Categorías");
-    });
+    webSocketService.connect();
 
     webSocketService.on("categoryCreated", (data) => {
       set((state) => ({ categories: [...state.categories, data] }));
@@ -42,10 +38,6 @@ export const useCategoryStore = create<CategoryState>((set) => {
           (category) => category.id !== data.id
         ),
       }));
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ Desconectado del servidor WebSocket - Categorías");
     });
   };
 

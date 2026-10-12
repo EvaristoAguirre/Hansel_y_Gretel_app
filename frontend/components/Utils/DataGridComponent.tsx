@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Box } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { esES } from '@mui/x-data-grid/locales';
@@ -49,4 +49,4 @@ const DataGridComponent: React.FC<DataGridComponentProps> = ({
   );
 };
 
-export default DataGridComponent;
+export default memo(DataGridComponent);

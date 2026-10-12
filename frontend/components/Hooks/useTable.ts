@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { URI_TABLE } from "../URI/URI";
 import Swal from "sweetalert2";
 import { useTableStore } from "../Table/useTableStore";
@@ -27,7 +27,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
     updateTablesByRoom
   } = useTableStore();
 
-  const handleOpenModal = (type: TableModalType, table?: ITable) => {
+  const handleOpenModal = useCallback((type: TableModalType, table?: ITable) => {
     setModalType(type);
     if (type === TableModalType.EDIT && table && table.state) {
       setForm({
@@ -45,7 +45,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
       setNameTable("")
     }
     setModalOpen(true);
-  };
+  }, [setNameTable]);
 
   const handleCloseModal = () => {
     setForm({
@@ -112,7 +112,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     const confirm = await Swal.fire({
       title: "¿Estás seguro?",
       text: "Esta acción no se puede deshacer.",
@@ -139,7 +139,7 @@ const useTable = (salaId: string, setNameTable: (name: string) => void) => {
         console.error(error);
       }
     }
-  };
+  }, [getAccessToken, removeTable]);
 
   return {
     tables,

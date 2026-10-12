@@ -701,8 +701,11 @@ export class OrderService {
     return await this.reader.getOrderDetails(page, limit);
   }
 
-  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.reader.getOrdersForOpenOrPendingTables();
+  async getOrdersForOpenOrPendingTables(
+    page: number,
+    limit: number,
+  ): Promise<Order[]> {
+    return await this.reader.getOrdersForOpenOrPendingTables(page, limit);
   }
 
   async markOrderAsPendingPayment(

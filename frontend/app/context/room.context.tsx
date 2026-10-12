@@ -102,10 +102,17 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
   }, []);
 
   const handleSaveRoom = useCallback(async (room: { id?: string; name: string }) => {
+    const notifySaveError = (error: unknown, fallback: string) => {
+      if (error instanceof Error && error.message === "TIMEOUT") {
+        Swal.fire("Sin respuesta", "El servidor no respondió. Reintentá en un momento.", "warning");
+        return;
+      }
+      Swal.fire("Error", fallback, "error");
+    };
+
     if (room.id) {
-      // Editar sala existente
       try {
-        const response = await fetch(`${URI_ROOM}/${room.id}`, {
+        const response = await apiFetch(`${URI_ROOM}/${room.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -114,8 +121,6 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
           body: JSON.stringify(room),
         });
 
-        if (!response.ok) throw new Error("Error al editar la sala.");
-
         const updatedRoom = await response.json();
         setRooms((prev) =>
           prev.map((s) => (s.id === updatedRoom.id ? updatedRoom : s))
@@ -123,12 +128,11 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
 
         Swal.fire("Éxito", "Room actualizada correctamente.", "success");
       } catch (error) {
-        Swal.fire("Error", "No se pudo actualizar la sala.", "error");
+        notifySaveError(error, "No se pudo actualizar la sala.");
       }
     } else {
-      // Crear nueva sala
       try {
-        const response = await fetch(URI_ROOM, {
+        const response = await apiFetch(URI_ROOM, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -137,14 +141,12 @@ const RoomProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => 
           body: JSON.stringify(room),
         });
 
-        if (!response.ok) throw new Error("Error al crear la sala.");
-
         const newRoom = await response.json();
         setRooms((prev) => [...prev, newRoom]);
 
         Swal.fire("Éxito", "Room creada correctamente.", "success");
       } catch (error) {
-        Swal.fire("Error", "No se pudo crear la sala.", "error");
+        notifySaveError(error, "No se pudo crear la sala.");
       }
     }
   }, [token]);

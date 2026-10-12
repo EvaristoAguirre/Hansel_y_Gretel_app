@@ -1,4 +1,5 @@
 import { URI_METRICS } from "@/components/URI/URI";
+import { readJson } from "@/lib/apiClient";
 
 // Ingresos y egresos diarios del mes: 
 export const getMonthlySummary = async (token: string, month: number, year: number) => {
@@ -11,8 +12,7 @@ export const getMonthlySummary = async (token: string, month: number, year: numb
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 
@@ -26,8 +26,7 @@ export const getAnnualSummary = async (token: string, year: number) => {
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 
@@ -41,8 +40,7 @@ export const getAnnualDistribution = async (token: string, year: number) => {
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 
@@ -56,8 +54,7 @@ export const getDailyIncomeExpense = async (token: string, month: number, year: 
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 
@@ -71,9 +68,5 @@ export const getDailyProfit = async (token: string, month: number, year: number)
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
-
-
-

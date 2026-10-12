@@ -49,6 +49,7 @@ import { MonitoringModule } from './Monitoring/monitoring-logger.module';
           synchronize: false, // en false en produccion
           dropSchema: false, //en false en produccion
           logging: isDev ? ['warn', 'error'] : ['error'],
+          maxQueryExecutionTime: dbConfig.maxQueryExecutionTime,
           schema: dbConfig.schema,
           entities: dbConfig.entities,
           migrations: dbConfig.migrations,
