@@ -10,6 +10,7 @@ import { createArcaClient } from './arca-client.factory';
 import { Invoice } from './invoice.entity';
 import { InvoiceController } from './invoice.controller';
 import { InvoiceDocumentService } from './invoice-document.service';
+import { InvoiceMailService } from './invoice-mail.service';
 import { InvoiceService } from './invoice.service';
 
 @Module({
@@ -23,6 +24,7 @@ import { InvoiceService } from './invoice.service';
     AfipConfig,
     InvoiceService,
     InvoiceDocumentService,
+    InvoiceMailService,
     {
       provide: ArcaClient,
       useFactory: (config: AfipConfig) => createArcaClient(config.settings),

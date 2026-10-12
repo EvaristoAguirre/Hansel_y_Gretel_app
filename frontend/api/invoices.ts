@@ -61,6 +61,32 @@ export async function printInvoice(token: string, id: string) {
   return response.json();
 }
 
+export async function updateInvoiceEmail(
+  token: string,
+  id: string,
+  customerEmail: string
+) {
+  const response = await fetch(`${URI_INVOICES}/${id}/email`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ customerEmail }),
+  });
+  if (!response.ok) await readError(response);
+  return response.json();
+}
+
+export async function sendInvoiceEmail(token: string, id: string) {
+  const response = await fetch(`${URI_INVOICES}/${id}/send-email`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) await readError(response);
+  return response.json();
+}
+
 export async function retryInvoice(token: string, id: string) {
   const response = await fetch(`${URI_INVOICES}/${id}/retry`, {
     method: "POST",

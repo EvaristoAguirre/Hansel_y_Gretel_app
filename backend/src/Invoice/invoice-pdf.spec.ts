@@ -16,7 +16,7 @@ function sample(overrides: Partial<Invoice> = {}): Invoice {
     cbteFch: '2026-10-12',
     concepto: 1,
     docTipo: 99,
-    docNro: '0',
+    docNro: 0,
     condicionIvaReceptorId: 0,
     impTotal: '1210.00',
     impTotConc: '0.00',

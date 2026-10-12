@@ -6,11 +6,15 @@ import {
   listInvoices,
   printInvoice,
   retryInvoice,
+  sendInvoiceEmail,
+  updateInvoiceEmail,
   InvoiceRow,
 } from "@/api/invoices";
 import { useAuth } from "@/app/context/authContext";
 import { formatNumber } from "@/components/Utils/FormatNumber";
+import EmailIcon from "@mui/icons-material/Email";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import SendIcon from "@mui/icons-material/Send";
 import PrintIcon from "@mui/icons-material/Print";
 import ReplayIcon from "@mui/icons-material/Replay";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -100,6 +104,37 @@ export default function InvoicesView() {
     }
   };
 
+  const editEmail = async (row: InvoiceRow) => {
+    const token = getAccessToken();
+    if (!token) return;
+    const result = await Swal.fire({
+      title: "Email",
+      input: "email",
+      inputValue: row.customerEmail ?? "",
+      showCancelButton: true,
+      confirmButtonText: "Guardar",
+    });
+    if (!result.isConfirmed || !result.value) return;
+    try {
+      await updateInvoiceEmail(token, row.id, result.value);
+      await load();
+    } catch (error) {
+      Swal.fire("No se pudo guardar el email", String(error), "error");
+    }
+  };
+
+  const sendEmail = async (row: InvoiceRow) => {
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      await sendInvoiceEmail(token, row.id);
+      Swal.fire("Correo enviado", "", "success");
+      await load();
+    } catch (error) {
+      Swal.fire("No se pudo enviar", String(error), "error");
+    }
+  };
+
   const retry = async (row: InvoiceRow) => {
     const confirm = await Swal.fire({
       title: "Reintentar factura",
@@ -159,12 +194,13 @@ export default function InvoicesView() {
     {
       field: "actions",
       headerName: "",
-      width: 210,
+      width: 280,
       sortable: false,
       renderCell: (params) => {
         const row = params.row as InvoiceRow;
         const canRetry = row.status === "pending" || row.status === "rejected";
         const authorized = row.status === "authorized";
+        const canSend = authorized && Boolean(row.customerEmail);
         const locked = "Disponible cuando la factura está autorizada";
         return (
           <>
@@ -184,6 +220,24 @@ export default function InvoicesView() {
               <span>
                 <IconButton disabled={!authorized} onClick={() => reprint(row.id)}>
                   <PrintIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Editar email">
+              <IconButton onClick={() => editEmail(row)}>
+                <EmailIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title={
+                canSend
+                  ? "Enviar"
+                  : "Disponible cuando está autorizada y tiene email"
+              }
+            >
+              <span>
+                <IconButton disabled={!canSend} onClick={() => sendEmail(row)}>
+                  <SendIcon fontSize="small" />
                 </IconButton>
               </span>
             </Tooltip>

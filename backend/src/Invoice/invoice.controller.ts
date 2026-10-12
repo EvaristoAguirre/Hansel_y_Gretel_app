@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Header,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   StreamableFile,
@@ -14,6 +16,8 @@ import { Roles } from 'src/Decorators/roles.decorator';
 import { UserRole } from 'src/Enums/roles.enum';
 import { RolesGuard } from 'src/Guards/roles.guard';
 import { InvoiceDocumentService } from './invoice-document.service';
+import { UpdateInvoiceEmailDto } from './invoice-email.dto';
+import { InvoiceMailService } from './invoice-mail.service';
 import { InvoiceService } from './invoice.service';
 
 @Controller('invoices')
@@ -23,6 +27,7 @@ export class InvoiceController {
   constructor(
     private readonly invoices: InvoiceService,
     private readonly documents: InvoiceDocumentService,
+    private readonly mail: InvoiceMailService,
   ) {}
 
   @Get()
@@ -64,5 +69,18 @@ export class InvoiceController {
   @Post(':id/retry')
   retry(@Param('id', ParseUUIDPipe) id: string) {
     return this.invoices.retry(id);
+  }
+
+  @Patch(':id/email')
+  updateEmail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateInvoiceEmailDto,
+  ) {
+    return this.mail.updateEmail(id, body.customerEmail);
+  }
+
+  @Post(':id/send-email')
+  sendEmail(@Param('id', ParseUUIDPipe) id: string) {
+    return this.mail.send(id);
   }
 }

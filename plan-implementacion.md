@@ -291,3 +291,9 @@ Verificación: los 8 tests de `InvoiceService` pasan, incluido el reintento y el
 `GET /invoices/:id/pdf` arma el PDF con pdfkit y un QR (librería `qrcode`) a partir del snapshot y las columnas fiscales. `POST /invoices/:id/print` reimprime con `printFiscalTicket` y no llama a `ArcaClient`. Pendiente o rechazada responden 409; en la grilla PDF y reimpresión quedan deshabilitados con tooltip. La descarga manda el token en el header. El comprobante simulado lleva la leyenda sin validez fiscal.
 
 Verificación: 3 tests del PDF (leyenda, CAE, payload del QR con tipo 6 y doc 99) y de la reimpresión. No se descargó el archivo en el navegador.
+
+### Paso 11 — hecho en código
+
+`PATCH /invoices/:id/email` y `POST /invoices/:id/send-email`. `InvoiceMailService` usa `SMTP_*` y adjunta el PDF. No pasa por `NotificationService`. En la grilla se edita el email y Enviar queda habilitado solo si está autorizada y hay email. Un fallo de envío responde 502 y no toca el CAE ni el email.
+
+Verificación: el test de SMTP caído no guarda la fila; el de envío exitoso adjunta un PDF y marca `emailSentAt`. No hay servidor SMTP en este entorno, así que no se confirmó una bandeja real. Las variables quedaron comentadas en `.env.example`.
