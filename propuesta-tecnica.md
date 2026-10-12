@@ -1,41 +1,45 @@
 # Propuesta técnica — Facturación electrónica (Factura B)
 
-Plan de implementación para el gestor de restaurante (NestJS + TypeORM + PostgreSQL en la notebook, Next.js en la LAN). La descripción funcional está en `propuesta-cliente.md`. El marco de ARCA está en `api-arca-requerimientos.md`.
+Plan de diseño para el gestor de restaurante (NestJS + TypeORM + PostgreSQL en la notebook, Next.js en la LAN). La descripción funcional está en `propuesta-cliente.md`. El marco de ARCA está en `api-arca-requerimientos.md`. El orden de construcción está en `plan-implementacion.md`.
 
-Las suposiciones de este documento valen hasta cerrar las dudas de la sección 8. No empezar la Fase 2 sin la duda 1 (Responsable Inscripto) y la duda 3 (alícuota única).
+Las confirmaciones del cliente (sección 9 de `propuesta-cliente.md`) ya están incorporadas. Lo que sigue abierto no bloquea el desarrollo y está listado en la sección 10.
 
 ---
 
-## 1. Decisiones de diseño
+## 1. Decisiones cerradas
 
-1. **El backend de la notebook es el único cliente de ARCA.** SOAP sobre HTTPS saliente (puerto 443). La LAN tablet ↔ notebook sigue en HTTP. La tablet nunca ve el certificado ni la clave privada.
-2. **Una orden cerrada produce como máximo una factura.** El pago parcial por productos y el pago con varios medios siguen siendo un solo `closeOrder`. El switch no parte el comprobante.
-3. **El cobro no espera a ARCA para liberar la mesa.** Misma idea que la impresora: la transacción de caja commitea primero; la autorización corre después, con timeout. Un fallo de red no revierte el cobro.
-4. **La factura no depende de la fila de `orders`.** El archivado semanal copia la orden a `archived_orders` (mismo UUID) y borra la original. La factura guarda `orderId` como UUID sin FK con borrado en cascada, más una foto de los importes e ítems en el momento del cobro.
-5. **Importe fiscal = consumo redondeado − descuento. La propina no entra.** Sale de `orders.total`, `discountAmount` y `tip`, que `closeOrder` ya separa. No reutilizar el cálculo del ticket térmico: `printTicketOrder` hoy estima una propina del 10 % para imprimir y no es la base fiscal.
-6. **Precios con IVA incluido y una sola alícuota** (a confirmar, propuesta 21 %). El sistema desglosa neto e IVA para WSFEv1; el ticket al cliente muestra el total con IVA incluido y la leyenda de IVA contenido.
-7. **Receptor fijo en v1:** consumidor final. `DocTipo` 99, `DocNro` 0, `CbteTipo` 6 (Factura B). El id de `CondicionIVAReceptorId` se toma de `FEParamGetCondicionIvaReceptor` en homologación y se deja en configuración. No hardcodear un id de memoria.
-8. **Reimprimir y el PDF no llaman a ARCA.** Usan la foto local. Solo una factura autorizada se imprime o se descarga como comprobante. Reintentar sí llama a ARCA, y antes pasa por `FECompConsultar` para no duplicar.
-9. **Homologación y producción se cambian por entorno** (URLs, certificado, clave, CUIT, punto de venta). El código de negocio es el mismo.
+1. **El emisor es Responsable Inscripto.** Comprobante: Factura B, `CbteTipo` 6. El mozo no factura. Roles: Admin y Encargado, igual que la caja.
+2. **El backend de la notebook es el único cliente de ARCA.** SOAP sobre HTTPS saliente (puerto 443). La LAN tablet ↔ notebook sigue en HTTP. La tablet nunca ve el certificado ni la clave privada.
+3. **Una orden cerrada produce como máximo una factura.** El pago parcial por productos y el pago con varios medios siguen siendo un solo `closeOrder`. El switch no parte el comprobante. Una orden cobrada con el switch apagado no se factura después.
+4. **El cobro no espera a ARCA para liberar la mesa.** La transacción de caja commitea primero; la autorización corre después, con timeout. Un fallo de red no revierte el cobro.
+5. **La factura no depende de la fila de `orders`.** El archivado semanal copia la orden a `archived_orders` (mismo UUID) y borra la original. La factura de una mesa guarda `orderId` como UUID sin FK. La factura manual no tiene orden.
+6. **Importe fiscal = consumo − descuento. La propina no entra.** Sale de `orders.total`, `discountAmount` y `tip`, que `closeOrder` ya separa. No reutilizar el cálculo del ticket térmico: `printTicketOrder` estima una propina del 10 % para imprimir y no es la base fiscal.
+7. **Precios con IVA incluido. La carta puede tener más de una alícuota.** WSFEv1 ya manda un array `Iva`, así que varias alícuotas no cambian el cliente SOAP ni la máquina de estados: el cálculo agrupa las líneas y manda un ítem de IVA por grupo. Cada producto tiene su porcentaje, o ninguno. Si no tiene, se usa el default de entorno (21 %). Los toppings con cargo entran en el subtotal de la línea y heredan la alícuota del producto. Exento y no gravado quedan fuera de esta versión: toda alícuota de esta versión es gravada.
+8. **Receptor fijo:** consumidor final. `DocTipo` 99, `DocNro` 0. El id de `CondicionIVAReceptorId` se toma de `FEParamGetCondicionIvaReceptor` en homologación y se deja en configuración.
+9. **El ticket de cuenta y la factura se imprimen en pasos distintos.** El paso 3 del stepper (Productos confirmados, `markOrderAsPendingPayment`) ya imprime el ticket de cuenta para llevar a la mesa. Ese camino no se toca. En el paso 4 (Pago) se imprime únicamente el ticket fiscal, y solo si ARCA autorizó. Si el switch está apagado, o si la factura queda pendiente o rechazada, el cobro no imprime nada: el ticket de cuenta ya salió en el paso 3, y un comprobante sin CAE no se imprime.
+10. **El email se carga en el cobro y en el listado.** En `Pay.tsx`, un ícono abre un input. El valor viaja en el cierre y se guarda en la factura. En el listado se puede corregir y, si la factura está autorizada, enviar el PDF.
+11. **No hay nota de crédito.** Una factura con CAE no se anula ni se borra desde el sistema.
+12. **Hay un generador manual.** Una vista en Cajas de registro carga líneas y emite una Factura B sin abrir mesa, sin orden y sin movimiento de caja. Comparte numeración, estados, PDF, reimpresión y email con la factura de mesa.
+13. **Reimprimir y el PDF no llaman a ARCA.** Usan la foto local. Solo una factura autorizada se imprime o se descarga como comprobante. Reintentar sí llama a ARCA (o al simulador), y antes consulta el comprobante para no duplicar.
+14. **Dos variables eligen cómo se factura.** `AFIP_ENV` elige el ambiente de ARCA. `AFIP_SIMULATE` evita la red y devuelve un CAE ficticio. El servicio de facturas no distingue los dos caminos: solo cambia la implementación de `ArcaClient`.
 
 ## 2. Arquitectura
 
 ```
 Encargada (Pay.tsx)                Pestaña Facturas
-        |                                  |
-        | POST /order/:id/close            | GET/POST /invoices...
+        |                          listado | nueva factura
+        | POST /order/:id/close           | GET/POST /invoices...
         v                                  v
    OrderService.closeOrder          InvoiceController
         |                                  |
         | commit cobro                     |
         v                                  v
    InvoiceService.solicitar() -------> ArcaClient
-        |                               WSAA (TA 12 h)
-        |                               WSFEv1
+        |                          simulador | WSAA + WSFEv1
         v                                  |
    tabla invoices  <---- CAE / error ------+
         |
-        +---- PrinterService.ticket fiscal (solo si autorizado)
+        +---- PrinterService.ticket fiscal (solo si autorizado, solo en el cobro o al reimprimir)
         +---- PDF on demand (pdfkit + QR)
         +---- mail con PDF adjunto
 ```
@@ -44,66 +48,109 @@ Módulo nuevo `backend/src/Invoice/`:
 
 | Pieza | Responsabilidad |
 |---|---|
-| `ArcaClient` | TRA, firma CMS, `loginCms`, caché del TA, métodos WSFEv1 usados. Sin reglas de restaurante |
-| `InvoiceService` | Armar el comprobante desde la orden, numeración, estados, reintento seguro, foto de ítems |
+| `AfipConfig` | Lee el entorno al arrancar, resuelve las URLs del ambiente y corta el proceso si la combinación es inválida |
+| `ArcaClient` | Contrato: último número, solicitar CAE, consultar, dummy y parámetros. Sin reglas de restaurante |
+| `ArcaSimulator` | Implementación local. No abre sockets. Numeración y CAE ficticios |
+| `ArcaWsfeClient` | TRA, firma CMS, `loginCms`, caché del TA, métodos WSFEv1. Se usa cuando la simulación está apagada |
+| `InvoiceService` | Armar el comprobante, numeración, estados, reintento, foto de ítems. Igual para mesa y para carga manual |
+| `InvoiceCalculator` | Función pura de importes y desglose de IVA |
 | `InvoicePdfService` | PDF con los datos obligatorios y el QR |
 | `InvoiceMailService` | Envío del PDF. No reutilizar `NotificationService`: hoy tiene Gmail y una contraseña de aplicación hardcodeados como placeholder |
-| `InvoiceController` | Listado, detalle, reintento, PDF, email, reimpresión. Roles Admin y Encargado |
+| `InvoiceController` | Listado, detalle, alta manual, reintento, PDF, email, reimpresión. Roles Admin y Encargado |
 
-Librería SOAP: en la Fase 1 se prueba una que **firme en la notebook** con la clave local (candidato a evaluar: `afip.ts` u otra equivalente mantenida). No usar un SaaS que se quede con la clave privada. Si ninguna librería cubre el flujo con calidad suficiente, el cliente SOAP queda detrás de `ArcaClient` igual y el resto del módulo no cambia.
+Librería SOAP: se evalúa una que firme en la notebook con la clave local (candidato: `afip.ts` u otra equivalente mantenida). No usar un SaaS que se quede con la clave privada. El resto del módulo habla solo con `ArcaClient`.
 
-## 3. Base de datos
+## 3. Ambientes y simulación
+
+`AFIP_ENV` selecciona el ambiente. Las URLs viven en un mapa en código, no se pegan a mano.
+
+| `AFIP_ENV` | WSAA | WSFEv1 |
+|---|---|---|
+| `homologacion` | `https://wsaahomo.afip.gov.ar/ws/services/LoginCms` | `https://wswhomo.afip.gov.ar/wsfev1/service.asmx` |
+| `produccion` | `https://wsaa.afip.gov.ar/ws/services/LoginCms` | `https://servicios1.afip.gov.ar/wsfev1/service.asmx` |
+
+`AFIP_SIMULATE` es la flag del proceso.
+
+| `AFIP_SIMULATE` | `AFIP_ENV` | Qué hace el proceso al arrancar |
+|---|---|---|
+| `true` o ausente | `homologacion`, vacío o ausente | Arranca sin certificado y sin red. `ArcaClient` es el simulador. Si la variable no está, se toma `true` para que un despliegue que todavía no la definió no llame a ARCA |
+| `true` | `produccion` | No arranca |
+| `false` | `homologacion` o `produccion` | Exige CUIT, punto de venta, certificado y clave. Habla con ese ambiente |
+| `false` | otro valor o ausente | No arranca |
+
+`AFIP_SIMULATE` no depende de `NODE_ENV`. En el local, `NODE_ENV=production` es lo que habilita la térmica; tiene que poder imprimirse un ticket fiscal de prueba.
+
+`AFIP_SIMULATE_RESULT` solo se lee con la flag encendida. Valores: `authorized` (default), `rejected`, `timeout`. Sirve para recorrer los tres avisos del cobro sin ARCA.
+
+Reglas del simulador:
+
+- No llama a WSAA ni a WSFEv1 y no lee el certificado.
+- Asigna `cbteNro` con el máximo local de ese `afipEnv` + punto de venta + tipo, más uno.
+- `authorized`: CAE de 14 dígitos ficticio y vencimiento a 10 días.
+- `rejected`: la fila queda `rejected` con un motivo fijo y legible.
+- `timeout`: no devuelve CAE. La consulta posterior responde “no existe”, así que la fila queda `pending`.
+- Cada fila guarda `afipEnv = simulado`. El ticket, el PDF y el listado lo muestran como comprobante sin validez fiscal.
+- El índice único de numeración incluye `afipEnv`, así un número de prueba no choca con el de homologación ni con el de producción.
+- Reintentar una fila `simulado` con la flag apagada responde 409. No se reenvía ese número a ARCA.
+
+En `.env.example` el default de desarrollo es `AFIP_SIMULATE=true` y `AFIP_ENV=homologacion`.
+
+## 4. Base de datos
 
 Migración TypeORM nueva. Importes en `numeric`, nunca `float`.
 
-### 3.1. `invoices`
+### 4.1. `invoices`
 
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | uuid PK | |
-| `orderId` | uuid, unique, sin FK | Mismo id en `orders` o, después del archivado, en `archived_orders` |
+| `origin` | enum | `order` o `manual` |
+| `orderId` | uuid, nullable | Solo `origin = order`. Mismo id en `orders` o, después del archivado, en `archived_orders` |
+| `afipEnv` | enum | `simulado`, `homologacion`, `produccion`. El valor con el que se emitió, no el del proceso actual |
 | `status` | enum | `pending`, `authorized`, `rejected` |
 | `ptoVta` | int | Copiado de la config al emitir |
 | `cbteTipo` | int | 6 |
-| `cbteNro` | int, nullable | Se asigna al armar el request, después de `FECompUltimoAutorizado` |
-| `cbteFch` | date | Día del cobro (fecha de proceso local). Es la que se manda a ARCA |
-| `concepto` | int | Default a confirmar (ver duda 9). Propuesta: 1 Productos |
+| `cbteNro` | int, nullable | Se asigna al armar el request |
+| `cbteFch` | date | Día en que se pidió la factura (fecha local). Es la que se manda a ARCA y la del filtro del listado |
+| `concepto` | int | `AFIP_CONCEPTO`, default 1 Productos |
 | `docTipo` / `docNro` | int | 99 / 0 |
 | `condicionIvaReceptorId` | int | |
-| `impTotal` / `impNeto` / `impIva` / `impTotConc` / `impOpEx` / `impTrib` | numeric(14,2) | |
-| `alicuotaId` | int | Id WSFEv1 de la alícuota (21 % suele ser 5; verificar con `FEParamGetTiposIva`) |
-| `alicQuota` | numeric(5,2) | Porcentaje, para el PDF y el ticket |
+| `impTotal` / `impNeto` / `impIva` / `impTotConc` / `impOpEx` / `impTrib` | numeric(14,2) | Los tres últimos en 0 |
+| `iva` | jsonb | Un objeto por alícuota. Ver 4.4 |
 | `discountAmount` | numeric(12,2) | Informativo |
-| `tipExcluded` | numeric(12,2) | Informativo, no va a ARCA |
+| `tipExcluded` | numeric(12,2) | Informativo. En la factura manual es 0 |
 | `cae` | varchar, nullable | |
 | `caeFchVto` | date, nullable | |
 | `resultado` | char, nullable | `A` o `R` del último intento |
 | `arcaErrors` | jsonb, nullable | `Errors` y `Observaciones` del último intento |
-| `customerEmail` | varchar, nullable | |
+| `customerEmail` | varchar, nullable | Puede venir del cobro o cargarse después |
 | `emailSentAt` | timestamptz, nullable | |
-| `snapshot` | jsonb | Ítems, mesa, razón social usada. Ver 3.3 |
+| `snapshot` | jsonb | Ítems y emisor. Ver 4.3 |
 | `attemptCount` | int | |
 | `lastAttemptAt` | timestamptz, nullable | |
 | `authorizedAt` | timestamptz, nullable | |
 | `createdAt` / `updatedAt` | timestamptz | |
 
-Unique parcial: `(ptoVta, cbteTipo, cbteNro)` donde `cbteNro` no es nulo.
+Índice único parcial: `(orderId)` donde `orderId` no es nulo.
 
-Índice para el listado: `(cbteFch)` y, si hace falta, `(status, cbteFch)`.
+Índice único: `(afipEnv, ptoVta, cbteTipo, cbteNro)` donde `cbteNro` no es nulo.
 
-### 3.2. `afip_tokens`
+Índice de listado: `(cbteFch)`.
 
-Una fila por servicio (`wsfe`): `token`, `sign`, `expirationTime`. Se reutiliza hasta el vencimiento (12 h). Pedir otro TA vigente hace fallar WSAA. Sobrevive a un reinicio del proceso.
+### 4.2. `afip_tokens`
 
-### 3.3. Foto (`snapshot`)
+Una fila por servicio y ambiente (`wsfe` + `homologacion` o `produccion`): `token`, `sign`, `expirationTime`. Se reutiliza hasta el vencimiento (12 h). Pedir otro TA vigente hace fallar WSAA. Sobrevive a un reinicio del proceso. El simulador no escribe en esta tabla.
+
+### 4.3. Foto (`snapshot`)
 
 Se escribe al crear la factura, antes de llamar a ARCA, para que el PDF y la reimpresión no dependan de productos renombrados ni del archivado.
 
 ```json
 {
+  "origin": "order",
   "tableName": "5",
   "lines": [
-    { "name": "Café con leche", "quantity": 2, "unitaryPrice": 2500, "subtotal": 5000 }
+    { "name": "Café con leche", "quantity": 2, "unitaryPrice": 2500, "subtotal": 5000, "alicQuota": 21 }
   ],
   "consumption": 10000,
   "discountAmount": 1000,
@@ -119,96 +166,121 @@ Se escribe al crear la factura, antes de llamar a ARCA, para que el PDF y la rei
 }
 ```
 
-Las líneas salen del mismo criterio que el ticket actual (`buildProductLines`): unidades activas, toppings con cargo visibles, subtotal alineado con `orders.total`.
+En una factura manual `tableName` es null y `origin` es `manual`. Las líneas de una orden salen del mismo criterio que el ticket actual (`buildProductLines`): unidades activas, toppings con cargo visibles, subtotal alineado con el consumo de la orden. La alícuota de la línea es la del producto, o el default.
 
-### 3.4. Configuración
+### 4.4. Desglose de IVA (`iva`)
 
-Variables de entorno, no tabla editable desde la UI en v1. Documentarlas en `backend/.env.example` sin secretos.
+```json
+[
+  { "id": 5, "quota": 21, "baseImp": 7438.02, "importe": 1561.98 }
+]
+```
+
+`id` es el de `FEParamGetTiposIva`. El mapa porcentaje → id vive en un solo archivo y se verifica en homologación antes de apagar la simulación. `impNeto` e `impIva` de la fila son la suma del array.
+
+### 4.5. Producto
+
+Columna nueva en `products`: `alicQuota numeric(5,2)`, nullable. Null significa “usar el default del entorno”. El formulario de producto (`ProductCreationModal`) ofrece las alícuotas gravadas que devuelva el parámetro de ARCA; hasta esa verificación, la lista inicial es 0, 2,5, 5, 10,5, 21 y 27. No se guarda el id de ARCA en el producto: el porcentaje es el dato estable y el id se resuelve al emitir.
+
+### 4.6. Configuración
+
+Variables de entorno, no tabla editable desde la UI. Documentarlas en `backend/.env.example` sin secretos.
 
 | Variable | Uso |
 |---|---|
-| `AFIP_ENV` | `homologacion` o `produccion` |
-| `AFIP_CUIT` | CUIT del emisor, sin guiones |
+| `AFIP_SIMULATE` | `true` o `false`. Flag de simulación. Ver sección 3 |
+| `AFIP_SIMULATE_RESULT` | `authorized`, `rejected` o `timeout`. Solo con la flag encendida |
+| `AFIP_ENV` | `homologacion` o `produccion`. Elige el par de URLs |
+| `AFIP_CUIT` | CUIT del emisor, sin guiones. Obligatorio con la simulación apagada |
 | `AFIP_PTO_VTA` | Punto de venta electrónico |
-| `AFIP_CERT_PATH` / `AFIP_KEY_PATH` | Archivos fuera del repo. Permisos de lectura solo para el usuario que corre el backend |
-| `AFIP_WSAA_URL` / `AFIP_WSFE_URL` | Por ambiente |
-| `AFIP_ALICUOTA_ID` / `AFIP_ALICUOTA_PCT` | Una sola alícuota |
-| `AFIP_CONDICION_IVA_RECEPTOR_ID` | Consumidor final, id verificado en homo |
-| `AFIP_CONCEPTO` | 1, 2 o 3 |
+| `AFIP_CERT_PATH` / `AFIP_KEY_PATH` | Archivos fuera del repo. Obligatorios con la simulación apagada. Permisos de lectura solo para el usuario que corre el backend |
+| `AFIP_ALICUOTA_DEFAULT_PCT` | Porcentaje cuando el producto no tiene alícuota. Propuesta: 21 |
+| `AFIP_CONDICION_IVA_RECEPTOR_ID` | Consumidor final, id verificado en homologación |
+| `AFIP_CONCEPTO` | 1 Productos, salvo que el contador indique otro |
 | `AFIP_RAZON_SOCIAL`, `AFIP_DOMICILIO`, `AFIP_IIBB`, `AFIP_INICIO_ACTIVIDADES` | Pie de ticket y PDF |
-| `AFIP_TIMEOUT_MS` | Timeout de cada llamada. Propuesta: 8000. Un intento. El reintento es manual desde el listado |
-| `SMTP_*` | Recién en la Fase 5. Host, puerto, usuario, clave de aplicación, remitente |
+| `AFIP_TIMEOUT_MS` | Timeout de cada llamada real. Propuesta: 8000. Un intento. El reintento es manual desde el listado |
+| `SMTP_*` | Recién en el paso de email. Host, puerto, usuario, clave de aplicación, remitente |
 
-El certificado de homologación (WSASS) y el de producción no se mezclan. Cambiar `AFIP_ENV` sin cambiar el par cert/clave tiene que fallar al arrancar con un mensaje claro, no en la primera venta.
+El certificado de homologación y el de producción no se mezclan. Con la simulación apagada, el arranque loguea el ambiente elegido. Cambiar de ambiente implica cambiar el par cert/clave; si el archivo no está, el proceso no arranca.
 
-## 4. Cálculo del comprobante
+## 5. Cálculo del comprobante
 
-Partir de la orden ya cerrada (después del commit):
-
-```
-consumoRedondeado = round(suma de subtotales activos)   // igual que grossRounded en closeOrder
-netoConIva        = consumoRedondeado - discountAmount  // propina fuera
-impTotal          = netoConIva                           // pesos enteros en la práctica
-impNeto           = round(impTotal / (1 + alicuota/100), 2)
-impIva            = round(impTotal - impNeto, 2)
-```
-
-Ajustar el último centavo para que `impNeto + impIva = impTotal`. `ImpTotConc`, `ImpOpEx` e `ImpTrib` en 0. Moneda `PES`, cotización 1. Array `Iva` con un solo ítem (`Id` = `AFIP_ALICUOTA_ID`, `BaseImp` = `impNeto`, `Importe` = `impIva`).
-
-Si `netoConIva <= 0` (descuento del 100 %), no se crea factura y el cobro responde un error de validación antes de cerrar, o se ignora el switch. Propuesta: rechazar el request con mensaje “No se puede facturar un importe cero”.
-
-`CbteDesde` = `CbteHasta` = último autorizado + 1.
-
-## 5. Máquina de estados y reintento
+`InvoiceCalculator` recibe líneas `{ subtotal, alicQuota }`, el descuento y no recibe la propina.
 
 ```
-crear fila pending + cbteNro
+consumo          = suma de subtotales
+netoConIva       = consumo - descuento
+impTotal         = netoConIva
+```
+
+Si `netoConIva <= 0`, no se crea la factura. En el cobro, el request se rechaza con “No se puede facturar un importe cero” antes de cerrar la orden. En el generador manual, el POST se rechaza igual y no queda fila.
+
+Agrupar por `alicQuota`. El descuento se reparte en proporción al subtotal de cada grupo, redondeado a dos decimales; el último grupo absorbe la diferencia para que la suma de los descuentos sea exactamente `discountAmount`.
+
+```
+base_g   = subtotal_g - descuento_g
+impNeto  = round(base_g / (1 + quota/100), 2)
+impIva   = round(base_g - impNeto, 2)
+```
+
+Ajustar el centavo del grupo de mayor base para que la suma de netos más la suma de IVA sea `impTotal`. `ImpTotConc`, `ImpOpEx` e `ImpTrib` en 0. Moneda `PES`, cotización 1. El array `Iva` lleva un ítem por grupo con base mayor a 0.
+
+En el pago parcial el descuento hoy no se envía (`discountPercent` queda 0). El importe facturado es el consumo de esa orden, sin propina.
+
+`CbteDesde` = `CbteHasta` = último número + 1, del simulador o de `FECompUltimoAutorizado` según la flag.
+
+## 6. Máquina de estados y reintento
+
+```
+crear fila pending + cbteNro + afipEnv
         |
         v
-   FECAESolicitar
+   solicitar CAE
      |         |
      A         R
      |         |
-authorized   rejected  (se guardan Observaciones)
+authorized   rejected
      |
 timeout o sin respuesta
      |
-FECompConsultar(ptoVta, cbteTipo, cbteNro)
+consultar(ptoVta, cbteTipo, cbteNro)
      |                    |
   existe con CAE      no existe
      |                    |
 authorized            sigue pending
-                      (el botón Reintentar vuelve a FECAESolicitar
-                       con el mismo número)
 ```
 
 Reglas:
 
-- Lock en proceso (mutex por `ptoVta` + `cbteTipo`) para que dos cobros simultáneos no lean el mismo último número. Con un solo backend alcanza un lock en memoria; el unique de `(ptoVta, cbteTipo, cbteNro)` es la red de seguridad.
-- Nunca un segundo `FECAESolicitar` si `FECompConsultar` devolvió CAE.
-- `Reproceso = S` en la respuesta se trata como autorización ya hecha: persistir ese CAE.
+- Lock en proceso (mutex por `afipEnv` + `ptoVta` + `cbteTipo`) para que un cobro y un alta manual simultáneos no lean el mismo último número. El unique de la tabla es la red de seguridad.
+- Nunca un segundo solicitar si la consulta devolvió CAE.
+- `Reproceso = S` en la respuesta real se trata como autorización ya hecha: persistir ese CAE.
+- Una fila `simulado` no se reintenta contra ARCA.
 - `FEDummy` no bloquea el cobro. Si se quiere un aviso previo, puede llamarse al abrir la pantalla de pago, con el resultado cacheado un par de minutos. Si falla, el switch sigue disponible y la factura nacerá `pending`.
 
-## 6. API
+ARCA acepta la fecha del comprobante dentro de una ventana de pocos días respecto del día en que se procesa (cinco días si el concepto es productos). Si una pendiente se reintenta fuera de esa ventana, se muestra el texto de ARCA (típico 10016) y no se reintenta en bucle.
+
+## 7. API
 
 Todas con `RolesGuard`, roles `Admin` y `Encargado`. Respuestas de error en español, igual que el resto de la API.
 
-### Cobro (cambio de contrato)
+### Cobro
 
-`POST /order/:id/close` suma un campo opcional:
+`POST /order/:id/close` suma campos opcionales:
 
 ```json
-{ "invoice": true }
+{ "invoice": true, "customerEmail": "cliente@correo.com" }
 ```
 
-Default `false` si no viene, para no facturar clientes viejos del front.
+`invoice` default `false`. `customerEmail` se ignora si `invoice` no es true. Si viene, se valida el formato y se guarda al crear la fila.
 
 Orden interna de `closeOrder`:
 
-1. Transacción actual de cobro (sin cambios de caja).
-2. Commit.
-3. Si `invoice` es true: crear `invoices` en `pending` y disparar la autorización **sin** devolver 500 si ARCA falla.
-4. La respuesta del cobro agrega un bloque opcional:
+1. Validar el importe fiscal si `invoice` es true. Importe cero: 400 y la orden no se cierra.
+2. Transacción actual de cobro.
+3. Commit.
+4. Si `invoice` es true: crear `invoices` en `pending` y disparar la autorización. Un fallo de ARCA no devuelve 500.
+5. La respuesta agrega:
 
 ```json
 {
@@ -217,194 +289,136 @@ Orden interna de `closeOrder`:
     "status": "authorized | pending | rejected",
     "cbteNro": 123,
     "cae": "...",
+    "afipEnv": "simulado | homologacion | produccion",
     "message": "texto para el Swal"
   }
 }
 ```
 
-5. Impresión, después del resultado:
-   - `authorized`: ticket fiscal (no el ticket de cuenta).
-   - `pending` o `rejected`: ticket de cuenta actual, más `printerWarning` si la térmica falla.
-   - `invoice` false: ticket de cuenta actual, como hoy.
-
-El fallo de impresión no cambia el estado de la factura. Ya queda autorizada; se reimprime desde el listado.
+6. Impresión, después del resultado:
+   - `authorized`: ticket fiscal.
+   - `pending`, `rejected` o switch apagado: no se imprime en este paso.
+   - El fallo de la térmica no cambia el estado de la factura. Se reimprime desde el listado.
 
 ### Facturas
 
 | Método | Uso |
 |---|---|
-| `GET /invoices?month=&year=` | Listado del mes. Ordenado por fecha descendente |
-| `GET /invoices/:id` | Detalle, incluida la foto y `arcaErrors` |
-| `POST /invoices/:id/retry` | Solo `pending` o `rejected`. Aplica la sección 5 |
-| `POST /invoices/:id/print` | Solo `authorized`. Llama a un método nuevo del `PrinterService` |
+| `GET /invoices?month=&year=` | Listado del mes, por `cbteFch` descendente. Incluye `origin`, estado, email y `afipEnv` |
+| `GET /invoices/:id` | Detalle, foto, desglose de IVA y `arcaErrors` |
+| `POST /invoices` | Alta manual. Body en la sección 8.3. Misma máquina de estados |
+| `POST /invoices/:id/retry` | Solo `pending` o `rejected`, y solo si `afipEnv` coincide con el modo actual |
+| `POST /invoices/:id/print` | Solo `authorized`. Ticket fiscal |
 | `GET /invoices/:id/pdf` | Solo `authorized`. `Content-Disposition: attachment` |
 | `PATCH /invoices/:id/email` | Body `{ "email": "..." }`. Valida formato. No envía |
-| `POST /invoices/:id/send-email` | Solo `authorized` y con email. Adjunta el PDF. Si falla, 502 con mensaje y no borra el email. Si sale, setea `emailSentAt` |
+| `POST /invoices/:id/send-email` | Solo `authorized` y con email. Adjunta el PDF. Si falla, 502 y no borra el email. Si sale, setea `emailSentAt` |
 
-No hay `DELETE`. Un CAE no se anula por API (ver duda 6, nota de crédito).
+No hay `DELETE`.
 
-## 7. Frontend
+## 8. Frontend
 
-### 7.1. Cobro — `frontend/components/Order/Pay.tsx`
+### 8.1. Cobro — `frontend/components/Order/Pay.tsx`
 
-- Switch “Emitir Factura B”, default apagado, visible en modo total y en modo parcial, al lado del botón que dispara `handlePayOrder`.
-- Texto secundario con el importe a facturar (consumo − descuento, sin propina). En modo parcial el descuento hoy no se envía; el importe es el consumo.
-- Se manda `invoice: true` dentro de `orderToClosed` (`frontend/api/order.ts`).
-- El `Swal` de éxito distingue los tres estados. En `pending` y `rejected` el título deja claro que **la orden sí se cobró**.
-- El switch no se ofrece si la orden no está en `pending_payment` (igual que el cobro).
+Visible en modo total y en modo parcial, junto al botón que dispara `handlePayOrder`.
 
-### 7.2. Pestaña Facturas — `PanelDailyCash.tsx`
+- Switch “Emitir Factura B”, apagado por defecto.
+- Texto con el importe a facturar (consumo − descuento, sin propina).
+- Ícono de email. Al clickearlo se abre un input. El valor se manda como `customerEmail` dentro de `orderToClosed` (`frontend/api/order.ts`) solo si el switch está encendido.
+- Se manda `invoice: true` con el switch encendido.
+- El `Swal` distingue los tres estados. En `pending` y `rejected` el título deja claro que la orden sí se cobró, y que en este paso no salió comprobante fiscal.
+- El switch no se ofrece si la orden no está en `pending_payment`.
 
-Cuarta tab, “Facturas”, solo en la ruta ya protegida (`Admin`, `Encargado`).
+El ticket de cuenta del paso 3 queda como está, en `markOrderAsPendingPayment`.
+
+### 8.2. Pestaña Facturas — `PanelDailyCash.tsx`
+
+Cuarta tab, “Facturas”, en la ruta ya protegida (`Admin`, `Encargado`).
 
 - Filtros mes y año con MUI, default mes actual. Misma línea visual que `DailySalesView` (DataGrid).
-- Columnas: fecha, comprobante (`punto de venta` con 4 dígitos + número con 8), importe, estado, email.
-- Acciones por fila según estado (la matriz está en `propuesta-cliente.md`). Botones deshabilitados con tooltip que explica por qué, en vez de ocultarlos todos: así se entiende que reimprimir exige CAE.
-- Modal de detalle: datos del snapshot, CAE, vencimiento, QR en pantalla si está autorizada (el mismo payload del PDF), observaciones de ARCA si las hay.
-- Reintentar pide confirmación. Al volver, refresca la fila.
-- Descargar PDF: `window.open` o blob sobre el GET autenticado (el token va en header, no en la URL).
+- Columnas: fecha, comprobante (punto de venta con 4 dígitos + número con 8), origen (Mesa o Manual), importe, estado, email, y una marca cuando `afipEnv` es `simulado`.
+- Acciones por fila según estado (la matriz está en `propuesta-cliente.md`). Botones deshabilitados con tooltip, para que se entienda que reimprimir exige CAE.
+- Modal de detalle: foto, CAE, vencimiento, desglose de IVA, QR en pantalla si está autorizada, observaciones si las hay.
+- Reintentar pide confirmación y refresca la fila.
+- Descargar PDF con el token en el header, no en la URL.
 - Guardar email: diálogo con un campo. Enviar: confirmación y aviso de éxito o de fallo de correo.
+- Botón “Nueva factura” abre el generador.
 
-Estados vacíos: “No hay facturas en ese mes”.
+Estado vacío: “No hay facturas en ese mes”.
 
-### 7.3. Ticket fiscal
+### 8.3. Generador manual
 
-Método nuevo, no un `if` gigante dentro de `printTicketOrder`. Papel 80 mm, ESC/POS, misma impresora (`PRINTER_HOST` / `PRINTER_PORT`).
+Vista dentro de la pestaña Facturas. No crea orden, no toca la mesa y no escribe en la caja diaria.
+
+- Líneas: concepto, cantidad, precio unitario, alícuota (default 21 %). Una línea puede nacer de un producto del catálogo, que completa nombre, precio y alícuota; se puede editar antes de emitir.
+- Descuento en pesos, default 0. Importe a facturar visible.
+- El mismo ícono de email.
+- Emitir llama a `POST /invoices` y muestra el mismo resultado que el cobro: autorizada, pendiente o rechazada.
+- La fila aparece en el listado del mes con origen Manual.
+
+### 8.4. Ticket fiscal
+
+Método nuevo en `PrinterService`, aparte de `printTicketOrder`. Papel 80 mm, ESC/POS, misma impresora (`PRINTER_HOST` / `PRINTER_PORT`).
 
 Contenido mínimo:
 
 - Razón social, domicilio, CUIT, condición IVA, IIBB, inicio de actividades
 - “FACTURA B”, punto de venta y número
 - Fecha
-- Ítems y descuento (de la foto)
+- Ítems, alícuota de cada línea si hay más de una, y descuento (de la foto)
 - Total
 - “Consumidor final”
-- IVA contenido (el `impIva` calculado)
+- IVA contenido, una línea por elemento de `iva`
 - CAE y vencimiento del CAE
-- QR según el esquema de la RG 4892: JSON en base64 con `ver`, `fecha`, `cuit`, `ptoVta`, `tipoCmp`, `nroCmp`, `importe`, `moneda`, `ctz`, `tipoDocRec`, `nroDocRec`, `tipoCodAut` = `E`, `codAut` = CAE. URL `https://www.afip.gob.ar/fe/qr/?p=<base64>`
+- QR según la RG 4892: JSON en base64 con `ver`, `fecha`, `cuit`, `ptoVta`, `tipoCmp`, `nroCmp`, `importe`, `moneda`, `ctz`, `tipoDocRec`, `nroDocRec`, `tipoCodAut` = `E`, `codAut` = CAE. URL `https://www.afip.gob.ar/fe/qr/?p=<base64>`
+- Si `afipEnv` es `simulado`: leyenda visible de comprobante sin validez fiscal
 
-El QR en térmica depende de que la impresora acepte el comando de imagen o QR nativo. En la Fase 4 se prueba con la impresora real del local. Si el comando QR no es fiable, se imprime la imagen raster del QR. El PDF no tiene ese problema.
+El QR en térmica se prueba con la impresora del local. Si el comando QR nativo no es fiable, se imprime la imagen raster del QR. El PDF no tiene ese problema.
 
-En `NODE_ENV !== production` no se manda nada a la térmica, igual que el ticket actual; se loguea el contenido.
+En `NODE_ENV !== production` no se manda nada a la térmica; se loguea el contenido.
 
-## 8. Dudas abiertas
+### 8.5. Alícuota en el producto
 
-Funcionales (también están en `propuesta-cliente.md`, para contestar con el local). Técnicas, para cerrarlas en el diseño.
+`ProductCreationModal` suma un selector de alícuota gravada. Vacío significa default del entorno. El alta y la edición de producto persisten `alicQuota`.
 
-| # | Duda | Si no se contesta, se asume | Impacto si la respuesta es otra |
-|---|---|---|---|
-| 1 | ¿El emisor es Responsable Inscripto? | Sí, porque se pidió Factura B (`CbteTipo` 6) | Monotributo → Factura C (`CbteTipo` 11), otros importes (sin discriminar IVA igual, pero el tipo cambia) y hay que rehacer ticket, PDF y config |
-| 2 | ¿La propina queda fuera? | Sí | Incluirla obliga a definir si es gravada y cambia el total que ve ARCA respecto de la caja |
-| 3 | ¿Una sola alícuota para toda la carta? | Sí, 21 %, precios con IVA incluido | Hay que agregar alícuota al producto y armar varios ítems en el array `Iva`. No entra en estas fases |
-| 4 | ¿Siempre consumidor final, o DNI desde cierto monto? | Siempre 99/0 | El cobro pide tipo y número de documento cuando el importe supera el tope que indique el contador. El tope no se inventa en código |
-| 5 | ¿Facturar después una orden cobrada sin switch? | No en v1 | Endpoint extra que crea la factura sobre una orden cerrada o archivada, con `cbteFch` dentro de la ventana. La pestaña Ventas sería el lugar |
-| 6 | ¿Nota de crédito en esta versión? | No | Tabla o tipo de comprobante nuevo (`CbteTipo` 8, Nota de Crédito B), asociación al comprobante original, acción “Anular” en el listado. Sin esto no hay corrección fiscal |
-| 7 | ¿Email en el listado o también en el cobro? | Solo en el listado | Un campo más en `Pay.tsx`, guardado en la fila al crearla |
-| 8 | ¿Ticket fiscal reemplaza al de cuenta? | Sí, cuando hay CAE | Si quieren los dos, se encadenan las dos impresiones |
-| 9 | ¿Concepto 1 Productos, 2 Servicios o 3? | 1 Productos | Cambia la ventana de fechas (±5 vs ±10) y los campos de período de servicio. Confirmar con el contador |
-| 10 | Id de condición IVA receptor y de alícuota | Se leen en homologación en la Fase 1 y se fijan en env | No bloquear el diseño de tablas |
-| 11 | ¿El QR de la térmica sale nativo o como imagen? | Se decide en la Fase 4 con la impresora del local | No cambia el modelo de datos |
-| 12 | SMTP real | Fase 5, variables nuevas. El `NotificationService` actual no sirve para esto | Sin casilla configurada, la Fase 5 no se puede cerrar. Guardar email y bajar PDF no dependen del SMTP |
+## 9. Qué no entra en este desarrollo
 
-## 9. Fases
+- Nota de crédito, Factura A, Factura C y controlador fiscal.
+- Facturar más tarde una orden cobrada con el switch apagado.
+- Pedir DNI o CUIT.
+- Exento y no gravado.
+- Movimiento de caja desde el generador manual.
+- Imprimir el ticket de cuenta otra vez en el paso 4.
+- Poner la clave o el certificado en el frontend, en logs o en el backup JSON de órdenes.
+- Emitir el CAE dentro de la transacción de `closeOrder`.
+- Reimprimir o generar PDF fiscal si `status !== authorized`.
+- Una segunda fila de `invoices` para la misma orden.
+- Atar el listado a `daily_cash`. El filtro es mes y año de `cbteFch`.
 
-Cada fase se puede probar sin la siguiente. No mezclar el certificado de producción en las fases 1 a 5.
+## 10. Lo que sigue abierto
 
-### Fase 0 — Alta fiscal y respuestas (sin código de producto)
+No bloquea los pasos del plan. Cada uno tiene un default.
 
-**Salida:** dudas 1, 2, 3 y 9 contestadas; certificado de homologación generado; punto de venta de homo habilitado; servicio `wsfe` asociado al certificado; archivos de cert y clave en la máquina de desarrollo, fuera del repo.
-
-Sin esto la Fase 1 no tiene contra qué hablar.
-
-### Fase 1 — Cliente ARCA en homologación
-
-**Objetivo:** la notebook obtiene un TA y lee parámetros. Todavía no se factura una orden.
-
-- Módulo `ArcaClient` + caché de TA en `afip_tokens`.
-- Variables de entorno y fail-fast si falta cert, clave o CUIT.
-- Script o endpoint de admin (solo Admin) que ejecute `FEDummy`, `FEParamGetPtosVenta`, `FEParamGetTiposIva`, `FEParamGetCondicionIvaReceptor` y muestre el resultado.
-- Anotar en `.env` los ids reales de alícuota y de condición IVA receptor.
-- Reloj: documentar en el checklist de despliegue que la notebook sincroniza NTP. Un TRA rechazado por hora desfasada se loguea con ese motivo.
-
-**Listo cuando:** en homologación, dos arranques seguidos reutilizan el mismo TA y `FEDummy` responde OK.
-
-### Fase 2 — Emisión al cobrar
-
-**Objetivo:** el switch crea la factura y pide el CAE, sin romper el cobro si ARCA no está.
-
-- Migración `invoices`.
-- `invoice` en `CloseOrderDto`.
-- Cálculo de importes y foto de ítems.
-- Flujo de la sección 5, con tests del servicio mockeando `ArcaClient`: autorizado, rechazado (observación), timeout + consulta que encuentra CAE, timeout + consulta que no encuentra (queda pending), segundo cobro concurrente no repite número.
-- Respuesta del cobro con el bloque `invoice`.
-- Front: switch, importe, mensajes. Ticket fiscal solo en el camino `authorized` (puede ser una versión mínima; el QR prolijo se cierra en la Fase 4).
-- No facturar importe ≤ 0.
-
-**Listo cuando:** en homologación, una orden de prueba con el switch encendido queda `authorized` con CAE en la base, la mesa se liberó, y con la red cortada la misma orden queda cobrada y la factura `pending` sin duplicar al reintentar la llamada a mano (aunque el botón de la UI llegue en la Fase 3, el servicio de reintento ya tiene que existir y estar testeado).
-
-### Fase 3 — Listado y reintento
-
-**Objetivo:** operar las pendientes sin tocar la base a mano.
-
-- `GET` listado y detalle.
-- Tab Facturas, filtros mes/año, estados, modal.
-- Botón Reintentar cableado al servicio de la Fase 2.
-- Caso de ventana de fechas vencida: mostrar el texto de ARCA (típico 10016), no reintentar en bucle.
-
-**Listo cuando:** una factura `pending` de homo se autoriza desde la pestaña, y una `rejected` muestra el motivo.
-
-### Fase 4 — Reimpresión y PDF
-
-**Objetivo:** el comprobante autorizado se puede volver a sacar sin Internet.
-
-- `POST .../print` con layout fiscal completo y QR. Prueba en la térmica del local.
-- `GET .../pdf` con pdfkit. QR con una librería de generación (a agregar; pdfkit ya está).
-- Ambos leen solo `snapshot` + columnas fiscales. Probar después de un archivado: la orden ya no está en `orders` y el PDF sigue saliendo.
-- Acciones de la grilla habilitadas solo en `authorized`.
-
-**Listo cuando:** se descarga el PDF con la red desconectada y el QR escanea al formato esperado; la reimpresión sale por la térmica con CAE y QR legible.
-
-### Fase 5 — Email
-
-**Objetivo:** guardar el correo y enviarlo cuando haya red.
-
-- `PATCH` email y `POST` send.
-- Transporte SMTP por entorno. Adjunto = el mismo PDF de la Fase 4.
-- UI: diálogo de email y botón Enviar.
-- Fallo de SMTP no borra el email ni el CAE.
-
-**Listo cuando:** un envío de prueba llega con el PDF, y un SMTP mal configurado deja la factura autorizada y el email guardado.
-
-### Fase 6 — Producción
-
-**Objetivo:** el primer comprobante real, controlado.
-
-- Certificado de producción, punto de venta real, `AFIP_ENV=produccion`.
-- Checklist: NTP, salida 443, backup de la clave, la clave no está en git.
-- Una factura de monto mínimo acordado con el contador, consulta con `FECompConsultar`, PDF y ticket confrontados con ese CAE.
-- Dejar homologación como modo por defecto en desarrollo.
-
-**Listo cuando:** el contador da por válido ese comprobante (número, CAE, QR, importes).
-
-## 10. Qué no hacer en estas fases
-
-- No poner la clave ni el certificado en el frontend, en logs ni en el backup JSON de órdenes.
-- No emitir el CAE dentro de la transacción de `closeOrder`.
-- No reimprimir ni generar PDF fiscal si `status !== authorized`.
-- No crear una segunda fila de `invoices` para la misma orden.
-- No acoplar el listado a `daily_cash`: el filtro pedido es mes/año del comprobante. La orden ya tiene `dailyCashId` si más adelante se quiere cruzar.
-- No implementar nota de crédito, Factura A/C ni controlador fiscal hasta cerrar las dudas 1 y 6.
+| Tema | Default mientras no haya otra respuesta |
+|---|---|
+| Porcentajes reales de la carta | 21 % en todo producto sin alícuota cargada. El selector ya permite otro valor |
+| Concepto del comprobante | 1 Productos (`AFIP_CONCEPTO`) |
+| Ids de alícuota y de condición IVA receptor | Se confirman con los parámetros de homologación y se fijan en el mapa y en el entorno |
+| QR nativo o imagen en la térmica | Se prueba con la impresora del local, en el paso del ticket |
+| Casilla SMTP | El envío de mail espera esas variables. Guardar el email y bajar el PDF no |
 
 ## 11. Verificación
 
-Además de los tests de la Fase 2:
+Además de los tests del cálculo y de la máquina de estados:
 
-- Cobro con switch apagado: no hay fila en `invoices` y el ticket de cuenta no cambia.
-- Cobro con switch encendido y ARCA OK: una fila `authorized`, ticket fiscal, mesa libre.
-- Timeout: fila `pending`, orden cerrada, un solo `cbteNro`.
-- Reintento después de un timeout en el que ARCA sí autorizó: el mock de `FECompConsultar` devuelve el CAE y no se llama otra vez a `FECAESolicitar`.
+- Cobro con switch apagado: no hay fila en `invoices` y el paso 4 no imprime.
+- Cobro con switch encendido y resultado autorizado: una fila `authorized`, ticket fiscal, mesa libre, email guardado si se cargó.
+- Timeout: fila `pending`, orden cerrada, un solo `cbteNro`, nada impreso en el paso 4.
+- Reintento después de un timeout en el que ARCA sí autorizó: la consulta devuelve el CAE y no se vuelve a solicitar.
+- Dos emisiones simultáneas (cobro y alta manual) no repiten número.
+- Dos alícuotas en la misma orden: el array `iva` tiene dos ítems y `impNeto + impIva = impTotal`.
 - Archivado: PDF y detalle siguen disponibles.
-- Roles: Mozo recibe 403 en `/invoices` y no ve la pestaña (la ruta de cajas ya lo impide).
-- Smoke en la notebook del local, en homologación, con la impresora prendida y con la impresora apagada.
+- Generador manual: factura sin `orderId`, visible en el listado, sin fila nueva en caja.
+- Simulación apagada contra producción no arranca si falta el certificado. Simulación encendida con `AFIP_ENV=produccion` no arranca.
+- Roles: Mozo recibe 403 en `/invoices` y no ve la pestaña.
 
-La UI (switch, pestaña, PDF descargado, mail) se prueba en el navegador de la notebook, no solo con tests, cuando esas fases estén implementadas.
+La UI (switch, ícono de email, pestaña, generador, PDF, mail) se prueba en el navegador de la notebook cuando esos pasos estén implementados. Con `AFIP_SIMULATE=true` se puede recorrer el flujo entero antes de tener el certificado de homologación.
