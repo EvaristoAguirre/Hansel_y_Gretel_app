@@ -271,3 +271,9 @@ El 12/10 se aplicó con `pnpm run migrate:run` y el script terminó bien. No se 
 ### Paso 6 — hecho
 
 `printFiscalTicket` se llama solo si la factura quedó autorizada. Pendiente o switch apagado no imprimen en el cobro. El ticket de cuenta del paso 3 no se tocó. Fuera de `NODE_ENV=production` se loguea y no se abre la térmica. El QR va como URL (RG 4892); la imagen en el papel térmico queda para probar con la impresora del local.
+
+### Paso 7 — hecho en código
+
+En el cobro hay switch «Emitir Factura B» (apagado por defecto), el importe sin propina y un ícono que abre el email. El aviso distingue factura autorizada, pendiente y rechazada. `tsc` del frontend pasa.
+
+No se recorrió el cobro en el navegador: hace falta una caja abierta y una orden en pago. Los tres textos salen del bloque `invoice` que ya cubren los tests del paso 5.

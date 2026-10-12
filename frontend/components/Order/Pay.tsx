@@ -1,7 +1,7 @@
 import { orderToClosed } from "@/api/order";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
-import { AddCircleOutline, Close, Payment } from "@mui/icons-material";
+import { AddCircleOutline, Close, Email, Payment } from "@mui/icons-material";
 import {
   Button,
   FormControl,
@@ -172,6 +172,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const [fullCustomTip, setFullCustomTip] = useState(0);
   const [fullDiscountPercent, setFullDiscountPercent] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emitInvoice, setEmitInvoice] = useState(false);
+  const [invoiceEmailOpen, setInvoiceEmailOpen] = useState(false);
+  const [invoiceEmail, setInvoiceEmail] = useState("");
   const [fullSplits, setFullSplits] = useState<FullSplit[]>([
     { id: "split-0", method: "", amount: "" },
   ]);
@@ -325,10 +328,38 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   );
   const total10 = (baseAmount * 1.1).toFixed(2);
   const totalCustom = (baseAmount + draftPayment.customTip).toFixed(2);
+  const invoiceAmount = fullPaymentMode
+    ? fullNetAfterDiscount
+    : Math.round(fullBaseAmount);
+
+  const notifyClosed = (paidOrder: { invoice?: { status?: string; message?: string } } | null) => {
+    const invoice = paidOrder?.invoice;
+    if (!invoice) {
+      Swal.fire("Orden cerrada con éxito", "", "success");
+      return;
+    }
+    if (invoice.status === "authorized") {
+      Swal.fire("Cobro correcto y factura emitida", invoice.message || "", "success");
+      return;
+    }
+    Swal.fire("La orden quedó cobrada", invoice.message || "", "warning");
+  };
 
   const handlePayOrder = async () => {
     if (!token || !selectedOrderByTable || !selectedTable) return;
     if (isSubmitting) return;
+    const email = invoiceEmail.trim();
+    if (
+      emitInvoice &&
+      email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      Swal.fire("El email no tiene un formato válido", "", "warning");
+      return;
+    }
+    const invoiceRequest = emitInvoice
+      ? { emit: true, email: email || undefined }
+      : undefined;
 
     if (fullPaymentMode) {
       if (!fullSplitsValid) {
@@ -360,9 +391,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           token,
           payments,
           undefined,
-          fullDiscountPercent
+          fullDiscountPercent,
+          invoiceRequest
         );
-        if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+        if (paidOrder) notifyClosed(paidOrder);
         setConfirmedProducts([]);
         clearSelectedProducts();
         if (paidOrder) {
@@ -404,9 +436,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       const paidOrder = await orderToClosed(
         selectedOrderByTable.id,
         token,
-        payments
+        payments,
+        undefined,
+        0,
+        invoiceRequest
       );
-      if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+      if (paidOrder) notifyClosed(paidOrder);
 
       setConfirmedProducts([]);
       clearSelectedProducts();
@@ -976,6 +1011,50 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 Agregar método de pago
               </Button>
             </>
+          )}
+
+          <Box
+            mt={2}
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+          >
+            <Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={emitInvoice}
+                    onChange={(_, checked) => setEmitInvoice(checked)}
+                    color="default"
+                  />
+                }
+                label="Emitir Factura B"
+              />
+              <Typography variant="body2" color="text.secondary">
+                Se factura ${formatNumber(invoiceAmount)} (sin propina)
+              </Typography>
+            </Box>
+            <Tooltip title="Email del cliente">
+              <IconButton
+                aria-label="Email del cliente"
+                onClick={() => setInvoiceEmailOpen((open) => !open)}
+                disabled={!emitInvoice}
+              >
+                <Email />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          {emitInvoice && invoiceEmailOpen && (
+            <TextField
+              fullWidth
+              size="small"
+              type="email"
+              label="Email"
+              value={invoiceEmail}
+              onChange={(e) => setInvoiceEmail(e.target.value)}
+              sx={{ mt: 1 }}
+            />
           )}
 
           {/* ─── Botón confirmar ──────────────────────────────────────────── */}
