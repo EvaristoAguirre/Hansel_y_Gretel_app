@@ -17,7 +17,7 @@ import {
 import { CashMovement } from './cash-movement.entity';
 import { CloseDailyCash } from 'src/DTOs/close-daily-cash.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { DailyCashState, TableState } from 'src/Enums/states.enum';
 import { isUUID } from 'class-validator';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
@@ -41,6 +41,7 @@ export class DailyCashService {
     private readonly eventEmitter: EventEmitter2,
     private readonly monitoringLogger: LoggerService,
     private readonly tableService: TableService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async openDailyCash(
@@ -135,16 +136,38 @@ export class DailyCashService {
     }
 
     try {
-      await this.dailyCashRepo.update(id, updateDailyCashDto);
+      const current = await this.dailyCashRepo.findOne({ where: { id } });
+      if (!current) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+
+      const patch: { comment?: string; initialCash?: number } = {};
+      if (updateDailyCashDto.comment !== undefined) {
+        patch.comment = updateDailyCashDto.comment;
+      }
+      if (updateDailyCashDto.initialCash !== undefined) {
+        if (current.state !== DailyCashState.OPEN) {
+          throw new ConflictException(
+            'No se puede modificar el efectivo inicial de una caja cerrada.',
+          );
+        }
+        patch.initialCash = Number(updateDailyCashDto.initialCash);
+      }
+
+      if (Object.keys(patch).length > 0) {
+        await this.dailyCashRepo.update(id, patch);
+      }
 
       const updatedDailyCash = await this.getDailyCashById(id);
       if (!updatedDailyCash) {
         throw new NotFoundException('Daily cash report not found.');
       }
 
-      this.eventEmitter.emit('dailyCash.updated', {
-        dailyCash: updatedDailyCash,
-      });
+      if (Object.keys(patch).length > 0) {
+        this.eventEmitter.emit('dailyCash.updated', {
+          dailyCash: updatedDailyCash,
+        });
+      }
 
       return DailyCashMapper.toResponse(updatedDailyCash);
     } catch (error) {
@@ -166,14 +189,21 @@ export class DailyCashService {
       );
     }
 
-    try {
-      const dailyCash = await this.dailyCashRepository.getDailyCashById(id);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-      if (!dailyCash) {
+    try {
+      const locked = await queryRunner.manager.findOne(DailyCash, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!locked) {
         throw new NotFoundException('Daily cash report not found.');
       }
 
-      if (dailyCash.state === DailyCashState.CLOSED) {
+      if (locked.state === DailyCashState.CLOSED) {
         throw new ConflictException('Daily cash report is already closed.');
       }
 
@@ -196,29 +226,34 @@ export class DailyCashService {
         );
       }
 
+      const dailyCash = await queryRunner.manager.findOne(DailyCash, {
+        where: { id },
+        relations: ['movements', 'orders', 'orders.payments'],
+      });
+
+      if (!dailyCash) {
+        throw new NotFoundException('Daily cash report not found.');
+      }
+
       dailyCash.state = DailyCashState.CLOSED;
       dailyCash.comment = closeDailyCashDto.comment || '';
 
-      // --- Separar movimientos por tipo ---
-      const incomes = dailyCash.movements.filter(
+      const incomes = (dailyCash.movements || []).filter(
         (mov) => mov.type === DailyCashMovementType.INCOME,
       );
-      const expenses = dailyCash.movements.filter(
+      const expenses = (dailyCash.movements || []).filter(
         (mov) => mov.type === DailyCashMovementType.EXPENSE,
       );
 
-      // --- Guardar TOTALES de ventas, propinas, ingresos y egresos directos ---
-      dailyCash.totalSales = this.sumGrossTotalOrders(dailyCash.orders);
-      dailyCash.totalDiscounts = this.sumDiscountsOrders(dailyCash.orders);
+      dailyCash.totalSales = this.sumGrossTotalOrders(dailyCash.orders || []);
+      dailyCash.totalDiscounts = this.sumDiscountsOrders(dailyCash.orders || []);
       dailyCash.totalNetSales = dailyCash.totalSales - dailyCash.totalDiscounts;
-      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders);
+      dailyCash.totalTips = this.sumTotalTipsOrders(dailyCash.orders || []);
       dailyCash.totalIncomes = this.sumTotal(incomes);
       dailyCash.totalExpenses = this.sumTotal(expenses);
 
-      // --- Agrupación por método de pago ---
-
       const orderPayments = this.groupRecordsByPaymentMethod(
-        dailyCash.orders.flatMap((order) =>
+        (dailyCash.orders || []).flatMap((order) =>
           (order.payments || []).map((p) => ({
             amount: Number(p.amount),
             methodOfPayment: p.methodOfPayment,
@@ -228,7 +263,6 @@ export class DailyCashService {
       const incomePayments = this.groupRecordsByPaymentMethod(incomes);
       const expensePayments = this.groupRecordsByPaymentMethod(expenses);
 
-      // --- Totales netos por método de pago ---
       dailyCash.totalCash =
         (orderPayments[PaymentMethod.CASH] || 0) +
         (incomePayments[PaymentMethod.CASH] || 0) -
@@ -254,7 +288,6 @@ export class DailyCashService {
         (incomePayments[PaymentMethod.MERCADOPAGO] || 0) -
         (expensePayments[PaymentMethod.MERCADOPAGO] || 0);
 
-      // Cierre por lote: tarjeta de crédito + débito + transferencias
       dailyCash.totalBatchClose =
         dailyCash.totalCreditCard +
         dailyCash.totalDebitCard +
@@ -267,7 +300,8 @@ export class DailyCashService {
 
       dailyCash.finalCash = Number(closeDailyCashDto.finalCash);
 
-      const dailyCashClosed = await this.dailyCashRepo.save(dailyCash);
+      const dailyCashClosed = await queryRunner.manager.save(dailyCash);
+      await queryRunner.commitTransaction();
 
       this.eventEmitter.emit('dailyCash.closed', {
         dailyCash: dailyCashClosed,
@@ -275,8 +309,13 @@ export class DailyCashService {
 
       return DailyCashMapper.toResponse(dailyCashClosed);
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('closeDailyCash', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -469,12 +508,12 @@ export class DailyCashService {
   }
 
   private sumTotal(records: { amount: number }[]): number {
-    return records.reduce((acc, r) => acc + Number(r.amount), 0);
+    return records.reduce((acc, r) => acc + this.finiteAmount(r.amount), 0);
   }
 
   /** Ventas brutas: suma del total de cada orden antes de descuentos. */
   private sumGrossTotalOrders(records: { total: number }[]): number {
-    return records.reduce((acc, r) => acc + Number(r.total), 0);
+    return records.reduce((acc, r) => acc + this.finiteAmount(r.total), 0);
   }
 
   /** Suma de todos los descuentos aplicados en las órdenes. */
@@ -482,7 +521,7 @@ export class DailyCashService {
     records: { discountAmount?: number }[],
   ): number {
     return records.reduce(
-      (acc, r) => acc + Number(r.discountAmount ?? 0),
+      (acc, r) => acc + this.finiteAmount(r.discountAmount),
       0,
     );
   }
@@ -627,7 +666,17 @@ export class DailyCashService {
   }
 
   private sumTotalTipsOrders(orders: Order[]): number {
-    return orders.reduce((tip, order) => tip + Number(order.tip), 0);
+    return orders.reduce((tip, order) => tip + this.finiteAmount(order.tip), 0);
+  }
+
+  private finiteAmount(value: unknown): number {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
+  /** SUM que no deja que un numeric NaN anule el total del período. */
+  private finiteSum(columnSql: string): string {
+    return `COALESCE(SUM(${columnSql}) FILTER (WHERE ${columnSql} IS DISTINCT FROM 'NaN'::numeric), 0)`;
   }
 
   // ------------------- metricas -----------------------
@@ -670,44 +719,9 @@ export class DailyCashService {
     const startDate = new Date(`${year}-01-01T00:00:00`);
     const endDate = new Date(`${year}-12-31T23:59:59`);
 
-    // Total ventas del año
-    const cashes = await this.dailyCashRepo.find({
-      where: {
-        date: Between(startDate, endDate),
-      },
-      select: ['totalSales'], // solo ventas
-    });
-
-    const totalSales = cashes.reduce(
-      (acc, cash) => acc + Number(cash.totalSales),
-      0,
-    );
-
-    // Ingresos del año
-    const incomeMovements = await this.cashMovementRepo.find({
-      where: {
-        type: DailyCashMovementType.INCOME,
-        createdAt: Between(startDate, endDate),
-      },
-    });
-
-    const totalIncomes = incomeMovements.reduce(
-      (acc, m) => acc + Number(m.amount),
-      0,
-    );
-
-    // Egresos del año
-    const expenseMovements = await this.cashMovementRepo.find({
-      where: {
-        type: DailyCashMovementType.EXPENSE,
-        createdAt: Between(startDate, endDate),
-      },
-    });
-
-    const totalExpenses = expenseMovements.reduce(
-      (acc, m) => acc + Number(m.amount),
-      0,
-    );
+    const totalSales = await this.sumSalesBetween(startDate, endDate);
+    const { incomes: totalIncomes, expenses: totalExpenses } =
+      await this.sumMovementsBetween(startDate, endDate);
 
     const income = totalSales + totalIncomes;
     const profit = income - totalExpenses;
@@ -736,57 +750,20 @@ export class DailyCashService {
       'noviembre',
       'diciembre',
     ];
+    const start = new Date(year, 0, 1, 0, 0, 0, 0);
+    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+    const sales = await this.salesByCalendarPart(start, end, 'MONTH');
+    const movements = await this.movementsByCalendarPart(start, end, 'MONTH');
 
-    const results = [];
-
-    for (let month = 0; month < 12; month++) {
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
-
-      const cashes = await this.dailyCashRepo.find({
-        where: {
-          date: Between(start, end),
-        },
-        select: ['totalSales'],
-      });
-
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
-
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-
-      const totalIncomes = incomes.reduce(
-        (acc, i) => acc + Number(i.amount),
-        0,
-      );
-
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-
-      const totalExpenses = expenses.reduce(
-        (acc, e) => acc + Number(e.amount),
-        0,
-      );
-
-      results.push({
-        mes: months[month],
-        income: totalSales + totalIncomes,
-        expenses: totalExpenses,
-      });
-    }
-
-    return results;
+    return months.map((mes, index) => {
+      const bucket = index + 1;
+      return {
+        mes,
+        income:
+          (sales.get(bucket) ?? 0) + (movements.incomes.get(bucket) ?? 0),
+        expenses: movements.expenses.get(bucket) ?? 0,
+      };
+    });
   }
 
   async getDailyMetrics(
@@ -794,47 +771,17 @@ export class DailyCashService {
     year: number,
   ): Promise<{ day: string; income: number; expenses: number }[]> {
     const daysInMonth = new Date(year, month, 0).getDate();
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    const sales = await this.salesByCalendarPart(start, end, 'DAY');
+    const movements = await this.movementsByCalendarPart(start, end, 'DAY');
+
     const results = [];
-
     for (let day = 1; day <= daysInMonth; day++) {
-      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
-      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-      const cashes = await this.dailyCashRepo.find({
-        where: { date: Between(start, end) },
-        select: ['totalSales'],
-      });
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
-
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalIncomes = incomes.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalExpenses = expenses.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
       results.push({
         day: String(day).padStart(2, '0'),
-        income: totalSales + totalIncomes,
-        expenses: totalExpenses,
+        income: (sales.get(day) ?? 0) + (movements.incomes.get(day) ?? 0),
+        expenses: movements.expenses.get(day) ?? 0,
       });
     }
 
@@ -845,50 +792,95 @@ export class DailyCashService {
     month: number,
     year: number,
   ): Promise<{ day: string; profit: number }[]> {
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const results = [];
+    const metrics = await this.getDailyMetrics(month, year);
+    return metrics.map(({ day, income, expenses }) => ({
+      day,
+      profit: income - expenses,
+    }));
+  }
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
-      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+  private async sumSalesBetween(start: Date, end: Date): Promise<number> {
+    const row = await this.dailyCashRepo
+      .createQueryBuilder('cash')
+      .select(this.finiteSum('cash."totalSales"'), 'total')
+      .where('cash.date BETWEEN :start AND :end', { start, end })
+      .getRawOne<{ total: string }>();
+    return this.finiteAmount(row?.total);
+  }
 
-      const cashes = await this.dailyCashRepo.find({
-        where: { date: Between(start, end) },
-        select: ['totalSales'],
-      });
-      const totalSales = cashes.reduce(
-        (acc, cash) => acc + Number(cash.totalSales),
-        0,
-      );
+  private async sumMovementsBetween(
+    start: Date,
+    end: Date,
+  ): Promise<{ incomes: number; expenses: number }> {
+    const rows = await this.cashMovementRepo
+      .createQueryBuilder('movement')
+      .select('movement.type', 'type')
+      .addSelect(this.finiteSum('movement.amount'), 'total')
+      .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
+      .groupBy('movement.type')
+      .getRawMany<{ type: string; total: string }>();
+    return this.splitMovementTotals(rows);
+  }
 
-      const incomes = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.INCOME,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalIncomes = incomes.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
+  private async salesByCalendarPart(
+    start: Date,
+    end: Date,
+    part: 'MONTH' | 'DAY',
+  ): Promise<Map<number, number>> {
+    const rows = await this.dailyCashRepo
+      .createQueryBuilder('cash')
+      .select(`EXTRACT(${part} FROM cash.date)`, 'bucket')
+      .addSelect(this.finiteSum('cash."totalSales"'), 'total')
+      .where('cash.date BETWEEN :start AND :end', { start, end })
+      .groupBy('bucket')
+      .getRawMany<{ bucket: string; total: string }>();
 
-      const expenses = await this.cashMovementRepo.find({
-        where: {
-          type: DailyCashMovementType.EXPENSE,
-          createdAt: Between(start, end),
-        },
-      });
-      const totalExpenses = expenses.reduce(
-        (acc, m) => acc + Number(m.amount),
-        0,
-      );
-
-      results.push({
-        day: String(day).padStart(2, '0'),
-        profit: totalSales + totalIncomes - totalExpenses,
-      });
+    const totals = new Map<number, number>();
+    for (const row of rows) {
+      totals.set(Number(row.bucket), this.finiteAmount(row.total));
     }
+    return totals;
+  }
 
-    return results;
+  private async movementsByCalendarPart(
+    start: Date,
+    end: Date,
+    part: 'MONTH' | 'DAY',
+  ): Promise<{ incomes: Map<number, number>; expenses: Map<number, number> }> {
+    const rows = await this.cashMovementRepo
+      .createQueryBuilder('movement')
+      .select(`EXTRACT(${part} FROM movement."createdAt")`, 'bucket')
+      .addSelect('movement.type', 'type')
+      .addSelect(this.finiteSum('movement.amount'), 'total')
+      .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
+      .groupBy('bucket')
+      .addGroupBy('movement.type')
+      .getRawMany<{ bucket: string; type: string; total: string }>();
+
+    const incomes = new Map<number, number>();
+    const expenses = new Map<number, number>();
+    for (const row of rows) {
+      const bucket = Number(row.bucket);
+      const total = this.finiteAmount(row.total);
+      if (row.type === DailyCashMovementType.INCOME) {
+        incomes.set(bucket, total);
+      } else if (row.type === DailyCashMovementType.EXPENSE) {
+        expenses.set(bucket, total);
+      }
+    }
+    return { incomes, expenses };
+  }
+
+  private splitMovementTotals(
+    rows: { type: string; total: string }[],
+  ): { incomes: number; expenses: number } {
+    let incomes = 0;
+    let expenses = 0;
+    for (const row of rows) {
+      const total = this.finiteAmount(row.total);
+      if (row.type === DailyCashMovementType.INCOME) incomes = total;
+      else if (row.type === DailyCashMovementType.EXPENSE) expenses = total;
+    }
+    return { incomes, expenses };
   }
 }

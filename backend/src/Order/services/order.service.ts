@@ -15,7 +15,7 @@ import { CancelOrderDetailDto } from '../dtos/cancel-order-detail.dto';
 import { OrderSummaryResponseDto } from 'src/Order/dtos/orderSummaryResponse.dto';
 import { CloseOrderDto } from 'src/Order/dtos/close-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { ProductLineDto } from 'src/DTOs/productSummary.dto';
 import { buildProductLines } from '../helpers/order-response.helper';
@@ -25,6 +25,10 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
+import {
+  latestStockChanges,
+  StockWsChange,
+} from 'src/Stock/stock-ws.payload';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
@@ -132,6 +136,14 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     let comandaWarning: string | null = null;
+    let pendingPrintData: {
+      numberCustomers: number;
+      table: string;
+      products: any[];
+      isPriority?: boolean;
+    } | null = null;
+    let savedDetailIds: string[] = [];
+    const deductedStocks: StockWsChange[] = [];
 
     try {
       const order = await this.orderRepository.getOrderWithRelations(
@@ -170,12 +182,17 @@ export class OrderService {
         let total = 0;
         const detailsToSave: OrderDetails[] = [];
         const printProducts: any[] = [];
+        const productIds = [
+          ...new Set(updateData.productsDetails.map((pd) => pd.productId)),
+        ];
+        const loadedProducts = await queryRunner.manager.find(Product, {
+          where: { id: In(productIds), isActive: true },
+        });
+        const productById = new Map(loadedProducts.map((p) => [p.id, p]));
 
         for (const pd of updateData.productsDetails) {
-          const product = await queryRunner.manager.findOne(Product, {
-            where: { id: pd.productId, isActive: true },
-          });
-          if (!product) throw new NotFoundException('No se encontró el producto.');
+          const product = productById.get(pd.productId);
+          if (!product) throw new NotFoundException('Product not found');
 
           let finalPrice = Number(product.price ?? 0);
           if (isNaN(finalPrice)) {
@@ -269,13 +286,14 @@ export class OrderService {
             finalPrice = Number(finalPrice) + Number(extraCost);
           }
 
-          //------------------- Deducción de stock con soporte para promociones con slots
-          await this.stockService.deductStock(
+          const deducted = await this.stockService.deductStock(
             product.id,
             pd.quantity,
             pd.toppingsPerUnit,
             pd.promotionSelections,
+            queryRunner,
           );
+          deductedStocks.push(...deducted);
 
           // Construir el OrderDetail real con el precio correcto.
           // Para promociones con extra cost, se pasa finalPrice como overrideBasePrice
@@ -450,47 +468,22 @@ export class OrderService {
           }
         }
 
-        // 🖨️ Generar número de comanda (una sola vez)
-        const printData = {
+        pendingPrintData = {
           numberCustomers: order.numberCustomers,
           table: order.table?.name || 'SIN MESA',
           products: printProducts,
           isPriority: updateData.isPriority,
         };
 
-        let commandNumber: string | null = null;
-
-        try {
-          if (process.env.NODE_ENV === 'production') {
-            commandNumber =
-              await this.printerService.printKitchenOrder(printData);
-          } else {
-            console.debug(
-              `📤 Enviando comanda a impresión para mesa ${printData.table}`,
-            );
-            commandNumber = 'grabandoTextFijo - 1111111111';
-          }
-          this.printerService.logger.log(
-            `✅ Comanda impresa, número: ${commandNumber}`,
-          );
-        } catch (printError) {
-          this.printerService.logger.error(
-            '❌ Falló la impresión de la comanda',
-            printError.stack,
-          );
-          comandaWarning = 'No se pudo conectar con la impresora. La comanda no fue impresa.';
-        }
-
-        // 💾 Guardar detalles (cascade: true en orderDetailToppings persiste los toppings automáticamente)
         this.logger.log(
           `[updateOrder] Guardando ${detailsToSave.length} detalle(s) de pedido`,
         );
         for (const detail of detailsToSave) {
-          detail.commandNumber = commandNumber;
           this.logger.log(
             `[updateOrder] Guardando detail: producto="${detail.product?.name}", cantidad=${detail.quantity}, toppings asignados=${detail.orderDetailToppings?.length ?? 0}`,
           );
           const savedDetail = await queryRunner.manager.save(detail);
+          savedDetailIds.push(savedDetail.id);
           this.logger.log(
             `[updateOrder] Detail guardado con id=${savedDetail.id} | toppings en DB: ${savedDetail.orderDetailToppings?.length ?? 'no cargados aún'}`,
           );
@@ -519,16 +512,80 @@ export class OrderService {
       });
 
       this.eventEmitter.emit('order.updated', { order: updatedOrder });
+      const deductedLatest = latestStockChanges(deductedStocks);
+      if (deductedLatest.length) {
+        this.eventEmitter.emit('stock.deducted', { stocks: deductedLatest });
+      }
+
+      if (pendingPrintData) {
+        const printResult = await this.tryPrintKitchenOrder(
+          pendingPrintData,
+          updatedOrder,
+        );
+        comandaWarning = printResult.comandaWarning;
+        if (printResult.commandNumber && savedDetailIds.length) {
+          await this.dataSource
+            .createQueryBuilder()
+            .update(OrderDetails)
+            .set({ commandNumber: printResult.commandNumber })
+            .whereInIds(savedDetailIds)
+            .execute();
+        }
+      }
 
       const responseAdapted = await this.adaptResponse(updatedOrder);
       responseAdapted.comandaWarning = comandaWarning;
       return responseAdapted;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('updateOrder', error);
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async tryPrintKitchenOrder(
+    printData: {
+      numberCustomers: number;
+      table: string;
+      products: any[];
+      isPriority?: boolean;
+    },
+    orderForEvent?: Order | null,
+  ): Promise<{ commandNumber: string | null; comandaWarning: string | null }> {
+    const failMessage =
+      'El pedido quedó guardado, pero la comanda no se imprimió. Usá Reimprimir comanda cuando la impresora esté lista.';
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const commandNumber =
+          await this.printerService.printKitchenOrder(printData);
+        this.printerService.logger.log(
+          `✅ Comanda impresa, número: ${commandNumber}`,
+        );
+        return { commandNumber, comandaWarning: null };
+      }
+      console.debug(
+        `📤 Enviando comanda a impresión para mesa ${printData.table}`,
+      );
+      return {
+        commandNumber: 'DEV-0001',
+        comandaWarning: null,
+      };
+    } catch (printError) {
+      this.printerService.logger.error(
+        '❌ Falló la impresión de la comanda',
+        printError.stack,
+      );
+      if (orderForEvent) {
+        this.eventEmitter.emit('order.printerError', {
+          order: orderForEvent,
+          message: failMessage,
+        });
+      }
+      return { commandNumber: null, comandaWarning: failMessage };
     }
   }
 
@@ -627,7 +684,7 @@ export class OrderService {
       throw new NotFoundException(`Order with ID: ${id} not found`);
     }
 
-    this.eventEmitter.emit('order.deleted', { orderId: id });
+    this.eventEmitter.emit('order.deleted', { order: { id } as Order });
 
     return 'Order successfully deleted';
   }
@@ -644,8 +701,11 @@ export class OrderService {
     return await this.reader.getOrderDetails(page, limit);
   }
 
-  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.reader.getOrdersForOpenOrPendingTables();
+  async getOrdersForOpenOrPendingTables(
+    page: number,
+    limit: number,
+  ): Promise<Order[]> {
+    return await this.reader.getOrdersForOpenOrPendingTables(page, limit);
   }
 
   async markOrderAsPendingPayment(
@@ -656,8 +716,31 @@ export class OrderService {
         'Invalid ID format. ID must be a valid UUID.',
       );
     }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let orderPending: Order;
     try {
-      const order = await this.orderRepo.findOne({
+      const locked = await queryRunner.manager
+        .createQueryBuilder(Order, 'order')
+        .setLock('pessimistic_write')
+        .where('order.id = :id', { id })
+        .andWhere('order.isActive = :isActive', { isActive: true })
+        .getOne();
+
+      if (!locked) {
+        throw new NotFoundException(`Order with ID: ${id} not found`);
+      }
+
+      if (locked.state !== OrderState.OPEN) {
+        throw new BadRequestException(
+          `Order with ID: ${id} is not in an open state`,
+        );
+      }
+
+      const order = await queryRunner.manager.findOne(Order, {
         where: { id, isActive: true },
         relations: [
           'orderDetails',
@@ -669,59 +752,57 @@ export class OrderService {
         ],
       });
 
-      if (!order) {
+      if (!order?.table) {
         throw new NotFoundException(`Order with ID: ${id} not found`);
       }
 
-      if (order.state !== OrderState.OPEN) {
-        throw new BadRequestException(
-          `Order with ID: ${id} is not in an open state`,
-        );
-      }
-
+      await queryRunner.manager.update(Table, order.table.id, {
+        state: TableState.PENDING_PAYMENT,
+      });
       order.state = OrderState.PENDING_PAYMENT;
       order.table.state = TableState.PENDING_PAYMENT;
-      await this.tableService.updateTableState(
-        order.table.id,
-        TableState.PENDING_PAYMENT,
-      );
-      const orderPending = await this.orderRepo.save(order);
-
-      let printerWarning: string | null = null;
-
-      if (process.env.NODE_ENV === 'production') {
-        try {
-          await this.printerService.printTicketOrder(order);
-        } catch (error) {
-          this.logger.error('printTicketOrder', error);
-          printerWarning = 'Tiempo de espera agotado al conectar con la impresora';
-          // Notificar el fallo de impresora por WebSocket (sin bloquear el flujo)
-          this.eventEmitter.emit('order.printerError', {
-            order: orderPending,
-            message: printerWarning,
-          });
-        }
-      } else {
-        console.log('simulando impresion de ticket');
-        console.log('orderPending to print ticket', orderPending);
-      }
-
-      // Emitir siempre: el estado de negocio cambió correctamente aunque la impresora falle
-      this.eventEmitter.emit('order.ticketPrinted', {
-        order: orderPending,
-      });
-      this.eventEmitter.emit('order.updatePending', {
-        order: orderPending,
-      });
-
-      const responseAdapted = await this.adaptResponse(orderPending);
-      responseAdapted.printerWarning = printerWarning;
-
-      return responseAdapted;
+      orderPending = await queryRunner.manager.save(order);
+      await queryRunner.commitTransaction();
     } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error('markOrderAsPendingPayment', error);
       throw error;
+    } finally {
+      await queryRunner.release();
     }
+
+    let printerWarning: string | null = null;
+
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await this.printerService.printTicketOrder(orderPending);
+      } catch (error) {
+        this.logger.error('printTicketOrder', error);
+        printerWarning =
+          'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.';
+        this.eventEmitter.emit('order.printerError', {
+          order: orderPending,
+          message: printerWarning,
+        });
+      }
+    } else {
+      console.log('simulando impresion de ticket');
+      console.log('orderPending to print ticket', orderPending);
+    }
+
+    this.eventEmitter.emit('order.ticketPrinted', {
+      order: orderPending,
+    });
+    this.eventEmitter.emit('order.updatePending', {
+      order: orderPending,
+    });
+
+    const responseAdapted = await this.adaptResponse(orderPending);
+    responseAdapted.printerWarning = printerWarning;
+
+    return responseAdapted;
   }
 
   async closeOrder(
@@ -805,6 +886,7 @@ export class OrderService {
       }
 
       // Restituir stock de cada ítem activo dentro de la misma transacción
+      const restoredStocks: StockWsChange[] = [];
       const activeDetails = (order.orderDetails ?? []).filter(
         (d) => d.isActive,
       );
@@ -841,13 +923,14 @@ export class OrderService {
         }
 
         try {
-          await this.stockService.restoreStock(
+          const restored = await this.stockService.restoreStock(
             detail.product.id,
             detail.quantity,
             toppingsPerUnit.length ? toppingsPerUnit : undefined,
             promotionSelections,
             queryRunner,
           );
+          restoredStocks.push(...restored);
           this.logger.log(
             `[cancelOrder] Stock restituido: producto "${detail.product.name}" x${detail.quantity}`,
           );
@@ -885,6 +968,10 @@ export class OrderService {
 
       // Commit único: restitución de stock + cancelación de orden + liberación de mesa
       await queryRunner.commitTransaction();
+      const restoredLatest = latestStockChanges(restoredStocks);
+      if (restoredLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredLatest });
+      }
 
       // Emitir tableUpdated después del commit para que el frontend actualice el color.
       if (previousTableId) {
@@ -926,6 +1013,7 @@ export class OrderService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+    const restoredDetailStocks: StockWsChange[] = [];
 
     try {
       // 1) Cargar la orden con todas las relaciones necesarias
@@ -1018,13 +1106,14 @@ export class OrderService {
 
       // 9) Restituir stock (modo lenient: loguear y continuar si falla)
       try {
-        await this.stockService.restoreStock(
+        const restored = await this.stockService.restoreStock(
           detail.product.id,
           quantityToCancel,
           toppingsPerUnit.length ? toppingsPerUnit : undefined,
           promotionSelections,
           queryRunner,
         );
+        restoredDetailStocks.push(...restored);
         this.logger.log(
           `[cancelOrderDetail] Stock restituido: "${detail.product.name}" x${quantityToCancel}`,
         );
@@ -1077,6 +1166,10 @@ export class OrderService {
       await queryRunner.manager.save(order);
 
       await queryRunner.commitTransaction();
+      const restoredDetailLatest = latestStockChanges(restoredDetailStocks);
+      if (restoredDetailLatest.length) {
+        this.eventEmitter.emit('stock.restored', { stocks: restoredDetailLatest });
+      }
 
       // 12) Reimprimir comanda de cocina con el estado actualizado (fuera de la transacción)
       try {

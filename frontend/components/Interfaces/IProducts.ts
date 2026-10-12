@@ -177,13 +177,20 @@ export interface SelectedProductsI {
   allowsToppings?: boolean;
   availableToppingGroups?: IProductToppingsGroupResponse[];
   internalId?: string;
-  slotSelections?: {
-    slotId: string;
-    selectedProductId: string;
-    selectedProductName?: string;
-    toppingsPerUnit?: string[];
-    toppingNames?: string[];
-  }[]; // Selecciones de slots para promociones (incluye toppings del producto seleccionado)
+  slotSelections?: SlotSelection[];
+}
+
+/** Una opción elegida dentro de un slot de promoción, con el extra ya calculado en pantalla. */
+export interface SlotSelection {
+  slotId: string;
+  selectedProductId: string;
+  selectedProductName?: string;
+  toppingsPerUnit?: string[];
+  toppingNames?: string[];
+  /** Costo extra de la opción del slot (ej. torta premium). */
+  extraCost?: number;
+  /** Suma de agregados con cargo elegidos para esa opción. */
+  toppingsExtraCost?: number;
 }
 
 export interface IConfirmedProducts {

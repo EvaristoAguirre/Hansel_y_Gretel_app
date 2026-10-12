@@ -30,7 +30,7 @@ export class PromotionSlotOption {
   @Column({ name: 'slotId' })
   slotId: string;
 
-  @ManyToOne(() => Product, { eager: true })
+  @ManyToOne(() => Product, { eager: false })
   @JoinColumn({ name: 'productId' })
   product: Product;
 

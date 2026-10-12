@@ -54,7 +54,7 @@ const ModalStock: React.FC<ModalStockProps> = ({
   token,
 }) => {
   const [formValues, setFormValues] = useState(initialState);
-  const { fetchAndSetProducts } = useProducts();
+  const { fetchAndSetProducts } = useProducts({ skipInitialFetch: true });
   const { updateIngredient } = useIngredientsContext();
   const { conventionalUnits } = useUnitContext();
   const { userRoleFromToken } = useAuth();

@@ -41,7 +41,7 @@ export class PromotionSlotAssignmentRepository {
     try {
       return await this.promotionSlotAssignmentRepository.findOne({
         where: { id },
-        relations: ['promotion', 'slot', 'slot.options'],
+        relations: ['promotion', 'slot', 'slot.options', 'slot.options.product'],
       });
     } catch (error) {
       this.logger.error('findById', error);
@@ -115,7 +115,7 @@ export class PromotionSlotAssignmentRepository {
       await manager.update(PromotionSlotAssignment, id, updateDto);
       const updated = await manager.findOne(PromotionSlotAssignment, {
         where: { id },
-        relations: ['promotion', 'slot', 'slot.options'],
+        relations: ['promotion', 'slot', 'slot.options', 'slot.options.product'],
       });
       if (!updated) {
         throw new Error('Assignment not found after update');

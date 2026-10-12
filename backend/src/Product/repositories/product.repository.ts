@@ -65,22 +65,7 @@ export class ProductRepository {
       skip: (page - 1) * limit,
       take: limit,
       order: { name: 'ASC' },
-      relations: [
-        'categories',
-        'productIngredients',
-        'productIngredients.ingredient',
-        'productIngredients.unitOfMeasure',
-        'promotionDetails',
-        'promotionDetails.product',
-        'stock',
-        'stock.unitOfMeasure',
-        'availableToppingGroups',
-        'availableToppingGroups.unitOfMeasure',
-        'availableToppingGroups.toppingGroup',
-        'availableToppingGroups.toppingGroup.toppings',
-        'promotionSlotAssignments',
-        'promotionSlotAssignments.slot',
-      ],
+      relations: ['categories', 'stock', 'stock.unitOfMeasure'],
     });
   }
 
@@ -147,6 +132,7 @@ export class ProductRepository {
         'promotionDetails',
         'availableToppingGroups',
         'availableToppingGroups.unitOfMeasure',
+        'availableToppingGroups.toppingGroup',
         'availableToppingGroups.toppingGroup.toppings',
         'availableToppingGroups.toppingGroup.toppings.unitOfMeasure',
         'promotionSlotAssignments',

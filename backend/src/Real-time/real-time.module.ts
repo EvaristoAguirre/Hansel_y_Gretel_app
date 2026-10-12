@@ -5,14 +5,12 @@ import { RealTimeGateway } from './real-time.gateway';
 import { CategoryWSListener } from './listeners/category-events.listener';
 import { OrderWSListener } from './listeners/order-events.listener';
 import { TableWSListener } from './listeners/table-events.listener';
-import { OrderDetailsWSListener } from './listeners/orderDetails-events.listener';
 import { StockWSListener } from './listeners/stock-events.listener';
-import { IngredientWSListener } from './listeners/ingredient-events.listener';
 import { DailyCashWSListener } from './listeners/daily-cash.listener';
-import { ToppingsGroupWSListener } from './listeners/toppingsGroup-events.listener';
+import { UserModule } from 'src/User/user.module';
 
 @Module({
-  imports: [],
+  imports: [UserModule],
   providers: [
     BroadcastService,
     RealTimeGateway,
@@ -20,11 +18,8 @@ import { ToppingsGroupWSListener } from './listeners/toppingsGroup-events.listen
     CategoryWSListener,
     OrderWSListener,
     TableWSListener,
-    OrderDetailsWSListener,
     StockWSListener,
-    IngredientWSListener,
     DailyCashWSListener,
-    ToppingsGroupWSListener,
   ],
   exports: [
     BroadcastService,
@@ -32,14 +27,8 @@ import { ToppingsGroupWSListener } from './listeners/toppingsGroup-events.listen
     CategoryWSListener,
     OrderWSListener,
     TableWSListener,
-    OrderDetailsWSListener,
     StockWSListener,
-    IngredientWSListener,
     DailyCashWSListener,
-    ToppingsGroupWSListener,
   ],
 })
-export class RealTimeModule {
-  // configure(consumer: MiddlewareConsumer) {
-  //   consumer.apply(WsAuthMiddleware).forRoutes('*');
-}
+export class RealTimeModule {}

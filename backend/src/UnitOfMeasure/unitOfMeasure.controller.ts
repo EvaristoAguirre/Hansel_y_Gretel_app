@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,14 +30,17 @@ import {
   EspecialUnitMeasureResponseDto,
   UnitOfMeasureSummaryResponseDto,
 } from 'src/DTOs/unitOfMeasureSummaryResponse.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
 
 @ApiTags('Unidad de Medida')
 @ApiBearerAuth('JWT-auth')
 @Controller('unitofmeasure')
+@UseGuards(RolesGuard)
 export class UnitOfMeasureController {
   constructor(private readonly unitOfMeasureService: UnitOfMeasureService) {}
 
   @Get('conversion')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Obtener unidades de conversión',
     description: 'Devuelve las unidades que pueden usarse para conversiones',

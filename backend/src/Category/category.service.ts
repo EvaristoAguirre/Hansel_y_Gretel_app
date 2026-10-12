@@ -78,10 +78,10 @@ export class CategoryService {
         throw new NotFoundException(`Category with ID ${id} not found`);
       }
 
-      const categoryDeleted = await this.repo.update(id, { isActive: false });
+      await this.repo.update(id, { isActive: false });
 
       this.eventEmitter.emit('category.deleted', {
-        category: categoryDeleted,
+        category: id,
       });
 
       return 'Category successfully deleted';

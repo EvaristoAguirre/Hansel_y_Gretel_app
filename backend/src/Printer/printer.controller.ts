@@ -1,5 +1,5 @@
 // printer/printer.controller.ts
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -10,14 +10,19 @@ import {
 } from '@nestjs/swagger';
 import { PrinterService } from './printer.service';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
+import { Roles } from 'src/Decorators/roles.decorator';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @ApiTags('Impresora')
 @ApiBearerAuth('JWT-auth')
 @Controller('printer')
+@UseGuards(RolesGuard)
 export class PrinterController {
   constructor(private readonly printerService: PrinterService) {}
 
   @Post('printTicket')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Imprimir ticket de venta',
     description:
@@ -53,6 +58,7 @@ export class PrinterController {
   }
 
   @Post('printTicket/:id')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Reimprimir ticket de venta',
     description: 'Reimprime el ticket de un pedido específico por su ID',
@@ -62,14 +68,14 @@ export class PrinterController {
     type: String,
     description: 'UUID del pedido a reimprimir',
   })
-  @ApiBody({ description: 'Datos adicionales del pedido (opcional)' })
   @ApiResponse({ status: 200, description: 'Ticket reenviado a imprimir' })
   @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
-  async rePrintSampleTicket(@Param('id') id: string, @Body() orderData) {
-    return await this.printerService.printTicketOrder(orderData);
+  async rePrintSampleTicket(@Param('id') id: string) {
+    return await this.printerService.reprintTicketById(id);
   }
 
   @Post('printComanda')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.MOZO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Imprimir comanda de cocina',
     description: 'Imprime la comanda con los productos para la cocina/barra',

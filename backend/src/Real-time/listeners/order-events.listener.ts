@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BroadcastService } from '../broadcast.service';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Order } from 'src/Order/entities/order.entity';
+import type { Order } from 'src/Order/entities/order.entity';
 
 @Injectable()
 export class OrderWSListener {
@@ -13,21 +13,18 @@ export class OrderWSListener {
     this.broadcastService.broadcast('orderCreated', event.order);
   }
 
-  /** Actualización de productos: solo los clientes que ven esa mesa la necesitan. */
+  /** Actualización de productos: broadcast global para que mozo y encargada
+   *  (con o sin mesa seleccionada) actualicen store/UI; el front filtra por mesa. */
   @OnEvent('order.updated')
   handleOrderUpdated(event: { order: Order }) {
-    const tableId = event.order?.table?.id;
-    if (tableId) {
-      this.broadcastService.broadcastToTable(tableId, 'orderUpdated', event.order);
-    } else {
-      this.broadcastService.broadcast('orderUpdated', event.order);
-    }
+    this.broadcastService.broadcast('orderUpdated', event.order);
   }
 
   /** Cancelación/eliminación: todos necesitan saber que la mesa quedó libre. */
   @OnEvent('order.deleted')
-  handleOrderDeleted(event: { order: Order }) {
-    this.broadcastService.broadcast('orderDeleted', event.order);
+  handleOrderDeleted(event: { order?: Order; orderId?: string }) {
+    const payload = event.order ?? { id: event.orderId };
+    this.broadcastService.broadcast('orderDeleted', payload);
   }
 
   /** Mesa pasa a pendiente de cobro: broadcast global para que todos actualicen
@@ -54,15 +51,10 @@ export class OrderWSListener {
     }
   }
 
-  /** Error de impresora: el estado cambió correctamente pero no se pudo imprimir. */
+  /** Error de impresora: broadcast global para aviso en UI aunque no estén en la sala. */
   @OnEvent('order.printerError')
   handleOrderPrinterError(event: { order: Order; message: string }) {
-    const tableId = event.order?.table?.id;
     const payload = { order: event.order, message: event.message };
-    if (tableId) {
-      this.broadcastService.broadcastToTable(tableId, 'printerError', payload);
-    } else {
-      this.broadcastService.broadcast('printerError', payload);
-    }
+    this.broadcastService.broadcast('printerError', payload);
   }
 }

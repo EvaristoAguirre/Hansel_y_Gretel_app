@@ -57,12 +57,12 @@ export class UnitOfMeasure {
   stock: Stock[];
 
   @OneToMany(() => UnitConversion, (conversion) => conversion.fromUnit, {
-    eager: true,
+    eager: false,
   })
   fromConversions: UnitConversion[];
 
   @OneToMany(() => UnitConversion, (conversion) => conversion.toUnit, {
-    eager: true,
+    eager: false,
   })
   toConversions: UnitConversion[];
 

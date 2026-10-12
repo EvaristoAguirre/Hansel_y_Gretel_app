@@ -21,8 +21,12 @@ const AnnualSummary = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
-      const response = await getAnnualSummary(token, year);
-      setData(response);
+      try {
+        const response = await getAnnualSummary(token, year);
+        if (response) setData(response);
+      } catch (error) {
+        console.error('Error al cargar el resumen anual', error);
+      }
     };
     fetchData();
   }, [token, year]);

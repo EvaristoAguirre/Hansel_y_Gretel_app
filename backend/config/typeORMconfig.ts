@@ -3,6 +3,11 @@ import * as path from 'path';
 import { DataSource } from 'typeorm';
 import 'dotenv/config';
 
+const poolMax = Number(process.env.DB_POOL_MAX) || 20;
+const slowQueryMs = Number(process.env.DB_SLOW_QUERY_MS);
+const maxQueryExecutionTime =
+  Number.isFinite(slowQueryMs) && slowQueryMs > 0 ? slowQueryMs : 500;
+
 export default registerAs('typeorm', () => ({
   type: 'postgres',
   host: process.env.DB_HOST,
@@ -14,9 +19,11 @@ export default registerAs('typeorm', () => ({
   synchronize: false, // pasar a false en producción
   dropSchema: false, // pasar a false en producción
   logging: ['error', 'warn'],
+  maxQueryExecutionTime,
   schema: 'public',
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
+  extra: { max: poolMax },
 
   // migrationsRun: true, // para activar las migraciones automáticamente al iniciar la aplicación
 }));
@@ -32,4 +39,6 @@ export const connectionSource = new DataSource({
   migrations: [path.join(__dirname, '..', 'migration', '*{.ts,.js}')],
   schema: 'public',
   logging: ['error', 'warn'],
+  maxQueryExecutionTime,
+  extra: { max: poolMax },
 });

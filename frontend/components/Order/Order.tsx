@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { useOrderContext } from "../../app/context/order.context";
 import { orderToPending, orderToReprint } from "@/api/order";
@@ -24,15 +24,68 @@ import { normalizeNumber } from "../Utils/NormalizeNumber";
 import { formatNumber } from "../Utils/FormatNumber";
 import { UserRole } from "../Enums/user";
 import LoadingLottie from "../Loader/Loading";
+import { markPrinterAlertShown } from "@/lib/printerAlertGuard";
+import { sumOrderLines } from "./orderTotal";
 
 export interface OrderProps {
-  imprimirComanda: any;
   handleDeleteOrder: any;
   selectedTable: ITable;
   handleNextStep: () => void;
   handleCompleteStep: () => void;
   handleReset: () => void;
 }
+
+const OrderLine = memo(function OrderLine({ item }: { item: SelectedProductsI }) {
+  return (
+    <ListItem
+      style={{
+        backgroundColor: "#eceae8",
+        margin: "0.3rem 0",
+        display: "flex",
+        alignItems: "center",
+        borderRadius: "5px",
+        height: "3rem",
+        justifyContent: "space-between",
+      }}
+    >
+      <Typography
+        sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
+        style={{
+          color: "black",
+          width: "2rem",
+          textAlign: "center",
+          borderRadius: "5px",
+        }}
+      >
+        {item.quantity}
+      </Typography>
+      <Tooltip title={item.productName} arrow>
+        <ListItemText
+          style={{
+            margin: "0 1rem 0 0.5rem",
+            fontSize: "1rem",
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 1,
+            overflow: "hidden",
+          }}
+          primary={item.productName}
+        />
+      </Tooltip>
+      <Typography
+        style={{
+          margin: "0 1rem 0 0.5rem",
+          fontSize: "1rem",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {`$ ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}`}
+      </Typography>
+    </ListItem>
+  );
+});
 
 const Order: React.FC<OrderProps> = ({
   handleNextStep,
@@ -49,23 +102,13 @@ const Order: React.FC<OrderProps> = ({
   } = useOrderContext();
   const { selectedTable, setSelectedTable, setOrderSelectedTable } = useRoomContext();
   const { addOrder } = useOrderStore();
-  const [total, setTotal] = useState(0);
   const [isPrinting, setIsPrinting] = useState(false);
   const { tables, updateTable } = useTableStore();
   const { getAccessToken, userRoleFromToken } = useAuth();
-
-  useEffect(() => {
-    const calcularTotal = () => {
-      if (confirmedProducts?.length > 0) {
-        setTotal(
-          confirmedProducts?.reduce((acc: number, item: SelectedProductsI) => {
-            return acc + (normalizeNumber(item.unitaryPrice ?? 0)) * item.quantity;
-          }, 0)
-        );
-      }
-    };
-    calcularTotal();
-  }, [confirmedProducts]);
+  const total = useMemo(
+    () => sumOrderLines(confirmedProducts),
+    [confirmedProducts],
+  );
 
   const expandOrderProducts = (products: SelectedProductsI[]): SelectedProductsI[] => {
     const expanded: SelectedProductsI[] = [];
@@ -102,9 +145,10 @@ const Order: React.FC<OrderProps> = ({
         }
 
         if (ordenPendingPay.printerWarning) {
+          markPrinterAlertShown(ordenPendingPay.id);
           await Swal.fire({
             title: "Impresora no disponible",
-            text: `${ordenPendingPay.printerWarning}. El ticket no fue impreso, pero la cuenta quedó registrada. Podés reimprimirlo cuando la impresora esté lista.`,
+            text: ordenPendingPay.printerWarning,
             icon: "warning",
             confirmButtonText: "Entendido",
           });
@@ -130,7 +174,7 @@ const Order: React.FC<OrderProps> = ({
       console.error("handlePayOrder:", error?.message);
       Swal.fire({
         title: "Impresora no disponible",
-        text: "No se pudo imprimir el ticket. La cuenta quedó registrada correctamente. Podés reimprimirlo cuando la impresora esté lista.",
+        text: "La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.",
         icon: "warning",
         confirmButtonText: "Entendido",
       });
@@ -139,39 +183,33 @@ const Order: React.FC<OrderProps> = ({
     }
   };
 
-  const handleReprintOrder = async (selectedTable: ITable) => {
+  const handleReprintOrder = async (_selectedTable: ITable) => {
     const token = getAccessToken();
     if (!token) return;
 
     setIsPrinting(true);
     try {
       if (selectedOrderByTable) {
-        const ordenPendingPay = await orderToReprint(selectedOrderByTable.id, token);
+        const reprintResult = await orderToReprint(
+          selectedOrderByTable.id,
+          token
+        );
 
-        setSelectedOrderByTable(ordenPendingPay);
-        setOrderSelectedTable(ordenPendingPay.id);
-        addOrder(ordenPendingPay);
-
-        if (ordenPendingPay.products) {
-          setConfirmedProducts(expandOrderProducts(ordenPendingPay.products));
+        if (reprintResult?.printerWarning) {
+          markPrinterAlertShown(selectedOrderByTable.id);
+          await Swal.fire({
+            title: "Impresora no disponible",
+            text: reprintResult.printerWarning,
+            icon: "warning",
+            confirmButtonText: "Entendido",
+          });
         }
       }
-
-      const tableEdited = await editTable(
-        { ...selectedTable, state: TableState.PENDING_PAYMENT },
-        token
-      );
-      if (tableEdited) {
-        setSelectedTable({ ...selectedTable, state: tableEdited.state });
-        updateTable(tableEdited);
-      }
-      handleCompleteStep();
-      handleNextStep();
     } catch (error: any) {
       console.error("handleReprintOrder:", error?.message);
       Swal.fire({
         title: "Impresora no disponible",
-        text: "No se pudo conectar con la impresora. Intentá de nuevo en unos segundos.",
+        text: "No se pudo reimprimir el ticket. La cuenta sigue registrada. Intentá de nuevo cuando la impresora esté lista.",
         icon: "warning",
         confirmButtonText: "Cerrar",
       });
@@ -244,55 +282,11 @@ const Order: React.FC<OrderProps> = ({
                 marginTop: "0.5rem",
               }}
             >
-              {confirmedProducts?.map((item: any, index: number) => (
-                <ListItem
-                  key={index}
-                  style={{
-                    backgroundColor: "#eceae8",
-                    margin: "0.3rem 0",
-                    display: "flex",
-                    alignItems: "center",
-                    borderRadius: "5px",
-                    height: "3rem",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography
-                    sx={{ border: "1px solid #856D5E", color: "#856D5E" }}
-                    style={{
-                      color: "black",
-                      width: "2rem",
-                      textAlign: "center",
-                      borderRadius: "5px",
-                    }}
-                  >
-                    {item.quantity}
-                  </Typography>
-                  <Tooltip title={item.productName} arrow>
-                    <ListItemText
-                      style={{
-                        margin: "0 1rem 0 0.5rem",
-                        fontSize: "1rem",
-                        display: "-webkit-box",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 1,
-                        overflow: "hidden",
-                      }}
-                      primary={item.productName}
-                    />
-                  </Tooltip>
-                  <Typography
-                    style={{
-                      margin: "0 1rem 0 0.5rem",
-                      fontSize: "1rem",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {`$ ${formatNumber(normalizeNumber(item.unitaryPrice) * item.quantity)}`}
-                  </Typography>
-                </ListItem>
+              {confirmedProducts?.map((item, index) => (
+                <OrderLine
+                  key={item.internalId ?? `${item.productId}-${index}`}
+                  item={item}
+                />
               ))}
             </List>
             <Typography

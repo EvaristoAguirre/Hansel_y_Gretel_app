@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,10 +22,12 @@ import { UserRole } from 'src/Enums/roles.enum';
 import { ToppingsGroup } from './toppings-group.entity';
 import { CreateToppingsGroupDto } from 'src/DTOs/create-toppings-group.dto';
 import { UpdateToppingsGroupDto } from 'src/DTOs/update-toppings-group.dto';
+import { RolesGuard } from 'src/Guards/roles.guard';
 
 @ApiTags('Grupos de Toppings')
 @ApiBearerAuth('JWT-auth')
 @Controller('toppings-group')
+@UseGuards(RolesGuard)
 export class ToppingsGroupsController {
   constructor(private readonly toppingsGroupsService: ToppingsGroupsService) {}
 

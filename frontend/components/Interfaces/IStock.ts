@@ -15,7 +15,7 @@ export interface IStockOfProduct {
   quantityInStock: string;
   minimumStock: string;
   unitOfMeasure: IUnitOfMeasureForm;
-
+  stockUpdatedAt?: number;
 }
 
 

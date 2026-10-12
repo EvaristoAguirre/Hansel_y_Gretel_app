@@ -28,7 +28,7 @@ import {
 } from "@/components/Hooks/useProductStore";
 import { normalizeNumber } from "@/components/Utils/NormalizeNumber";
 import { getPromotionSlots, deletePromotionSlot } from "@/api/promotionSlot";
-import { createPromoWithSlots, editProduct } from "@/api/products";
+import { createPromoWithSlots, editProduct, getProductById } from "@/api/products";
 import DataGridComponent from "@/components/Utils/DataGridComponent";
 import Swal from "sweetalert2";
 
@@ -251,6 +251,76 @@ const Products: React.FC<ProductsProps> = ({
       | null
   ) => setForm({ ...form, [field]: value as ProductForm[keyof ProductForm] });
 
+  const mapProductToForm = (row: any): ProductForm => {
+    const slotsFromAssignments =
+      row.promotionSlotAssignments?.flatMap(
+        (assignment: {
+          slot: { id: string; name: string };
+          quantity: number;
+          isOptional: boolean;
+        }) => {
+          const slotEntries: { slotId: string; name: string }[] = [];
+          for (let i = 0; i < assignment.quantity; i++) {
+            slotEntries.push({
+              slotId: assignment.slot.id,
+              name: assignment.slot.name,
+            });
+          }
+          return slotEntries;
+        }
+      ) || [];
+
+    return {
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      type: row.type,
+      price: normalizeNumber(row.price),
+      cost: normalizeNumber(row.cost),
+      baseCost: normalizeNumber(row.baseCost),
+      categories: row.categories,
+      ingredients:
+        row.productIngredients?.map(mapIngredientResponseToForm) || [],
+      products: row.promotionDetails || [],
+      isActive: true,
+      allowsToppings: row.allowsToppings,
+      toppingsSettings: row.availableToppingGroups?.settings || [],
+      unitOfMeasure: row.unitOfMeasure,
+      unitOfMeasureId: row.unitOfMeasureId,
+      unitOfMeasureConversions: row.unitOfMeasureConversions,
+      availableToppingGroups:
+        row.availableToppingGroups?.map(
+          (group: IProductToppingsGroupResponse) => ({
+            toppingsGroupId: group.id,
+            quantityOfTopping: parseFloat(group.quantityOfTopping),
+            settings: group.settings,
+            unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
+          })
+        ) || [],
+      slots:
+        Array.isArray(slotsFromAssignments) && slotsFromAssignments.length > 0
+          ? slotsFromAssignments
+          : [],
+    };
+  };
+
+  const handleOpenEdit = async (productId: string) => {
+    if (!token) return;
+    const result = await getProductById(productId, token);
+    if (!result.ok || !result.data) {
+      Swal.fire(
+        "Error",
+        result.error || "No se pudo cargar el producto para editar.",
+        "error"
+      );
+      return;
+    }
+    setForm(mapProductToForm(result.data));
+    setModalType(FormTypeProduct.EDIT);
+    setModalOpen(true);
+  };
+
   const columns = [
     { field: "code", headerName: "Código", width: 100 },
     { field: "name", headerName: "Nombre", width: 200 },
@@ -279,69 +349,7 @@ const Products: React.FC<ProductsProps> = ({
             className="bg-[--color-primary]"
             size="small"
             onClick={() => {
-              console.log(params.row);
-
-              // Mapear promotionSlotAssignments a slots para el formulario
-              // Expandir cada asignación según su quantity para que aparezca en el array
-              const slotsFromAssignments =
-                params.row.promotionSlotAssignments?.flatMap(
-                  (assignment: {
-                    slot: { id: string; name: string };
-                    quantity: number;
-                    isOptional: boolean;
-                  }) => {
-                    // Crear un array con el slot repetido según su quantity
-                    const slotEntries: { slotId: string; name: string }[] = [];
-                    for (let i = 0; i < assignment.quantity; i++) {
-                      slotEntries.push({
-                        slotId: assignment.slot.id,
-                        name: assignment.slot.name,
-                      });
-                    }
-                    return slotEntries;
-                  }
-                ) || [];
-
-              setForm({
-                id: params.row.id,
-                code: params.row.code,
-                name: params.row.name,
-                description: params.row.description,
-                type: params.row.type,
-                price: normalizeNumber(params.row.price),
-                cost: normalizeNumber(params.row.cost),
-                baseCost: normalizeNumber(params.row.baseCost),
-                categories: params.row.categories,
-                ingredients:
-                  params.row.productIngredients?.map(
-                    mapIngredientResponseToForm
-                  ) || [],
-                products: params.row.promotionDetails || [],
-                isActive: true,
-                allowsToppings: params.row.allowsToppings,
-                toppingsSettings:
-                  params.row.availableToppingGroups?.settings || [],
-                unitOfMeasure: params.row.unitOfMeasure,
-                unitOfMeasureId: params.row.unitOfMeasureId,
-                unitOfMeasureConversions: params.row.unitOfMeasureConversions,
-                availableToppingGroups:
-                  params.row.availableToppingGroups?.map(
-                    (group: IProductToppingsGroupResponse) => ({
-                      toppingsGroupId: group.id,
-                      quantityOfTopping: parseFloat(group.quantityOfTopping),
-                      settings: group.settings,
-                      unitOfMeasureId: group.unitOfMeasure.id ?? undefined,
-                    })
-                  ) || [],
-                // Asegurar que slots siempre sea un array válido
-                slots:
-                  Array.isArray(slotsFromAssignments) &&
-                  slotsFromAssignments.length > 0
-                    ? slotsFromAssignments
-                    : [],
-              });
-              setModalType(FormTypeProduct.EDIT);
-              setModalOpen(true);
+              handleOpenEdit(params.row.id);
             }}
             disabled={units.length === 0}
           >

@@ -8,9 +8,14 @@ import Swal from 'sweetalert2';
 import { useProductStore } from './useProductStore';
 import { URI_PRODUCT } from '../URI/URI';
 import { editProduct } from '../../api/products';
-import { ProductForm } from '../Interfaces/IProducts';
+import { ProductForm, ProductResponse } from '../Interfaces/IProducts';
 import { useAuth } from '@/app/context/authContext';
 import { FormTypeProduct, TypeProduct } from '../Enums/view-products';
+import { shareInflight, type InflightSlot } from '@/lib/inflightByToken';
+
+const ADMIN_PAGE_SIZE = 50;
+const ADMIN_MAX_PAGES = 10;
+let productsListInflight: InflightSlot<void> | null = null;
 
 interface UseProductsOptions {
   /** Si es true, no se realiza la carga inicial de los 500 productos al montar.
@@ -62,13 +67,33 @@ export const useProducts = (options?: UseProductsOptions) => {
   }, []);
 
   const fetchAndSetProducts = async (token: string) => {
+    if (!token) return;
     setLoading(true);
 
     try {
-      if (!token) return;
-      const fetchedProducts = await fetchProducts('1', '500', token);
-
-      setProducts(fetchedProducts);
+      await shareInflight(
+        () => productsListInflight,
+        (slot) => {
+          productsListInflight = slot;
+        },
+        token,
+        async () => {
+          const accumulated: ProductResponse[] = [];
+          for (let page = 1; page <= ADMIN_MAX_PAGES; page += 1) {
+            const batch = await fetchProducts(
+              String(page),
+              String(ADMIN_PAGE_SIZE),
+              token
+            );
+            if (!Array.isArray(batch)) {
+              throw new Error('Respuesta de productos inválida');
+            }
+            accumulated.push(...(batch as ProductResponse[]));
+            setProducts([...accumulated]);
+            if (batch.length < ADMIN_PAGE_SIZE) break;
+          }
+        }
+      );
     } catch (error) {
       console.error('Error al cargar los productos:', error);
     } finally {

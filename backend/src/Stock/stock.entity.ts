@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity({ name: 'stock' })
@@ -17,6 +18,9 @@ export class Stock {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   quantityInStock: number;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @Column({
     type: 'decimal',

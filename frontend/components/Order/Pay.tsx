@@ -171,6 +171,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   );
   const [fullCustomTip, setFullCustomTip] = useState(0);
   const [fullDiscountPercent, setFullDiscountPercent] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullSplits, setFullSplits] = useState<FullSplit[]>([
     { id: "split-0", method: "", amount: "" },
   ]);
@@ -327,6 +328,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
 
   const handlePayOrder = async () => {
     if (!token || !selectedOrderByTable || !selectedTable) return;
+    if (isSubmitting) return;
 
     if (fullPaymentMode) {
       if (!fullSplitsValid) {
@@ -347,6 +349,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         );
         return;
       }
+      setIsSubmitting(true);
       try {
         const payments = fullSplits.map((s) => ({
           amount: parseInt(s.amount.replace(/\D/g, ""), 10),
@@ -379,6 +382,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           e.message || "No se pudo cerrar.",
           "error"
         );
+      } finally {
+        setIsSubmitting(false);
       }
       return;
     }
@@ -390,6 +395,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       Swal.fire("Faltan productos por pagar", "", "warning");
       return;
     }
+    setIsSubmitting(true);
     try {
       const payments = confirmedPayments.map((cp) => ({
         amount: cp.amount,
@@ -422,6 +428,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
         e.message || "No se pudo cerrar.",
         "error"
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -976,6 +984,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
             <Button
               fullWidth
               variant="contained"
+              disabled={isSubmitting}
               sx={{
                 mt: 3,
                 backgroundColor: "#7e9d8a",
@@ -984,7 +993,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
               onClick={handlePayOrder}
             >
               <Payment sx={{ mr: 1 }} />
-              Confirmar Orden Pagada
+              {isSubmitting ? "Procesando..." : "Confirmar Orden Pagada"}
             </Button>
           )}
         </Box>
