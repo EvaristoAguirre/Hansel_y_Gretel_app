@@ -13,7 +13,14 @@ describe('OrderService.closeOrder factura', () => {
     getTableById: jest.fn().mockResolvedValue({ id: 't1' }),
   };
   const eventEmitter = { emit: jest.fn() };
-  const invoiceService = { emitForOrder: jest.fn() };
+  const printerService = {
+    printTicketOrder: jest.fn(),
+    printFiscalTicket: jest.fn().mockResolvedValue('ok'),
+  };
+  const invoiceService = {
+    emitForOrder: jest.fn(),
+    fiscalTicket: jest.fn().mockResolvedValue({ afipEnv: 'simulado' }),
+  };
   const orderRepo = { findOne: jest.fn() };
 
   const service = new OrderService(
@@ -24,7 +31,7 @@ describe('OrderService.closeOrder factura', () => {
     dailyCashService as any,
     {} as any,
     {} as any,
-    {} as any,
+    printerService as any,
     {} as any,
     invoiceService as any,
   );
@@ -80,6 +87,32 @@ describe('OrderService.closeOrder factura', () => {
       'a@b.com',
     );
     expect(result.invoice?.status).toBe('authorized');
+    expect(printerService.printFiscalTicket).toHaveBeenCalled();
+    expect(printerService.printTicketOrder).not.toHaveBeenCalled();
+  });
+
+  it('si la factura queda pendiente no imprime ticket de cuenta ni fiscal', async () => {
+    orderRepo.findOne.mockResolvedValue({
+      id: ORDER_ID,
+      orderDetails: [{ isActive: true, subtotal: 1000 }],
+    });
+    orderRepository.closeOrder.mockResolvedValue({
+      id: ORDER_ID,
+      table: { id: 't1' },
+    });
+    invoiceService.emitForOrder.mockResolvedValue({
+      id: 'inv-2',
+      status: 'pending',
+      cbteNro: 2,
+      cae: null,
+      afipEnv: 'simulado',
+      message: 'La orden está cobrada. La factura quedó pendiente.',
+    });
+
+    await service.closeOrder(ORDER_ID, dto as any);
+
+    expect(printerService.printFiscalTicket).not.toHaveBeenCalled();
+    expect(printerService.printTicketOrder).not.toHaveBeenCalled();
   });
 
   it('con el switch apagado no pide factura', async () => {

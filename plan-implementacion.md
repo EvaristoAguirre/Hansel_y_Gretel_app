@@ -267,3 +267,7 @@ El 12/10 se aplicó con `pnpm run migrate:run` y el script terminó bien. No se 
 ### Paso 5 — hecho
 
 `InvoiceService.emitForOrder` corre después del commit de `closeOrder`. Importe fiscal cero rechaza el cobro antes de cerrar la orden. Los tests cubren autorizado, rechazado, timeout con CAE ya otorgado, timeout sin comprobante, numeración concurrente y una sola fila por orden. Un fallo al registrar la factura no devuelve 500: la respuesta dice que la orden quedó cobrada.
+
+### Paso 6 — hecho
+
+`printFiscalTicket` se llama solo si la factura quedó autorizada. Pendiente o switch apagado no imprimen en el cobro. El ticket de cuenta del paso 3 no se tocó. Fuera de `NODE_ENV=production` se loguea y no se abre la térmica. El QR va como URL (RG 4892); la imagen en el papel térmico queda para probar con la impresora del local.

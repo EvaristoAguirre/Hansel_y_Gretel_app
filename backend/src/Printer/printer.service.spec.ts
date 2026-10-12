@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as net from 'net';
 import { PrinterService } from './printer.service';
 import { EnvNames } from '../common/names.env';
 
@@ -37,6 +38,37 @@ describe('PrinterService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     configService.get.mockImplementation((key: string) => configValues[key]);
+  });
+
+  it('en desarrollo el ticket fiscal no abre la térmica', async () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    const connect = jest.spyOn(net, 'createConnection');
+    const service = createService();
+    const text = await service.printFiscalTicket({
+      afipEnv: 'simulado',
+      razonSocial: 'Local',
+      domicilio: 'Calle 1',
+      cuit: '20123456789',
+      condicionIva: 'Responsable Inscripto',
+      iibb: '1',
+      inicioActividades: '2020-01-01',
+      ptoVta: 1,
+      cbteNro: 1,
+      cbteFch: '2026-10-12',
+      lines: [{ name: 'Café', quantity: 1, subtotal: 1210, alicQuota: 21 }],
+      discountAmount: 0,
+      impTotal: 1210,
+      iva: [{ quota: 21, importe: 210 }],
+      cae: '00000000000001',
+      caeFchVto: '2026-10-22',
+      qrUrl: 'https://www.afip.gob.ar/fe/qr/?p=abc',
+    });
+    expect(text).toMatch(/SIN VALIDEZ FISCAL/);
+    expect(text).toMatch(/FACTURA B/);
+    expect(connect).not.toHaveBeenCalled();
+    connect.mockRestore();
+    process.env.NODE_ENV = previous;
   });
 
   it('lee host, puerto, timeout y reintentos desde env', () => {
@@ -153,9 +185,9 @@ describe('PrinterService', () => {
   it('reprintTicketById lanza 404 si la orden no existe', async () => {
     orderRepo.findOne.mockResolvedValue(null);
     const service = createService();
-    await expect(service.reprintTicketById(validOrderId)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.reprintTicketById(validOrderId),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('reprintTicketById carga la orden y no usa el body', async () => {

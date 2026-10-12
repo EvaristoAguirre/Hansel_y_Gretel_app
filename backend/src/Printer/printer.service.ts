@@ -18,6 +18,7 @@ import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
 import { EnvNames } from 'src/common/names.env';
+import { FiscalTicketPayload } from 'src/Invoice/fiscal-ticket';
 
 @Injectable()
 export class PrinterService {
@@ -451,6 +452,59 @@ export class PrinterService {
     }
   }
 
+  async printFiscalTicket(payload: FiscalTicketPayload): Promise<string> {
+    const lines = payload.lines.map((line) => {
+      const name = this.normalizeTextToTicket(line.name).substring(0, 24);
+      return `${line.quantity} ${name} $${line.subtotal.toLocaleString('es-AR')}\n`;
+    });
+    const ivaLines = payload.iva.map(
+      (item) =>
+        `IVA contenido ${item.quota}%: $${item.importe.toLocaleString('es-AR')}\n`,
+    );
+    const simulated =
+      payload.afipEnv === 'simulado'
+        ? 'COMPROBANTE SIMULADO - SIN VALIDEZ FISCAL\n'
+        : '';
+    const text = [
+      'FACTURA B\n',
+      simulated,
+      `${payload.razonSocial}\n`,
+      `${payload.domicilio}\n`,
+      `CUIT: ${payload.cuit}\n`,
+      `${payload.condicionIva}\n`,
+      `IIBB: ${payload.iibb}\n`,
+      `Inicio de actividades: ${payload.inicioActividades}\n`,
+      `Punto de venta ${String(payload.ptoVta).padStart(4, '0')}  Nro ${String(payload.cbteNro).padStart(8, '0')}\n`,
+      `Fecha: ${payload.cbteFch}\n`,
+      ...lines,
+      payload.discountAmount > 0
+        ? `Descuento: $${payload.discountAmount.toLocaleString('es-AR')}\n`
+        : '',
+      `TOTAL: $${payload.impTotal.toLocaleString('es-AR')}\n`,
+      'Consumidor final\n',
+      ...ivaLines,
+      `CAE: ${payload.cae}\n`,
+      `Vencimiento CAE: ${payload.caeFchVto}\n`,
+      `${payload.qrUrl}\n`,
+    ].join('');
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`Ticket fiscal (sin enviar a la térmica):\n${text}`);
+      return text;
+    }
+
+    const commands = [
+      '\x1B\x40',
+      this.normalizeText(text),
+      '\x1D\x56\x41\x50',
+    ].join('');
+    const printed = await this.sendRawCommandWithRetry(commands);
+    if (!printed) {
+      throw new Error('No se pudo imprimir el ticket fiscal');
+    }
+    return text;
+  }
+
   async reprintTicketById(
     id: string,
   ): Promise<{ message: string; printerWarning?: string }> {
@@ -474,7 +528,9 @@ export class PrinterService {
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      this.logger.log(`[DEV] Simulando reimpresión de ticket para pedido ${id}`);
+      this.logger.log(
+        `[DEV] Simulando reimpresión de ticket para pedido ${id}`,
+      );
       return { message: 'reimpresion-ticket-simulada-dev' };
     }
 

@@ -14,6 +14,7 @@ import {
   InvoiceCalculationError,
 } from './invoice-calculator';
 import { Invoice, InvoiceAfipEnv } from './invoice.entity';
+import { fiscalTicketFromInvoice } from './fiscal-ticket';
 import { InvoiceCloseView, InvoiceSnapshot } from './invoice.types';
 
 const ORDER_RELATIONS = [
@@ -36,6 +37,14 @@ export class InvoiceService {
     private readonly config: AfipConfig,
     private readonly arca: ArcaClient,
   ) {}
+
+  async fiscalTicket(id: string) {
+    const invoice = await this.invoices.findOne({ where: { id } });
+    if (!invoice || invoice.status !== 'authorized' || !invoice.cae) {
+      throw new ConflictException('Solo se imprime una factura autorizada.');
+    }
+    return fiscalTicketFromInvoice(invoice);
+  }
 
   async emitForOrder(
     orderId: string,

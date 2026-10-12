@@ -857,6 +857,21 @@ export class OrderService {
       const email = closeOrderDto.customerEmail?.trim() || undefined;
       try {
         closedOrder.invoice = await this.invoiceService.emitForOrder(id, email);
+        if (
+          closedOrder.invoice.status === 'authorized' &&
+          closedOrder.invoice.id
+        ) {
+          try {
+            const payload = await this.invoiceService.fiscalTicket(
+              closedOrder.invoice.id,
+            );
+            await this.printerService.printFiscalTicket(payload);
+          } catch (printError) {
+            this.logger.error('printFiscalTicket', printError);
+            closedOrder.printerWarning =
+              'La factura quedó autorizada, pero el ticket fiscal no se imprimió. Reimprimila desde el listado.';
+          }
+        }
       } catch (error) {
         this.logger.error('emitForOrder', error);
         closedOrder.invoice = {
