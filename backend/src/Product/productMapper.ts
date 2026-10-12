@@ -24,6 +24,8 @@ export class ProductMapper {
     });
 
     dto.price = formatter.format(Number(product.price));
+    dto.alicQuota =
+      product.alicQuota == null ? null : Number(product.alicQuota);
     dto.cost = formatter.format(Number(product.cost));
     dto.baseCost = formatter.format(Number(product.baseCost ?? 0));
 

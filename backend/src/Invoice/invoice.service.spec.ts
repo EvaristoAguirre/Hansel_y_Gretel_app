@@ -1,4 +1,5 @@
 import { ConflictException } from '@nestjs/common';
+import { renderInvoicePdf } from './invoice-pdf';
 import { ArcaClient, ArcaSolicitarResult } from './arca-client';
 import { AfipSettings } from './afip-config';
 import { Invoice } from './invoice.entity';
@@ -54,13 +55,16 @@ function settings(): AfipSettings {
   };
 }
 
-function harness(behavior: {
-  solicitar: (cbteNro: number) => Promise<ArcaSolicitarResult>;
-  consultar?: (
-    cbteNro: number,
-  ) => Promise<{ cae: string; caeFchVto: string } | null>;
-  ultimo?: () => Promise<number>;
-}) {
+function harness(
+  behavior: {
+    solicitar: (cbteNro: number) => Promise<ArcaSolicitarResult>;
+    consultar?: (
+      cbteNro: number,
+    ) => Promise<{ cae: string; caeFchVto: string } | null>;
+    ultimo?: () => Promise<number>;
+  },
+  source: { orderA?: ReturnType<typeof order> } = {},
+) {
   const rows: Invoice[] = [];
   let seq = 0;
   const solicitar = jest.fn(async (input: { cbteNro: number }) =>
@@ -114,7 +118,7 @@ function harness(behavior: {
 
   const orders = {
     findOne: jest.fn(async ({ where }: { where: { id: string } }) => {
-      if (where.id === ORDER_A) return order(ORDER_A);
+      if (where.id === ORDER_A) return source.orderA ?? order(ORDER_A);
       if (where.id === ORDER_B) return order(ORDER_B);
       return null;
     }),
@@ -266,6 +270,46 @@ describe('InvoiceService.emitForOrder', () => {
     await expect(service.retry(first.id)).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+
+  it('dos alícuotas quedan en el detalle y en el PDF', async () => {
+    const mixed = order(ORDER_A, 1210);
+    mixed.orderDetails.push({
+      isActive: true,
+      subtotal: 1105,
+      quantity: 1,
+      unitaryPrice: 1105,
+      commentOfProduct: null,
+      product: {
+        id: 'prod-2',
+        name: 'Agua',
+        allowsToppings: false,
+        alicQuota: 10.5,
+      },
+      orderDetailToppings: [],
+    });
+    const { service, rows } = harness(
+      {
+        solicitar: async (cbteNro) => ({
+          outcome: 'authorized',
+          cae: String(cbteNro).padStart(14, '0'),
+          caeFchVto: '20261022',
+          reproceso: false,
+        }),
+      },
+      { orderA: mixed },
+    );
+
+    await service.emitForOrder(ORDER_A);
+    const quotas = (rows[0].iva ?? []).map((item) => item.quota).sort();
+    expect(quotas).toEqual([10.5, 21]);
+
+    const text = (await renderInvoicePdf(rows[0])).toString('latin1');
+    const decoded = [...text.matchAll(/<([0-9A-Fa-f]+)>/g)]
+      .map((match) => Buffer.from(match[1], 'hex').toString('latin1'))
+      .join('');
+    expect(decoded).toContain('21%');
+    expect(decoded).toContain('10.5%');
   });
 
   it('un importe cero no crea fila', async () => {

@@ -297,3 +297,9 @@ Verificación: 3 tests del PDF (leyenda, CAE, payload del QR con tipo 6 y doc 99
 `PATCH /invoices/:id/email` y `POST /invoices/:id/send-email`. `InvoiceMailService` usa `SMTP_*` y adjunta el PDF. No pasa por `NotificationService`. En la grilla se edita el email y Enviar queda habilitado solo si está autorizada y hay email. Un fallo de envío responde 502 y no toca el CAE ni el email.
 
 Verificación: el test de SMTP caído no guarda la fila; el de envío exitoso adjunta un PDF y marca `emailSentAt`. No hay servidor SMTP en este entorno, así que no se confirmó una bandeja real. Las variables quedaron comentadas en `.env.example`.
+
+### Paso 12 — hecho en código
+
+El alta y la edición de producto aceptan `alicQuota` (0, 2,5, 5, 10,5, 21 o 27). Vacío queda null y la emisión usa el default. El modal tiene el selector. Una orden con 21 % y 10,5 % guarda dos ítems en `iva` y el PDF nombra las dos alícuotas.
+
+Verificación: test de `InvoiceService`. No se abrió el modal de productos en el navegador.

@@ -11,6 +11,7 @@ import {
   ValidateNested,
   IsEnum,
   IsBoolean,
+  IsIn,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductIngredientDto } from '../../DTOs/productIngredient.dto';
@@ -92,6 +93,21 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   price?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Alícuota de IVA. Vacío usa el default del entorno (AFIP_ALICUOTA_DEFAULT_PCT).',
+    example: 21,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? null
+      : Number(value),
+  )
+  @IsNumber()
+  @IsIn([0, 2.5, 5, 10.5, 21, 27])
+  alicQuota?: number | null;
 
   @ApiPropertyOptional({
     description: 'Costo del producto (para cálculo de ganancia)',
