@@ -244,3 +244,12 @@ Configuración de arranque en `backend/src/Invoice/`. La validación corre antes
 - `AFIP_SIMULATE` ausente se toma como `true`, para que un despliegue que todavía no define la variable no llame a ARCA. Quedó anotado en la tabla de `propuesta-tecnica.md`.
 - Verificación: 10 tests de `resolveAfipConfig`. `nest start` con `AFIP_SIMULATE=true` y sin certificado loguea `Facturación electrónica: modo simulado` y escucha en el puerto. `AFIP_SIMULATE=true` con `AFIP_ENV=produccion` termina con código 1 y el mensaje de combinación inválida, antes de abrir el puerto.
 - Nota: invocar `src/main.ts` con ts-node no es el arranque del proyecto. Las entidades se cargan desde `dist`, y en ese camino el seeder falla con `EntityMetadataNotFoundError` de `UnitOfMeasure`. Con `nest start` el proceso levanta. No se modificó el seeder.
+
+### Paso 2 — hecho
+
+Contrato `ArcaClient` y `ArcaSimulator`. La numeración vive en memoria del proceso, por punto de venta y tipo. Todavía no hay tabla.
+
+- Los tres resultados (`authorized`, `rejected`, `timeout`) están cubiertos. Un rechazo o un timeout no dejan comprobante consultable. Repetir un número ya autorizado devuelve el mismo CAE con `reproceso: true`.
+- El test de dummy espía `net.Socket.prototype.connect` y no se llama.
+- `InvoiceModule` inyecta el simulador cuando la flag está encendida. Con `AFIP_SIMULATE=false` el proceso sigue arrancando: la primera llamada al cliente responde que el SOAP entra en el paso 8.
+- Los ids de alícuota del simulador y el id 0 de condición IVA receptor son de desarrollo. Se contrastan con ARCA en el paso 8. No hay que copiarlos al entorno como si fueran definitivos.
