@@ -4,7 +4,7 @@ Fecha: **11/10/2026**.
 Alcance: qué datos conserva hoy el archivado, cuáles conviene agregar, cómo implementar la corrida al arrancar (punto 5.3 de `update-archivado-ordenes.md`), la transacción por orden (punto 5.4), el horario por variable de entorno y el registro de errores.  
 Este documento es una propuesta. No modifica código.
 
-El criterio de antigüedad pasa de 7 a **15 días**. El cron pasa de domingo 21:10 a **miércoles 16:30**, hora de Argentina, con la expresión y la zona leídas del entorno para poder cambiarlas sin otro deploy.
+El criterio de antigüedad pasa de 7 a **15 días**. El cron pasa de domingo 21:10 a **sábado 14:00**, hora de Argentina, con la expresión y la zona leídas del entorno para poder cambiarlas sin otro deploy. Horario corregido el 12/10/2026: sábado 14:00 (`0 14 * * 6`), en lugar del miércoles 16:30 que decía el borrador.
 
 ---
 
@@ -12,7 +12,7 @@ El criterio de antigüedad pasa de 7 a **15 días**. El cron pasa de domingo 21:
 
 Hoy el job copia la cabecera de la orden, sus importes, el id de mesa, el id de caja, los ítems (precio, cantidad, subtotal, comanda, toppings y promociones en JSON) y los pagos. No guarda el nombre del producto, el comentario del ítem, el nombre de la mesa ni el día de caja. Esos cuatro son los que hacen útil el archivo cuando el producto se renombra, la mesa cambia de nombre o se lee el JSON sin abrir el resto de la base.
 
-La corrida al arrancar y el miércoles 16:30 deben llamar al **mismo** método. La selección deja de ser “la semana calendario anterior” y pasa a ser: estado `closed` o `cancelled`, y `date` anterior al inicio del día de hoy en `America/Argentina/Buenos_Aires`, menos 15 días.
+La corrida al arrancar y el sábado 14:00 deben llamar al **mismo** método. La selección deja de ser “la semana calendario anterior” y pasa a ser: estado `closed` o `cancelled`, y `date` anterior al inicio del día de hoy en `America/Argentina/Buenos_Aires`, menos 15 días.
 
 Cada orden se inserta y se borra en **su propia** transacción. Si una falla, se deshace solo esa y se sigue con la siguiente. Un fallo de esquema (columna que no existe) aborta la corrida entera antes de borrar nada.
 
@@ -113,12 +113,12 @@ Variables, todas con default. Un valor inválido usa el default y deja una líne
 
 | Variable | Default | Uso |
 | --- | --- | --- |
-| `ARCHIVE_CRON` | `30 16 * * 3` | Minuto 30, hora 16, miércoles |
+| `ARCHIVE_CRON` | `0 14 * * 6` | Minuto 0, hora 14, sábado |
 | `ARCHIVE_TIMEZONE` | `America/Argentina/Buenos_Aires` | Zona del cron y del corte de 15 días |
 | `ARCHIVE_RETENTION_DAYS` | `15` | Antigüedad mínima de `date`. Entero ≥ 1. Si viene 0, negativo o texto, se usa 15. |
 | `ARCHIVE_STARTUP_DELAY_MS` | `60000` | Espera tras el arranque antes de la corrida de recuperación |
 
-`@Cron('10 21 * * 0')` evalúa la expresión al cargar la clase, antes de que `ConfigService` esté listo, y un cron inválido tira abajo el proceso. Registrar el job en `OnModuleInit` con `SchedulerRegistry` y `CronJob` (el paquete que ya usa `@nestjs/schedule`): leer `ConfigService`, validar la expresión, y si no es válida programar el default y loguear el valor rechazado. Pasar `timeZone` al `CronJob`. Así el miércoles 16:30 es hora de Argentina aunque el sistema operativo esté en UTC.
+`@Cron('10 21 * * 0')` evalúa la expresión al cargar la clase, antes de que `ConfigService` esté listo, y un cron inválido tira abajo el proceso. Registrar el job en `OnModuleInit` con `SchedulerRegistry` y `CronJob` (el paquete que ya usa `@nestjs/schedule`): leer `ConfigService`, validar la expresión, y si no es válida programar el default y loguear el valor rechazado. Pasar `timeZone` al `CronJob`. Así el sábado 14:00 es hora de Argentina aunque el sistema operativo esté en UTC.
 
 Criterio, calculado **una vez** al empezar la corrida:
 
@@ -137,7 +137,7 @@ No reinterpretar `date` ni `closedAt` al copiar. En el JSON del 02/03, `createdA
 
 `getPreviousWeekRange` deja de usarse. Una orden cerrada hace un mes, que la ventana semanal ya no mira, entra en la primera corrida.
 
-El miércoles a las 16:30 el local puede estar abierto. Con 15 días de antigüedad el job solo bloquea filas `closed` o `cancelled` viejas, no la orden que se está cobrando. La garantía de “la notebook estaba apagada” la da la corrida al arrancar, no el día de la semana.
+El sábado a las 14:00 el local puede estar abierto. Con 15 días de antigüedad el job solo bloquea filas `closed` o `cancelled` viejas, no la orden que se está cobrando. La garantía de “la notebook estaba apagada” la da la corrida al arrancar, no el día de la semana.
 
 ---
 
@@ -149,9 +149,9 @@ El miércoles a las 16:30 el local puede estar abierto. Con 15 días de antigüe
 
 1. Esperar `ARCHIVE_STARTUP_DELAY_MS` (default 60 segundos) con un timer. No bloquear el bootstrap: la API ya está escuchando.
 2. Llamar a `run('startup')`.
-3. El cron del miércoles llama a `run('cron')`.
+3. El cron del sábado llama a `run('cron')`.
 
-Un arranque de lunes, o de cualquier mañana en que el miércoles no hubo proceso, archiva el backlog de más de 15 días. Encender la notebook varias veces el mismo día es seguro: la segunda corrida no encuentra candidatas, o encuentra solo las que la anterior dejó por error.
+Un arranque de lunes, o de cualquier mañana en que el sábado no hubo proceso, archiva el backlog de más de 15 días. Encender la notebook varias veces el mismo día es seguro: la segunda corrida no encuentra candidatas, o encuentra solo las que la anterior dejó por error.
 
 ### 4.2 Una sola corrida a la vez
 
@@ -320,7 +320,7 @@ El mail de `NotificationService` sigue con usuario y clave fijos, y no avisa. Es
 
    Una orden `closed` o `cancelled` con `date` de más de 15 días que siga en `orders` tiene que estar en `archive_order_errors`.
 6. Abrir el log del día y buscar `[ARCHIVE]` con `status=success` o `status=partial`.
-7. El miércoles siguiente, con la notebook prendida a las 16:30, tiene que aparecer otra línea. Si ese miércoles está apagada, la línea aparece al próximo arranque.
+7. El sábado siguiente, con la notebook prendida a las 14:00, tiene que aparecer otra línea. Si ese sábado está apagada, la línea aparece al próximo arranque.
 
 ---
 
@@ -329,7 +329,7 @@ El mail de `NotificationService` sigue con usuario y clave fijos, y no avisa. Es
 - `archived_orders` tiene las órdenes `closed` y `cancelled` con `date` anterior a hoy menos 15 días, incluidas las que quedaron en `orders` desde marzo.
 - Cada una de esas filas permite leer nombre de producto, comentario del ítem, mesa (si seguía vinculada) y fecha de caja, sin adivinar por UUID.
 - `open` y `pending_payment` siguen en `orders`.
-- Apagar la notebook un miércoles no deja el lote varado: al próximo arranque se archiva.
+- Apagar la notebook un sábado no deja el lote varado: al próximo arranque se archiva.
 - Una orden con `product` null, o con copia ya existente y conteos distintos, queda en `archive_order_errors` y en `backend/logs/`, y el resto se archiva.
 - Una columna faltante deja la corrida en `failed` y no borra ninguna orden.
 - El UUID de la orden y de los ítems no cambia.

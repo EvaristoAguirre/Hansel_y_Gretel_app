@@ -23,6 +23,8 @@ import { StockModule } from 'src/Stock/stock.module';
 import { TableModule } from 'src/Table/table.module';
 import { PrinterModule } from 'src/Printer/printer.module';
 import { OrderPayment } from './entities/order_payment.entity';
+import { ArchiveRun } from './entities/archive-run.entity';
+import { ArchiveOrderError } from './entities/archive-order-error.entity';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { OrderPromotionSelection } from './entities/order-promotion-selection.entity';
@@ -42,6 +44,8 @@ import { OrderReaderService } from './services/order-reader.service';
       DailyCash,
       OrderDetailToppings,
       OrderPayment,
+      ArchiveRun,
+      ArchiveOrderError,
       PromotionSlot,
       PromotionSlotOption,
       OrderPromotionSelection,

@@ -160,7 +160,7 @@ Si no aparece ninguna de esas líneas, el proceso no estaba arriba. Si aparece e
 
 ## 5. Propuesta de cambio
 
-Objetivo: que toda orden `closed` o `cancelled` con más de siete días termine en `archived_orders`, aunque la notebook haya estado apagada uno o varios domingos, y que un fallo quede visible y no borre el lote entero.
+Objetivo: que toda orden `closed` o `cancelled` con más de 15 días termine en `archived_orders`, aunque la notebook haya estado apagada uno o varios sábados, y que un fallo quede visible y no borre el lote entero. La propuesta del 11/10 (`propuesta de archivado.md`) subió el umbral de 7 a 15 días.
 
 ### 5.1 Poner al día el esquema antes de tocar el job
 
@@ -173,23 +173,19 @@ Verificar con las consultas de la sección 4. Recién después, un backfill.
 Reemplazar “la semana calendario anterior” por:
 
 - `state IN ('closed', 'cancelled')`
-- `date < inicio del día de hoy menos 7 días` (hora de `America/Argentina/Buenos_Aires`)
+- `date < inicio del día de hoy menos 15 días` (hora de `America/Argentina/Buenos_Aires`)
 
 Sacar `pending_payment` del criterio. Esas órdenes siguen en caja.
 
-Así, el primer domingo —o el primer arranque— después del cambio arrastra todo el backlog, no solo siete días.
+Así, el primer sábado —o el primer arranque— después del cambio arrastra todo el backlog, no solo la semana anterior.
 
-Fijar la zona en el cron:
-
-```ts
-@Cron('10 21 * * 0', { timeZone: 'America/Argentina/Buenos_Aires' })
-```
+Fijar la zona en el cron. Horario decidido el 12/10/2026: **sábado 14:00**, hora de Argentina (`0 14 * * 6`). El detalle de implementación está en `propuesta de archivado.md`: el job se registra con `SchedulerRegistry` para leer la expresión del entorno, no con el decorador fijo del domingo 21:10.
 
 ### 5.3 Corrida de recuperación al arrancar
 
-Además del domingo a las 21:10, ejecutar el mismo método al iniciar el backend, con un retardo corto para no competir con el arranque de la API.
+Además del sábado a las 14:00, ejecutar el mismo método al iniciar el backend, con un retardo corto para no competir con el arranque de la API.
 
-Si la notebook se enciende el lunes, el backlog de la semana que el domingo no corrió se archiva igual. El domingo de las 21:10 queda como segunda oportunidad, no como única.
+Si la notebook se enciende el lunes, el backlog que el sábado no corrió se archiva igual. El sábado a las 14:00 queda como segunda oportunidad, no como única.
 
 Guardar la última corrida exitosa (tabla chica o una fila de control) con fecha, cantidad archivada y error si lo hubo.
 
@@ -213,9 +209,9 @@ Variables nuevas, todas opcionales, con default que **no apague** el job:
 
 | Variable | Default | Uso |
 | --- | --- | --- |
-| `ARCHIVE_CRON` | `10 21 * * 0` | Expresión cron |
+| `ARCHIVE_CRON` | `0 14 * * 6` | Expresión cron. Sábado 14:00. La propuesta del 11/10 dejó la antigüedad en 15 días |
 | `ARCHIVE_TIMEZONE` | `America/Argentina/Buenos_Aires` | Zona del cron y de la ventana |
-| `ARCHIVE_RETENTION_DAYS` | `7` | Antigüedad mínima de `date` |
+| `ARCHIVE_RETENTION_DAYS` | `15` | Antigüedad mínima de `date` |
 | `SMTP_USER`, `SMTP_PASS`, `ALERT_EMAIL` | vacías | Aviso solo si las tres tienen valor |
 
 No agregar `ARCHIVE_ENABLED=false` como forma de “arreglar” el local. El problema actual es la ausencia de corridas efectivas, no un flag activo.
@@ -247,14 +243,14 @@ El JSON de respaldo se mantiene, escrito por lote o por día, fuera de la transa
 3. Cambiar selección, zona horaria, transacción por orden y corrida al arrancar.
 4. Correr el backfill una vez y comparar conteos.
 5. Dejar el aviso por mail solo cuando las variables SMTP estén cargadas.
-6. El domingo siguiente, verificar una línea `Archivadas N` y que las órdenes de más de siete días ya no estén en `orders`.
+6. El sábado siguiente, a las 14:00, verificar una línea `[ARCHIVE]` y que las órdenes que superan la antigüedad ya no estén en `orders`.
 
 ---
 
 ## 7. Criterio de listo
 
-- `archived_orders` contiene las órdenes `closed` y `cancelled` con más de siete días, incluidas las anteriores a marzo de 2026 que sigan en `orders`.
-- Un domingo con la notebook apagada no deja ese lote varado: al próximo arranque se archiva.
+- `archived_orders` contiene las órdenes `closed` y `cancelled` con más de 15 días, incluidas las anteriores a marzo de 2026 que sigan en `orders`.
+- Un sábado con la notebook apagada no deja ese lote varado: al próximo arranque se archiva.
 - Una orden con datos incompletos queda registrada y no impide archivar el resto.
 - El fallo de esquema (columna ausente) aparece en el log con el mensaje de Postgres.
 - `pending_payment` y `open` siguen en `orders`.
