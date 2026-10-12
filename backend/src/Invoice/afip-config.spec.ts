@@ -38,6 +38,7 @@ describe('resolveAfipConfig', () => {
     expect(settings.simulate).toBe(true);
     expect(settings.urls).toBeNull();
     expect(settings.certPath).toBeNull();
+    expect(settings.ptoVta).toBe(1);
     expect(settings.simulateResult).toBe('authorized');
     expect(settings.alicuotaDefaultPct).toBe(21);
     expect(fileExists).not.toHaveBeenCalled();

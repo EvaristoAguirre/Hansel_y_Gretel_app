@@ -32,6 +32,16 @@ export interface InvoiceAmounts {
   iva: InvoiceIvaBreakdown[];
 }
 
+export function previewFiscalTotal(
+  consumption: number,
+  discountPercent: number,
+): number {
+  const gross = Math.round(consumption);
+  const pct = Math.min(100, Math.max(0, Math.round(discountPercent || 0)));
+  const discount = pct === 0 ? 0 : Math.round((gross * pct) / 100);
+  return gross - discount;
+}
+
 export function calculateInvoice(input: {
   lines: InvoiceLineInput[];
   discountAmount: number;

@@ -91,7 +91,7 @@ export function resolveAfipConfig(
       mode: 'simulado',
       urls: null,
       cuit: null,
-      ptoVta: null,
+      ptoVta: readOptionalPositiveInt(env.AFIP_PTO_VTA, 'AFIP_PTO_VTA') ?? 1,
       certPath: null,
       keyPath: null,
       ...shared,
