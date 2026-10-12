@@ -259,3 +259,7 @@ Contrato `ArcaClient` y `ArcaSimulator`. La numeración vive en memoria del proc
 Migración `1783400000000-CreateInvoicesAndProductAlicuota`: tablas `invoices` y `afip_tokens`, columna `products.alicQuota`, índices únicos parciales. Entidades `Invoice` y `AfipToken`. Typecheck y tests del módulo en verde.
 
 No se corrió `migration:run` ni `migration:revert`. Antes de reiniciar el backend hay que aplicarla a mano. Si el proceso nuevo arranca sin esa columna, el SELECT de productos falla.
+
+### Paso 4 — hecho
+
+`calculateInvoice` agrupa por alícuota, reparte el descuento en centavos y deja neto + IVA = total. La propina no entra en la función. Importe cero lanza «No se puede facturar un importe cero». Una línea sin alícuota usa el default. El mapa de ids está en `afip-alicuotas.ts` y lo comparte el simulador; sigue sin confirmar contra homologación.

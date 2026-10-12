@@ -1,3 +1,4 @@
+import { AFIP_ALICUOTAS } from './afip-alicuotas';
 import { AfipSimulateResult } from './afip-config';
 import {
   ArcaClient,
@@ -8,19 +9,6 @@ import {
 
 const REJECTED_MSG =
   'Rechazado por simulación (AFIP_SIMULATE_RESULT=rejected).';
-
-/**
- * Catálogo de desarrollo. El paso 8 lo contrasta con FEParamGetTiposIva
- * antes de apagar la simulación. No es la tabla fiscal definitiva.
- */
-const SIMULATED_TIPOS_IVA = [
-  { id: 3, desc: '0%', quota: 0 },
-  { id: 9, desc: '2.5%', quota: 2.5 },
-  { id: 8, desc: '5%', quota: 5 },
-  { id: 4, desc: '10.5%', quota: 10.5 },
-  { id: 5, desc: '21%', quota: 21 },
-  { id: 6, desc: '27%', quota: 27 },
-];
 
 export class ArcaSimulator extends ArcaClient {
   private readonly authorized = new Map<string, ArcaComprobante>();
@@ -98,7 +86,11 @@ export class ArcaSimulator extends ArcaClient {
   }
 
   async getTiposIva() {
-    return SIMULATED_TIPOS_IVA.map((item) => ({ ...item }));
+    return AFIP_ALICUOTAS.map((item) => ({
+      id: item.id,
+      desc: `${item.quota}%`,
+      quota: item.quota,
+    }));
   }
 
   async getCondicionIvaReceptor() {
