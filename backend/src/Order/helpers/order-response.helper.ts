@@ -39,9 +39,10 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
 
   // Precio base = unitaryPrice - (toppingsExtraCost / quantity)
   // unitaryPrice almacenado es el promedio: basePrice + totalExtra/qty
-  const basePrice =
-    Number(detail.unitaryPrice) -
-    Number(detail.toppingsExtraCost) / detail.quantity;
+  const quantity = Number(detail.quantity);
+  const extraPerUnit =
+    quantity > 0 ? Number(detail.toppingsExtraCost) / quantity : 0;
+  const basePrice = Number(detail.unitaryPrice) - extraPerUnit;
 
   // Agrupar toppings por unidad
   const toppingsByUnit = new Map<number, typeof allToppings>();

@@ -282,3 +282,36 @@ describe('DailyCashService.getAnnualDistribution', () => {
     expect(movementQb.getRawMany).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('DailyCashService.getAnnualSummary', () => {
+  it('no propaga un totalSales NaN al ingreso del año', async () => {
+    const salesQb = {
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ total: 'NaN' }),
+    };
+    const movementQb = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        { type: 'ingreso', total: '1000' },
+        { type: 'egreso', total: '400' },
+      ]),
+    };
+    const service = new DailyCashService(
+      { createQueryBuilder: () => salesQb } as any,
+      { createQueryBuilder: () => movementQb } as any,
+      {} as any,
+      { emit: jest.fn() } as any,
+      { log: jest.fn() } as any,
+      {} as any,
+      {} as any,
+    );
+
+    const result = await service.getAnnualSummary(2026);
+
+    expect(result).toEqual({ income: 1000, expenses: 400, profit: 600 });
+  });
+});

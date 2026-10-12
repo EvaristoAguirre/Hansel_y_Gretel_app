@@ -412,7 +412,8 @@ export class OrderRepository {
         }
       }
 
-      const unitaryToppingsCost = totalExtraCost / quantity;
+      const unitaryToppingsCost =
+        quantity > 0 ? totalExtraCost / quantity : 0;
       const basePrice = overrideBasePrice !== undefined
         ? Number(overrideBasePrice)
         : Number(product.price);

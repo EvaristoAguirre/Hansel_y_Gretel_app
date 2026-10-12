@@ -508,12 +508,12 @@ export class DailyCashService {
   }
 
   private sumTotal(records: { amount: number }[]): number {
-    return records.reduce((acc, r) => acc + Number(r.amount), 0);
+    return records.reduce((acc, r) => acc + this.finiteAmount(r.amount), 0);
   }
 
   /** Ventas brutas: suma del total de cada orden antes de descuentos. */
   private sumGrossTotalOrders(records: { total: number }[]): number {
-    return records.reduce((acc, r) => acc + Number(r.total), 0);
+    return records.reduce((acc, r) => acc + this.finiteAmount(r.total), 0);
   }
 
   /** Suma de todos los descuentos aplicados en las órdenes. */
@@ -521,7 +521,7 @@ export class DailyCashService {
     records: { discountAmount?: number }[],
   ): number {
     return records.reduce(
-      (acc, r) => acc + Number(r.discountAmount ?? 0),
+      (acc, r) => acc + this.finiteAmount(r.discountAmount),
       0,
     );
   }
@@ -666,7 +666,17 @@ export class DailyCashService {
   }
 
   private sumTotalTipsOrders(orders: Order[]): number {
-    return orders.reduce((tip, order) => tip + Number(order.tip), 0);
+    return orders.reduce((tip, order) => tip + this.finiteAmount(order.tip), 0);
+  }
+
+  private finiteAmount(value: unknown): number {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
+  /** SUM que no deja que un numeric NaN anule el total del período. */
+  private finiteSum(columnSql: string): string {
+    return `COALESCE(SUM(${columnSql}) FILTER (WHERE ${columnSql} IS DISTINCT FROM 'NaN'::numeric), 0)`;
   }
 
   // ------------------- metricas -----------------------
@@ -792,10 +802,10 @@ export class DailyCashService {
   private async sumSalesBetween(start: Date, end: Date): Promise<number> {
     const row = await this.dailyCashRepo
       .createQueryBuilder('cash')
-      .select('COALESCE(SUM(cash."totalSales"), 0)', 'total')
+      .select(this.finiteSum('cash."totalSales"'), 'total')
       .where('cash.date BETWEEN :start AND :end', { start, end })
       .getRawOne<{ total: string }>();
-    return Number(row?.total ?? 0);
+    return this.finiteAmount(row?.total);
   }
 
   private async sumMovementsBetween(
@@ -805,7 +815,7 @@ export class DailyCashService {
     const rows = await this.cashMovementRepo
       .createQueryBuilder('movement')
       .select('movement.type', 'type')
-      .addSelect('COALESCE(SUM(movement.amount), 0)', 'total')
+      .addSelect(this.finiteSum('movement.amount'), 'total')
       .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
       .groupBy('movement.type')
       .getRawMany<{ type: string; total: string }>();
@@ -820,14 +830,14 @@ export class DailyCashService {
     const rows = await this.dailyCashRepo
       .createQueryBuilder('cash')
       .select(`EXTRACT(${part} FROM cash.date)`, 'bucket')
-      .addSelect('COALESCE(SUM(cash."totalSales"), 0)', 'total')
+      .addSelect(this.finiteSum('cash."totalSales"'), 'total')
       .where('cash.date BETWEEN :start AND :end', { start, end })
       .groupBy('bucket')
       .getRawMany<{ bucket: string; total: string }>();
 
     const totals = new Map<number, number>();
     for (const row of rows) {
-      totals.set(Number(row.bucket), Number(row.total));
+      totals.set(Number(row.bucket), this.finiteAmount(row.total));
     }
     return totals;
   }
@@ -841,7 +851,7 @@ export class DailyCashService {
       .createQueryBuilder('movement')
       .select(`EXTRACT(${part} FROM movement."createdAt")`, 'bucket')
       .addSelect('movement.type', 'type')
-      .addSelect('COALESCE(SUM(movement.amount), 0)', 'total')
+      .addSelect(this.finiteSum('movement.amount'), 'total')
       .where('movement."createdAt" BETWEEN :start AND :end', { start, end })
       .groupBy('bucket')
       .addGroupBy('movement.type')
@@ -851,7 +861,7 @@ export class DailyCashService {
     const expenses = new Map<number, number>();
     for (const row of rows) {
       const bucket = Number(row.bucket);
-      const total = Number(row.total);
+      const total = this.finiteAmount(row.total);
       if (row.type === DailyCashMovementType.INCOME) {
         incomes.set(bucket, total);
       } else if (row.type === DailyCashMovementType.EXPENSE) {
@@ -867,7 +877,7 @@ export class DailyCashService {
     let incomes = 0;
     let expenses = 0;
     for (const row of rows) {
-      const total = Number(row.total);
+      const total = this.finiteAmount(row.total);
       if (row.type === DailyCashMovementType.INCOME) incomes = total;
       else if (row.type === DailyCashMovementType.EXPENSE) expenses = total;
     }
