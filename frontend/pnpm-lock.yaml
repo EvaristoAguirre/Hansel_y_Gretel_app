@@ -75,8 +75,8 @@ importers:
         specifier: ^11.14.5
         version: 11.26.25
       tabulator-tables:
-        specifier: ^6.3.0
-        version: 6.5.2
+        specifier: ^6.6.1
+        version: 6.6.1
       zustand:
         specifier: ^5.0.1
         version: 5.0.15(@types/react@18.3.31)(immer@11.1.18)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -1705,8 +1705,8 @@ packages:
   sweetalert2@11.26.25:
     resolution: {integrity: sha512-+hunCOJdJ6FLj04T9YSLvvZXRjsvIkTeTKP2e4VF8CaBias961BTnWiSFAy7F/CM5eq3QK2Rraoc5Gzftslvkg==}
 
-  tabulator-tables@6.5.2:
-    resolution: {integrity: sha512-cRL3xsaaf5RzND8KPbn4C9Ce5tzyiQUE01E/10zN50MjdRKl/Gl5nXkzLN6cvEyRfWHCPuqBF92y50CBw20WYA==}
+  tabulator-tables@6.6.1:
+    resolution: {integrity: sha512-8A77aN30vJS34w1P5h4HtgEajB7vX2v0AD1fXFIKxp6SxplpGGfKn0Y4ouY91+6gdGK8/quqXoCA2LkrhBVE3A==}
 
   tailwindcss@3.4.19:
     resolution: {integrity: sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==}
@@ -3300,7 +3300,7 @@ snapshots:
 
   sweetalert2@11.26.25: {}
 
-  tabulator-tables@6.5.2: {}
+  tabulator-tables@6.6.1: {}
 
   tailwindcss@3.4.19:
     dependencies:
