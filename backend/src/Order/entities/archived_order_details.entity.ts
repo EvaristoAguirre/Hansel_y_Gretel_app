@@ -36,10 +36,27 @@ export class ArchivedOrderDetails {
   @Column({ type: 'json', nullable: true })
   promotionSelections: {
     slotId: string;
+    slotName?: string | null;
     selectedProductId: string;
     selectedProductName: string;
     extraCostApplied: number;
   }[];
+
+  @Column({ type: 'varchar', nullable: true })
+  productName: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  productCode: number | null;
+
+  @Column({ type: 'json', nullable: true })
+  categoryNames: string[] | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  commentOfProduct: string | null;
+
+  /** archive = foto al archivar; backfill = nombre rellenado después. */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  snapshotSource: 'archive' | 'backfill' | null;
 
   /** Indica si el ítem estaba activo al momento del archivado (false = cancelado dentro de la orden). */
   @Column({ nullable: true, default: true })

@@ -52,6 +52,22 @@ export class ArchivedOrder {
   @Column({ nullable: true })
   dailyCashId: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  tableName: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  roomName: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dailyCashDate: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  archivedAt: Date | null;
+
+  /** archive = foto al archivar; backfill = nombre rellenado después. */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  snapshotSource: 'archive' | 'backfill' | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
