@@ -55,7 +55,7 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.13",
     "pdfkit": "^0.17.1",
-    "pdfkit-table": "^0.1.99",
+    "pdfkit-table": "^0.2.11",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
