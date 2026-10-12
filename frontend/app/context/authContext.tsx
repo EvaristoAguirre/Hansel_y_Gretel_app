@@ -1,9 +1,10 @@
 "use client";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "jwt-decode";
 import Swal from "sweetalert2";
 import { UserRole } from "@/components/Enums/user";
+import { webSocketService } from "@/services/websocket.service";
 
 interface AuthContextProps {
   user: any;
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const getAccessToken = (): string | null => {
+  const getAccessToken = useCallback((): string | null => {
     if (typeof window === "undefined") return null;
     const userSession = localStorage.getItem("user");
     if (!userSession) return null;
@@ -63,15 +64,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Failed to retrieve token", error);
       return null;
     }
-  };
+  }, []);
 
   const removeAccessToken = useCallback((): void => {
     localStorage.removeItem("user");
     setUser(null);
     setAccessToken(null);
+    webSocketService.disconnect();
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     Swal.fire({
       icon: "warning",
       title: "Cerrar sesión",
@@ -85,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         window.location.href = "/views/login";
       }
     });
-  };
+  }, [removeAccessToken]);
 
   const userRoleFromToken = useCallback((): UserRole | null => {
     if (typeof window === "undefined") {
@@ -135,13 +137,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
 
-  const validateUserSession = () => {
+  const validateUserSession = useCallback(() => {
     return !!accessToken;
-  };
+  }, [accessToken]);
 
   // 🔹 Verifica si el token ha expirado y programa alertas
   useEffect(() => {
     if (!accessToken) return;
+
+    let warningTimer: ReturnType<typeof setTimeout> | undefined;
+    let expirationTimer: ReturnType<typeof setTimeout> | undefined;
 
     try {
       const decoded: { exp: number } = jwtDecode(accessToken);
@@ -162,7 +167,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 🔔 Notificar 1 minuto antes de la expiración
       const warningTime = expirationTime - 60000;
       if (warningTime > 0) {
-        setTimeout(() => {
+        warningTimer = setTimeout(() => {
           Swal.fire({
             icon: "warning",
             title: "Sesión por expirar",
@@ -173,7 +178,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // 🔴 Cerrar sesión automáticamente cuando el token expire
-      setTimeout(() => {
+      expirationTimer = setTimeout(() => {
         Swal.fire({
           icon: "error",
           title: "Sesión expirada",
@@ -189,23 +194,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       removeAccessToken();
       window.location.href = "/views/login";
     }
-  }, [accessToken]);
+
+    return () => {
+      if (warningTimer) clearTimeout(warningTimer);
+      if (expirationTimer) clearTimeout(expirationTimer);
+    };
+  }, [accessToken, removeAccessToken]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      accessToken,
+      isAuthLoaded,
+      getAccessToken,
+      setUser,
+      validateUserSession,
+      userRoleFromToken,
+      handleSignOut,
+      usernameFromToken,
+      removeAccessToken,
+    }),
+    [
+      user,
+      accessToken,
+      isAuthLoaded,
+      getAccessToken,
+      validateUserSession,
+      userRoleFromToken,
+      handleSignOut,
+      usernameFromToken,
+      removeAccessToken,
+    ],
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        isAuthLoaded,
-        getAccessToken,
-        setUser,
-        validateUserSession,
-        userRoleFromToken,
-        handleSignOut,
-        usernameFromToken,
-        removeAccessToken,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

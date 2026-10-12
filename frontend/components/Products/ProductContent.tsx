@@ -26,7 +26,7 @@ const ProductsContent: React.FC<ProductsContentProps> = ({
   onClearSelectedCategory,
   getAccessToken,
 }) => {
-  const { connectWebSocket } = useProducts();
+  const { connectWebSocket } = useProducts({ skipInitialFetch: true });
   const { userRoleFromToken } = useAuth();
 
   useEffect(() => {

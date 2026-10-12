@@ -40,7 +40,15 @@ const MonthlySummary = () => {
     const fetchData = async () => {
       if (!token) return;
 
-      const dailyData: DailyEntry[] = await getMonthlySummary(token, month, year);
+      let dailyData: DailyEntry[] = [];
+      try {
+        dailyData = await getMonthlySummary(token, month, year);
+      } catch (error) {
+        console.error('Error al cargar el resumen mensual', error);
+        return;
+      }
+
+      if (!Array.isArray(dailyData)) return;
 
       const totals = dailyData.reduce(
         (acc, curr) => {

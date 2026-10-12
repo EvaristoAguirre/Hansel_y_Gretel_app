@@ -73,7 +73,7 @@ export class Order {
 
   @ManyToOne(() => DailyCash, (dailyCash) => dailyCash.orders, {
     onDelete: 'SET NULL',
-    eager: true,
+    eager: false,
   })
   @JoinColumn({ name: 'dailyCashId' })
   dailyCash: DailyCash;

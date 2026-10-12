@@ -1,4 +1,5 @@
 import { URI_CATEGORY } from "@/components/URI/URI";
+import { readJson } from "@/lib/apiClient";
 
 
 export const fetchCategories = async (token: string) => {
@@ -9,7 +10,7 @@ export const fetchCategories = async (token: string) => {
         "Authorization": `Bearer ${token}`,
       },
     });
-    const data = await response.json();
+    const data = await readJson<unknown>(response);
     return Array.isArray(data) ? data : [];
 
   } catch (error) {
@@ -29,11 +30,7 @@ export const createCategory = async (name: string, token: string) => {
 
     });
 
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    const data = await response.json();
-    return data;
+    return await readJson(response);
   } catch (error) {
     console.error(error);
   }
@@ -51,11 +48,7 @@ export const editCategory = async (selectedCategoryId: string, name: string, tok
       body: JSON.stringify({ name: name }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    const data = await response.json();
-    return data;
+    return await readJson(response);
   } catch (error) {
     console.error(error);
   }
@@ -74,8 +67,6 @@ export const deleteCategory = async (id: string, token: string) => {
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
-
-
   } catch (error) {
     console.error(error);
   }
@@ -93,7 +84,7 @@ export const fetchCategoriesByName = async (token: string, name: string) => {
       return { ok: false, status: response.status };
     }
 
-    const data = await response.json();
+    const data = await readJson(response);
     return { ok: true, data };
   } catch (error) {
     console.error(error);

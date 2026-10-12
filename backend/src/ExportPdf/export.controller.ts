@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Res, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -8,14 +8,19 @@ import {
 } from '@nestjs/swagger';
 import { ExportService } from './export.service';
 import { Response } from 'express';
+import { RolesGuard } from 'src/Guards/roles.guard';
+import { Roles } from 'src/Decorators/roles.decorator';
+import { UserRole } from 'src/Enums/roles.enum';
 
 @ApiTags('Exportar')
 @ApiBearerAuth('JWT-auth')
 @Controller('export')
+@UseGuards(RolesGuard)
 export class ExportController {
   constructor(private exportService: ExportService) {}
 
   @Get('stock/pdf')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Exportar stock a PDF',
     description:
@@ -48,6 +53,7 @@ export class ExportController {
   }
 
   @Get('stock/printer')
+  @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   @ApiOperation({
     summary: 'Imprimir reporte de stock',
     description:

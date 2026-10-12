@@ -28,6 +28,11 @@ import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotAssignment } from 'src/Product/entities/promotion-slot-assignment.entity';
 import { PromotionSelectionDto } from 'src/Product/dtos/promotion-selection.dto';
+import {
+  latestStockChanges,
+  StockWsChange,
+  toStockWsChange,
+} from './stock-ws.payload';
 
 @Injectable()
 export class StockService {
@@ -173,7 +178,12 @@ export class StockService {
 
     const stockWithFormatt = StockResponseFormatter.format(createdStock);
 
-    this.eventEmitter.emit('stock.created', { stock: stockWithFormatt });
+    this.emitStockEvent('stock.created', [
+      toStockWsChange(createdStock, {
+        productId: product?.id,
+        ingredientId: ingredient?.id,
+      }),
+    ]);
 
     return stockWithFormatt;
   }
@@ -305,7 +315,12 @@ export class StockService {
 
     const stockWithFormatt = StockResponseFormatter.format(updatedStock);
 
-    this.eventEmitter.emit('stock.updated', { stock: stockWithFormatt });
+    this.emitStockEvent('stock.updated', [
+      toStockWsChange(updatedStock, {
+        productId: stock.product?.id ?? productId,
+        ingredientId: stock.ingredient?.id ?? ingredientId,
+      }),
+    ]);
     return stockWithFormatt;
   }
 
@@ -314,6 +329,58 @@ export class StockService {
     quantity: number,
     toppingsPerUnit?: string[][],
     promotionSelections?: PromotionSelectionDto[],
+    queryRunner?: QueryRunner,
+  ): Promise<StockWsChange[]> {
+    const isExternal = !!queryRunner;
+    const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    const touched: StockWsChange[] = [];
+
+    if (!isExternal) {
+      await qr.connect();
+      await qr.startTransaction();
+    }
+
+    try {
+      await this.deductStockCore(
+        productId,
+        quantity,
+        toppingsPerUnit,
+        promotionSelections,
+        qr,
+        touched,
+      );
+
+      if (!isExternal) {
+        await qr.commitTransaction();
+        this.emitStockEvent('stock.deducted', touched);
+      }
+
+      return touched;
+    } catch (error) {
+      if (!isExternal) {
+        await qr.rollbackTransaction();
+      }
+      this.logger.error('[deductStock]', error);
+      throw error;
+    } finally {
+      if (!isExternal) {
+        await qr.release();
+      }
+    }
+  }
+
+  /**
+   * Núcleo de deducción. Siempre corre sobre el QueryRunner recibido
+   * (propio o externo) para que updateOrder y las promociones recursivas
+   * participen en la misma transacción.
+   */
+  private async deductStockCore(
+    productId: string,
+    quantity: number,
+    toppingsPerUnit: string[][] | undefined,
+    promotionSelections: PromotionSelectionDto[] | undefined,
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     const product =
       await this.productService.getProductByIdToAnotherService(productId);
@@ -331,37 +398,40 @@ export class StockService {
     }
 
     if (product.type === 'simple') {
-      await this.deductSimpleStock(product, quantity, unidadId);
+      await this.deductSimpleStock(product, quantity, unidadId, qr, touched);
     } else if (product.type === 'product') {
-      await this.deductCompositeStock(product, quantity);
+      await this.deductCompositeStock(product, quantity, qr, touched);
     } else if (product.type === 'promotion') {
-      // Si hay selecciones, usar el nuevo método con slots
       if (promotionSelections && promotionSelections.length > 0) {
         await this.deductPromotionStockWithSelections(
           product,
           quantity,
           promotionSelections,
+          qr,
+          touched,
         );
       } else {
-        // Fallback: usar método legacy para promociones sin slots
-        // (mantener compatibilidad temporal durante migración)
-        await this.deductPromotionStockLegacy(product, quantity);
+        await this.deductPromotionStockLegacy(product, quantity, qr, touched);
       }
     }
 
     if (toppingsPerUnit?.length) {
-      await this.deductToppingsStock(toppingsPerUnit, quantity, product);
+      await this.deductToppingsStock(
+        toppingsPerUnit,
+        quantity,
+        product,
+        qr,
+        touched,
+      );
     }
-
-    this.eventEmitter.emit('stock.deducted', { stockDeducted: true });
-
-    return 'Stock deducted successfully.';
   }
 
   private async deductSimpleStock(
     product: Product,
     quantity: number,
     unidadId: string,
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     if (!product.stock) {
       throw new BadRequestException(
@@ -384,23 +454,32 @@ export class StockService {
     }
 
     product.stock.quantityInStock -= quantityToDeduct;
-    await this.stockRepository.saveStock(product.stock);
+    await qr.manager.save(product.stock);
+    touched.push(toStockWsChange(product.stock, { productId: product.id }));
   }
 
-  private async deductCompositeStock(product: Product, quantity: number) {
+  private async deductCompositeStock(
+    product: Product,
+    quantity: number,
+    qr: QueryRunner,
+    touched: StockWsChange[],
+  ) {
     for (const pi of product.productIngredients) {
       await this.deductIngredientStock(
         pi.ingredient.id,
         pi.quantityOfIngredient * quantity,
         pi.unitOfMeasure.id,
+        qr,
+        touched,
       );
     }
   }
 
-  // Renombrar método antiguo para claridad
   private async deductPromotionStockLegacy(
     promotion: Product,
     quantity: number,
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     const promotionProducts =
       await this.productService.getPromotionProductsToAnotherService(
@@ -408,9 +487,13 @@ export class StockService {
       );
 
     for (const promotionProduct of promotionProducts) {
-      await this.deductStock(
+      await this.deductStockCore(
         promotionProduct.product.id,
         promotionProduct.quantity * quantity,
+        undefined,
+        undefined,
+        qr,
+        touched,
       );
     }
   }
@@ -425,19 +508,17 @@ export class StockService {
     promotion: Product,
     quantity: number,
     selections: PromotionSelectionDto[],
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     this.logger.log(
       `[deductPromotionStockWithSelections] Deducción de stock para promoción: ${promotion.name}, Cantidad: ${quantity}`,
     );
 
-    // Cargar asignaciones de slots de la promoción
-    const assignments = await this.promotionSlotRepository.manager.find(
-      PromotionSlotAssignment,
-      {
-        where: { promotionId: promotion.id },
-        relations: ['slot', 'slot.options', 'slot.options.product'],
-      },
-    );
+    const assignments = await qr.manager.find(PromotionSlotAssignment, {
+      where: { promotionId: promotion.id },
+      relations: ['slot', 'slot.options', 'slot.options.product'],
+    });
 
     // Validar que existan asignaciones
     if (!assignments || assignments.length === 0) {
@@ -539,11 +620,13 @@ export class StockService {
           // Obtener toppings para este producto específico (si hay)
           const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
 
-          // Deducir stock del producto seleccionado
-          await this.deductStock(
+          await this.deductStockCore(
             selectedProductId,
-            quantity, // Cantidad de promociones
-            [toppingsForThisProduct], // Toppings para este producto específico
+            quantity,
+            [toppingsForThisProduct],
+            undefined,
+            qr,
+            touched,
           );
         }
       }
@@ -558,6 +641,8 @@ export class StockService {
     ingredientId: string,
     quantity: number,
     unitOfMeasureId: string,
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     const ingredient =
       await this.ingredientService.getIngredientByIdToAnotherService(
@@ -585,13 +670,18 @@ export class StockService {
     }
 
     ingredient.stock.quantityInStock -= quantityToDeduct;
-    await this.stockRepository.saveStock(ingredient.stock);
+    await qr.manager.save(ingredient.stock);
+    touched.push(
+      toStockWsChange(ingredient.stock, { ingredientId: ingredient.id }),
+    );
   }
 
   private async deductToppingsStock(
     toppingsPerUnit: string[][],
     productQuantity: number,
     product: Product,
+    qr: QueryRunner,
+    touched: StockWsChange[],
   ) {
     this.logger.log(
       `🧾 Toppings por unidad: ${JSON.stringify(toppingsPerUnit)} | Cantidad de producto: ${productQuantity}`,
@@ -610,8 +700,10 @@ export class StockService {
     );
 
     for (const [toppingId, totalUses] of Object.entries(toppingCountMap)) {
-      const toppingStock =
-        await this.stockRepository.getStockByToppingId(toppingId);
+      const toppingStock = await qr.manager.findOne(Stock, {
+        where: { ingredient: { id: toppingId } },
+        relations: ['ingredient', 'unitOfMeasure'],
+      });
       if (!toppingStock) {
         throw new NotFoundException(
           `No se encontró stock para el agregado con ID ${toppingId}.`,
@@ -665,7 +757,10 @@ export class StockService {
 
       toppingStock.quantityInStock -= quantityToDeduct;
 
-      await this.stockRepository.saveStock(toppingStock);
+      await qr.manager.save(toppingStock);
+      touched.push(
+        toStockWsChange(toppingStock, { ingredientId: toppingId }),
+      );
 
       this.logger.log(
         `✅ Descontado ${quantityToDeduct} ${toppingStock.unitOfMeasure.abbreviation} del topping ${topping.name} (${toppingId}). Stock restante: ${toppingStock.quantityInStock}`,
@@ -692,9 +787,10 @@ export class StockService {
     toppingsPerUnit?: string[][],
     promotionSelections?: PromotionSelectionDto[],
     queryRunner?: QueryRunner,
-  ): Promise<string> {
+  ): Promise<StockWsChange[]> {
     const isExternal = !!queryRunner;
     const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    const touched: StockWsChange[] = [];
 
     if (!isExternal) {
       await qr.connect();
@@ -717,9 +813,9 @@ export class StockService {
       }
 
       if (product.type === 'simple') {
-        await this.restoreSimpleStock(product, quantity, unidadId, qr);
+        await this.restoreSimpleStock(product, quantity, unidadId, qr, touched);
       } else if (product.type === 'product') {
-        await this.restoreCompositeStock(product, quantity, qr);
+        await this.restoreCompositeStock(product, quantity, qr, touched);
       } else if (product.type === 'promotion') {
         if (promotionSelections && promotionSelections.length > 0) {
           await this.restorePromotionStockWithSelections(
@@ -727,22 +823,29 @@ export class StockService {
             quantity,
             promotionSelections,
             qr,
+            touched,
           );
         } else {
-          await this.restorePromotionStockLegacy(product, quantity, qr);
+          await this.restorePromotionStockLegacy(product, quantity, qr, touched);
         }
       }
 
       if (toppingsPerUnit?.length) {
-        await this.restoreToppingsStock(toppingsPerUnit, quantity, product, qr);
+        await this.restoreToppingsStock(
+          toppingsPerUnit,
+          quantity,
+          product,
+          qr,
+          touched,
+        );
       }
 
       if (!isExternal) {
         await qr.commitTransaction();
+        this.emitStockEvent('stock.restored', touched);
       }
 
-      this.eventEmitter.emit('stock.restored', { stockRestored: true });
-      return 'Stock restored successfully.';
+      return touched;
     } catch (error) {
       if (!isExternal) {
         await qr.rollbackTransaction();
@@ -773,6 +876,7 @@ export class StockService {
   ): Promise<void> {
     const isExternal = !!queryRunner;
     const qr = queryRunner ?? this.dataSource.createQueryRunner();
+    const touched: StockWsChange[] = [];
 
     if (!isExternal) {
       await qr.connect();
@@ -785,10 +889,12 @@ export class StockService {
         quantity,
         unitOfMeasureId,
         qr,
+        touched,
       );
 
       if (!isExternal) {
         await qr.commitTransaction();
+        this.emitStockEvent('stock.restored', touched);
       }
     } catch (error) {
       if (!isExternal) {
@@ -808,6 +914,7 @@ export class StockService {
     quantity: number,
     unidadId: string,
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     if (!product.stock) {
       throw new BadRequestException(
@@ -827,12 +934,14 @@ export class StockService {
       Number(product.stock.quantityInStock) + quantityToRestore;
 
     await qr.manager.save(product.stock);
+    touched.push(toStockWsChange(product.stock, { productId: product.id }));
   }
 
   private async restoreCompositeStock(
     product: Product,
     quantity: number,
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     for (const pi of product.productIngredients) {
       await this.restoreIngredientStockCore(
@@ -840,6 +949,7 @@ export class StockService {
         pi.quantityOfIngredient * quantity,
         pi.unitOfMeasure.id,
         qr,
+        touched,
       );
     }
   }
@@ -855,6 +965,7 @@ export class StockService {
     quantity: number,
     unitOfMeasureId: string,
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     const ingredient =
       await this.ingredientService.getIngredientByIdToAnotherService(
@@ -883,6 +994,9 @@ export class StockService {
       Number(ingredient.stock.quantityInStock) + quantityToRestore;
 
     await qr.manager.save(ingredient.stock);
+    touched.push(
+      toStockWsChange(ingredient.stock, { ingredientId: ingredient.id }),
+    );
   }
 
   private async restoreToppingsStock(
@@ -890,6 +1004,7 @@ export class StockService {
     productQuantity: number,
     product: Product,
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     this.logger.log(
       `[restoreToppingsStock] Toppings por unidad: ${JSON.stringify(toppingsPerUnit)} | Cantidad de producto: ${productQuantity}`,
@@ -947,6 +1062,7 @@ export class StockService {
         Number(toppingStock.quantityInStock) + quantityToRestore;
 
       await qr.manager.save(toppingStock);
+      touched.push(toStockWsChange(toppingStock, { ingredientId: toppingId }));
     }
   }
 
@@ -954,6 +1070,7 @@ export class StockService {
     promotion: Product,
     quantity: number,
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     const promotionProducts =
       await this.productService.getPromotionProductsToAnotherService(
@@ -961,13 +1078,14 @@ export class StockService {
       );
 
     for (const promotionProduct of promotionProducts) {
-      await this.restoreStock(
+      const child = await this.restoreStock(
         promotionProduct.product.id,
         promotionProduct.quantity * quantity,
         undefined,
         undefined,
         qr,
       );
+      touched.push(...child);
     }
   }
 
@@ -976,6 +1094,7 @@ export class StockService {
     quantity: number,
     selections: PromotionSelectionDto[],
     qr: QueryRunner,
+    touched: StockWsChange[],
   ): Promise<void> {
     this.logger.log(
       `[restorePromotionStockWithSelections] Restitución de stock para promoción: ${promotion.name}, Cantidad: ${quantity}`,
@@ -1000,13 +1119,14 @@ export class StockService {
         const selectedProductId = selection.selectedProductIds[i];
         const toppingsForThisProduct = selection.toppingsPerUnit?.[i] || [];
 
-        await this.restoreStock(
+        const child = await this.restoreStock(
           selectedProductId,
           quantity,
           toppingsForThisProduct.length ? [toppingsForThisProduct] : undefined,
           undefined,
           qr,
         );
+        touched.push(...child);
       }
     }
 
@@ -1285,7 +1405,26 @@ export class StockService {
     const stockWithRelations = await this.stockRepository.findStockById(id);
     const stockWithFormatt = StockResponseFormatter.format(stockWithRelations);
 
-    this.eventEmitter.emit('stock.updated', { stock: stockWithFormatt });
+    this.emitStockEvent('stock.updated', [
+      toStockWsChange(stockWithRelations ?? updatedStock, {
+        productId: stockWithRelations?.product?.id ?? stock.product?.id,
+        ingredientId:
+          stockWithRelations?.ingredient?.id ?? stock.ingredient?.id,
+      }),
+    ]);
     return stockWithFormatt;
+  }
+
+  private emitStockEvent(
+    event:
+      | 'stock.created'
+      | 'stock.updated'
+      | 'stock.deducted'
+      | 'stock.restored',
+    stocks: StockWsChange[],
+  ) {
+    const latest = latestStockChanges(stocks);
+    if (!latest.length) return;
+    this.eventEmitter.emit(event, { stocks: latest });
   }
 }

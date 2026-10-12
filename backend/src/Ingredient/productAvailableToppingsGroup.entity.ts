@@ -41,7 +41,7 @@ export class ProductAvailableToppingGroup {
   productId: string;
 
   @ManyToOne(() => ToppingsGroup, (group) => group.productsAvailableIn, {
-    eager: true,
+    eager: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'toppingGroupId' })

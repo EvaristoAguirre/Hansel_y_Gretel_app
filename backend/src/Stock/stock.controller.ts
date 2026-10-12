@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -13,12 +16,12 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { StockService } from './stock.service';
 import { Stock } from './stock.entity';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateStockDto } from 'src/DTOs/create-stock.dto';
 import { UpdateStockDto } from 'src/DTOs/update-stock.dto';
 import { AddStockDto } from 'src/DTOs/add-stock.dto';
@@ -33,10 +36,7 @@ import { StockSummaryResponseDTO } from 'src/DTOs/stockSummaryResponse.dto';
 @Controller('stock')
 @UseGuards(RolesGuard)
 export class StockController {
-  constructor(
-    private readonly stockService: StockService,
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly stockService: StockService) {}
 
   @Get()
   @ApiOperation({
@@ -44,14 +44,16 @@ export class StockController {
     description:
       'Devuelve una lista de todo el inventario (productos e ingredientes)',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
     status: 200,
     description: 'Lista de stock obtenida exitosamente',
   })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async getAllStock(
-    @Param('page') page: number = 1,
-    @Param('limit') limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ): Promise<StockSummaryResponseDTO[]> {
     return await this.stockService.getAllStocks(page, limit);
   }
@@ -118,9 +120,7 @@ export class StockController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async createStock(@Body() createStockDto: CreateStockDto): Promise<Stock> {
-    const createStock = await this.stockService.createStock(createStockDto);
-    await this.eventEmitter.emit('stock.created', createStock);
-    return createStock;
+    return await this.stockService.createStock(createStockDto);
   }
 
   @Patch(':id')
@@ -141,12 +141,7 @@ export class StockController {
     @Param('id') id: string,
     @Body() updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
-    const updatedStock = await this.stockService.updateStock(
-      id,
-      updateStockDto,
-    );
-    await this.eventEmitter.emit('stock.updated', updatedStock);
-    return updatedStock;
+    return await this.stockService.updateStock(id, updateStockDto);
   }
 
   @Patch(':id/add')
@@ -175,9 +170,7 @@ export class StockController {
     @Param('id') id: string,
     @Body() addStockDto: AddStockDto,
   ): Promise<Stock> {
-    const updatedStock = await this.stockService.addStock(id, addStockDto);
-    await this.eventEmitter.emit('stock.updated', updatedStock);
-    return updatedStock;
+    return await this.stockService.addStock(id, addStockDto);
   }
 
   @Put('/deduct')
@@ -199,6 +192,7 @@ export class StockController {
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO, UserRole.INVENTARIO)
   async deductStock(@Body() deductStockDto: DeductStockDto): Promise<string> {
     const { productId, quantity } = deductStockDto;
-    return await this.stockService.deductStock(productId, quantity);
+    await this.stockService.deductStock(productId, quantity);
+    return 'Stock deducted successfully.';
   }
 }

@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggerMidleware } from './Middleware/logger.middleware';
-import { WsAdapter } from '@nestjs/platform-ws';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import rateLimit from 'express-rate-limit';
 import { LoggerService } from './Monitoring/monitoring-logger.service';
@@ -160,16 +159,17 @@ async function bootstrap() {
   app.useGlobalFilters(new ExceptionFilters(loggerService));
   app.use(LoggerMidleware);
 
-  app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  await app.listen(3000);
+  const port = Number(configService.get(EnvNames.PORT) ?? 3000);
+  const host = configService.get(EnvNames.HOST) ?? '0.0.0.0';
+  await app.listen(port, host);
 
-  const port = app.getHttpServer().address().port;
-  console.log(`Server listening on http://localhost:${port}`);
-  console.log(
-    `📚 Swagger docs disponible en: http://localhost:${port}/api/docs`,
-  );
+  const baseUrl = `http://${host}:${port}`;
+  loggerService.log(`Server listening on ${baseUrl}`);
+  if (configService.get(EnvNames.NODE_ENV) === 'development') {
+    loggerService.log(`Swagger docs disponible en: ${baseUrl}/api/docs`);
+  }
 }
 bootstrap().catch((err) =>
   console.error('❌ Error al iniciar la aplicación:', err),

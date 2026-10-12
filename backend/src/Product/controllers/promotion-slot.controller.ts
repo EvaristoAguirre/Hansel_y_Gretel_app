@@ -43,6 +43,7 @@ interface FindAllOptions {
 @ApiBearerAuth()
 @Controller('promotion-slot')
 @UseGuards(RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.ENCARGADO)
 export class PromotionSlotController {
   constructor(
     private readonly promotionSlotService: PromotionSlotService,

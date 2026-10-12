@@ -87,11 +87,11 @@ export const StepperTable: React.FC<Props> = ({
   };
 
   const handleCompleteStep = () => {
-    setCompleted({ ...completed, [activeStep]: true });
+    setCompleted((prev) => ({ ...prev, [activeStep]: true }));
   };
   const handleComplete = () => {
     setIsPaymentInProgress(false);
-    setCompleted({ ...completed, [activeStep]: true });
+    setCompleted((prev) => ({ ...prev, [activeStep]: true }));
     handleReset();
     handleResetSelectedOrder();
   };
@@ -100,10 +100,6 @@ export const StepperTable: React.FC<Props> = ({
     setIsPaymentInProgress(false);
     setActiveStep(0);
     setCompleted({});
-  };
-
-  const imprimirComanda = () => {
-    // función de impresión
   };
 
   const handleTableAvailable = async (table: ITable, token: string) => {
@@ -163,7 +159,6 @@ export const StepperTable: React.FC<Props> = ({
       case 2:
         return confirmedProducts.length > 0 ? (
           <Order
-            imprimirComanda={imprimirComanda}
             handleDeleteOrder={handleReset}
             selectedTable={selectedTable}
             handleNextStep={handleNextStep}

@@ -1,71 +1,126 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
+import { DataSource, Repository } from 'typeorm';
 import { PrintComandaDTO } from 'src/DTOs/print-comanda.dto';
 import { Order } from 'src/Order/entities/order.entity';
 import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
+import { EnvNames } from 'src/common/names.env';
 
 @Injectable()
 export class PrinterService {
   readonly logger = new Logger(PrinterService.name);
-  private counter: number = 0;
-  private readonly counterFilePath = path.join(__dirname, 'print-counter.json');
-  private readonly printerConfig = {
-    host: '192.168.70.3',
-    port: 9100,
-    timeout: 9000,
+  private readonly printerConfig: {
+    host: string;
+    port: number;
+    timeout: number;
+    retries: number;
   };
 
-  constructor(private readonly loggerService: LoggerService) {
-    this.initializeCounter();
+  constructor(
+    private readonly loggerService: LoggerService,
+    private readonly configService: ConfigService,
+    @InjectRepository(Order)
+    private readonly orderRepo: Repository<Order>,
+    private readonly dataSource: DataSource,
+  ) {
+    this.printerConfig = {
+      host:
+        this.configService.get<string>(EnvNames.PRINTER.HOST) ?? '192.168.70.3',
+      port: Number(
+        this.configService.get<string>(EnvNames.PRINTER.PORT) ?? 9100,
+      ),
+      timeout: Number(
+        this.configService.get<string>(EnvNames.PRINTER.TIMEOUT) ?? 4000,
+      ),
+      retries: Number(
+        this.configService.get<string>(EnvNames.PRINTER.RETRIES) ?? 1,
+      ),
+    };
   }
 
-  private initializeCounter(): void {
-    try {
-      if (fs.existsSync(this.counterFilePath)) {
-        const data = fs.readFileSync(this.counterFilePath, 'utf8');
-        this.counter = JSON.parse(data).counter || 0;
+  /**
+   * El JSON histórico vivía junto al compilado. Un build borra `dist/`,
+   * así que la copia que sobrevive al deploy está en el directorio de trabajo.
+   * `__dirname` queda como respaldo por si el proceso todavía no se reconstruyó.
+   */
+  private legacyCounterCandidates(): string[] {
+    return [
+      path.join(process.cwd(), 'print-counter.json'),
+      path.join(__dirname, 'print-counter.json'),
+    ];
+  }
+
+  private readLegacyCounterFile(): number {
+    for (const filePath of this.legacyCounterCandidates()) {
+      try {
+        if (!fs.existsSync(filePath)) continue;
+        const data = fs.readFileSync(filePath, 'utf8');
+        const value = Number(JSON.parse(data).counter);
+        if (Number.isFinite(value) && value > 0) return value;
+      } catch (error) {
+        this.logger.error('readLegacyCounterFile', error);
       }
-    } catch (error) {
-      this.logger.error('initializeCounter', error);
-      this.counter = 0;
-      throw error;
     }
+    return 0;
   }
 
-  private saveCounter(): void {
-    try {
-      fs.writeFileSync(
-        this.counterFilePath,
-        JSON.stringify({
-          counter: this.counter,
-          lastUpdated: new Date().toISOString(),
-        }),
+  private isLegacyImported(value: unknown): boolean {
+    return value === true || value === 't' || value === 'true';
+  }
+
+  private async nextCommandSequence(): Promise<number> {
+    return this.dataSource.transaction(async (manager) => {
+      await manager.query(`
+        INSERT INTO "print_counter" ("id", "counter", "legacyImported")
+        VALUES (1, 0, false)
+        ON CONFLICT ("id") DO NOTHING
+      `);
+      const rows: { counter: number; legacyImported: unknown }[] =
+        await manager.query(
+          `SELECT "counter", "legacyImported" FROM "print_counter" WHERE "id" = 1 FOR UPDATE`,
+        );
+      let current = Number(rows[0]?.counter ?? 0);
+      if (!this.isLegacyImported(rows[0]?.legacyImported)) {
+        const imported = this.readLegacyCounterFile();
+        if (imported > current) {
+          current = imported;
+        }
+      }
+      const next = current + 1;
+      await manager.query(
+        `UPDATE "print_counter" SET "counter" = $1, "legacyImported" = true, "updatedAt" = NOW() WHERE "id" = 1`,
+        [next],
       );
-    } catch (error) {
-      this.logger.error('saveCounter', error);
-      throw error;
-    }
+      return current;
+    });
   }
 
-  private generateOrderCode(): string {
+  private async generateOrderCode(): Promise<string> {
     const now = new Date();
     const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
-    const count = String(this.counter++).padStart(4, '0');
-    this.saveCounter();
+    const count = String(await this.nextCommandSequence()).padStart(4, '0');
     return `${datePart}-${count}`;
   }
 
   private async sendRawCommand(command: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      const socket = net.createConnection(this.printerConfig);
+      const socket = net.createConnection({
+        host: this.printerConfig.host,
+        port: this.printerConfig.port,
+      });
 
       socket.setTimeout(this.printerConfig.timeout);
 
@@ -112,7 +167,7 @@ export class PrinterService {
 
   private async sendRawCommandWithRetry(
     command: string,
-    retries = 3,
+    retries = this.printerConfig.retries,
     delayMs = 2000,
   ): Promise<boolean> {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -143,7 +198,7 @@ export class PrinterService {
 
     try {
       const now = new Date();
-      const orderCode = this.generateOrderCode();
+      const orderCode = await this.generateOrderCode();
 
       const commands = [
         '\x1B\x40', // Inicializar impresora
@@ -223,17 +278,15 @@ export class PrinterService {
         throw new Error('Print command failed');
       }
 
-      let secondCopyWarning = '';
       try {
         await this.sendRawCommandWithRetry(commands);
       } catch {
         this.logger.warn(
           `[printKitchenOrder] ⚠️ La primera copia se imprimió correctamente, pero falló la segunda copia`,
         );
-        secondCopyWarning = ' (segunda copia no impresa)';
       }
 
-      return `Comanda impresa: ${orderCode}${secondCopyWarning}`;
+      return orderCode;
     } catch (error) {
       this.logger.error('printKitchenOrder', error);
       throw error;
@@ -398,80 +451,49 @@ export class PrinterService {
     }
   }
 
+  async reprintTicketById(
+    id: string,
+  ): Promise<{ message: string; printerWarning?: string }> {
+    if (!isUUID(id)) {
+      throw new BadRequestException('El ID del pedido no es un UUID válido.');
+    }
+
+    const order = await this.orderRepo.findOne({
+      where: { id, isActive: true },
+      relations: [
+        'table',
+        'orderDetails',
+        'orderDetails.product',
+        'orderDetails.orderDetailToppings',
+        'orderDetails.orderDetailToppings.topping',
+      ],
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Pedido ${id} no encontrado`);
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`[DEV] Simulando reimpresión de ticket para pedido ${id}`);
+      return { message: 'reimpresion-ticket-simulada-dev' };
+    }
+
+    try {
+      const message = await this.printTicketOrder(order);
+      return { message };
+    } catch (error) {
+      this.logger.error('reprintTicketById', error);
+      return {
+        message: 'No se pudo imprimir el ticket.',
+        printerWarning:
+          'La cuenta quedó registrada, pero el ticket no se imprimió. Usá Reimprimir ticket cuando la impresora esté lista.',
+      };
+    }
+  }
+
   private normalizeTextToTicket(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
-
-  // private splitCommentWithPrefix(
-  //   comment: string,
-  //   maxLineLength: number,
-  //   prefix: string,
-  // ): string[] {
-  //   const prefixLength = prefix.length;
-  //   const remainingLineLength = maxLineLength - prefixLength;
-  //   const normalizedComment = this.normalizeText(comment);
-
-  //   if (!normalizedComment) return [prefix];
-
-  //   const lines: string[] = [];
-  //   let firstLineContent = '';
-  //   const words = normalizedComment.split(/(\s+)/);
-
-  //   for (const word of words) {
-  //     if ((firstLineContent + word).length <= remainingLineLength) {
-  //       firstLineContent += word;
-  //     } else {
-  //       break;
-  //     }
-  //   }
-
-  //   lines.push(`${prefix}${firstLineContent.trim()}`);
-
-  //   const remainingText = normalizedComment
-  //     .substring(firstLineContent.length)
-  //     .trim();
-  //   if (remainingText) {
-  //     const remainingLines = this.splitTextIntoLines(
-  //       remainingText,
-  //       maxLineLength,
-  //     );
-  //     lines.push(...remainingLines);
-  //   }
-
-  //   return lines;
-  // }
-
-  // private splitTextIntoLines(
-  //   text: string,
-  //   maxLength: number,
-  //   prefix: string = '',
-  // ): string[] {
-  //   const words = this.normalizeText(text).split(/(\s+)/);
-  //   let currentLine = prefix;
-  //   const lines = [];
-
-  //   for (let word of words) {
-  //     if ((currentLine + word).length > maxLength) {
-  //       if (currentLine === prefix) {
-  //         while (word.length > 0) {
-  //           const chunk = word.substring(0, maxLength - prefix.length);
-  //           lines.push(prefix + chunk);
-  //           word = word.substring(maxLength - prefix.length);
-  //         }
-  //         continue;
-  //       }
-  //       lines.push(currentLine.trim());
-  //       currentLine = prefix;
-  //     }
-  //     currentLine += word;
-  //   }
-
-  //   if (currentLine !== prefix) {
-  //     lines.push(currentLine.trim());
-  //   }
-
-  //   return lines;
-  // }
 
   async printerStock(stockData: ProductsToExportDto[]) {
     try {

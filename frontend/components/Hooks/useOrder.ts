@@ -43,7 +43,7 @@ const useOrder = () => {
     async function fetchOrders() {
       setIsLoadingOrders(true);
       try {
-        const response = await apiFetch(`${URI_ORDER}/active`, {
+        const response = await apiFetch(`${URI_ORDER}/active?page=1&limit=200`, {
           method: "GET",
           headers: { "Authorization": `Bearer ${token}` },
         });

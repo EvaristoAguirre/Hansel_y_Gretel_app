@@ -9,7 +9,6 @@ import Table from "../Table/Table";
 import { UserRole } from "../Enums/user";
 import { useAuth } from '../../app/context/authContext';
 import RoomModal from "./RoomModal";
-import LoadingLottie from "../Loader/Loading";
 
 const Rooms = () => {
   const {

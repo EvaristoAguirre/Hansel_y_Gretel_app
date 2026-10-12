@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,8 +24,19 @@ export class AuthService {
   async register(
     username: string,
     password: string,
-    role: UserRole,
-  ): Promise<User> {
+    role: UserRole = UserRole.MOZO,
+    actorRole?: UserRole,
+  ): Promise<Omit<User, 'password'>> {
+    const privilegedRoles = [UserRole.ADMIN, UserRole.ENCARGADO];
+    if (
+      actorRole === UserRole.ENCARGADO &&
+      privilegedRoles.includes(role)
+    ) {
+      throw new ForbiddenException(
+        'El rol Encargado no puede crear usuarios Admin o Encargado.',
+      );
+    }
+
     const existingUser = await this.userRepository.findOne({
       where: { username },
     });
@@ -42,7 +54,6 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
-    // Log crítico: Registro exitoso de usuario (operación de seguridad)
     this.monitoringLogger.log({
       action: 'USER_REGISTERED_SUCCESS',
       userId: savedUser.id,
@@ -51,7 +62,8 @@ export class AuthService {
       timestamp: new Date().toISOString(),
     });
 
-    return savedUser;
+    const { password: _omitted, ...safeUser } = savedUser;
+    return safeUser;
   }
 
   async login(

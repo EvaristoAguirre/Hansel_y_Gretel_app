@@ -59,7 +59,7 @@ Sistema integral de gestión para cafetería/restaurante que permite administrar
 ## 📦 Requisitos Previos
 
 - **Node.js** >= 18.x
-- **npm** >= 9.x o **yarn**
+- **pnpm** >= 10
 - **PostgreSQL** >= 14.x
 
 ---
@@ -77,14 +77,14 @@ cd Hansel_y_Gretel_app
 
 ```bash
 cd backend
-npm install
+pnpm install
 ```
 
 ### 3. Instalar dependencias del Frontend
 
 ```bash
 cd ../frontend
-npm install
+pnpm install
 ```
 
 ### 4. Configurar variables de entorno
@@ -99,7 +99,7 @@ Ver sección [Base de Datos](#-base-de-datos)
 
 ```bash
 cd backend
-npm run migration:run
+pnpm run migration:run
 ```
 
 ### 7. Iniciar la aplicación
@@ -107,11 +107,11 @@ npm run migration:run
 ```bash
 # Terminal 1 - Backend
 cd backend
-npm run start:dev
+pnpm run start:dev
 
 # Terminal 2 - Frontend
 cd frontend
-npm run dev
+pnpm run dev
 ```
 
 ---
@@ -207,20 +207,20 @@ GRANT ALL PRIVILEGES ON DATABASE hansel_gretel_db TO hansel_user;
 cd backend
 
 # Ver migraciones pendientes
-npm run migration:show
+pnpm run migration:show
 
 # Ejecutar migraciones
-npm run migration:run
+pnpm run migration:run
 
 # Revertir última migración (si es necesario)
-npm run migration:revert
+pnpm run migration:revert
 ```
 
 ### Generar Nueva Migración
 
 ```bash
 # Generar migración basada en cambios de entidades
-npm run migration:generate -- migration/NombreDeMigracion
+pnpm run migration:generate -- migration/NombreDeMigracion
 ```
 
 ### Estructura de la Base de Datos
@@ -249,31 +249,31 @@ La aplicación utiliza las siguientes tablas principales:
 
 | Comando                      | Descripción                                          |
 | ---------------------------- | ---------------------------------------------------- |
-| `npm run start:dev`          | Inicia el servidor en modo desarrollo con hot-reload |
-| `npm run start:debug`        | Inicia en modo debug con hot-reload                  |
-| `npm run build`              | Compila el proyecto para producción                  |
-| `npm run start:prod`         | Inicia el servidor en modo producción                |
-| `npm run start`              | Inicia el servidor sin watch                         |
-| `npm run lint`               | Ejecuta ESLint para verificar código                 |
-| `npm run lint:fix`           | Corrige errores de linting automáticamente           |
-| `npm run format`             | Formatea código con Prettier                         |
-| `npm run test`               | Ejecuta tests unitarios                              |
-| `npm run test:watch`         | Ejecuta tests en modo watch                          |
-| `npm run test:cov`           | Ejecuta tests con cobertura                          |
-| `npm run test:e2e`           | Ejecuta tests end-to-end                             |
-| `npm run migration:run`      | Ejecuta migraciones pendientes                       |
-| `npm run migration:revert`   | Revierte última migración                            |
-| `npm run migration:show`     | Muestra estado de migraciones                        |
-| `npm run migration:generate` | Genera nueva migración                               |
+| `pnpm run start:dev`          | Inicia el servidor en modo desarrollo con hot-reload |
+| `pnpm run start:debug`        | Inicia en modo debug con hot-reload                  |
+| `pnpm run build`              | Compila el proyecto para producción                  |
+| `pnpm run start:prod`         | Inicia el servidor en modo producción                |
+| `pnpm run start`              | Inicia el servidor sin watch                         |
+| `pnpm run lint`               | Ejecuta ESLint para verificar código                 |
+| `pnpm run lint:fix`           | Corrige errores de linting automáticamente           |
+| `pnpm run format`             | Formatea código con Prettier                         |
+| `pnpm run test`               | Ejecuta tests unitarios                              |
+| `pnpm run test:watch`         | Ejecuta tests en modo watch                          |
+| `pnpm run test:cov`           | Ejecuta tests con cobertura                          |
+| `pnpm run test:e2e`           | Ejecuta tests end-to-end                             |
+| `pnpm run migration:run`      | Ejecuta migraciones pendientes                       |
+| `pnpm run migration:revert`   | Revierte última migración                            |
+| `pnpm run migration:show`     | Muestra estado de migraciones                        |
+| `pnpm run migration:generate` | Genera nueva migración                               |
 
 ### Frontend (`/frontend`)
 
 | Comando         | Descripción                                    |
 | --------------- | ---------------------------------------------- |
-| `npm run dev`   | Inicia el servidor de desarrollo (puerto 3001) |
-| `npm run build` | Compila el proyecto para producción            |
-| `npm run start` | Inicia el servidor de producción (puerto 3001) |
-| `npm run lint`  | Ejecuta linting del código                     |
+| `pnpm run dev`   | Inicia el servidor de desarrollo (puerto 3001) |
+| `pnpm run build` | Compila el proyecto para producción            |
+| `pnpm run start` | Inicia el servidor de producción (puerto 3001) |
+| `pnpm run lint`  | Ejecuta linting del código                     |
 
 ### Desarrollo Completo
 
@@ -282,11 +282,11 @@ Para ejecutar toda la aplicación en desarrollo:
 ```bash
 # Terminal 1 - Backend (puerto 3000)
 cd backend
-npm run start:dev
+pnpm run start:dev
 
 # Terminal 2 - Frontend (puerto 3001)
 cd frontend
-npm run dev
+pnpm run dev
 ```
 
 Acceder a:
@@ -402,8 +402,8 @@ Hansel_y_Gretel_app/
 
 ```bash
 # Limpiar y regenerar
-npm run build
-npm run migration:run
+pnpm run build
+pnpm run migration:run
 ```
 
 ### Puerto en uso

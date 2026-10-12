@@ -9,6 +9,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import { BroadcastService } from './broadcast.service';
 
@@ -28,13 +29,35 @@ export class RealTimeGateway
 {
   @WebSocketServer()
   server: Server;
-  private logger: Logger = new Logger('EventsGateway');
+  private logger: Logger = new Logger(RealTimeGateway.name);
 
-  constructor(private readonly broadcastService: BroadcastService) {}
+  constructor(
+    private readonly broadcastService: BroadcastService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   afterInit(server: Server) {
+    server.use((socket, next) => this.authenticateSocket(socket, next));
     this.broadcastService.setServer(server);
     this.logger.log('WebSocket server initialized');
+  }
+
+  authenticateSocket(
+    socket: Socket,
+    next: (err?: Error) => void,
+  ): void {
+    const token = socket.handshake?.auth?.token;
+    if (!token || typeof token !== 'string') {
+      return next(new Error('Unauthorized'));
+    }
+
+    try {
+      const payload = this.jwtService.verify(token);
+      socket.data.user = payload;
+      next();
+    } catch {
+      next(new Error('Unauthorized'));
+    }
   }
 
   handleConnection(client: Socket) {

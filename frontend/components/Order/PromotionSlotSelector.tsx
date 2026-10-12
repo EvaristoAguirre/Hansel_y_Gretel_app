@@ -20,7 +20,7 @@ import { getSlotsByPromotionId } from '@/api/promotionSlot';
 import { capitalizeFirstLetter } from '../Utils/CapitalizeFirstLetter';
 import { getProductById } from '@/api/products';
 import { fetchToppingsGroupById } from '@/api/topping';
-import { IProductToppingsGroupResponse } from '../Interfaces/IProducts';
+import { IProductToppingsGroupResponse, SlotSelection } from '../Interfaces/IProducts';
 import { ITopping } from '../Interfaces/IToppings';
 
 interface SlotOption {
@@ -64,15 +64,7 @@ interface PromotionSlotSelectorProps {
     price: number;
   };
   quantity: number;
-  onConfirm: (
-    selections: {
-      slotId: string;
-      selectedProductId: string;
-      selectedProductName?: string;
-      toppingsPerUnit?: string[];
-      toppingNames?: string[];
-    }[]
-  ) => void;
+  onConfirm: (selections: SlotSelection[]) => void;
   onCancel: () => void;
 }
 
@@ -379,20 +371,25 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
     const selectionsArray = Object.entries(selections).map(
       ([instanceId, selectedProductId]) => {
         const instanceToppings = toppingsBySlot[instanceId] || {};
-        // Convertir toppings de formato { [groupId]: string[] } a string[] (flat)
         const toppingsPerUnit = Object.values(instanceToppings).flat();
 
-        // Buscar la instancia para obtener el slotId original y el nombre del producto
         const instance = slotInstances.find((i) => i.instanceId === instanceId);
         const slotId = instance?.slotId || '';
-        
-        // Buscar el nombre del producto seleccionado en las opciones
+
         const selectedOption = instance?.options.find(
           (opt) => opt.productId === selectedProductId
         );
         const selectedProductName = selectedOption?.product?.name || '';
 
-        // Obtener los nombres de los toppings seleccionados
+        const groups =
+          selectedProductsInfo[instanceId]?.availableToppingGroups ?? [];
+        const toppingsExtraCost = groups.reduce((sum, group) => {
+          const settings = group.settings;
+          if (!settings?.chargeExtra || !settings.extraCost) return sum;
+          const selected = instanceToppings[group.id] || [];
+          return sum + selected.length * Number(settings.extraCost);
+        }, 0);
+
         const toppingNames: string[] = [];
         toppingsPerUnit.forEach((toppingId) => {
           // Buscar el topping en todos los grupos cargados
@@ -412,6 +409,8 @@ export const PromotionSlotSelector: React.FC<PromotionSlotSelectorProps> = ({
           toppingsPerUnit:
             toppingsPerUnit.length > 0 ? toppingsPerUnit : undefined,
           toppingNames: toppingNames.length > 0 ? toppingNames : undefined,
+          extraCost: Number(selectedOption?.extraCost) || 0,
+          toppingsExtraCost,
         };
       }
     );

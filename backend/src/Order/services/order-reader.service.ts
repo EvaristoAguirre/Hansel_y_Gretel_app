@@ -135,8 +135,14 @@ export class OrderReaderService {
     }
   }
 
-  async getOrdersForOpenOrPendingTables(): Promise<Order[]> {
-    return await this.orderRepository.getOrdersForOpenOrPendingTables();
+  async getOrdersForOpenOrPendingTables(
+    page: number,
+    limit: number,
+  ): Promise<Order[]> {
+    return await this.orderRepository.getOrdersForOpenOrPendingTables(
+      page,
+      limit,
+    );
   }
 
   async orderDetailsById(id: string): Promise<OrderDetailsDto> {

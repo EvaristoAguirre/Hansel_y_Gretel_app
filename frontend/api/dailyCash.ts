@@ -4,6 +4,7 @@ import {
   I_DC_Open_Close,
 } from '@/components/Interfaces/IDailyCash';
 import { URI_DAILY_CASH, URI_ORDER } from '@/components/URI/URI';
+import { readJson } from '@/lib/apiClient';
 
 export const fetchDailyCashResume = async (token: string) => {
   const response = await fetch(`${URI_DAILY_CASH}/summary`, {
@@ -12,8 +13,7 @@ export const fetchDailyCashResume = async (token: string) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 export const fetchAllDailyCash = async (token: string) => {
@@ -68,8 +68,7 @@ export const fetchDailyCashByID = async (token: string, id: string) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 export const openDailyCash = async (token: string, data: I_DC_Open_Close) => {
@@ -159,8 +158,7 @@ export const checkOpenDailyCash = async (token: string) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 export const newMovement = async (token: string, body: INewMovement) => {
@@ -196,8 +194,7 @@ export const getMovements = async (
       },
     }
   );
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 export const getMovementsDetailsById = async (token: string, id: string) => {
@@ -207,8 +204,7 @@ export const getMovementsDetailsById = async (token: string, id: string) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
 
 export const getOrderDetails = async (token: string, id: string) => {
@@ -218,6 +214,5 @@ export const getOrderDetails = async (token: string, id: string) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  const data = await response.json();
-  return data;
+  return readJson(response);
 };
