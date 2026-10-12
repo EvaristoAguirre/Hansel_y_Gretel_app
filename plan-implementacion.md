@@ -253,3 +253,9 @@ Contrato `ArcaClient` y `ArcaSimulator`. La numeración vive en memoria del proc
 - El test de dummy espía `net.Socket.prototype.connect` y no se llama.
 - `InvoiceModule` inyecta el simulador cuando la flag está encendida. Con `AFIP_SIMULATE=false` el proceso sigue arrancando: la primera llamada al cliente responde que el SOAP entra en el paso 8.
 - Los ids de alícuota del simulador y el id 0 de condición IVA receptor son de desarrollo. Se contrastan con ARCA en el paso 8. No hay que copiarlos al entorno como si fueran definitivos.
+
+### Paso 3 — escrito, sin ejecutar
+
+Migración `1783400000000-CreateInvoicesAndProductAlicuota`: tablas `invoices` y `afip_tokens`, columna `products.alicQuota`, índices únicos parciales. Entidades `Invoice` y `AfipToken`. Typecheck y tests del módulo en verde.
+
+No se corrió `migration:run` ni `migration:revert`. Antes de reiniciar el backend hay que aplicarla a mano. Si el proceso nuevo arranca sin esa columna, el SELECT de productos falla.

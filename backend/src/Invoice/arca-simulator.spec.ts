@@ -2,9 +2,8 @@ import { Test } from '@nestjs/testing';
 import * as net from 'net';
 import { ArcaClient, ArcaSolicitud } from './arca-client';
 import { createArcaClient } from './arca-client.factory';
-import { resolveAfipConfig } from './afip-config';
+import { AfipConfig, resolveAfipConfig } from './afip-config';
 import { ArcaSimulator } from './arca-simulator';
-import { InvoiceModule } from './invoice.module';
 
 function restoreEnv(name: string, value: string | undefined) {
   if (value === undefined) delete process.env[name];
@@ -135,7 +134,7 @@ describe('createArcaClient', () => {
   });
 });
 
-describe('InvoiceModule', () => {
+describe('factura en el contenedor', () => {
   const previous = {
     simulate: process.env.AFIP_SIMULATE,
     env: process.env.AFIP_ENV,
@@ -150,7 +149,14 @@ describe('InvoiceModule', () => {
     process.env.AFIP_SIMULATE = 'true';
     delete process.env.AFIP_ENV;
     const moduleRef = await Test.createTestingModule({
-      imports: [InvoiceModule],
+      providers: [
+        AfipConfig,
+        {
+          provide: ArcaClient,
+          useFactory: (config: AfipConfig) => createArcaClient(config.settings),
+          inject: [AfipConfig],
+        },
+      ],
     }).compile();
 
     const client = moduleRef.get(ArcaClient);
