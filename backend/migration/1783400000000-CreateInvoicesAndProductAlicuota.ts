@@ -24,7 +24,7 @@ export class CreateInvoicesAndProductAlicuota1783400000000 implements MigrationI
 
     await queryRunner.query(`
       CREATE TABLE "invoices" (
-        "id" uuid PRIMARY KEY,
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "origin" "invoices_origin_enum" NOT NULL,
         "orderId" uuid,
         "afipEnv" "invoices_afip_env_enum" NOT NULL,
@@ -77,7 +77,7 @@ export class CreateInvoicesAndProductAlicuota1783400000000 implements MigrationI
 
     await queryRunner.query(`
       CREATE TABLE "afip_tokens" (
-        "id" uuid PRIMARY KEY,
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "service" character varying NOT NULL,
         "afipEnv" character varying NOT NULL,
         "token" text NOT NULL,
