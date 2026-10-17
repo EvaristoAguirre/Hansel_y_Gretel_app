@@ -310,9 +310,13 @@ Verificación: test de `InvoiceService`. No se abrió el modal de productos en e
 
 Verificación: el test deja una fila `manual` de $900, sin `orderId` y con propina 0. No se emitió una desde el navegador.
 
-### Paso 8 — no hecho
+### Paso 8 — escrito, sin probar contra ARCA
 
-Sigue `ArcaClientNotReady`. Sin certificado de homologación, CUIT y punto de venta no se puede cumplir el “listo cuando” (TA reutilizado y `FEDummy` OK). Las pantallas y las tablas no dependen de este paso.
+`ArcaWsfeClient` firma el TRA con openssl, pide el token a WSAA, lo guarda en `afip_tokens` y llama a `FECAESolicitar`, `FECompConsultar`, `FECompUltimoAutorizado`, `FEDummy` y los tres parámetros. `GET /invoices/arca/parametros` (solo Admin) muestra ese JSON y compara el mapa de alícuotas. Un TRA rechazado por la hora queda en el log.
+
+En `.env` quedaron el CUIT `20234083202`, el punto de venta 5, la razón social y el domicilio de la constancia. `AFIP_SIMULATE` sigue en `true`: faltan las rutas del `.crt` y del `.key`. Sin esas rutas el proceso no puede hablar con homologación.
+
+Verificación: tests del cliente con respuestas SOAP falsas (autorizado, rechazado, consulta vacía, token reutilizado, hora desfasada, timeout). No se llamó a `wsaahomo` ni a `wswhomo`.
 
 ### Paso 14 — no hecho
 

@@ -117,7 +117,7 @@ describe('createArcaClient', () => {
     });
   });
 
-  it('sin simulación el proceso puede armar el cliente, y recién la llamada avisa que el SOAP entra en el paso 8', async () => {
+  it('sin simulación arma el cliente SOAP y no llama a la red hasta usarlo', async () => {
     const settings = resolveAfipConfig(
       {
         AFIP_SIMULATE: 'false',
@@ -129,8 +129,14 @@ describe('createArcaClient', () => {
       },
       () => true,
     );
-    const client = createArcaClient(settings);
-    await expect(client.dummy()).rejects.toThrow(/paso 8/);
+    const connect = jest.spyOn(net.Socket.prototype, 'connect');
+    const client = createArcaClient(settings, {
+      findValid: async () => null,
+      save: async () => undefined,
+    });
+    expect(client.constructor.name).toBe('ArcaWsfeClient');
+    expect(connect).not.toHaveBeenCalled();
+    connect.mockRestore();
   });
 });
 
