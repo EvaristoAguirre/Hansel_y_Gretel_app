@@ -1,7 +1,9 @@
+import { EventEmitter } from 'events';
 import { Logger } from '@nestjs/common';
+import * as https from 'https';
 import { resolveAfipConfig } from './afip-config';
 import { ArcaSolicitud } from './arca-client';
-import { buildTra } from './arca-soap';
+import { buildTra, httpsSoapPost } from './arca-soap';
 import { AfipTokenStore, ArcaWsfeClient } from './arca-wsfe-client';
 
 function settings() {
@@ -41,7 +43,7 @@ function store(): AfipTokenStore & { saved: number } {
 }
 
 const loginXml = `<?xml version="1.0"?>
-<soapenv:Envelope><soapenv:Body><loginCmsResponse><loginCmsReturn>&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2026-10-17T21:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;&lt;credentials&gt;&lt;token&gt;TOKEN-1&lt;/token&gt;&lt;sign&gt;SIGN-1&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;</loginCmsReturn></loginCmsResponse></soapenv:Body></soapenv:Envelope>`;
+<soapenv:Envelope><soapenv:Body><loginCmsResponse><loginCmsReturn>&lt;loginTicketResponse&gt;&lt;header&gt;&lt;expirationTime&gt;2099-01-01T00:00:00-03:00&lt;/expirationTime&gt;&lt;/header&gt;&lt;credentials&gt;&lt;token&gt;TOKEN-1&lt;/token&gt;&lt;sign&gt;SIGN-1&lt;/sign&gt;&lt;/credentials&gt;&lt;/loginTicketResponse&gt;</loginCmsReturn></loginCmsResponse></soapenv:Body></soapenv:Envelope>`;
 
 function caeXml(resultado: string, extra = '') {
   return `<FECAESolicitarResult><FeDetResp><FECAEDetResponse><Resultado>${resultado}</Resultado><CAE>12345678901234</CAE><CAEFchVto>20261027</CAEFchVto>${extra}</FECAEDetResponse></FeDetResp></FECAESolicitarResult>`;
@@ -66,6 +68,35 @@ const solicitud: ArcaSolicitud = {
 };
 
 describe('ArcaWsfeClient', () => {
+  it('el cliente https expone request', async () => {
+    const spy = jest.spyOn(https, 'request').mockImplementation(((
+      _options: unknown,
+      callback: (res: EventEmitter) => void,
+    ) => {
+      const req = new EventEmitter();
+      process.nextTick(() => {
+        const res = new EventEmitter();
+        callback(res);
+        res.emit('data', Buffer.from('<ok/>'));
+        res.emit('end');
+      });
+      return Object.assign(req, {
+        write: () => undefined,
+        end: () => undefined,
+        destroy: () => undefined,
+      });
+    }) as unknown as typeof https.request);
+    await expect(
+      httpsSoapPost(
+        'https://wsaahomo.afip.gov.ar/ws/services/LoginCms',
+        '""',
+        '<x/>',
+        1000,
+      ),
+    ).resolves.toBe('<ok/>');
+    spy.mockRestore();
+  });
+
   it('el TRA pide wsfe y adelanta la hora de generación', () => {
     const now = Date.parse('2026-10-17T15:00:00Z');
     const xml = buildTra(now);

@@ -30,6 +30,8 @@ import {
 } from './arca-soap';
 
 const TOKEN_MARGIN_MS = 5 * 60 * 1000;
+/** El login de WSAA responde cerca de los 11 s. El timeout de facturación sigue en AFIP_TIMEOUT_MS. */
+const WSAA_TIMEOUT_MS = 25000;
 const WSFE_NS = 'http://ar.gov.afip.dif.FEV1/';
 
 export interface AfipTokenStore {
@@ -86,6 +88,8 @@ export class TypeormTokenStore implements AfipTokenStore {
 
 export class ArcaWsfeClient extends ArcaClient {
   private readonly logger = new Logger(ArcaWsfeClient.name);
+  private ticketInflight: Promise<{ token: string; sign: string }> | null =
+    null;
 
   constructor(
     private readonly settings: AfipSettings,
@@ -260,7 +264,16 @@ export class ArcaWsfeClient extends ArcaClient {
     return authXml(ticket.token, ticket.sign, this.requireCuit());
   }
 
-  private async ticket(): Promise<{ token: string; sign: string }> {
+  private ticket(): Promise<{ token: string; sign: string }> {
+    if (!this.ticketInflight) {
+      this.ticketInflight = this.loadTicket().finally(() => {
+        this.ticketInflight = null;
+      });
+    }
+    return this.ticketInflight;
+  }
+
+  private async loadTicket(): Promise<{ token: string; sign: string }> {
     const env = this.settings.environment;
     const urls = this.settings.urls;
     if (!env || !urls) throw new Error('ARCA no tiene ambiente configurado.');
@@ -277,7 +290,7 @@ export class ArcaWsfeClient extends ArcaClient {
       urls.wsaa,
       '""',
       loginEnvelope(cms),
-      this.settings.timeoutMs,
+      Math.max(this.settings.timeoutMs, WSAA_TIMEOUT_MS),
     );
     const fault = faultString(xml);
     if (fault) {

@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'fs/promises';
-import https from 'https';
+import * as https from 'https';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -152,7 +152,7 @@ export function httpsSoapPost(
       },
     );
     req.on('timeout', () => {
-      req.destroy(new Error('timeout'));
+      req.destroy(new Error(`timeout ${target.hostname}`));
     });
     req.on('error', reject);
     req.write(body);
