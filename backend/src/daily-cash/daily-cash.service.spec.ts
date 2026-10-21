@@ -315,3 +315,18 @@ describe('DailyCashService.getAnnualSummary', () => {
     expect(result).toEqual({ income: 1000, expenses: 400, profit: 600 });
   });
 });
+
+describe('DailyCashService.getDailyCashWithOrdersByDate', () => {
+  it('un día sin caja devuelve los listados vacíos', async () => {
+    const dailyCashRepo = { findOne: jest.fn().mockResolvedValue(null) };
+    const service = buildService({ dailyCashRepo, dataSource: {} });
+
+    const result = await service.getDailyCashWithOrdersByDate(20, 10, 2026);
+
+    expect(result).toEqual({
+      date: new Date(2026, 9, 20, 0, 0, 0, 0),
+      orders: [],
+      movements: [],
+    });
+  });
+});
