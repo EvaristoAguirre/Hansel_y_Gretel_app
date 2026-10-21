@@ -101,7 +101,7 @@ describe('ArcaWsfeClient', () => {
     const now = Date.parse('2026-10-17T15:00:00Z');
     const xml = buildTra(now);
     expect(xml).toContain('<service>wsfe</service>');
-    expect(xml).toContain(`<uniqueId>${now}</uniqueId>`);
+    expect(xml).toContain(`<uniqueId>${Math.floor(now / 1000)}</uniqueId>`);
     expect(xml).toContain('-03:00');
     expect(xml).toContain(
       '<generationTime>2026-10-17T11:50:00-03:00</generationTime>',
@@ -152,6 +152,19 @@ describe('ArcaWsfeClient', () => {
       outcome: 'rejected',
       errors: [{ code: '10016', msg: 'La fecha está fuera de rango' }],
     });
+  });
+
+  it('sin puntos de venta en homologación devuelve una lista vacía', async () => {
+    const client = new ArcaWsfeClient(
+      settings(),
+      store(),
+      async (url) => {
+        if (url.includes('LoginCms')) return loginXml;
+        return '<Errors><Err><Code>602</Code><Msg>Sin Resultados</Msg></Err></Errors>';
+      },
+      async () => 'cms',
+    );
+    await expect(client.getPtosVenta()).resolves.toEqual([]);
   });
 
   it('si el comprobante no existe, la consulta devuelve null', async () => {

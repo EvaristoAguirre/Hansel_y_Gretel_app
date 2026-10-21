@@ -17,7 +17,7 @@ export function buildTra(nowMs: number): string {
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<loginTicketRequest version="1.0">',
     '  <header>',
-    `    <uniqueId>${nowMs}</uniqueId>`,
+    `    <uniqueId>${Math.floor(nowMs / 1000)}</uniqueId>`,
     `    <generationTime>${formatAfip(generation)}</generationTime>`,
     `    <expirationTime>${formatAfip(expiration)}</expirationTime>`,
     '  </header>',

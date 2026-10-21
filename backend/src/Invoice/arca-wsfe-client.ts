@@ -239,6 +239,8 @@ export class ArcaWsfeClient extends ArcaClient {
 
   async getPtosVenta(): Promise<ArcaPuntoVenta[]> {
     const xml = await this.call('FEParamGetPtosVenta', await this.authBlock());
+    const errors = collectErrors(xml);
+    if (errors.some((error) => error.code === '602')) return [];
     this.assertNoErrors(xml);
     return blocks(xml, 'PtoVenta')
       .filter((item) => !tag(item, 'FchBaja'))
