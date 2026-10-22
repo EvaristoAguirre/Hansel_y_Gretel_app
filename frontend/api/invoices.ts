@@ -12,6 +12,47 @@ export interface InvoiceRow {
   afipEnv: "simulado" | "homologacion" | "produccion";
 }
 
+export interface InvoiceDetailLine {
+  name: string;
+  quantity: number;
+  unitaryPrice: number;
+  subtotal: number;
+  alicQuota: number;
+}
+
+export interface InvoiceDetail {
+  ptoVta: number;
+  cbteTipo: number;
+  cbteNro: number | null;
+  cbteFch: string;
+  status: InvoiceRow["status"];
+  afipEnv: InvoiceRow["afipEnv"];
+  origin: InvoiceRow["origin"];
+  cae: string | null;
+  caeFchVto: string | null;
+  resultado: string | null;
+  arcaErrors: { errors?: { code?: string; msg?: string }[] } | null;
+  impTotal: string | number;
+  impNeto: string | number;
+  impIva: string | number;
+  discountAmount: string | number;
+  customerEmail: string | null;
+  iva: {
+    quota: number;
+    baseImp: number | string;
+    importe: number | string;
+  }[];
+  snapshot: {
+    tableName?: string | null;
+    lines?: InvoiceDetailLine[];
+    emitter?: {
+      cuit?: string | null;
+      razonSocial?: string | null;
+      domicilio?: string | null;
+    };
+  };
+}
+
 async function readError(response: Response) {
   const data = await response.json().catch(() => ({}));
   throw new Error(data.message || "No se pudo completar la operación");
@@ -55,7 +96,10 @@ export async function listInvoices(
   return response.json();
 }
 
-export async function getInvoice(token: string, id: string) {
+export async function getInvoice(
+  token: string,
+  id: string
+): Promise<InvoiceDetail> {
   const response = await fetch(`${URI_INVOICES}/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });

@@ -8,10 +8,12 @@ import {
   retryInvoice,
   sendInvoiceEmail,
   updateInvoiceEmail,
+  InvoiceDetail,
   InvoiceRow,
 } from "@/api/invoices";
 import { useAuth } from "@/app/context/authContext";
 import { formatNumber } from "@/components/Utils/FormatNumber";
+import InvoiceDetailDialog from "./InvoiceDetailDialog";
 import ManualInvoiceDialog from "./ManualInvoiceDialog";
 import EmailIcon from "@mui/icons-material/Email";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
@@ -22,9 +24,6 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Box,
   Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   TextField,
@@ -61,7 +60,7 @@ export default function InvoicesView() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [rows, setRows] = useState<InvoiceRow[]>([]);
-  const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [detail, setDetail] = useState<InvoiceDetail | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const { getAccessToken } = useAuth();
 
@@ -82,7 +81,11 @@ export default function InvoicesView() {
   const openDetail = async (id: string) => {
     const token = getAccessToken();
     if (!token) return;
-    setDetail(await getInvoice(token, id));
+    try {
+      setDetail(await getInvoice(token, id));
+    } catch (error) {
+      Swal.fire("No se pudo abrir el detalle", String(error), "error");
+    }
   };
 
   const download = async (id: string) => {
@@ -302,14 +305,7 @@ export default function InvoicesView() {
         onClose={() => setManualOpen(false)}
         onCreated={load}
       />
-      <Dialog open={Boolean(detail)} onClose={() => setDetail(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Detalle de factura</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" component="pre" sx={{ whiteSpace: "pre-wrap" }}>
-            {detail ? JSON.stringify(detail, null, 2) : ""}
-          </Typography>
-        </DialogContent>
-      </Dialog>
+      <InvoiceDetailDialog detail={detail} onClose={() => setDetail(null)} />
     </Box>
   );
 }
