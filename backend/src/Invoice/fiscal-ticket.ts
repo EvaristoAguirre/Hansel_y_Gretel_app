@@ -20,6 +20,7 @@ export interface FiscalTicketPayload {
     alicQuota: number;
   }[];
   discountAmount: number;
+  impNeto?: number;
   impTotal: number;
   iva: { quota: number; importe: number }[];
   cae: string;
@@ -51,6 +52,7 @@ export function fiscalTicketFromInvoice(invoice: Invoice): FiscalTicketPayload {
     cbteFch: String(invoice.cbteFch),
     lines: snapshot.lines ?? [],
     discountAmount: Number(invoice.discountAmount ?? 0),
+    impNeto: Number(invoice.impNeto),
     impTotal: Number(invoice.impTotal),
     iva: (invoice.iva ?? []).map((item) => ({
       quota: item.quota,

@@ -308,8 +308,8 @@ describe('InvoiceService.emitForOrder', () => {
     const decoded = [...text.matchAll(/<([0-9A-Fa-f]+)>/g)]
       .map((match) => Buffer.from(match[1], 'hex').toString('latin1'))
       .join('');
-    expect(decoded).toContain('21%');
-    expect(decoded).toContain('10.5%');
+    expect(decoded).toContain('21 %');
+    expect(decoded).toContain('10,5 %');
   });
 
   it('una factura manual no abre orden ni mueve la caja', async () => {

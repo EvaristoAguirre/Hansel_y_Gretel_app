@@ -1,6 +1,10 @@
 import { BadGatewayException } from '@nestjs/common';
 import { Invoice } from './invoice.entity';
-import { InvoiceMailService } from './invoice-mail.service';
+import { invoiceMailContent } from './invoice-mail-content';
+import {
+  InvoiceMailService,
+  OutgoingInvoiceMail,
+} from './invoice-mail.service';
 
 function invoice(): Invoice {
   return {
@@ -92,17 +96,34 @@ describe('InvoiceMailService', () => {
       { detail: jest.fn(async () => row) } as any,
       { save } as any,
     );
-    let attachment: Buffer | undefined;
+    let sent: OutgoingInvoiceMail | undefined;
 
     const result = await service.send(row.id, async (mail) => {
-      attachment = mail.pdf;
-      expect(mail.to).toBe('cliente@example.com');
+      sent = mail;
     });
 
     expect(result.sent).toBe(true);
     expect(result.cae).toBe('00000000000003');
-    expect(attachment?.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(sent?.to).toBe('cliente@example.com');
+    expect(sent?.subject).toBe('Factura B 0001-00000003');
+    expect(sent?.text).toContain('CAE: 00000000000003');
+    expect(sent?.text).toContain('$ 121,00');
+    expect(sent?.text).toContain('SIN VALIDEZ FISCAL');
+    expect(sent?.html).toContain('cid:logo');
+    expect(sent?.html).not.toContain('https://www.afip.gob.ar');
+    expect(sent?.filename).toBe('factura-b-0001-00000003.pdf');
+    expect(sent?.logo.subarray(0, 4).toString('latin1')).toBe('\x89PNG');
+    expect(sent?.pdf.subarray(0, 5).toString()).toBe('%PDF-');
     expect(save).toHaveBeenCalled();
     expect(row.emailSentAt).toBeInstanceOf(Date);
+  });
+
+  it('en producción el correo no lleva la leyenda de prueba', () => {
+    const row = invoice();
+    row.afipEnv = 'produccion';
+    const content = invoiceMailContent(row);
+    expect(content.text).not.toContain('SIN VALIDEZ FISCAL');
+    expect(content.html).not.toContain('SIN VALIDEZ FISCAL');
+    expect(content.html).toContain('cid:logo');
   });
 });

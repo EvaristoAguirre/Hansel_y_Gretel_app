@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { createTransport } from 'nodemailer';
 import { Repository } from 'typeorm';
 import { Invoice } from './invoice.entity';
+import { invoiceMailContent } from './invoice-mail-content';
+import { invoiceLogoPng } from './invoice-logo';
 import { renderInvoicePdf } from './invoice-pdf';
 import { InvoiceService } from './invoice.service';
 
@@ -15,7 +17,10 @@ export interface OutgoingInvoiceMail {
   to: string;
   subject: string;
   text: string;
+  html: string;
   pdf: Buffer;
+  filename: string;
+  logo: Buffer;
 }
 
 export type MailDelivery = (input: OutgoingInvoiceMail) => Promise<void>;
@@ -50,14 +55,19 @@ export class InvoiceMailService {
     }
 
     const pdf = await renderInvoicePdf(invoice);
+    const content = invoiceMailContent(invoice);
+    const logo = invoiceLogoPng();
     const cae = invoice.cae;
     const email = invoice.customerEmail;
     try {
       await deliver({
         to: email,
-        subject: `Factura B ${String(invoice.ptoVta).padStart(4, '0')}-${String(invoice.cbteNro ?? 0).padStart(8, '0')}`,
-        text: 'Adjuntamos la factura.',
+        subject: content.subject,
+        text: content.text,
+        html: content.html,
         pdf,
+        filename: content.filename,
+        logo,
       });
     } catch {
       throw new BadGatewayException(
@@ -89,11 +99,18 @@ async function deliverWithSmtp(input: OutgoingInvoiceMail): Promise<void> {
     to: input.to,
     subject: input.subject,
     text: input.text,
+    html: input.html,
     attachments: [
       {
-        filename: 'factura-b.pdf',
+        filename: input.filename,
         content: input.pdf,
         contentType: 'application/pdf',
+      },
+      {
+        filename: 'logo.png',
+        content: input.logo,
+        cid: 'logo',
+        contentType: 'image/png',
       },
     ],
   });

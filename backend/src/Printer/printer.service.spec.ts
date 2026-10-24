@@ -66,6 +66,8 @@ describe('PrinterService', () => {
     });
     expect(text).toMatch(/SIN VALIDEZ FISCAL/);
     expect(text).toMatch(/FACTURA B/);
+    expect(text).toMatch(/\$ 1\.210,00/);
+    expect(text).not.toMatch(/https:\/\//);
     expect(connect).not.toHaveBeenCalled();
     connect.mockRestore();
     process.env.NODE_ENV = previous;
