@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -11,8 +12,10 @@ import { EnvNames } from './common/names.env';
 import { ExceptionFilters } from './Filters/globalException.filters';
 // import { GlobalExceptionFilter } from './Filters/globalException.filters';
 import * as express from 'express';
+import { AfipConfigError, resolveAfipConfig } from './Invoice/afip-config';
 
 async function bootstrap() {
+  const afipSettings = resolveAfipConfig(process.env);
   const configService = new ConfigService();
 
   const app = await NestFactory.create(AppModule);
@@ -155,6 +158,7 @@ async function bootstrap() {
 
   // Obtener el LoggerService del contenedor de dependencias
   const loggerService = app.get(LoggerService);
+  loggerService.log(`Facturación electrónica: modo ${afipSettings.mode}`);
 
   app.useGlobalFilters(new ExceptionFilters(loggerService));
   app.use(LoggerMidleware);
@@ -171,6 +175,9 @@ async function bootstrap() {
     loggerService.log(`Swagger docs disponible en: ${baseUrl}/api/docs`);
   }
 }
-bootstrap().catch((err) =>
-  console.error('❌ Error al iniciar la aplicación:', err),
-);
+bootstrap().catch((err) => {
+  console.error('❌ Error al iniciar la aplicación:', err);
+  if (err instanceof AfipConfigError) {
+    process.exit(1);
+  }
+});

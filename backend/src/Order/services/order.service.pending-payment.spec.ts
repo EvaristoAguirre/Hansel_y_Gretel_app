@@ -103,6 +103,7 @@ describe('OrderService.markOrderAsPendingPayment', () => {
       {} as any,
       printerService as any,
       {} as any,
+      {} as any,
     );
   }
 

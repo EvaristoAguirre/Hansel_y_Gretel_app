@@ -1,6 +1,8 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -33,6 +35,16 @@ export class CloseOrderDto {
   @Min(0)
   @Max(100)
   discountPercent?: number;
+
+  /** Si es true, después del cobro se pide una Factura B. Default false. */
+  @IsOptional()
+  @IsBoolean()
+  invoice?: boolean;
+
+  /** Se guarda en la factura solo cuando invoice es true. */
+  @IsOptional()
+  @IsEmail()
+  customerEmail?: string;
 }
 
 export class PaymentDetailDto {

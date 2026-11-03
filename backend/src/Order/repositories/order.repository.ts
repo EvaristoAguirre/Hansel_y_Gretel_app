@@ -128,7 +128,7 @@ export class OrderRepository {
         .reduce((acc, detail) => acc + Number(detail.subtotal), 0);
 
       const totalConsumedNum = Number(totalConsumed);
-      const grossRounded = Math.round(totalConsumedNum);
+      const consumptionCents = Math.round(totalConsumedNum * 100);
       const pctRaw = Number(closeOrderDto.discountPercent ?? 0);
       const discountPercent = Math.min(100, Math.max(0, Math.round(pctRaw)));
 
@@ -138,22 +138,27 @@ export class OrderRepository {
       if (discountPercent === 0) {
         discountAmount = 0;
         const declaredTotal = Number(closeOrderDto.total);
-        calculatedTip = declaredTotal - totalConsumedNum;
+        calculatedTip =
+          Math.round((declaredTotal - totalConsumedNum) * 100) / 100;
         if (calculatedTip < 0) {
           throw new BadRequestException(
             `The declared total (${declaredTotal}) is less than the consumed amount (${totalConsumedNum}). This implies a negative tip.`,
           );
         }
       } else {
-        discountAmount = Math.round((grossRounded * discountPercent) / 100);
-        const netAfterDiscount = grossRounded - discountAmount;
+        const discountCents = Math.round(
+          (consumptionCents * discountPercent) / 100,
+        );
+        discountAmount = discountCents / 100;
+        const netAfterDiscount = (consumptionCents - discountCents) / 100;
         if (netAfterDiscount < 0) {
           throw new BadRequestException(
             'El descuento no puede superar el subtotal.',
           );
         }
-        const declaredTotal = Math.round(Number(closeOrderDto.total));
-        calculatedTip = declaredTotal - netAfterDiscount;
+        const declaredTotal = Number(closeOrderDto.total);
+        calculatedTip =
+          Math.round((declaredTotal - netAfterDiscount) * 100) / 100;
         if (calculatedTip < 0) {
           throw new BadRequestException(
             `El total cobrado (${declaredTotal}) es menor que el neto tras descuento (${netAfterDiscount}).`,
