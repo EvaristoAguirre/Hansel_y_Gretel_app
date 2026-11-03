@@ -97,6 +97,21 @@ describe('WebSocketService', () => {
     });
   });
 
+  it('en desarrollo usa NEXT_PUBLIC_API_URL si no hay variables DEV', async () => {
+    vi.resetModules();
+    delete process.env.NEXT_PUBLIC_WS_URL_DEV;
+    delete process.env.NEXT_PUBLIC_API_URL_DEV;
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000';
+    process.env.NODE_ENV = 'development';
+    const { io } = await import('socket.io-client');
+    const { WebSocketService: Reloaded } = await import('./websocket.service');
+    new Reloaded().connect();
+    expect(io).toHaveBeenCalledWith(
+      'http://localhost:3000',
+      expect.any(Object),
+    );
+  });
+
   it('pasa el JWT en auth.token al crear el socket', async () => {
     const { io } = await import('socket.io-client');
     localStorage.setItem('user', JSON.stringify({ accessToken: 'jwt-test' }));

@@ -66,15 +66,20 @@ export const orderToClosed = async (
   token: string,
   payments: PaymentDTO[],
   commandNumber?: string,
-  discountPercent: number = 0
+  discountPercent: number = 0,
+  invoice?: { emit?: boolean; email?: string }
 ) => {
   const total = payments.reduce((sum, p) => sum + p.amount, 0);
+  const email = invoice?.email?.trim();
 
   const body = {
     total,
     payments,
     discountPercent: Math.min(100, Math.max(0, Math.round(discountPercent))),
     ...(commandNumber && { commandNumber }),
+    ...(invoice?.emit
+      ? { invoice: true, ...(email ? { customerEmail: email } : {}) }
+      : {}),
   };
 
   const response = await fetch(`${URI_ORDER}/close/${orderId}`, {

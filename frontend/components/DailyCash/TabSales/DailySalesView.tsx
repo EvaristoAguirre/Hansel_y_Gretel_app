@@ -92,13 +92,16 @@ const DailySalesView = () => {
 
       const result = token && (await getMovements(token, day, month, year));
 
-      if (!result || !result.date) {
-        throw new Error('No se encontraron ventas para esa fecha.');
-      }
-
-      setDataOrders(result.orders);
-      setDataMovements(result.movements);
+      setDataOrders(result?.orders ?? []);
+      setDataMovements(result?.movements ?? []);
     } catch (err: any) {
+      if (err?.message === 'Daily cash not found') {
+        setDataOrders([]);
+        setDataMovements([]);
+        return;
+      }
+      setDataOrders([]);
+      setDataMovements([]);
       setError(err.message || 'Error al obtener los datos.');
     } finally {
       setLoading(false);
@@ -267,7 +270,7 @@ const DailySalesView = () => {
         </Typography>
         <Box bgcolor="#fff" borderRadius={2} boxShadow={1} mt={3}>
           <DataGrid
-            rows={dataOrders?.map((order: any, i: number) => ({
+            rows={(dataOrders ?? []).map((order: any, i: number) => ({
               ...order,
               id: order.id || i,
             }))}
@@ -285,11 +288,6 @@ const DailySalesView = () => {
         <Typography variant="h4" color="primary" gutterBottom>
           Movimientos por Día
         </Typography>
-        {error && (
-          <Typography color="error" mt={3}>
-            {error}
-          </Typography>
-        )}
 
         <Box bgcolor="#fff" borderRadius={2} boxShadow={1} mt={3}>
           <DataGrid

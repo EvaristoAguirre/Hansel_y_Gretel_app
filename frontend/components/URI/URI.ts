@@ -62,5 +62,7 @@ export const URI_PDF = `${API_URL}/export/stock`;
 // DAILY CASH
 export const URI_DAILY_CASH = `${API_URL}/daily-cash`;
 
+export const URI_INVOICES = `${API_URL}/invoices`;
+
 // MÉTRICAS
 export const URI_METRICS = `${API_URL}/daily-cash/metrics`;

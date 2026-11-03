@@ -18,6 +18,11 @@ import { ProductsToExportDto } from 'src/DTOs/productsToExport.dto';
 import { LoggerService } from 'src/Monitoring/monitoring-logger.service';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
 import { EnvNames } from 'src/common/names.env';
+import { FiscalTicketPayload } from 'src/Invoice/fiscal-ticket';
+import {
+  fiscalTicketCommands,
+  fiscalTicketPlainText,
+} from 'src/Invoice/fiscal-ticket-print';
 
 @Injectable()
 export class PrinterService {
@@ -451,6 +456,22 @@ export class PrinterService {
     }
   }
 
+  async printFiscalTicket(payload: FiscalTicketPayload): Promise<string> {
+    const text = fiscalTicketPlainText(payload);
+
+    if (process.env.NODE_ENV !== 'production') {
+      this.logger.log(`Ticket fiscal (sin enviar a la térmica):\n${text}`);
+      return text;
+    }
+
+    const commands = fiscalTicketCommands(payload);
+    const printed = await this.sendRawCommandWithRetry(commands);
+    if (!printed) {
+      throw new Error('No se pudo imprimir el ticket fiscal');
+    }
+    return text;
+  }
+
   async reprintTicketById(
     id: string,
   ): Promise<{ message: string; printerWarning?: string }> {
@@ -474,7 +495,9 @@ export class PrinterService {
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      this.logger.log(`[DEV] Simulando reimpresión de ticket para pedido ${id}`);
+      this.logger.log(
+        `[DEV] Simulando reimpresión de ticket para pedido ${id}`,
+      );
       return { message: 'reimpresion-ticket-simulada-dev' };
     }
 

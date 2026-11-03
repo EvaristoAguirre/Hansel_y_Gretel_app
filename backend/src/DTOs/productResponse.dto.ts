@@ -52,6 +52,9 @@ export class ProductResponseDto {
   price?: string;
 
   @Expose()
+  alicQuota?: number | null;
+
+  @Expose()
   cost?: string;
 
   @Expose()

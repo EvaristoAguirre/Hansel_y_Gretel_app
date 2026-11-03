@@ -306,14 +306,17 @@ export class DailyCashController {
     description: 'Año',
     example: 2024,
   })
-  @ApiResponse({ status: 200, description: 'Caja del día encontrada' })
-  @ApiResponse({ status: 404, description: 'No hay caja para esa fecha' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Caja del día. Si no se abrió caja, orders y movements vienen vacíos.',
+  })
   @Roles(UserRole.ADMIN, UserRole.ENCARGADO)
   getDailyCashWithOrdersByDate(
     @Query('day', ParseIntPipe) day: number,
     @Query('month', ParseIntPipe) month: number,
     @Query('year', ParseIntPipe) year: number,
-  ): Promise<DailyCash | null> {
+  ) {
     return this.dailyCashService.getDailyCashWithOrdersByDate(day, month, year);
   }
 

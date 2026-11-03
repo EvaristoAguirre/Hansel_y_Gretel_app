@@ -164,14 +164,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // 🔔 Notificar 1 minuto antes de la expiración
-      const warningTime = expirationTime - 60000;
+      // 🔔 Notificar 10 minutos antes de la expiración
+      const warningTime = expirationTime - 10 * 60 * 1000;
       if (warningTime > 0) {
         warningTimer = setTimeout(() => {
           Swal.fire({
             icon: "warning",
             title: "Sesión por expirar",
-            text: "Tu sesión expirará en 1 minuto. Guarda tu trabajo o vuelve a iniciar sesión.",
+            text: "Tu sesión expirará en 10 minutos. Guarda tu trabajo o vuelve a iniciar sesión.",
             confirmButtonText: "OK",
           });
         }, warningTime);

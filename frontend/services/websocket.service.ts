@@ -90,15 +90,16 @@ export class WebSocketService {
   }
 
   private getWebSocketUrl(): string | null {
-    const NODE_ENV = process.env.NODE_ENV;
-    let wsUrl: string | undefined;
-
-    if (NODE_ENV === 'production') {
-      wsUrl = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL;
-    } else {
-      wsUrl =
-        process.env.NEXT_PUBLIC_WS_URL_DEV || process.env.NEXT_PUBLIC_API_URL_DEV;
-    }
+    const wsUrl =
+      process.env.NODE_ENV === 'production'
+        ? process.env.NEXT_PUBLIC_WS_URL ||
+          process.env.NEXT_PUBLIC_API_URL ||
+          process.env.NEXT_PUBLIC_WS_URL_DEV ||
+          process.env.NEXT_PUBLIC_API_URL_DEV
+        : process.env.NEXT_PUBLIC_WS_URL_DEV ||
+          process.env.NEXT_PUBLIC_API_URL_DEV ||
+          process.env.NEXT_PUBLIC_WS_URL ||
+          process.env.NEXT_PUBLIC_API_URL;
 
     return wsUrl || null;
   }

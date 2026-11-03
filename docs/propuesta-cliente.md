@@ -150,3 +150,17 @@ Estas respuestas cambian el diseño. Hasta definirlas, el desarrollo sigue las s
 6. **Anulación.** Una factura con CAE no se borra. La forma de anularla es una Nota de Crédito B. ¿La necesitamos enseguida (mesa mal facturada, error de importe) o puede esperar a una etapa siguiente? Sin nota de crédito, una factura emitida por error queda firme.
 7. **Email en el cobro.** ¿El correo se carga solo desde el listado, o también en la pantalla de pago, antes de que el cliente se vaya?
 8. **Ticket cuando se factura.** Cuando la factura sale autorizada, el ticket fiscal reemplaza al ticket de cuenta. ¿Quieren las dos copias (cuenta + factura) o solo la factura?
+
+## 9.Confirmaciones del cliente
+
+El cliente ha confirmado lo siguiente
+
+1. **Condición del emisor.** ¿El local es Responsable Inscripto? Sí.
+2. **Propina.** ¿Confirmamos que la propina no se factura? No se factura.
+3. **Alícuota.** ¿Toda la carta va a la misma alícuota (por ejemplo 21 %)? Sin respuesta todavía. Podemos aceptar o desarrollar de manera que pueda aceptar más de un valor, si es que eso no genera un problema a nivel desarrollo.
+4. **Cliente identificado.** ¿Alcanza siempre “consumidor final”, o a partir de cierto monto hay que pedir DNI? Sin identificación, "consumidor final".
+5. **Olvido del switch.** ¿Hace falta, en una segunda etapa, un botón para facturar una orden ya cobrada que quedó sin factura? No.
+6. **Anulación.** Sin nota de crédito, una factura emitida por error queda firme.
+7. **Email en el cobro.** ¿El correo se carga solo desde el listado, o también en la pantalla de pago, antes de que el cliente se vaya?. En el listado y en la pantalla de cobro. En la pantalla de cobro agregar un pequeño ícono que al ser clickeado abra un input para dejar guardado el email. 
+8. **Ticket cuando se factura.** Cuando la factura sale autorizada, el ticket fiscal reemplaza al ticket de cuenta. ¿Quieren las dos copias (cuenta + factura) o solo la factura?. Se imprimirá el ticket normal en el paso 3, para ser llevado a la mesa con el total. En el paso 4 donde se cobra se imprimirá sólo la factura. 
+9. **Generador de factura en vista**: Cliente pide una vista para poder cargar y emitir factura sin tener que realizar el proceso entero de atención en mesa. Considerar el desarrollo.

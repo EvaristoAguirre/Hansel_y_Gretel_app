@@ -1,6 +1,7 @@
 import { OrderState, TableState } from 'src/Enums/states.enum';
 import { ProductLineDto } from '../../DTOs/productSummary.dto';
 import { PaymentMethod } from 'src/Enums/paymentMethod.enum';
+import { InvoiceCloseView } from 'src/Invoice/invoice.types';
 
 export class OrderSummaryResponseDto {
   id: string;
@@ -22,6 +23,8 @@ export class OrderSummaryResponseDto {
   printerWarning?: string | null;
   /** Presente cuando el pedido se confirmó pero la comanda no pudo imprimirse. */
   comandaWarning?: string | null;
+  /** Presente cuando el cobro pidió Factura B. */
+  invoice?: InvoiceCloseView;
 }
 
 export class OrderPaymentSummary {

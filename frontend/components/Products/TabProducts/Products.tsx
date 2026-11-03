@@ -277,6 +277,10 @@ const Products: React.FC<ProductsProps> = ({
       description: row.description,
       type: row.type,
       price: normalizeNumber(row.price),
+      alicQuota:
+        row.alicQuota == null || row.alicQuota === ''
+          ? null
+          : Number(row.alicQuota),
       cost: normalizeNumber(row.cost),
       baseCost: normalizeNumber(row.baseCost),
       categories: row.categories,

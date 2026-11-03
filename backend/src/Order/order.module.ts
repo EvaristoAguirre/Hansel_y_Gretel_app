@@ -29,6 +29,7 @@ import { PromotionSlot } from 'src/Product/entities/promotion-slot.entity';
 import { PromotionSlotOption } from 'src/Product/entities/promotion-slot-option.entity';
 import { OrderPromotionSelection } from './entities/order-promotion-selection.entity';
 import { OrderReaderService } from './services/order-reader.service';
+import { InvoiceModule } from 'src/Invoice/invoice.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { OrderReaderService } from './services/order-reader.service';
     StockModule,
     TableModule,
     PrinterModule,
+    InvoiceModule,
   ],
   controllers: [OrderController],
   providers: [

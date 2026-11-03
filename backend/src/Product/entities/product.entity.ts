@@ -43,6 +43,13 @@ export class Product {
   @Min(0)
   price: number;
 
+  /** Porcentaje de IVA gravado. Null = default del entorno al facturar. */
+  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0)
+  alicQuota?: number | null;
+
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0)

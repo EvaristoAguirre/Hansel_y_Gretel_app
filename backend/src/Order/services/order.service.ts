@@ -25,10 +25,7 @@ import { DailyCashService } from 'src/daily-cash/daily-cash.service';
 import { Table } from 'src/Table/table.entity';
 import { Product } from 'src/Product/entities/product.entity';
 import { StockService } from 'src/Stock/stock.service';
-import {
-  latestStockChanges,
-  StockWsChange,
-} from 'src/Stock/stock-ws.payload';
+import { latestStockChanges, StockWsChange } from 'src/Stock/stock-ws.payload';
 import { Logger } from '@nestjs/common';
 import { PrinterService } from 'src/Printer/printer.service';
 import { transferOrderData } from 'src/Order/dtos/transfer-order.dto';
@@ -39,6 +36,8 @@ import { OrderPromotionSelection } from '../entities/order-promotion-selection.e
 import { OrderReaderService } from './order-reader.service';
 import { Ingredient } from '@/Ingredient/ingredient.entity';
 import { PromotionSelectionDto } from '@/Product/dtos/promotion-selection.dto';
+import { InvoiceService } from 'src/Invoice/invoice.service';
+import { previewFiscalTotal } from 'src/Invoice/invoice-calculator';
 
 @Injectable()
 export class OrderService {
@@ -55,6 +54,7 @@ export class OrderService {
     private readonly stockService: StockService,
     private readonly printerService: PrinterService,
     private readonly reader: OrderReaderService,
+    private readonly invoiceService: InvoiceService,
   ) {}
 
   async openOrder(
@@ -142,7 +142,7 @@ export class OrderService {
       products: any[];
       isPriority?: boolean;
     } | null = null;
-    let savedDetailIds: string[] = [];
+    const savedDetailIds: string[] = [];
     const deductedStocks: StockWsChange[] = [];
 
     try {
@@ -824,6 +824,10 @@ export class OrderService {
       );
     }
 
+    if (closeOrderDto.invoice) {
+      await this.assertInvoiceable(id, closeOrderDto.discountPercent ?? 0);
+    }
+
     const closedOrder = await this.orderRepository.closeOrder(
       id,
       closeOrderDto,
@@ -836,7 +840,9 @@ export class OrderService {
     // se emitía este evento y la mesa quedaba visualmente en pending_payment.
     if (closedOrder.table?.id) {
       try {
-        const freedTable = await this.tableService.getTableById(closedOrder.table.id);
+        const freedTable = await this.tableService.getTableById(
+          closedOrder.table.id,
+        );
         this.eventEmitter.emit('table.updated', { table: freedTable });
       } catch (err) {
         this.logger.warn(
@@ -847,7 +853,61 @@ export class OrderService {
 
     this.eventEmitter.emit('order.updateClose', { order: closedOrder });
 
+    if (closeOrderDto.invoice) {
+      const email = closeOrderDto.customerEmail?.trim() || undefined;
+      try {
+        closedOrder.invoice = await this.invoiceService.emitForOrder(id, email);
+        if (
+          closedOrder.invoice.status === 'authorized' &&
+          closedOrder.invoice.id
+        ) {
+          try {
+            const payload = await this.invoiceService.fiscalTicket(
+              closedOrder.invoice.id,
+            );
+            await this.printerService.printFiscalTicket(payload);
+          } catch (printError) {
+            this.logger.error('printFiscalTicket', printError);
+            closedOrder.printerWarning =
+              'La factura quedó autorizada, pero el ticket fiscal no se imprimió. Reimprimila desde el listado.';
+          }
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : 'error';
+        this.logger.error(
+          `emitForOrder env=${this.invoiceService.currentAfipEnv()} ptoVta=${this.invoiceService.currentPtoVta()} cbteNro=- id=- ${detail}`,
+        );
+        closedOrder.invoice = {
+          id: '',
+          status: 'pending',
+          cbteNro: null,
+          cae: null,
+          afipEnv: this.invoiceService.currentAfipEnv(),
+          message:
+            error instanceof Error && error.message
+              ? `La orden está cobrada. ${error.message}`
+              : 'La orden está cobrada. La factura no pudo registrarse.',
+        };
+      }
+    }
+
     return closedOrder;
+  }
+
+  private async assertInvoiceable(id: string, discountPercent: number) {
+    const order = await this.orderRepo.findOne({
+      where: { id, isActive: true },
+      relations: ['orderDetails'],
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID: ${id} not found`);
+    }
+    const consumption = (order.orderDetails ?? [])
+      .filter((detail) => detail.isActive)
+      .reduce((sum, detail) => sum + Number(detail.subtotal), 0);
+    if (previewFiscalTotal(consumption, discountPercent) <= 0) {
+      throw new BadRequestException('No se puede facturar un importe cero.');
+    }
   }
 
   async cancelOrder(id: string): Promise<Order> {
@@ -976,7 +1036,8 @@ export class OrderService {
       // Emitir tableUpdated después del commit para que el frontend actualice el color.
       if (previousTableId) {
         try {
-          const freedTable = await this.tableService.getTableById(previousTableId);
+          const freedTable =
+            await this.tableService.getTableById(previousTableId);
           this.eventEmitter.emit('table.updated', { table: freedTable });
         } catch (err) {
           this.logger.warn(
@@ -1158,7 +1219,8 @@ export class OrderService {
 
         detail.quantity = newQuantity;
         detail.toppingsExtraCost = newToppingsExtraCost;
-        detail.unitaryPrice = baseProductPricePerUnit + newUnitaryToppingsCostPerUnit;
+        detail.unitaryPrice =
+          baseProductPricePerUnit + newUnitaryToppingsCostPerUnit;
         detail.subtotal = detail.unitaryPrice * newQuantity;
       }
 
@@ -1168,7 +1230,9 @@ export class OrderService {
       await queryRunner.commitTransaction();
       const restoredDetailLatest = latestStockChanges(restoredDetailStocks);
       if (restoredDetailLatest.length) {
-        this.eventEmitter.emit('stock.restored', { stocks: restoredDetailLatest });
+        this.eventEmitter.emit('stock.restored', {
+          stocks: restoredDetailLatest,
+        });
       }
 
       // 12) Reimprimir comanda de cocina con el estado actualizado (fuera de la transacción)

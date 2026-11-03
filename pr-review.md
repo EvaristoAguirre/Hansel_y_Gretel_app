@@ -1,137 +1,220 @@
-# PR Review: fix-fase-4-higiene
+# PR Review: feat-implementacion-arca
 
-**Fecha:** 2026-09-24  
+**Fecha:** 2026-11-03  
 **Rama base:** development (`origin/development`)  
-**Merge-base:** `5377cd9`  
-**Commits incluidos:** 1 (`e620725`)  
-**Archivos modificados (reales, vía merge-base):** 41
+**Merge-base:** `4a5ac96`  
+**Commits incluidos:** 23  
+**Archivos modificados (reales, vía merge-base):** 94
 
-La rama también contiene el historial que ya está en `development` y no está en `origin/main` (fases 0–3). `origin/main` existe y el algoritmo por defecto lo elegiría primero, pero esta rama está exactamente **1 commit adelante de `development` y 0 atrás**. El review usa `origin/development...HEAD` para no mezclar trabajo ya integrado. No hace falta traer la base antes de mergear a `development`.
+La detección mecánica de la skill toma la primera rama que existe, y `origin/main` existe. Esta rama está mergeada con `development`, va 0 commits atrás de `origin/development` y el diff contra `main` mete otros ~130 archivos que ya están en `development` (archivado, pnpm, guards, WebSocket). El review usa `origin/development...HEAD`.
 
 ## Resumen ejecutivo
 
-El PR cierra la fase 4: JWT en el handshake de Socket.IO, eventos de stock con cantidad para el front, contador de comanda en Postgres y un bump de dependencias (Next 15.5.26, Nest 10.4.22, overrides de `socket.io-parser` y `ws`). La auth del socket y el corte de emisión de stock hasta después del commit están bien encaminados. Hay que corregir cómo el front aplica esas cantidades, el corte del contador de comanda en el primer deploy y el lockfile de pnpm, que no refleja el bump de Next.
+El PR agrega Factura B (ARCA / WSFEv1): configuración con simulación por defecto, tablas, cálculo de IVA, emisión al cobrar, ticket, PDF, mail, listado con reintento y factura manual. El cobro se commitea antes de pedir el CAE, y un fallo de ARCA no deshace la venta. Esa decisión es la correcta para el salón.
+
+No está en condiciones de mergear. Hay tres defectos que producen un comprobante inválido o una orden cobrada sin factura recuperable: la fecha que Postgres devuelve se manda mal al QR y al reintento, el simulador olvida la numeración al reiniciar el proceso, y una respuesta SOAP que no es un rechazo de negocio se guarda como `rejected` y la emisión siguiente suelta ese número.
 
 ## Patrones del proyecto detectados
 
 | Aspecto | Patrón detectado |
 |---------|-----------------|
-| ORM/DB | TypeORM + PostgreSQL. `synchronize: false`. Migraciones en `backend/migration/`, sin `migrationsRun`. Transacciones con `QueryRunner` / `dataSource.transaction`. |
-| Logging | Winston en `LoggerService` (`backend/src/Monitoring/monitoring-logger.service.ts`) y `Logger` de Nest en servicios. `main.ts` sigue con `console.log` en el bootstrap. |
-| Errores | `HttpException` de Nest y filtro global `ExceptionFilters`. La impresión de comanda atrapa el fallo y deja el pedido guardado con aviso. |
-| Validación | `class-validator` + `ValidationPipe` global en `main.ts`. |
-| Auth | JWT (`JwtModule` exportado por `UserModule`, secreto `JWT_SECRET`, 120 min) y `RolesGuard` en HTTP. Este PR exige el mismo JWT en el handshake del gateway de Socket.IO. |
+| ORM/DB | TypeORM con PostgreSQL. `synchronize: false`. Transacciones con `QueryRunner` en órdenes y caja. El módulo de facturas usa `Repository` directo, sin un repositorio propio. |
+| Logging | `Logger` de Nest y `LoggerService` (winston) en `src/Monitoring/`. El servicio de facturas no loguea. |
+| Errores | Excepciones HTTP de Nest (`BadRequestException`, `ConflictException`, `NotFoundException`) y `ExceptionFilters` global. `AfipConfigError` corta el arranque. |
+| Validación | `class-validator` + `ValidationPipe` global (`whitelist`, `transform: true`). |
+| Auth | `RolesGuard` verifica el JWT y el rol. Facturas: `ADMIN` y `ENCARGADO`. `GET /invoices/arca/parametros` solo `ADMIN`. |
 
-No hay `docs/specs/**/tasks.md`. No aplica alcance SDD.
+No hay `docs/specs/**/tasks.md`. El alcance está en `docs/plan-implementacion.md`: pasos 1 a 13 escritos en código; el paso 8 no se probó contra homologación; el paso 14 (producción) no está hecho. Nota de crédito, DNI/CUIT del receptor y factura A quedan fuera del plan.
 
 ## Problemas encontrados
 
 ### 🔴 Críticos
 
-No se encontraron problemas críticos.
+#### La fecha leída de Postgres no es `AAAA-MM-DD`
+
+**Archivo:** `backend/src/Invoice/fiscal-ticket.ts` (líneas 52 y 64), `backend/src/Invoice/invoice.service.ts` (línea 690), `backend/src/Invoice/invoice-format.ts` (líneas 1-6)
+
+**Problema:** `cbteFch` y `caeFchVto` son columnas `date`. `pg-types` parsea el OID 1082 con `postgres-date`, que arma un `Date` a medianoche local. El ticket, el PDF, el QR y el reintento hacen `String(fecha).slice(0, 10)`. En este entorno eso es `Tue Nov 03`, no `2026-11-03`.
+
+La primera solicitud a ARCA usa el string de `argentinaIsoDate()` y sale bien. El ticket del cobro no: `fiscalTicket()` vuelve a leer la fila. El QR de la RG 4892 queda con `fecha` inválida, el papel imprime el `Date` de JavaScript, y un reintento manda ese texto como `CbteFch`.
+
+**Código actual:**
+
+```ts
+cbteFch: String(invoice.cbteFch).slice(0, 10).replace(/-/g, ''),
+// fiscal-ticket.ts
+fecha: String(invoice.cbteFch).slice(0, 10),
+```
+
+**Sugerencia:**
+
+```ts
+export function civilDate(value: string | Date | null | undefined): string {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const text = String(value ?? '').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
+}
+```
+
+Usar `civilDate` en `formatFiscalDate`, `fiscalTicketFromInvoice`, `solicitudFromInvoice` y `comprobanteMatchesInvoice`. Los getters locales coinciden con el parseo de `postgres-date`. Un test tiene que hidratar la fila como `Date`, no como string.
+
+**Resolución (2026-11-03):** `civilDate` quedó en `invoice-format.ts`. La usan el formato fiscal, el ticket (papel, PDF y QR), `solicitudFromInvoice`, `comprobanteMatchesInvoice` y las fechas que salen en el listado y el detalle. El test de formato arma `new Date(2026, 10, 3)` y espera `2026-11-03`. El de servicio hidrata la fila autorizada como `Date` y revisa el ticket y el `fecha` del QR.
+
+---
+
+#### Al reiniciar, el simulador vuelve a pedir el número 1 y la orden queda sin factura
+
+**Archivo:** `backend/src/Invoice/arca-simulator.ts` (líneas 20-27), `backend/src/Invoice/invoice.service.ts` (líneas 604-652), `backend/src/Order/services/order.service.ts` (líneas 875-887)
+
+**Problema:** `ArcaSimulator.ultimoAutorizado` solo mira un `Map` en memoria. `allocateNumber` hace `ultimo + 1` y después busca pendientes o rechazadas de ese candidato. No mira el máximo `cbteNro` ya `authorized` en `invoices`.
+
+`AFIP_SIMULATE` por defecto es `true`. Después de reiniciar el backend el simulador responde 0, el candidato es 1 y el `INSERT` choca con `UQ_invoices_number`. Esa excepción no entra en `persistFailedAttempt`. `closeOrder` la convierte en una factura ficticia (`id: ''`, sin fila). La orden ya está cobrada y el listado no tiene reintento. El plan deja fuera facturar después una orden cobrada sin factura.
+
+En homologación el último número sale de ARCA y este caso no se da. El modo en el que se va a usar el módulo hasta tener certificado, sí.
+
+**Código actual:**
+
+```ts
+let max = 0;
+for (const comprobante of this.authorized.values()) {
+  if (comprobante.ptoVta === ptoVta && comprobante.cbteTipo === cbteTipo) {
+    max = Math.max(max, comprobante.cbteNro);
+  }
+}
+return max;
+```
+
+**Sugerencia:** en `allocateNumber`, el candidato tiene que ser `max(último de ARCA, máximo local authorized) + 1`, filtrando por `afipEnv`, `ptoVta` y `cbteTipo`. El índice único sigue siendo la red de seguridad, no la numeración. Si el `save` igual choca, hay que dejar la fila `pending` con `cbteNro` null y el error de base, no un `id` vacío.
+
+**Resolución (2026-11-03):** `allocateNumber` usa ese máximo. Un `23505` de `UQ_invoices_number` persiste la fila `pending` con `cbteNro` null y el mensaje de la base. El `id` vacío de `closeOrder` queda para un fallo que no es ese choque.
+
+---
+
+#### Una respuesta que no es un rechazo de ARCA se guarda como `rejected` y se libera el número
+
+**Archivo:** `backend/src/Invoice/arca-wsfe-client.ts` (líneas 148-172), `backend/src/Invoice/arca-soap.ts` (líneas 148-151), `backend/src/Invoice/invoice.service.ts` (líneas 640-649 y 719-723)
+
+**Problema:** `httpsSoapPost` resuelve con cualquier status HTTP. `solicitar` autoriza solo si hay `Resultado = A` y CAE. Todo lo demás — fault SOAP, HTML de un 500, cuerpo vacío — vuelve como `rejected`. El servicio persiste `status: 'rejected'`. La factura siguiente, en `allocateNumber`, ve esa fila, pone `cbteNro` en null y reutiliza el número.
+
+Eso es correcto cuando ARCA respondió `Resultado = R` y no consumió el número. No lo es si el comprobante se autorizó y la respuesta se perdió, o si el body es un fault. El reintento de la fila original ya no puede consultar: el número quedó en `releasedCbteNro` y `retryLocked` no lo usa. El CAE queda desvinculado.
+
+El `catch` de `persistAndRequest` que convierte un throw en `timeout` no cubre este camino, porque el cliente no lanza: devuelve `rejected`.
+
+**Código actual:**
+
+```ts
+if (resultado === 'A' && cae) {
+  return { outcome: 'authorized', cae, caeFchVto: tag(xml, 'CAEFchVto') ?? '', reproceso: false };
+}
+return {
+  outcome: 'rejected',
+  errors: errors.length ? errors : [{ code: 'R', msg: 'ARCA rechazó el comprobante sin detalle.' }],
+};
+```
+
+**Sugerencia:** tratar como rechazo solo `Resultado = R`. Status distinto de 2xx, `faultstring`, o ausencia de `Resultado` tienen que ser `timeout` (consultar, y si no hay comprobante dejar `pending` con el número). `releaseNumber` solo cuando el resultado guardado es un `R` explícito. Revisar `res.statusCode` en `httpsSoapPost` y fallar si no es 2xx.
+
+**Resolución (2026-11-03):** `httpsSoapPost` rechaza un status fuera de 2xx. `solicitar` devuelve `rejected` solo con `Resultado = R`. Fault, HTTP no exitoso, corte de red o cuerpo sin `Resultado` quedan en `timeout`, así el número sigue en la fila y el reintento puede consultar. `releaseNumber` corre únicamente si `resultado === 'R'`.
 
 ---
 
 ### 🟡 Importantes
 
-#### La UI de stock se queda con una cantidad que no es la final
-**Archivo:** `frontend/components/Hooks/useProductStore.ts` (líneas 78-81) y `frontend/app/context/ingredientsContext.tsx` (líneas 106-110)  
-**Problema:** El payload puede traer el mismo stock más de una vez (promo con el mismo producto en dos slots, ingrediente y topping sobre el mismo ítem). Cada entrada tiene la cantidad **después de ese paso**, no un delta. `Array.find` se queda con la primera, que es la intermedia. La base queda bien; la tablet muestra de más hasta el próximo fetch.
+#### El servicio de facturas no deja rastro cuando ARCA o la base fallan
 
-Ejemplo: stock 10, dos descuentos del mismo producto → `[{ quantityInStock: 9 }, { quantityInStock: 8 }]`. La UI muestra 9.
+**Archivo:** `backend/src/Invoice/invoice.service.ts` (líneas 328-337, 456-470 y 534-548)
 
-Además la cantidad es absoluta y no trae versión. Si dos pedidos descuentan el mismo ítem y el evento viejo llega último, pisa el más nuevo.
+**Problema:** El resto del backend loguea con `Logger` de Nest y, en caja e impresora, también con `LoggerService`. `InvoiceService` traga el error de `solicitar`, de la consulta y del reintento y solo lo guarda en `arcaErrors` si llega a persistir. Un choque de numeración o un token caído se ven, como mucho, en el log de `closeOrder` (`emitForOrder`). No queda el número, el código de ARCA ni el modo.
 
-**Código actual:**
-```ts
-const change = stocks.find(
-  (stock) =>
-    stock.productId === product.id || stock.id === product.stock?.id
-);
-```
-**Sugerencia:** Quedarse con la última ocurrencia de cada `id` antes de aplicar. En el back, colapsar igual en los dos emisores (`StockService.emitStockEvent` y los `emit('stock.deducted' | 'stock.restored')` de `order.service.ts`), porque el servicio de órdenes emite el array crudo y no pasa por `emitStockEvent`.
-```ts
-const latestById = new Map(stocks.map((stock) => [stock.id, stock]));
-const change = [...latestById.values()].find(
-  (stock) =>
-    stock.productId === product.id || stock.id === product.stock?.id
-);
-```
-Para el cruce entre eventos, hace falta un número monótono por stock (el `counter` no sirve; un `updatedAt` o una secuencia) y ignorar un snapshot más viejo que el que ya muestra la UI.
+**Sugerencia:** un `Logger` en el servicio, en rechazo, timeout, `CONSULTA`, `MISMATCH` y en el `catch` de `closeOrder`, con `afipEnv`, `ptoVta`, `cbteNro` e id de factura. Sin token, sin sign y sin la clave.
+
+**Resolución (2026-11-03):** `InvoiceService` loguea esos casos, y también el choque de numeración, con ambiente, punto de venta, número e id. El `catch` de `closeOrder` registra ambiente, punto de venta y el mensaje. No se escribe el token, el sign ni la clave.
 
 ---
 
-#### El contador de comanda vuelve a 0 en un deploy normal
-**Archivo:** `backend/src/Printer/printer.service.ts` (líneas 55-89) y `backend/migration/1782900000000-CreatePrintCounter.ts`  
-**Problema:** `readLegacyCounterFile` lee `print-counter.json` desde `__dirname`. En runtime eso es `dist/.../Printer/`. Un build borra `dist/` antes de arrancar, así que el archivo casi nunca está y el `if (current === 0)` no importa nada. La migración siembra `counter = 0`. El primer día de producción después del deploy, los `COD` del ticket rearrancan en `0000` y pueden repetir códigos ya impresos ese día.
+#### La pantalla de ventas deja de mostrar el error
 
-Encima `migrationsRun` está comentado en `backend/config/typeORMconfig.ts`. Si no se corre `1782900000000` a mano, `nextCommandSequence` falla, `printKitchenOrder` tira y en producción la comanda no sale (el pedido sí queda guardado, con el aviso de reimpresión).
+**Archivo:** `frontend/components/DailyCash/TabSales/DailySalesView.tsx` (el `catch` de la carga y el bloque que se eliminó junto al título)
 
-**Código actual:**
-```ts
-if (current === 0) {
-  const imported = this.readLegacyCounterFile();
-  if (imported > 0) {
-    current = imported;
-  }
-}
-```
-**Sugerencia:** Antes de borrar `dist/`, copiar el `counter` del JSON a la fila `id = 1` (o leer una ruta fuera de `dist/`, por ejemplo `process.cwd()`). Correr la migración en el deploy, antes de imprimir. Después del import, no volver a tratar `0` como “todavía no migré”: un contador legítimo en cero no debería releer el archivo en cada ticket.
+**Problema:** El cambio para un día sin caja está bien: grilla vacía en vez de un 404. En el mismo diff se borró el `Typography` que renderizaba `error`. Un fallo de red o de permiso sigue haciendo `setError`, pero la pantalla queda en blanco, igual que un día sin movimientos.
+
+**Sugerencia:** mantener el vacío cuando no hay caja y volver a mostrar `error` para el resto de fallos.
+
+**Resolución (2026-11-03):** El `Typography` de error que está antes de «Ventas por Día» sigue. El que salió en el diff era el duplicado de movimientos. Un día sin caja deja las grillas vacías y no setea `error`. Cualquier otro fallo muestra ese texto y también vacía las grillas, para no dejarlas en `null`.
 
 ---
 
-#### El lockfile de pnpm no trae el Next que el PR declara
-**Archivo:** `frontend/package.json` (línea 29) y `frontend/pnpm-lock.yaml` (línea 1371); `backend/pnpm-lock.yaml` sigue listando `escpos@3.0.0-alpha.6` (línea 1816)  
-**Problema:** `frontend/package.json` fija `next` en `15.5.26` y `frontend/package-lock.json` también. `frontend/pnpm-lock.yaml` sigue en `next@15.0.3`. El README del front instala con pnpm (`pnpm dev`). Con ese lock no entra el bump de seguridad que `diagnostico.md` marca como hecho. En el back, `package.json` sacó `escpos`, `escpos-network`, `escpos-usb` y `serialport`, pero `pnpm-lock.yaml` no se actualizó en este commit: un `pnpm install --frozen-lockfile` puede fallar o reinstalar paquetes que el PR quiere fuera.
+#### Dos migraciones comparten el timestamp `1783400000000`
 
-**Sugerencia:** Regenerar `frontend/pnpm-lock.yaml` y `backend/pnpm-lock.yaml` con el mismo gestor que usen en el deploy, y dejar un solo lockfile por paquete si npm y pnpm no conviven a propósito. Dependabot (`.github/dependabot.yml`) solo mira npm.
+**Archivo:** `backend/migration/1783400000000-CreateInvoicesAndProductAlicuota.ts` y `backend/migration/1783400000000-AddArchiveSnapshotAndRunTables.ts` (esta última ya está en `development`)
+
+**Problema:** TypeORM ordena por timestamp. El revert y el orden entre estas dos quedan atados al nombre del archivo. Además, el `CREATE TABLE` usa `uuid_generate_v4()` y `CREATE EXTENSION "uuid-ossp"` está en la migración siguiente (`1783500000000`). En una base que todavía no tiene la extensión, la primera migración falla antes de llegar a la que la crea.
+
+**Sugerencia:** renumerar la de facturas a un timestamp posterior al de archivado, y crear la extensión al inicio de esa migración, antes del `CREATE TABLE`.
+
+**Resolución (2026-11-03):** El archivo pasó a `1783410000000-CreateInvoicesAndProductAlicuota.ts` y crea `uuid-ossp` antes del `CREATE TABLE`. En esta base la fila de `migrations` ya tenía el nombre `1783400000000`; se actualizó a `CreateInvoicesAndProductAlicuota1783410000000` para que no se vuelva a correr. Otra base que haya aplicado el nombre viejo necesita el mismo `UPDATE` de `timestamp` y `name`.
 
 ---
 
 ### 🟢 Sugerencias
 
-#### Paths de TypeScript a paquetes que ya no están
-**Archivo:** `backend/tsconfig.json` (líneas 22-23)  
-**Problema:** `paths` sigue apuntando a `escpos` y `escpos-usb`, que este PR sacó de `package.json`. No hay imports en `src/`.  
-**Sugerencia:** Borrar esas dos entradas para que un import futuro falle en el typecheck y no contra un paquete fantasma.
+#### El generador manual puede emitir dos veces y parsea el precio a mano
+
+**Archivo:** `frontend/components/DailyCash/TabInvoices/ManualInvoiceDialog.tsx` (líneas 62 y 74-94)
+
+**Problema:** `submit` no deshabilita el botón. Dos clics son dos Facturas B. El precio del catálogo hace `replace` de todos los puntos. Hoy el alta formatea con `es-AR` y 0 decimales (`1.500` → `1500`) y cierra bien. Si el valor llega como `1500.50`, el mismo replace lo convierte en `150050`. En el front ya está `parseEsARNumber`.
+
+**Sugerencia:** un flag `submitting` alrededor del `POST`, y parsear el precio con `parseEsARNumber`.
+
+**Resolución (2026-11-03):** Emitir y Cancelar quedan deshabilitados mientras dura el POST, y un ref descarta el segundo clic antes del render. El precio del catálogo se lee con `parseEsARNumber`.
 
 ---
 
-#### El bootstrap loguea con `console.log` teniendo el logger a mano
-**Archivo:** `backend/src/main.ts` (líneas 166-173)  
-**Problema:** `loggerService` ya está resuelto arriba y el listen ahora usa `PORT` / `HOST`. El mensaje de arranque y el de Swagger siguen en `console.log`; Swagger además dice siempre `localhost` aunque `HOST` sea otra interfaz.  
-**Sugerencia:** Usar `LoggerService` y armar la URL de Swagger con el mismo `host` y `port`.
+#### El reintento no mueve la fecha del comprobante
+
+**Archivo:** `backend/src/Invoice/invoice.service.ts` (líneas 450-452 y 690)
+
+**Problema:** Un `pending` de un día anterior se reenvía con la `cbteFch` original. ARCA suele rechazar una fecha fuera de la ventana (pocos días hacia atrás). El mensaje le queda al operador como un rechazo de datos.
+
+**Sugerencia:** si la fecha guardada está fuera de la ventana de productos, actualizar `cbteFch` a `argentinaIsoDate()` antes de `solicitar`, y dejar la fecha vieja en `arcaErrors` por si hay que auditarla.
+
+**Resolución (2026-11-03):** En el reintento, después de consultar y antes de `solicitar`, una `cbteFch` fuera de ±5 días (ventana de productos) pasa a la fecha civil de hoy. La anterior queda en `arcaErrors.previousCbteFch`. Una fecha de ayer no se mueve. Si la consulta encuentra el CAE con la fecha original, se autoriza esa y no se reescribe.
 
 ---
 
-#### Dos adapters de WebSocket, gana el segundo
-**Archivo:** `backend/src/main.ts` (líneas 163-164)  
-**Problema:** `useWebSocketAdapter(new WsAdapter(app))` y enseguida `useWebSocketAdapter(new IoAdapter(app))`. Nest se queda con el último. La auth nueva está en el gateway de Socket.IO, así que hoy funciona, pero el `WsAdapter` no hace nada.  
-**Sugerencia:** Dejar solo `IoAdapter`. Es código previo; este PR no lo introdujo, pero la auth del socket depende de que siga siendo el adapter activo.
+#### `backend/.gitignore` ignora `docs/*`
 
----
+**Archivo:** `backend/.gitignore` (línea 66)
 
-#### Tests que no cubren los casos que se rompen
-**Archivo:** `backend/src/Printer/printer.service.spec.ts` (líneas 61-77); no hay test de front para el patch de stock  
-**Problema:** El test del contador fija el caso feliz (SELECT 4 → UPDATE 5 → devuelve 4, igual que el post-incremento viejo). No cubre archivo legado ausente, `counter === 0` ni tabla inexistente. El front no tiene test de dos cambios con el mismo `productId`.  
-**Sugerencia:** Un caso con dos entradas del mismo id que espere la cantidad final, y uno de `nextCommandSequence` sin archivo legado.
+**Problema:** El PR mueve la documentación a `docs/` y al mismo tiempo ignora todo lo que haya ahí sin trackear. Los archivos ya commiteados siguen versionados. Un documento nuevo en `docs/` no entra en `git add` salvo que se fuerce.
+
+**Sugerencia:** sacar `docs/*` de ese ignore. El `.env` y los certificados ya están cubiertos más arriba.
+
+**Resolución (2026-11-03):** No se cambia. `docs/*` sigue ignorado.
 
 ---
 
 ### 📋 Preguntas / Observaciones
 
-- Se borraron `IngredientWSListener`, `OrderDetailsWSListener`, `ToppingsGroupWSListener` y `EventsGateway`. En `development` ningún componente importaba `useIngredientStore` ni escuchaba `ingredientCreated`, `orderDetailsCreated` o `toppingsGroupCreated`. Los servicios siguen emitiendo `ingredient.*` y `toppingsGroup.*` sin nadie que los retransmita. No cambia la UI actual; si había otro cliente en la LAN escuchando esos nombres, deja de recibirlos.
-- El JWT solo se valida en el handshake. `joinTable` no comprueba mesa ni rol, y `BroadcastService.broadcast` sigue yendo a todos los sockets autenticados. Encaja con el objetivo de esta fase (cerrar el socket anónimo). No es autorización por recurso.
-- `webSocketService.disconnect()` en el logout vacía el mapa de listeners. Hoy no se nota porque el sign-out hace `window.location.href` y recarga el bundle. Si más adelante el logout es solo client-side, `useProductStore` no vuelve a suscribirse: `productListenersBound` queda en `true`.
-- `tsconfig` del back y el filtro global de excepciones no cambiaron de patrón. El `DataSource` inyectado en `PrinterService` es coherente con TypeORM ya cargado en `AppModule`.
+- El candado de numeración es un `Map` en el proceso (`withLock`). Con una sola instancia alcanza, y el test de concurrencia cubre ese caso. Dos procesos pueden pedir el mismo número; el índice único frena el duplicado y la orden perdedora cae en el mismo hueco del hallazgo del simulador (cobrada, sin fila).
+- `AFIP_CONCEPTO` acepta 2 y 3, pero el XML no manda `FchServDesde`, `FchServHasta` ni `FchVtoPago`. El default es 1 (productos) y con eso el comprobante cierra. Con 2 o 3, ARCA rechaza todas las emisiones.
+- La factura manual no escribe en la caja. Está así en el paso 13 del plan.
+- Nota de crédito, DNI/CUIT del receptor y el tope de consumidor final no están. El plan y la auditoría los dejan fuera. No es un defecto de este slice. Conviene no salir a producción (paso 14) con mesas de importe alto hasta definir el documento del receptor.
+- El paso 8 está cubierto con SOAP falso. No hay una llamada real a `wsaahomo`. El merge a `development` puede hacerse en simulación; homologación sigue siendo una prueba pendiente, no un bug de este diff.
+- El nombre del PDF descargado es siempre `factura-b.pdf`. El mail sí arma `factura-b-{punto}-{número}.pdf`.
 
 ## Veredicto
 
 | | |
 |-|-|
-| **Estado** | ⚠️ Aprobado con cambios |
-| **Críticos** | 0 |
-| **Importantes** | 3 |
-| **Sugerencias** | 4 |
+| **Estado** | Cambios aplicados el 2026-11-03. Pendiente de re-revisión. |
+| **Críticos** | 3 resueltos |
+| **Importantes** | 3 resueltos |
+| **Sugerencias** | 2 aplicadas. `docs/*` sigue ignorado a pedido. |
 
-Antes de mergear: aplicar la última cantidad por stock (no la primera), no depender de `print-counter.json` dentro de `dist/` y alinear el lockfile de pnpm con Next 15.5.26. Correr la migración `1782900000000` en el deploy.
+Quedaron resueltos la fecha civil al leer columnas `date`, la numeración con el máximo local autorizado y el rechazo solo cuando ARCA devuelve `Resultado = R`.

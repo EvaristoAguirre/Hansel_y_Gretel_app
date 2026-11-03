@@ -88,18 +88,37 @@ export function buildProductLines(detail: OrderDetails): ProductLineDto[] {
     groups.get(key)!.count++;
   }
 
-  return Array.from(groups.values()).map((group) => {
-    const unitaryPrice = Math.round(basePrice + group.extraCost);
+  const detailSubtotalCents = Math.round(Number(detail.subtotal) * 100);
+  const mapped = Array.from(groups.values()).map((group) => {
+    const unitaryPrice =
+      Math.round((basePrice + group.extraCost) * 100) / 100;
     return {
       detailId: detail.id,
       productId: detail.product.id,
       productName: detail.product.name,
       quantity: group.count,
       unitaryPrice,
-      subtotal: unitaryPrice * group.count,
+      subtotal: Math.round(unitaryPrice * group.count * 100) / 100,
       allowsToppings: detail.product.allowsToppings,
       commentOfProduct: detail.commentOfProduct || null,
       toppings: group.toppings,
     };
   });
+
+  // Ajusta el último grupo para que la suma de subtotales coincida con detail.subtotal.
+  const assignedCents = mapped.reduce(
+    (sum, line) => sum + Math.round(line.subtotal * 100),
+    0,
+  );
+  const deltaCents = detailSubtotalCents - assignedCents;
+  if (deltaCents !== 0 && mapped.length > 0) {
+    const last = mapped[mapped.length - 1];
+    const newSubtotalCents = Math.round(last.subtotal * 100) + deltaCents;
+    last.subtotal = newSubtotalCents / 100;
+    if (last.quantity > 0) {
+      last.unitaryPrice = Math.round(newSubtotalCents / last.quantity) / 100;
+    }
+  }
+
+  return mapped;
 }

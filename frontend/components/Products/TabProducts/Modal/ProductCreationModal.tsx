@@ -11,6 +11,7 @@ import {
   Chip,
   DialogActions,
   Tooltip,
+  MenuItem,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
@@ -571,6 +572,30 @@ const ProductCreationModal: React.FC<ProductCreationModalProps> = ({
               )}
             </Grid>
           ))}
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Alícuota IVA"
+              size="small"
+              value={form.alicQuota ?? ''}
+              onChange={(event) =>
+                onChange(
+                  'alicQuota',
+                  event.target.value === '' ? null : Number(event.target.value)
+                )
+              }
+              helperText="Vacío usa el 21 % del entorno"
+            >
+              <MenuItem value="">Default del entorno</MenuItem>
+              <MenuItem value={0}>0 %</MenuItem>
+              <MenuItem value={2.5}>2,5 %</MenuItem>
+              <MenuItem value={5}>5 %</MenuItem>
+              <MenuItem value={10.5}>10,5 %</MenuItem>
+              <MenuItem value={21}>21 %</MenuItem>
+              <MenuItem value={27}>27 %</MenuItem>
+            </TextField>
+          </Grid>
           <Grid item xs={12}>
             <TextField
               fullWidth
