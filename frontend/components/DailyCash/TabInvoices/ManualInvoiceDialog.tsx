@@ -3,6 +3,7 @@
 import { createManualInvoice } from "@/api/invoices";
 import { searchProducts } from "@/api/products";
 import { useAuth } from "@/app/context/authContext";
+import { parseEsARNumber } from "@/components/Utils/FormatNumber";
 import {
   Button,
   Dialog,
@@ -11,7 +12,7 @@ import {
   DialogTitle,
   TextField,
 } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Swal from "sweetalert2";
 
 interface Line {
@@ -42,6 +43,8 @@ export default function ManualInvoiceDialog({
   const [discount, setDiscount] = useState("");
   const [email, setEmail] = useState("");
   const [catalog, setCatalog] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const update = (index: number, field: keyof Line, value: string) => {
     setLines((current) =>
@@ -59,7 +62,7 @@ export default function ManualInvoiceDialog({
       Swal.fire("Sin resultados", "No hay un producto con ese nombre o código.", "info");
       return;
     }
-    const price = Number(String(product.price).replace(/\./g, "").replace(",", "."));
+    const price = parseEsARNumber(product.price);
     setLines((current) => [
       ...current.filter((line) => line.concept || line.unitPrice),
       {
@@ -72,8 +75,11 @@ export default function ManualInvoiceDialog({
   };
 
   const submit = async () => {
+    if (submittingRef.current) return;
     const token = getAccessToken();
     if (!token) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       const result = await createManualInvoice(token, {
         lines: lines.map((line) => ({
@@ -94,11 +100,22 @@ export default function ManualInvoiceDialog({
       onClose();
     } catch (error) {
       Swal.fire("No se pudo emitir", String(error), "error");
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (submitting) return;
+        onClose();
+      }}
+      maxWidth="sm"
+      fullWidth
+    >
       <DialogTitle>Nueva factura</DialogTitle>
       <DialogContent>
         <TextField
@@ -170,8 +187,10 @@ export default function ManualInvoiceDialog({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={submit}>
+        <Button onClick={onClose} disabled={submitting}>
+          Cancelar
+        </Button>
+        <Button variant="contained" onClick={submit} disabled={submitting}>
           Emitir Factura B
         </Button>
       </DialogActions>

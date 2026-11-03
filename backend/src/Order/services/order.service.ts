@@ -873,7 +873,10 @@ export class OrderService {
           }
         }
       } catch (error) {
-        this.logger.error('emitForOrder', error);
+        const detail = error instanceof Error ? error.message : 'error';
+        this.logger.error(
+          `emitForOrder env=${this.invoiceService.currentAfipEnv()} ptoVta=${this.invoiceService.currentPtoVta()} cbteNro=- id=- ${detail}`,
+        );
         closedOrder.invoice = {
           id: '',
           status: 'pending',

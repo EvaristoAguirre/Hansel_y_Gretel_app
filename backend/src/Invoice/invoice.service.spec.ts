@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, Logger } from '@nestjs/common';
 import { renderInvoicePdf } from './invoice-pdf';
 import { ArcaClient, ArcaSolicitarResult } from './arca-client';
 import { AfipSettings } from './afip-config';
@@ -74,12 +74,14 @@ function harness(
     orderA?: ReturnType<typeof order>;
     orderB?: ReturnType<typeof order>;
     afip?: Partial<AfipSettings>;
+    onSave?: (row: Invoice) => void;
   } = {},
 ) {
   const rows: Invoice[] = [];
   let seq = 0;
-  const solicitar = jest.fn(async (input: { cbteNro: number }) =>
-    behavior.solicitar(input.cbteNro),
+  const solicitar = jest.fn(
+    async (input: { cbteNro: number; cbteFch?: string }) =>
+      behavior.solicitar(input.cbteNro),
   );
   const consultar = jest.fn(async (_p: number, _t: number, nro: number) => {
     if (!behavior.consultar) return null;
@@ -110,6 +112,7 @@ function harness(
   const invoices = {
     create: (data: Partial<Invoice>) => ({ ...data }) as Invoice,
     save: jest.fn(async (row: Invoice) => {
+      source.onSave?.(row);
       if (!row.id) {
         seq += 1;
         row.id = `inv-${seq}`;
@@ -119,6 +122,38 @@ function harness(
       }
       return row;
     }),
+    find: jest.fn(
+      async ({
+        where,
+        order,
+        take,
+      }: {
+        where?: {
+          afipEnv?: string;
+          ptoVta?: number;
+          cbteTipo?: number;
+          status?: string;
+        };
+        order?: { cbteNro?: 'ASC' | 'DESC' };
+        take?: number;
+      }) => {
+        let found = rows.filter((row) => {
+          if (where?.afipEnv && row.afipEnv !== where.afipEnv) return false;
+          if (where?.ptoVta != null && row.ptoVta !== where.ptoVta) return false;
+          if (where?.cbteTipo != null && row.cbteTipo !== where.cbteTipo) {
+            return false;
+          }
+          if (where?.status && row.status !== where.status) return false;
+          return true;
+        });
+        if (order?.cbteNro === 'DESC') {
+          found = [...found].sort(
+            (a, b) => Number(b.cbteNro ?? 0) - Number(a.cbteNro ?? 0),
+          );
+        }
+        return take ? found.slice(0, take) : found;
+      },
+    ),
     findOne: jest.fn(
       async ({
         where,
@@ -503,6 +538,163 @@ describe('InvoiceService.emitForOrder', () => {
     ).toBe('MISMATCH');
   });
 
+  it('si el simulador vuelve a 0 no reutiliza un número ya autorizado', async () => {
+    const { service, rows } = harness({
+      ultimo: async () => 0,
+      solicitar: async (cbteNro) => ({
+        outcome: 'authorized',
+        cae: String(cbteNro).padStart(14, '0'),
+        caeFchVto: '20261022',
+        reproceso: false,
+      }),
+    });
+    rows.push({
+      id: 'prev',
+      afipEnv: 'simulado',
+      ptoVta: 1,
+      cbteTipo: 6,
+      cbteNro: 4,
+      status: 'authorized',
+      orderId: 'otra-orden',
+    } as Invoice);
+
+    const view = await service.emitForOrder(ORDER_A);
+    expect(view.cbteNro).toBe(5);
+    expect(view.id).toBeTruthy();
+  });
+
+  it('si el número choca con la base deja la fila pendiente y sin número', async () => {
+    let collided = false;
+    const { service, rows } = harness(
+      {
+        solicitar: async () => ({ outcome: 'timeout' }),
+      },
+      {
+        onSave: (row) => {
+          if (!collided && row.cbteNro != null) {
+            collided = true;
+            const error = new Error(
+              'duplicate key value violates unique constraint "UQ_invoices_number"',
+            );
+            (error as Error & { code?: string }).code = '23505';
+            throw error;
+          }
+        },
+      },
+    );
+
+    const view = await service.emitForOrder(ORDER_A);
+    expect(view.id).toBeTruthy();
+    expect(view.status).toBe('pending');
+    expect(view.cbteNro).toBeNull();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].cbteNro).toBeNull();
+    expect(view.message).toMatch(/UQ_invoices_number/);
+  });
+
+  it('un rechazado sin Resultado R no suelta el número', async () => {
+    const { service, rows } = harness({
+      solicitar: async () => ({
+        outcome: 'rejected',
+        errors: [{ code: '1', msg: 'dato inválido' }],
+      }),
+      consultar: async () => null,
+    });
+
+    await service.emitForOrder(ORDER_A);
+    rows[0].resultado = null;
+
+    const second = await service.emitForOrder(ORDER_B);
+    expect(second.status).toBe('pending');
+    expect(second.cbteNro).toBeNull();
+    expect(second.message).toMatch(/rechazo explícito/);
+    expect(rows[0].cbteNro).toBe(1);
+  });
+
+  it('el ticket lee la fecha que Postgres devuelve como Date', async () => {
+    const { service, rows } = harness({
+      solicitar: async (cbteNro) => ({
+        outcome: 'authorized',
+        cae: String(cbteNro).padStart(14, '0'),
+        caeFchVto: '20261022',
+        reproceso: false,
+      }),
+    });
+
+    const view = await service.emitForOrder(ORDER_A);
+    rows[0].cbteFch = new Date(2026, 10, 3) as unknown as string;
+    rows[0].caeFchVto = new Date(2026, 10, 13) as unknown as string;
+
+    const ticket = await service.fiscalTicket(view.id);
+    expect(ticket.cbteFch).toBe('2026-11-03');
+    expect(ticket.caeFchVto).toBe('2026-11-13');
+    const encoded = ticket.qrUrl.split('?p=')[1];
+    const payload = JSON.parse(
+      Buffer.from(encoded, 'base64').toString('utf8'),
+    ) as { fecha: string };
+    expect(payload.fecha).toBe('2026-11-03');
+  });
+
+  it('reintenta una fecha fuera de la ventana con la fecha de hoy', async () => {
+    const { service, rows, solicitar } = harness({
+      solicitar: async () => ({ outcome: 'timeout' }),
+      consultar: async () => null,
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    rows[0].cbteFch = new Date(2020, 0, 1) as unknown as string;
+    rows[0].status = 'pending';
+
+    const retried = await service.retry(first.id);
+    const today = argentinaIsoDate();
+    expect(retried.status).toBe('pending');
+    expect(rows[0].cbteFch).toBe(today);
+    expect(
+      (rows[0].arcaErrors as { previousCbteFch?: string }).previousCbteFch,
+    ).toBe('2020-01-01');
+    expect(solicitar.mock.calls.at(-1)?.[0]).toMatchObject({
+      cbteFch: today.replace(/-/g, ''),
+    });
+  });
+
+  it('un reintento de ayer conserva la fecha del comprobante', async () => {
+    const { service, rows, solicitar } = harness({
+      solicitar: async () => ({ outcome: 'timeout' }),
+      consultar: async () => null,
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    const yesterday = shiftIso(argentinaIsoDate(), -1);
+    rows[0].cbteFch = yesterday;
+    rows[0].status = 'pending';
+
+    await service.retry(first.id);
+    expect(rows[0].cbteFch).toBe(yesterday);
+    expect(solicitar.mock.calls.at(-1)?.[0]).toMatchObject({
+      cbteFch: yesterday.replace(/-/g, ''),
+    });
+  });
+
+  it('un rechazo queda en el log con ambiente y número', async () => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    const { service } = harness({
+      solicitar: async () => ({
+        outcome: 'rejected',
+        errors: [{ code: '10016', msg: 'fecha fuera de rango' }],
+      }),
+    });
+
+    await service.emitForOrder(ORDER_A);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('env=simulado'),
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('cbteNro=1'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('10016'));
+    const logged = warn.mock.calls.map((call) => String(call[0])).join('\n');
+    expect(logged).not.toMatch(/token|sign|clave/i);
+    warn.mockRestore();
+  });
+
   it('cbteFch usa la fecha civil de Argentina', async () => {
     const { service, rows } = harness({
       solicitar: async (cbteNro) => ({
@@ -521,6 +713,16 @@ describe('InvoiceService.emitForOrder', () => {
     expect(rows[0].cbteFch).toBe(argentinaIsoDate());
   });
 });
+
+function shiftIso(iso: string, days: number): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 describe('argentinaIsoDate', () => {
   it('antes de la medianoche argentina no salta de día', () => {

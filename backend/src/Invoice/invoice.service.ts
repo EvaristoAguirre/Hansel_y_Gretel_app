@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +17,7 @@ import {
 } from './invoice-calculator';
 import { Invoice, InvoiceAfipEnv } from './invoice.entity';
 import { fiscalTicketFromInvoice } from './fiscal-ticket';
+import { civilDate } from './invoice-format';
 import { InvoiceCloseView, InvoiceSnapshot } from './invoice.types';
 
 const ORDER_RELATIONS = [
@@ -27,9 +29,12 @@ const ORDER_RELATIONS = [
 ] as const;
 
 const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires';
+/** Concepto productos: ARCA acepta la fecha del comprobante a ±5 días. */
+const PRODUCT_CBTE_WINDOW_DAYS = 5;
 
 @Injectable()
 export class InvoiceService {
+  private readonly logger = new Logger(InvoiceService.name);
   private readonly locks = new Map<string, Promise<void>>();
 
   constructor(
@@ -52,7 +57,7 @@ export class InvoiceService {
     });
     return rows.map((row) => ({
       id: row.id,
-      cbteFch: row.cbteFch,
+      cbteFch: civilDate(row.cbteFch),
       createdAt: row.createdAt,
       ptoVta: row.ptoVta,
       cbteNro: row.cbteNro,
@@ -69,6 +74,10 @@ export class InvoiceService {
     if (!invoice) {
       throw new NotFoundException('No se encontró la factura.');
     }
+    invoice.cbteFch = civilDate(invoice.cbteFch);
+    invoice.caeFchVto = invoice.caeFchVto
+      ? civilDate(invoice.caeFchVto)
+      : invoice.caeFchVto;
     return invoice;
   }
 
@@ -101,6 +110,10 @@ export class InvoiceService {
 
   currentAfipEnv(): InvoiceAfipEnv {
     return this.config.settings.mode as InvoiceAfipEnv;
+  }
+
+  currentPtoVta(): number {
+    return this.config.settings.ptoVta ?? 1;
   }
 
   async emitForOrder(
@@ -300,7 +313,33 @@ export class InvoiceService {
       attemptCount: 1,
       lastAttemptAt: new Date(),
     });
-    const saved = await this.invoices.save(row);
+    let saved: Invoice;
+    try {
+      saved = await this.invoices.save(row);
+    } catch (error) {
+      if (!isInvoiceNumberConflict(error)) {
+        this.logInvoice('error', 'base', row, errorText(error));
+        throw error;
+      }
+      this.logInvoice(
+        'error',
+        'numeración',
+        row,
+        'el número ya está en la base',
+      );
+      return this.persistFailedAttempt({
+        origin: input.origin,
+        orderId: input.orderId,
+        afipEnv: input.afipEnv,
+        ptoVta: input.ptoVta,
+        tipExcluded: input.tipExcluded,
+        customerEmail: input.customerEmail,
+        message: errorText(error),
+        amounts: input.amounts,
+        snapshot: input.snapshot,
+        cbteFch: today,
+      });
+    }
 
     let result: ArcaSolicitarResult;
     try {
@@ -331,10 +370,11 @@ export class InvoiceService {
         errors: [
           {
             code: 'REQUEST',
-            msg: error instanceof Error ? error.message : 'Error al solicitar.',
+            msg: errorText(error),
           },
         ],
       };
+      this.logInvoice('warn', 'timeout', saved, errorText(error));
     }
 
     if (result.outcome === 'timeout') {
@@ -344,6 +384,9 @@ export class InvoiceService {
       }
       saved.status = 'pending';
       saved.resultado = null;
+      if (!saved.arcaErrors) {
+        this.logInvoice('warn', 'timeout', saved);
+      }
       const updated = await this.invoices.save(saved);
       return this.toView(updated);
     }
@@ -452,20 +495,25 @@ export class InvoiceService {
       }
     }
 
+    this.alignCbteFchToProductWindow(invoice);
+
     let result: ArcaSolicitarResult;
     try {
       result = await this.arca.solicitar(this.solicitudFromInvoice(invoice));
     } catch (error) {
       invoice.status = 'pending';
       invoice.resultado = null;
+      const previousFch = previousCbteFchOf(invoice);
       invoice.arcaErrors = {
         errors: [
           {
             code: 'REQUEST',
-            msg: error instanceof Error ? error.message : 'Error al solicitar.',
+            msg: errorText(error),
           },
         ],
+        ...(previousFch ? { previousCbteFch: previousFch } : {}),
       };
+      this.logInvoice('warn', 'timeout', invoice, errorText(error));
       const saved = await this.invoices.save(invoice);
       return this.toView(saved);
     }
@@ -477,6 +525,7 @@ export class InvoiceService {
       }
       invoice.status = 'pending';
       invoice.resultado = null;
+      this.logInvoice('warn', 'timeout', invoice);
       const saved = await this.invoices.save(invoice);
       return this.toView(saved);
     }
@@ -534,17 +583,19 @@ export class InvoiceService {
     } catch (error) {
       invoice.status = 'pending';
       invoice.resultado = null;
+      const msg = errorText(
+        error,
+        'No se pudo consultar el comprobante en ARCA.',
+      );
       invoice.arcaErrors = {
         errors: [
           {
             code: 'CONSULTA',
-            msg:
-              error instanceof Error
-                ? error.message
-                : 'No se pudo consultar el comprobante en ARCA.',
+            msg,
           },
         ],
       };
+      this.logInvoice('warn', 'CONSULTA', invoice, msg);
       await this.invoices.save(invoice);
       return null;
     }
@@ -564,6 +615,7 @@ export class InvoiceService {
           },
         ],
       };
+      this.logInvoice('warn', 'MISMATCH', invoice);
       await this.invoices.save(invoice);
       return null;
     }
@@ -588,7 +640,7 @@ export class InvoiceService {
     if (!consulted.cbteFch) {
       return true;
     }
-    const localFch = String(invoice.cbteFch).slice(0, 10).replace(/-/g, '');
+    const localFch = civilDate(invoice.cbteFch).replace(/-/g, '');
     const remoteFch = consulted.cbteFch.replace(/-/g, '');
     return localFch === remoteFch;
   }
@@ -601,7 +653,9 @@ export class InvoiceService {
     | { kind: 'ok'; cbteNro: number }
     | { kind: 'blocked'; message: string }
   > {
-    let candidate = (await this.arca.ultimoAutorizado(ptoVta, cbteTipo)) + 1;
+    const remoteLast = await this.arca.ultimoAutorizado(ptoVta, cbteTipo);
+    const localLast = await this.maxAuthorizedNumber(afipEnv, ptoVta, cbteTipo);
+    let candidate = Math.max(remoteLast, localLast) + 1;
 
     for (let guard = 0; guard < 20; guard += 1) {
       const pending = await this.findByNumber(
@@ -645,6 +699,13 @@ export class InvoiceService {
         'rejected',
       );
       if (rejected) {
+        if (rejected.resultado !== 'R') {
+          return {
+            kind: 'blocked',
+            message:
+              'Hay un comprobante marcado como rechazado sin un rechazo explícito de ARCA. No se reutiliza el número.',
+          };
+        }
         await this.releaseNumber(rejected);
         return { kind: 'ok', cbteNro: candidate };
       }
@@ -670,6 +731,19 @@ export class InvoiceService {
     });
   }
 
+  private async maxAuthorizedNumber(
+    afipEnv: InvoiceAfipEnv,
+    ptoVta: number,
+    cbteTipo: number,
+  ): Promise<number> {
+    const rows = await this.invoices.find({
+      where: { afipEnv, ptoVta, cbteTipo, status: 'authorized' },
+      order: { cbteNro: 'DESC' },
+      take: 1,
+    });
+    return Number(rows[0]?.cbteNro ?? 0);
+  }
+
   private async releaseNumber(invoice: Invoice): Promise<void> {
     const released = invoice.cbteNro;
     const previous =
@@ -687,7 +761,7 @@ export class InvoiceService {
       ptoVta: invoice.ptoVta,
       cbteTipo: invoice.cbteTipo,
       cbteNro: invoice.cbteNro ?? 0,
-      cbteFch: String(invoice.cbteFch).slice(0, 10).replace(/-/g, ''),
+      cbteFch: civilDate(invoice.cbteFch).replace(/-/g, ''),
       concepto: invoice.concepto,
       docTipo: invoice.docTipo,
       docNro: invoice.docNro,
@@ -713,17 +787,66 @@ export class InvoiceService {
       invoice.caeFchVto = isoFromCompact(result.caeFchVto);
       invoice.resultado = 'A';
       invoice.authorizedAt = new Date();
-      invoice.arcaErrors = null;
+      const previousFch = previousCbteFchOf(invoice);
+      invoice.arcaErrors = previousFch
+        ? { previousCbteFch: previousFch }
+        : null;
       return;
     }
     if (result.outcome === 'rejected') {
       invoice.status = 'rejected';
       invoice.resultado = 'R';
-      invoice.arcaErrors = { errors: result.errors };
+      const previousFch = previousCbteFchOf(invoice);
+      invoice.arcaErrors = {
+        errors: result.errors,
+        ...(previousFch ? { previousCbteFch: previousFch } : {}),
+      };
+      this.logInvoice(
+        'warn',
+        'rechazo',
+        invoice,
+        result.errors.map((item) => `${item.code} ${item.msg}`).join('; '),
+      );
       return;
     }
     invoice.status = 'pending';
     invoice.resultado = null;
+  }
+
+  private alignCbteFchToProductWindow(invoice: Invoice): void {
+    const today = argentinaIsoDate();
+    const stored = civilDate(invoice.cbteFch);
+    if (stored === today) return;
+    if (stored && !outsideProductWindow(stored, today)) return;
+    invoice.arcaErrors = {
+      ...errorRecord(invoice.arcaErrors),
+      previousCbteFch: stored || String(invoice.cbteFch ?? ''),
+    };
+    invoice.cbteFch = today;
+  }
+
+  private logInvoice(
+    level: 'warn' | 'error',
+    event: string,
+    invoice: {
+      id?: string;
+      afipEnv?: string;
+      ptoVta?: number;
+      cbteNro?: number | null;
+    },
+    detail?: string,
+  ) {
+    const line = [
+      event,
+      `env=${invoice.afipEnv ?? '-'}`,
+      `ptoVta=${invoice.ptoVta ?? '-'}`,
+      `cbteNro=${invoice.cbteNro ?? '-'}`,
+      `id=${invoice.id || '-'}`,
+      detail,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    this.logger[level](line);
   }
 
   private buildFromOrder(order: Order) {
@@ -832,6 +955,56 @@ export class InvoiceService {
       message: messageFor(invoice),
     };
   }
+}
+
+function previousCbteFchOf(invoice: Invoice): string | null {
+  const value = errorRecord(invoice.arcaErrors).previousCbteFch;
+  return typeof value === 'string' && value ? value : null;
+}
+
+function errorRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function errorText(
+  error: unknown,
+  fallback = 'Error al solicitar.',
+): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function isInvoiceNumberConflict(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const row = error as {
+    code?: string;
+    constraint?: string;
+    message?: string;
+    driverError?: { code?: string; constraint?: string; message?: string };
+  };
+  const code = row.driverError?.code ?? row.code;
+  const constraint = `${row.driverError?.constraint ?? ''} ${row.constraint ?? ''} ${row.message ?? ''} ${row.driverError?.message ?? ''}`;
+  return code === '23505' && /UQ_invoices_number/.test(constraint);
+}
+
+function outsideProductWindow(stored: string, today: string): boolean {
+  const delta = daysBetweenIso(stored, today);
+  if (delta == null) return true;
+  return Math.abs(delta) > PRODUCT_CBTE_WINDOW_DAYS;
+}
+
+function daysBetweenIso(from: string, to: string): number | null {
+  const start = isoUtc(from);
+  const end = isoUtc(to);
+  if (start == null || end == null) return null;
+  return Math.round((end - start) / 86_400_000);
+}
+
+function isoUtc(value: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 function messageFor(invoice: Invoice): string {

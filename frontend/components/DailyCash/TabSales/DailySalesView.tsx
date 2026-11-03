@@ -100,6 +100,8 @@ const DailySalesView = () => {
         setDataMovements([]);
         return;
       }
+      setDataOrders([]);
+      setDataMovements([]);
       setError(err.message || 'Error al obtener los datos.');
     } finally {
       setLoading(false);
@@ -268,7 +270,7 @@ const DailySalesView = () => {
         </Typography>
         <Box bgcolor="#fff" borderRadius={2} boxShadow={1} mt={3}>
           <DataGrid
-            rows={dataOrders?.map((order: any, i: number) => ({
+            rows={(dataOrders ?? []).map((order: any, i: number) => ({
               ...order,
               id: order.id || i,
             }))}

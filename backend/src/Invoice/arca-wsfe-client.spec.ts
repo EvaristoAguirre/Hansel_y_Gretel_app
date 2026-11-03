@@ -77,6 +77,7 @@ describe('ArcaWsfeClient', () => {
       const req = new EventEmitter();
       process.nextTick(() => {
         const res = new EventEmitter();
+        (res as EventEmitter & { statusCode?: number }).statusCode = 200;
         callback(res);
         res.emit('data', Buffer.from('<ok/>'));
         res.emit('end');
@@ -95,6 +96,36 @@ describe('ArcaWsfeClient', () => {
         1000,
       ),
     ).resolves.toBe('<ok/>');
+    spy.mockRestore();
+  });
+
+  it('un status que no es 2xx no se toma como cuerpo SOAP', async () => {
+    const spy = jest.spyOn(https, 'request').mockImplementation(((
+      _options: unknown,
+      callback: (res: EventEmitter) => void,
+    ) => {
+      const req = new EventEmitter();
+      process.nextTick(() => {
+        const res = new EventEmitter();
+        (res as EventEmitter & { statusCode?: number }).statusCode = 500;
+        callback(res);
+        res.emit('data', Buffer.from('<html>error</html>'));
+        res.emit('end');
+      });
+      return Object.assign(req, {
+        write: () => undefined,
+        end: () => undefined,
+        destroy: () => undefined,
+      });
+    }) as unknown as typeof https.request);
+    await expect(
+      httpsSoapPost(
+        'https://wsaahomo.afip.gov.ar/ws/services/LoginCms',
+        '""',
+        '<x/>',
+        1000,
+      ),
+    ).rejects.toThrow(/HTTP 500/);
     spy.mockRestore();
   });
 
@@ -194,6 +225,49 @@ describe('ArcaWsfeClient', () => {
     await expect(client.ultimoAutorizado(5, 6)).rejects.toThrow(/generacion/);
     expect(error).toHaveBeenCalledWith(expect.stringMatching(/hora desfasada/));
     error.mockRestore();
+  });
+
+  it('un fault o un cuerpo sin Resultado no liberan el número', async () => {
+    const client = new ArcaWsfeClient(
+      settings(),
+      store(),
+      async (url) => {
+        if (url.includes('LoginCms')) return loginXml;
+        return '<soap:Fault><faultstring>Error interno</faultstring></soap:Fault>';
+      },
+      async () => 'cms',
+    );
+    await expect(client.solicitar(solicitud)).resolves.toEqual({
+      outcome: 'timeout',
+    });
+
+    const empty = new ArcaWsfeClient(
+      settings(),
+      store(),
+      async (url) => {
+        if (url.includes('LoginCms')) return loginXml;
+        return '<html>bad gateway</html>';
+      },
+      async () => 'cms',
+    );
+    await expect(empty.solicitar(solicitud)).resolves.toEqual({
+      outcome: 'timeout',
+    });
+  });
+
+  it('un HTTP que no es 2xx al pedir el CAE queda como timeout', async () => {
+    const client = new ArcaWsfeClient(
+      settings(),
+      store(),
+      async (url) => {
+        if (url.includes('LoginCms')) return loginXml;
+        throw new Error('HTTP 500 wsfe.example');
+      },
+      async () => 'cms',
+    );
+    await expect(client.solicitar(solicitud)).resolves.toEqual({
+      outcome: 'timeout',
+    });
   });
 
   it('un corte de red al pedir el CAE queda como timeout', async () => {

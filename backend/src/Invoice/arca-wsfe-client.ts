@@ -21,6 +21,7 @@ import {
   faultString,
   httpsSoapPost,
   isClockSkew,
+  isHttpFailure,
   isTimeoutError,
   loginEnvelope,
   opensslCmsSign,
@@ -149,8 +150,21 @@ export class ArcaWsfeClient extends ArcaClient {
     try {
       xml = await this.call('FECAESolicitar', body);
     } catch (error) {
-      if (isTimeoutError(error)) return { outcome: 'timeout' };
+      if (isTimeoutError(error) || isHttpFailure(error)) {
+        this.logger.warn(
+          `FECAESolicitar no confirmó el comprobante: ${
+            error instanceof Error ? error.message : 'error de red'
+          }`,
+        );
+        return { outcome: 'timeout' };
+      }
       throw error;
+    }
+
+    const fault = faultString(xml);
+    if (fault) {
+      this.logger.warn(`FECAESolicitar respondió un fault: ${fault}`);
+      return { outcome: 'timeout' };
     }
 
     const errors = collectErrors(xml);
@@ -164,12 +178,16 @@ export class ArcaWsfeClient extends ArcaClient {
         reproceso: false,
       };
     }
-    return {
-      outcome: 'rejected',
-      errors: errors.length
-        ? errors
-        : [{ code: 'R', msg: 'ARCA rechazó el comprobante sin detalle.' }],
-    };
+    if (resultado === 'R') {
+      return {
+        outcome: 'rejected',
+        errors: errors.length
+          ? errors
+          : [{ code: 'R', msg: 'ARCA rechazó el comprobante sin detalle.' }],
+      };
+    }
+    this.logger.warn('FECAESolicitar no trajo Resultado A ni R.');
+    return { outcome: 'timeout' };
   }
 
   async consultar(

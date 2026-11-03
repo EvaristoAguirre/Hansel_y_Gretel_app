@@ -148,7 +148,15 @@ export function httpsSoapPost(
       (res) => {
         const chunks: Buffer[] = [];
         res.on('data', (chunk: Buffer) => chunks.push(chunk));
-        res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        res.on('end', () => {
+          const status = res.statusCode ?? 0;
+          const body = Buffer.concat(chunks).toString('utf8');
+          if (status < 200 || status >= 300) {
+            reject(new Error(`HTTP ${status} ${target.hostname}`));
+            return;
+          }
+          resolve(body);
+        });
       },
     );
     req.on('timeout', () => {
@@ -165,6 +173,11 @@ export function isTimeoutError(error: unknown): boolean {
   return /timeout|ETIMEDOUT|ECONNRESET|ECONNABORTED|socket hang up/i.test(
     message,
   );
+}
+
+export function isHttpFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /^HTTP \d{3}\b/.test(message);
 }
 
 export async function opensslCmsSign(

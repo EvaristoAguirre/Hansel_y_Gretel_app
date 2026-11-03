@@ -1,4 +1,5 @@
 import { Invoice } from './invoice.entity';
+import { civilDate } from './invoice-format';
 import { fiscalQrUrl } from './invoice-qr';
 import { InvoiceSnapshot } from './invoice.types';
 
@@ -49,7 +50,7 @@ export function fiscalTicketFromInvoice(invoice: Invoice): FiscalTicketPayload {
     inicioActividades: emitter.inicioActividades ?? '',
     ptoVta: invoice.ptoVta,
     cbteNro: invoice.cbteNro ?? 0,
-    cbteFch: String(invoice.cbteFch),
+    cbteFch: civilDate(invoice.cbteFch),
     lines: snapshot.lines ?? [],
     discountAmount: Number(invoice.discountAmount ?? 0),
     impNeto: Number(invoice.impNeto),
@@ -59,9 +60,9 @@ export function fiscalTicketFromInvoice(invoice: Invoice): FiscalTicketPayload {
       importe: item.importe,
     })),
     cae: invoice.cae ?? '',
-    caeFchVto: invoice.caeFchVto ? String(invoice.caeFchVto) : '',
+    caeFchVto: invoice.caeFchVto ? civilDate(invoice.caeFchVto) : '',
     qrUrl: fiscalQrUrl({
-      fecha: String(invoice.cbteFch).slice(0, 10),
+      fecha: civilDate(invoice.cbteFch),
       cuit: Number(cuitDigits || 0),
       ptoVta: invoice.ptoVta,
       nroCmp: invoice.cbteNro ?? 0,

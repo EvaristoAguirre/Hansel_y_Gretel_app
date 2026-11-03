@@ -1,9 +1,26 @@
-export function formatFiscalDate(value: string | null | undefined): string {
+/**
+ * Fecha civil AAAA-MM-DD. `pg` entrega las columnas `date` como `Date` a
+ * medianoche local; `String(date)` no es esa forma.
+ */
+export function civilDate(value: string | Date | null | undefined): string {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const text = String(value ?? '').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
+}
+
+export function formatFiscalDate(
+  value: string | Date | null | undefined,
+): string {
   if (!value) return '';
-  const iso = String(value).slice(0, 10);
+  const iso = civilDate(value);
   const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) return `${match[3]}/${match[2]}/${match[1]}`;
-  return String(value);
+  return value instanceof Date ? '' : String(value);
 }
 
 export function formatFiscalMoney(value: number): string {

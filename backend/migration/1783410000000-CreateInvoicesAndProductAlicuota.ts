@@ -5,8 +5,10 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * No se ejecuta sola. Hay que correrla a mano antes de volver a levantar el backend:
  * la columna products.alicQuota entra en el SELECT de TypeORM.
  */
-export class CreateInvoicesAndProductAlicuota1783400000000 implements MigrationInterface {
+export class CreateInvoicesAndProductAlicuota1783410000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+
     await queryRunner.query(`
       ALTER TABLE "products"
       ADD COLUMN IF NOT EXISTS "alicQuota" numeric(5,2)

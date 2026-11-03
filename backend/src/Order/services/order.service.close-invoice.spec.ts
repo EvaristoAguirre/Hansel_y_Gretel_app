@@ -21,6 +21,7 @@ describe('OrderService.closeOrder factura', () => {
     emitForOrder: jest.fn(),
     fiscalTicket: jest.fn().mockResolvedValue({ afipEnv: 'simulado' }),
     currentAfipEnv: jest.fn().mockReturnValue('homologacion'),
+    currentPtoVta: jest.fn().mockReturnValue(1),
   };
   const orderRepo = { findOne: jest.fn() };
 
