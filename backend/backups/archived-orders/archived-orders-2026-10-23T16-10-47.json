@@ -1,0 +1,680 @@
+{
+  "archivedAt": "2026-10-23T19:10:47.353Z",
+  "totalArchived": 5,
+  "orders": [
+    {
+      "id": "99adfffd-6c62-4889-8725-3efa752b4aa6",
+      "date": "2026-10-07T19:56:22.277Z",
+      "state": "closed",
+      "total": 44000,
+      "tip": 4400,
+      "discountPercent": 0,
+      "discountAmount": 0,
+      "numberCustomers": 2,
+      "comment": "",
+      "commandNumber": null,
+      "methodOfPayment": "tarjeta de debito",
+      "tableId": "82dd5a86-4f71-429f-9b49-4fd0986694f5",
+      "dailyCashId": "c38188bd-a699-48db-9c61-ea21ec12f5f1",
+      "tableName": "totora",
+      "roomName": "adentro",
+      "dailyCashDate": "2026-10-07T19:50:20.182Z",
+      "createdAt": "2026-10-07T22:56:22.269Z",
+      "updatedAt": "2026-10-07T23:32:46.687Z",
+      "closedAt": "2026-10-07T20:32:46.643Z",
+      "archivedAt": "2026-10-23T19:10:47.152Z",
+      "snapshotSource": "archive",
+      "orderDetails": [
+        {
+          "id": "ed092452-f3c6-4522-90ab-ee4183bb3ea7",
+          "quantity": 1,
+          "unitaryPrice": 21000,
+          "toppingsExtraCost": 0,
+          "subtotal": 21000,
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20261007-0000",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "77428729-5887-49bd-b8ea-55b7a8b8eb05",
+              "slotName": "Chocolate HyG",
+              "selectedProductId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+              "selectedProductName": "Chocolate HyG Grande",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "c6ace776-9116-4c20-a87d-90f1ebc78ea2",
+              "slotName": "Tortas",
+              "selectedProductId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+              "selectedProductName": "Torta cheesecake frutos",
+              "extraCostApplied": 0
+            }
+          ],
+          "productName": "Chocolate + torta",
+          "productCode": 8,
+          "categoryNames": [
+            "promos",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "edbc5ef2-c692-42b0-9782-1875290c797f",
+          "quantity": 1,
+          "unitaryPrice": 23000,
+          "toppingsExtraCost": 0,
+          "subtotal": 23000,
+          "productId": "608785dc-c17f-4137-9753-d05cb11e2fba",
+          "commandNumber": "Comanda impresa: 20261007-0000",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "9da5598d-b57f-47fe-b1e2-926757598759",
+              "slotName": "Tostados promo 6",
+              "selectedProductId": "d63199e8-325a-43e2-82b2-bf10a81093fb",
+              "selectedProductName": "Tostado jamón crudo",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "7fa5917a-5d4b-4f5c-8ade-41fcbd052e12",
+              "slotName": "Bebida promo 6",
+              "selectedProductId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+              "selectedProductName": "Chocolate HyG Grande",
+              "extraCostApplied": 0
+            }
+          ],
+          "productName": "De mi campo",
+          "productCode": 6,
+          "categoryNames": [
+            "promos"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        }
+      ],
+      "payments": [
+        {
+          "id": "31fc668e-f67c-43bb-83bf-e946e3bf5df6",
+          "amount": 48400,
+          "methodOfPayment": "tarjeta de debito",
+          "createdAt": "2026-10-07T23:32:46.645Z"
+        }
+      ],
+      "paymentSummary": {
+        "totalPaid": "48400.00",
+        "methodCount": 1,
+        "methods": [
+          {
+            "method": "tarjeta de debito",
+            "amount": "48400.00"
+          }
+        ],
+        "primaryMethod": "tarjeta de debito",
+        "discountPercent": 0,
+        "discountAmount": 0
+      }
+    },
+    {
+      "id": "5d66dd2a-34e9-4415-908d-d3e6ccbd4c7e",
+      "date": "2026-10-07T20:43:07.367Z",
+      "state": "closed",
+      "total": 43500,
+      "tip": 4350,
+      "discountPercent": 0,
+      "discountAmount": 0,
+      "numberCustomers": 4,
+      "comment": "",
+      "commandNumber": null,
+      "methodOfPayment": "transferencia",
+      "tableId": "b512f96b-c827-490a-a061-09bee2b199e1",
+      "dailyCashId": "c38188bd-a699-48db-9c61-ea21ec12f5f1",
+      "tableName": "PIZARRITA",
+      "roomName": "adentro",
+      "dailyCashDate": "2026-10-07T19:50:20.182Z",
+      "createdAt": "2026-10-07T23:43:07.352Z",
+      "updatedAt": "2026-10-08T00:28:52.514Z",
+      "closedAt": "2026-10-07T21:28:52.494Z",
+      "archivedAt": "2026-10-23T19:10:47.242Z",
+      "snapshotSource": "archive",
+      "orderDetails": [
+        {
+          "id": "6e6d1827-beef-4cc1-bb9d-38b255c7fda0",
+          "quantity": 1,
+          "unitaryPrice": 10500,
+          "toppingsExtraCost": 0,
+          "subtotal": 10500,
+          "productId": "4e0af888-951a-459e-86f4-004a0a17c974",
+          "commandNumber": "Comanda impresa: 20261007-0001",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "5ebd2141-d310-43ce-a242-cb7da241cb64",
+              "slotName": "Bebidas calientes",
+              "selectedProductId": "04035366-7636-41ea-985c-5540ce3a1178",
+              "selectedProductName": "Cafe grande",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "e5332f2d-de93-4b69-b5da-0ec8a9f4d707",
+              "slotName": "Medialuna-tortita",
+              "selectedProductId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+              "selectedProductName": "Medialuna",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "e5332f2d-de93-4b69-b5da-0ec8a9f4d707",
+              "slotName": "Medialuna-tortita",
+              "selectedProductId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+              "selectedProductName": "Medialuna",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "e5332f2d-de93-4b69-b5da-0ec8a9f4d707",
+              "slotName": "Medialuna-tortita",
+              "selectedProductId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+              "selectedProductName": "Medialuna",
+              "extraCostApplied": 0
+            }
+          ],
+          "productName": "Clasico",
+          "productCode": 2,
+          "categoryNames": [
+            "promos"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "01403f3e-e52c-4699-ac0c-8a938cf103c6",
+          "quantity": 1,
+          "unitaryPrice": 5500,
+          "toppingsExtraCost": 0,
+          "subtotal": 5500,
+          "productId": "df3dbbd6-8903-48cc-bd58-f09fe05bfc90",
+          "commandNumber": "Comanda impresa: 20261007-0001",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Cafe mediano",
+          "productCode": 1110,
+          "categoryNames": [
+            "Bebidas calientes",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "d5a68765-9493-4b97-ae56-1d43174dd7a2",
+          "quantity": 1,
+          "unitaryPrice": 5800,
+          "toppingsExtraCost": 0,
+          "subtotal": 5800,
+          "productId": "be1aabe2-9d59-4c52-b79e-650fd51bfdd5",
+          "commandNumber": "Comanda impresa: 20261007-0001",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Jugo de naranja (grande)",
+          "productCode": 1430,
+          "categoryNames": [
+            "bebidas frías",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "a7f94256-ed2f-4355-8c90-5673223c051d",
+          "quantity": 1,
+          "unitaryPrice": 9700,
+          "toppingsExtraCost": 0,
+          "subtotal": 9700,
+          "productId": "7e031827-a1e1-4f4f-8139-6dbf8a5c0d64",
+          "commandNumber": "Comanda impresa: 20261007-0003",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Licuado de banana",
+          "productCode": 1350,
+          "categoryNames": [
+            "bebidas frías",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "cb01af54-8f4a-4b33-867b-64466206e437",
+          "quantity": 1,
+          "unitaryPrice": 8500,
+          "toppingsExtraCost": 0,
+          "subtotal": 8500,
+          "productId": "51e50ba0-4251-43c0-9585-582b604a1647",
+          "commandNumber": "Comanda impresa: 20261007-0001",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Chipa porcion",
+          "productCode": 1560,
+          "categoryNames": [
+            "salados",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "7d8e7254-fb8d-497c-aedd-f089eb67e385",
+          "quantity": 1,
+          "unitaryPrice": 3500,
+          "toppingsExtraCost": 0,
+          "subtotal": 3500,
+          "productId": "688f36ff-8e35-4d57-9749-e67287f70fac",
+          "commandNumber": "Comanda impresa: 20261007-0001",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Medialuna con jamon y queso",
+          "productCode": 1702,
+          "categoryNames": [
+            "salados",
+            "Pastelería"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        }
+      ],
+      "payments": [
+        {
+          "id": "f7fbb21e-85ee-42df-894d-fc801c0be3c6",
+          "amount": 47850,
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-10-08T00:28:52.496Z"
+        }
+      ],
+      "paymentSummary": {
+        "totalPaid": "47850.00",
+        "methodCount": 1,
+        "methods": [
+          {
+            "method": "transferencia",
+            "amount": "47850.00"
+          }
+        ],
+        "primaryMethod": "transferencia",
+        "discountPercent": 0,
+        "discountAmount": 0
+      }
+    },
+    {
+      "id": "7667c519-3ff7-4fbe-b812-d2417a0998b0",
+      "date": "2026-10-07T20:46:40.477Z",
+      "state": "closed",
+      "total": 40700,
+      "tip": 4070,
+      "discountPercent": 0,
+      "discountAmount": 0,
+      "numberCustomers": 4,
+      "comment": "",
+      "commandNumber": null,
+      "methodOfPayment": "transferencia",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "c38188bd-a699-48db-9c61-ea21ec12f5f1",
+      "tableName": "tablero",
+      "roomName": "adentro",
+      "dailyCashDate": "2026-10-07T19:50:20.182Z",
+      "createdAt": "2026-10-07T23:46:40.471Z",
+      "updatedAt": "2026-10-08T00:32:04.540Z",
+      "closedAt": "2026-10-07T21:32:04.518Z",
+      "archivedAt": "2026-10-23T19:10:47.276Z",
+      "snapshotSource": "archive",
+      "orderDetails": [
+        {
+          "id": "5545ff21-76e7-4f12-bf0a-3e01d53d3714",
+          "quantity": 6,
+          "unitaryPrice": 2500,
+          "toppingsExtraCost": 0,
+          "subtotal": 15000,
+          "productId": "8ecaee4e-d0ca-458a-8d0a-b9767c9ca30f",
+          "commandNumber": "Comanda impresa: 20261007-0002",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Medialuna",
+          "productCode": 1700,
+          "categoryNames": [
+            "Pastelería"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "81e9f59b-74c3-4c16-8ef5-5bc2ca136afa",
+          "quantity": 1,
+          "unitaryPrice": 9000,
+          "toppingsExtraCost": 0,
+          "subtotal": 9000,
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20261007-0002",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Capuccino ",
+          "productCode": 1260,
+          "categoryNames": [
+            "Bebidas calientes",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "6fc6c91a-09e2-4fbc-b77b-f00767414493",
+          "quantity": 1,
+          "unitaryPrice": 7000,
+          "toppingsExtraCost": 0,
+          "subtotal": 7000,
+          "productId": "e046ff2c-7916-4d5c-88ca-b9a9315da1e0",
+          "commandNumber": "Comanda impresa: 20261007-0002",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Cafe con leche Grande",
+          "productCode": 1190,
+          "categoryNames": [
+            "Bebidas calientes",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "b6a742ab-b299-4db0-8261-21443260800c",
+          "quantity": 1,
+          "unitaryPrice": 9700,
+          "toppingsExtraCost": 0,
+          "subtotal": 9700,
+          "productId": "7e031827-a1e1-4f4f-8139-6dbf8a5c0d64",
+          "commandNumber": "Comanda impresa: 20261007-0002",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Licuado de banana",
+          "productCode": 1350,
+          "categoryNames": [
+            "bebidas frías",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        }
+      ],
+      "payments": [
+        {
+          "id": "f43892cb-27e3-405f-88df-71f4c8f4028f",
+          "amount": 44770,
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-10-08T00:32:04.519Z"
+        }
+      ],
+      "paymentSummary": {
+        "totalPaid": "44770.00",
+        "methodCount": 1,
+        "methods": [
+          {
+            "method": "transferencia",
+            "amount": "44770.00"
+          }
+        ],
+        "primaryMethod": "transferencia",
+        "discountPercent": 0,
+        "discountAmount": 0
+      }
+    },
+    {
+      "id": "31cf0916-d037-46da-b301-aab0d3b6b1dc",
+      "date": "2026-10-07T22:09:11.581Z",
+      "state": "closed",
+      "total": 63000,
+      "tip": 6300,
+      "discountPercent": 0,
+      "discountAmount": 0,
+      "numberCustomers": 3,
+      "comment": "",
+      "commandNumber": null,
+      "methodOfPayment": "transferencia",
+      "tableId": "3878e500-4077-4995-abd5-0fb4f5f2e57b",
+      "dailyCashId": "c38188bd-a699-48db-9c61-ea21ec12f5f1",
+      "tableName": "tablero",
+      "roomName": "adentro",
+      "dailyCashDate": "2026-10-07T19:50:20.182Z",
+      "createdAt": "2026-10-08T01:09:11.575Z",
+      "updatedAt": "2026-10-08T01:42:47.218Z",
+      "closedAt": "2026-10-07T22:42:47.199Z",
+      "archivedAt": "2026-10-23T19:10:47.309Z",
+      "snapshotSource": "archive",
+      "orderDetails": [
+        {
+          "id": "a0f74121-c878-42aa-a423-5946433c54d4",
+          "quantity": 3,
+          "unitaryPrice": 21000,
+          "toppingsExtraCost": 0,
+          "subtotal": 63000,
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20261007-0004",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "77428729-5887-49bd-b8ea-55b7a8b8eb05",
+              "slotName": "Chocolate HyG",
+              "selectedProductId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+              "selectedProductName": "Chocolate HyG Grande",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "c6ace776-9116-4c20-a87d-90f1ebc78ea2",
+              "slotName": "Tortas",
+              "selectedProductId": "4cac743e-7789-43d1-aed2-0a7e7995b749",
+              "selectedProductName": "Torta brownie",
+              "extraCostApplied": 0
+            }
+          ],
+          "productName": "Chocolate + torta",
+          "productCode": 8,
+          "categoryNames": [
+            "promos",
+            "Gluten Free"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        }
+      ],
+      "payments": [
+        {
+          "id": "d1dcf5dc-bef7-4df1-be9a-a76c35cd8f80",
+          "amount": 69300,
+          "methodOfPayment": "transferencia",
+          "createdAt": "2026-10-08T01:42:47.201Z"
+        }
+      ],
+      "paymentSummary": {
+        "totalPaid": "69300.00",
+        "methodCount": 1,
+        "methods": [
+          {
+            "method": "transferencia",
+            "amount": "69300.00"
+          }
+        ],
+        "primaryMethod": "transferencia",
+        "discountPercent": 0,
+        "discountAmount": 0
+      }
+    },
+    {
+      "id": "0ca2bdbf-b9c2-4bc0-a189-b325e340509a",
+      "date": "2026-10-07T22:25:26.772Z",
+      "state": "closed",
+      "total": 60000,
+      "tip": 6000,
+      "discountPercent": 0,
+      "discountAmount": 0,
+      "numberCustomers": 3,
+      "comment": "",
+      "commandNumber": null,
+      "methodOfPayment": "tarjeta de credito",
+      "tableId": null,
+      "dailyCashId": "c38188bd-a699-48db-9c61-ea21ec12f5f1",
+      "tableName": null,
+      "roomName": null,
+      "dailyCashDate": "2026-10-07T19:50:20.182Z",
+      "createdAt": "2026-10-08T01:25:26.766Z",
+      "updatedAt": "2026-10-08T01:49:10.508Z",
+      "closedAt": "2026-10-07T22:49:10.487Z",
+      "archivedAt": "2026-10-23T19:10:47.337Z",
+      "snapshotSource": "archive",
+      "orderDetails": [
+        {
+          "id": "b19171d7-eb3b-4bfa-896a-16b8144e0208",
+          "quantity": 1,
+          "unitaryPrice": 21000,
+          "toppingsExtraCost": 0,
+          "subtotal": 21000,
+          "productId": "7c0d1d1e-333f-4f70-9fa1-acd5489caaff",
+          "commandNumber": "Comanda impresa: 20261007-0005",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [
+            {
+              "slotId": "77428729-5887-49bd-b8ea-55b7a8b8eb05",
+              "slotName": "Chocolate HyG",
+              "selectedProductId": "8b65b119-805b-4ed5-acf3-ef19c1922330",
+              "selectedProductName": "Chocolate HyG Grande",
+              "extraCostApplied": 0
+            },
+            {
+              "slotId": "c6ace776-9116-4c20-a87d-90f1ebc78ea2",
+              "slotName": "Tortas",
+              "selectedProductId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+              "selectedProductName": "Torta cheesecake frutos",
+              "extraCostApplied": 0
+            }
+          ],
+          "productName": "Chocolate + torta",
+          "productCode": 8,
+          "categoryNames": [
+            "Gluten Free",
+            "promos"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "4e94ad46-4993-4897-a89b-e0b4c011965c",
+          "quantity": 1,
+          "unitaryPrice": 12000,
+          "toppingsExtraCost": 0,
+          "subtotal": 12000,
+          "productId": "4cac743e-7789-43d1-aed2-0a7e7995b749",
+          "commandNumber": "Comanda impresa: 20261007-0005",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Torta brownie",
+          "productCode": 1610,
+          "categoryNames": [
+            "Pastelería"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "23b83eb9-5466-4e4a-a142-7972d03034b2",
+          "quantity": 1,
+          "unitaryPrice": 6000,
+          "toppingsExtraCost": 0,
+          "subtotal": 6000,
+          "productId": "3793ba4d-36ad-4c29-be1a-bdab5d7d8b7d",
+          "commandNumber": "Comanda impresa: 20261007-0005",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Cortado mediano",
+          "productCode": 1150,
+          "categoryNames": [
+            "Gluten Free",
+            "Bebidas calientes"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "0c3f822c-9603-4ce3-a10f-51806e230cf6",
+          "quantity": 1,
+          "unitaryPrice": 9000,
+          "toppingsExtraCost": 0,
+          "subtotal": 9000,
+          "productId": "45a6a4d2-2e5e-4a1e-a5ca-0f030365902d",
+          "commandNumber": "Comanda impresa: 20261007-0005",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Capuccino ",
+          "productCode": 1260,
+          "categoryNames": [
+            "Gluten Free",
+            "Bebidas calientes"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        },
+        {
+          "id": "d6475117-9b08-4bdb-8099-36cc86c3ed3a",
+          "quantity": 1,
+          "unitaryPrice": 12000,
+          "toppingsExtraCost": 0,
+          "subtotal": 12000,
+          "productId": "2a77a5ae-92bc-42bf-942a-d7a6ee352448",
+          "commandNumber": "Comanda impresa: 20261007-0005",
+          "isActive": true,
+          "toppings": [],
+          "promotionSelections": [],
+          "productName": "Torta cheesecake frutos",
+          "productCode": 1600,
+          "categoryNames": [
+            "Pastelería"
+          ],
+          "commentOfProduct": null,
+          "snapshotSource": "archive"
+        }
+      ],
+      "payments": [
+        {
+          "id": "e367b594-ea69-4e59-9489-03cd392ba19e",
+          "amount": 66000,
+          "methodOfPayment": "tarjeta de credito",
+          "createdAt": "2026-10-08T01:49:10.489Z"
+        }
+      ],
+      "paymentSummary": {
+        "totalPaid": "66000.00",
+        "methodCount": 1,
+        "methods": [
+          {
+            "method": "tarjeta de credito",
+            "amount": "66000.00"
+          }
+        ],
+        "primaryMethod": "tarjeta de credito",
+        "discountPercent": 0,
+        "discountAmount": 0
+      }
+    }
+  ]
+}
