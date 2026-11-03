@@ -31,6 +31,7 @@ function payload(afipEnv: string): FiscalTicketPayload {
 describe('ticket fiscal impreso', () => {
   it('en homologación avisa y no escribe la URL', () => {
     const text = fiscalTicketPlainText(payload('homologacion'));
+    expect(text).toMatch(/^HANSEL Y GRETEL\n\nFACTURA B/);
     expect(text).toContain('COMPROBANTE DE HOMOLOGACIÓN - SIN VALIDEZ FISCAL');
     expect(text).toContain('$ 6.000,00');
     expect(text).toContain('$ 1.041,32');
@@ -63,6 +64,7 @@ describe('ticket fiscal impreso', () => {
     expect(commands.includes(qr.toString('latin1'))).toBe(true);
     expect(commands).toContain('HOMOLOGACION');
     expect(commands).not.toContain('https://www.afip.gob.ar');
+    expect(commands).toContain('\x1D\x21\x11HANSEL Y GRETEL\n\x1D\x21\x00\n');
     expect(commands).toContain('\x1B\x61\x00');
     expect(commands).toContain('\x1B\x45\x01\x1D\x21\x10TOTAL:');
     expect(commands).toContain('\x1B\x45\x00\x1D\x21\x00');

@@ -16,6 +16,9 @@ const BOLD_OFF = '\x1B\x45\x00';
 const SIZE_NORMAL = '\x1D\x21\x00';
 /** Doble altura: el paso de tamaño que tiene la térmica, sin ensanchar. */
 const SIZE_TALL = '\x1D\x21\x10';
+/** Mismo doble tamaño que el título del ticket no fiscal. */
+const SIZE_DOUBLE = '\x1D\x21\x11';
+const SHOP_TITLE = 'HANSEL Y GRETEL';
 
 interface QrSymbol {
   modules: {
@@ -97,7 +100,13 @@ function footerLines(payload: FiscalTicketPayload): string[] {
 }
 
 export function fiscalTicketLines(payload: FiscalTicketPayload): string[] {
-  const lines = [...headerLines(payload), ...itemLines(payload), SEPARATOR];
+  const lines = [
+    SHOP_TITLE,
+    '',
+    ...headerLines(payload),
+    ...itemLines(payload),
+    SEPARATOR,
+  ];
   if (payload.impNeto != null) {
     lines.push(`Neto: ${formatFiscalMoney(payload.impNeto)}`);
   }
@@ -154,6 +163,10 @@ export function fiscalTicketCommands(payload: FiscalTicketPayload): string {
   const write = (value: string) =>
     chunks.push(Buffer.from(stripAccents(value), 'latin1'));
 
+  chunks.push(Buffer.from(SIZE_DOUBLE, 'latin1'));
+  write(`${SHOP_TITLE}\n`);
+  chunks.push(Buffer.from(SIZE_NORMAL, 'latin1'));
+  write('\n');
   for (const line of headerLines(payload)) write(`${line}\n`);
   chunks.push(Buffer.from(ALIGN_LEFT, 'latin1'));
   for (const line of itemLines(payload)) write(`${line}\n`);
