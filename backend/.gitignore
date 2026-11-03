@@ -61,3 +61,6 @@ afip-key.pem
 
 # Backups
 backups/*
+
+# Documentacion
+docs/*
