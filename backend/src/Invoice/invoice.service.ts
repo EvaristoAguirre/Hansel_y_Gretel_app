@@ -8,7 +8,7 @@ import { Between, Repository } from 'typeorm';
 import { Order } from 'src/Order/entities/order.entity';
 import { buildProductLines } from 'src/Order/helpers/order-response.helper';
 import { AfipConfig } from './afip-config';
-import { ArcaClient, ArcaSolicitarResult } from './arca-client';
+import { ArcaClient, ArcaComprobante, ArcaSolicitarResult } from './arca-client';
 import {
   calculateInvoice,
   InvoiceAmounts,
@@ -25,6 +25,8 @@ const ORDER_RELATIONS = [
   'orderDetails.orderDetailToppings.topping',
   'table',
 ] as const;
+
+const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires';
 
 @Injectable()
 export class InvoiceService {
@@ -97,6 +99,10 @@ export class InvoiceService {
     return fiscalTicketFromInvoice(invoice);
   }
 
+  currentAfipEnv(): InvoiceAfipEnv {
+    return this.config.settings.mode as InvoiceAfipEnv;
+  }
+
   async emitForOrder(
     orderId: string,
     customerEmail?: string,
@@ -132,7 +138,29 @@ export class InvoiceService {
       return this.toView(existing);
     }
 
-    const built = this.buildFromOrder(order);
+    let built: { amounts: InvoiceAmounts; snapshot: InvoiceSnapshot };
+    try {
+      built = this.buildFromOrder(order);
+    } catch (error) {
+      const message =
+        error instanceof ConflictException
+          ? String(error.message)
+          : error instanceof Error
+            ? error.message
+            : 'No se pudo armar la factura.';
+      return this.persistFailedAttempt({
+        origin: 'order',
+        orderId: order.id,
+        afipEnv,
+        ptoVta,
+        tipExcluded: Number(order.tip ?? 0),
+        customerEmail: customerEmail ?? null,
+        message,
+        amounts: zeroAmounts(),
+        snapshot: emptySnapshot('order', order.table?.name ?? null),
+      });
+    }
+
     return this.persistAndRequest({
       origin: 'order',
       orderId: order.id,
@@ -191,14 +219,7 @@ export class InvoiceService {
       consumption: amounts.consumption,
       discountAmount: amounts.discountAmount,
       tipExcluded: 0,
-      emitter: {
-        cuit: settings.cuit,
-        razonSocial: settings.razonSocial,
-        domicilio: settings.domicilio,
-        condicionIva: 'Responsable Inscripto',
-        iibb: settings.iibb,
-        inicioActividades: settings.inicioActividades,
-      },
+      emitter: this.emitterSnapshot(),
     };
 
     const afipEnv = settings.mode as InvoiceAfipEnv;
@@ -228,8 +249,30 @@ export class InvoiceService {
     snapshot: InvoiceSnapshot;
   }): Promise<InvoiceCloseView> {
     const settings = this.config.settings;
-    const cbteNro = await this.nextNumber(input.afipEnv, input.ptoVta, 6);
-    const today = localIsoDate();
+    const today = argentinaIsoDate();
+    const numberResult = await this.allocateNumber(
+      input.afipEnv,
+      input.ptoVta,
+      6,
+    );
+
+    if (numberResult.kind === 'blocked') {
+      return this.persistFailedAttempt({
+        origin: input.origin,
+        orderId: input.orderId,
+        afipEnv: input.afipEnv,
+        ptoVta: input.ptoVta,
+        tipExcluded: input.tipExcluded,
+        customerEmail: input.customerEmail,
+        message: numberResult.message,
+        amounts: input.amounts,
+        snapshot: input.snapshot,
+        cbteFch: today,
+      });
+    }
+
+    const cbteNro = numberResult.cbteNro;
+    const condicionIvaReceptorId = this.requireCondicionIvaReceptorId();
     const row = this.invoices.create({
       origin: input.origin,
       orderId: input.orderId,
@@ -242,7 +285,7 @@ export class InvoiceService {
       concepto: settings.concepto,
       docTipo: 99,
       docNro: 0,
-      condicionIvaReceptorId: settings.condicionIvaReceptorId ?? 0,
+      condicionIvaReceptorId,
       impTotal: money(input.amounts.impTotal),
       impNeto: money(input.amounts.impNeto),
       impIva: money(input.amounts.impIva),
@@ -269,7 +312,7 @@ export class InvoiceService {
         concepto: settings.concepto,
         docTipo: 99,
         docNro: 0,
-        condicionIvaReceptorId: settings.condicionIvaReceptorId ?? 0,
+        condicionIvaReceptorId,
         impTotal: input.amounts.impTotal,
         impTotConc: 0,
         impNeto: input.amounts.impNeto,
@@ -282,80 +325,361 @@ export class InvoiceService {
           importe: item.importe,
         })),
       });
-    } catch {
+    } catch (error) {
       result = { outcome: 'timeout' };
+      saved.arcaErrors = {
+        errors: [
+          {
+            code: 'REQUEST',
+            msg: error instanceof Error ? error.message : 'Error al solicitar.',
+          },
+        ],
+      };
     }
 
     if (result.outcome === 'timeout') {
-      try {
-        const consulted = await this.arca.consultar(input.ptoVta, 6, cbteNro);
-        if (consulted?.cae) {
-          result = {
-            outcome: 'authorized',
-            cae: consulted.cae,
-            caeFchVto: consulted.caeFchVto,
-            reproceso: true,
-          };
-        }
-      } catch {
-        result = { outcome: 'timeout' };
+      const resolved = await this.tryAuthorizeFromConsulta(saved);
+      if (resolved) {
+        return this.toView(resolved);
       }
-    }
-
-    if (result.outcome === 'authorized') {
-      saved.status = 'authorized';
-      saved.cae = result.cae;
-      saved.caeFchVto = isoFromCompact(result.caeFchVto);
-      saved.resultado = 'A';
-      saved.authorizedAt = new Date();
-      saved.arcaErrors = null;
-    } else if (result.outcome === 'rejected') {
-      saved.status = 'rejected';
-      saved.resultado = 'R';
-      saved.arcaErrors = { errors: result.errors };
-    } else {
       saved.status = 'pending';
       saved.resultado = null;
+      const updated = await this.invoices.save(saved);
+      return this.toView(updated);
     }
 
+    this.applyResult(saved, result);
     const updated = await this.invoices.save(saved);
     return this.toView(updated);
+  }
+
+  private async persistFailedAttempt(input: {
+    origin: 'order' | 'manual';
+    orderId: string | null;
+    afipEnv: InvoiceAfipEnv;
+    ptoVta: number;
+    tipExcluded: number;
+    customerEmail: string | null;
+    message: string;
+    amounts: InvoiceAmounts;
+    snapshot: InvoiceSnapshot;
+    cbteFch?: string;
+  }): Promise<InvoiceCloseView> {
+    const settings = this.config.settings;
+    const condicionIvaReceptorId =
+      settings.condicionIvaReceptorId != null &&
+      settings.condicionIvaReceptorId > 0
+        ? settings.condicionIvaReceptorId
+        : 0;
+    const row = this.invoices.create({
+      origin: input.origin,
+      orderId: input.orderId,
+      afipEnv: input.afipEnv,
+      status: 'pending',
+      ptoVta: input.ptoVta,
+      cbteTipo: 6,
+      cbteNro: null,
+      cbteFch: input.cbteFch ?? argentinaIsoDate(),
+      concepto: settings.concepto,
+      docTipo: 99,
+      docNro: 0,
+      condicionIvaReceptorId,
+      impTotal: money(input.amounts.impTotal),
+      impNeto: money(input.amounts.impNeto),
+      impIva: money(input.amounts.impIva),
+      impTotConc: '0.00',
+      impOpEx: '0.00',
+      impTrib: '0.00',
+      iva: input.amounts.iva,
+      discountAmount: money(input.amounts.discountAmount),
+      tipExcluded: money(input.tipExcluded),
+      customerEmail: input.customerEmail,
+      snapshot: input.snapshot as unknown as Record<string, unknown>,
+      arcaErrors: { errors: [{ code: 'LOCAL', msg: input.message }] },
+      attemptCount: 1,
+      lastAttemptAt: new Date(),
+    });
+    const saved = await this.invoices.save(row);
+    return this.toView(saved);
   }
 
   private async retryLocked(invoice: Invoice): Promise<InvoiceCloseView> {
     invoice.attemptCount = Number(invoice.attemptCount ?? 0) + 1;
     invoice.lastAttemptAt = new Date();
 
-    if (invoice.status === 'pending' && invoice.cbteNro != null) {
-      try {
-        const consulted = await this.arca.consultar(
-          invoice.ptoVta,
-          invoice.cbteTipo,
-          invoice.cbteNro,
-        );
-        if (consulted?.cae) {
-          invoice.status = 'authorized';
-          invoice.cae = consulted.cae;
-          invoice.caeFchVto = isoFromCompact(consulted.caeFchVto);
-          invoice.resultado = 'A';
-          invoice.authorizedAt = new Date();
+    if (invoice.cbteNro != null) {
+      const fromConsulta = await this.tryAuthorizeFromConsulta(invoice);
+      if (fromConsulta) {
+        return this.toView(fromConsulta);
+      }
+      if (invoice.status === 'pending' && invoice.arcaErrors) {
+        const errors = (
+          invoice.arcaErrors as { errors?: { code?: string }[] } | null
+        )?.errors;
+        if (errors?.some((item) => item.code === 'CONSULTA')) {
           const saved = await this.invoices.save(invoice);
           return this.toView(saved);
         }
-      } catch {
-        // Sigue el reintento de solicitud.
+        if (errors?.some((item) => item.code === 'MISMATCH')) {
+          const saved = await this.invoices.save(invoice);
+          return this.toView(saved);
+        }
+      }
+    }
+
+    if (invoice.cbteNro == null) {
+      if (invoice.origin === 'order' && invoice.orderId) {
+        const rebuilt = await this.rebuildOrderInvoice(invoice);
+        if (rebuilt) {
+          invoice = rebuilt;
+        }
+      }
+      const allocated = await this.allocateNumber(
+        invoice.afipEnv,
+        invoice.ptoVta,
+        invoice.cbteTipo,
+      );
+      if (allocated.kind === 'blocked') {
+        invoice.arcaErrors = {
+          errors: [{ code: 'LOCAL', msg: allocated.message }],
+        };
+        const saved = await this.invoices.save(invoice);
+        return this.toView(saved);
+      }
+      invoice.cbteNro = allocated.cbteNro;
+      if (!invoice.cbteFch) {
+        invoice.cbteFch = argentinaIsoDate();
       }
     }
 
     let result: ArcaSolicitarResult;
     try {
       result = await this.arca.solicitar(this.solicitudFromInvoice(invoice));
-    } catch {
-      result = { outcome: 'timeout' };
+    } catch (error) {
+      invoice.status = 'pending';
+      invoice.resultado = null;
+      invoice.arcaErrors = {
+        errors: [
+          {
+            code: 'REQUEST',
+            msg: error instanceof Error ? error.message : 'Error al solicitar.',
+          },
+        ],
+      };
+      const saved = await this.invoices.save(invoice);
+      return this.toView(saved);
     }
+
+    if (result.outcome === 'timeout') {
+      const resolved = await this.tryAuthorizeFromConsulta(invoice);
+      if (resolved) {
+        return this.toView(resolved);
+      }
+      invoice.status = 'pending';
+      invoice.resultado = null;
+      const saved = await this.invoices.save(invoice);
+      return this.toView(saved);
+    }
+
     this.applyResult(invoice, result);
     const saved = await this.invoices.save(invoice);
     return this.toView(saved);
+  }
+
+  private async rebuildOrderInvoice(
+    invoice: Invoice,
+  ): Promise<Invoice | null> {
+    if (!invoice.orderId) return null;
+    const order = await this.orders.findOne({
+      where: { id: invoice.orderId },
+      relations: [...ORDER_RELATIONS],
+    });
+    if (!order) return null;
+    try {
+      const built = this.buildFromOrder(order);
+      invoice.impTotal = money(built.amounts.impTotal);
+      invoice.impNeto = money(built.amounts.impNeto);
+      invoice.impIva = money(built.amounts.impIva);
+      invoice.iva = built.amounts.iva;
+      invoice.discountAmount = money(built.amounts.discountAmount);
+      invoice.tipExcluded = money(Number(order.tip ?? 0));
+      invoice.snapshot = built.snapshot as unknown as Record<string, unknown>;
+      invoice.condicionIvaReceptorId = this.requireCondicionIvaReceptorId();
+      invoice.concepto = this.config.settings.concepto;
+      return invoice;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Consulta el número. Si hay CAE con el mismo importe y fecha, autoriza.
+   * Si la consulta falla o el CAE no coincide, deja la fila pendiente y
+   * no pide un CAE nuevo.
+   * Devuelve la fila autorizada, o null si hay que seguir (inexistente)
+   * o si no se puede solicitar.
+   */
+  private async tryAuthorizeFromConsulta(
+    invoice: Invoice,
+  ): Promise<Invoice | null> {
+    if (invoice.cbteNro == null) return null;
+
+    let consulted: ArcaComprobante | null;
+    try {
+      consulted = await this.arca.consultar(
+        invoice.ptoVta,
+        invoice.cbteTipo,
+        invoice.cbteNro,
+      );
+    } catch (error) {
+      invoice.status = 'pending';
+      invoice.resultado = null;
+      invoice.arcaErrors = {
+        errors: [
+          {
+            code: 'CONSULTA',
+            msg:
+              error instanceof Error
+                ? error.message
+                : 'No se pudo consultar el comprobante en ARCA.',
+          },
+        ],
+      };
+      await this.invoices.save(invoice);
+      return null;
+    }
+
+    if (!consulted?.cae) {
+      return null;
+    }
+
+    if (!this.comprobanteMatchesInvoice(invoice, consulted)) {
+      invoice.status = 'pending';
+      invoice.resultado = null;
+      invoice.arcaErrors = {
+        errors: [
+          {
+            code: 'MISMATCH',
+            msg: 'ARCA tiene un CAE para este número con otro importe o fecha.',
+          },
+        ],
+      };
+      await this.invoices.save(invoice);
+      return null;
+    }
+
+    invoice.status = 'authorized';
+    invoice.cae = consulted.cae;
+    invoice.caeFchVto = isoFromCompact(consulted.caeFchVto);
+    invoice.resultado = 'A';
+    invoice.authorizedAt = new Date();
+    invoice.arcaErrors = null;
+    return this.invoices.save(invoice);
+  }
+
+  private comprobanteMatchesInvoice(
+    invoice: Invoice,
+    consulted: ArcaComprobante,
+  ): boolean {
+    const localTotal = Number(invoice.impTotal);
+    if (Math.abs(localTotal - Number(consulted.impTotal)) > 0.009) {
+      return false;
+    }
+    if (!consulted.cbteFch) {
+      return true;
+    }
+    const localFch = String(invoice.cbteFch).slice(0, 10).replace(/-/g, '');
+    const remoteFch = consulted.cbteFch.replace(/-/g, '');
+    return localFch === remoteFch;
+  }
+
+  private async allocateNumber(
+    afipEnv: InvoiceAfipEnv,
+    ptoVta: number,
+    cbteTipo: number,
+  ): Promise<
+    | { kind: 'ok'; cbteNro: number }
+    | { kind: 'blocked'; message: string }
+  > {
+    let candidate = (await this.arca.ultimoAutorizado(ptoVta, cbteTipo)) + 1;
+
+    for (let guard = 0; guard < 20; guard += 1) {
+      const pending = await this.findByNumber(
+        afipEnv,
+        ptoVta,
+        cbteTipo,
+        candidate,
+        'pending',
+      );
+      if (pending) {
+        const authorized = await this.tryAuthorizeFromConsulta(pending);
+        if (authorized?.status === 'authorized') {
+          candidate += 1;
+          continue;
+        }
+        if (
+          pending.status === 'pending' &&
+          (pending.arcaErrors as { errors?: { code?: string }[] } | null)
+            ?.errors?.some(
+              (item) => item.code === 'CONSULTA' || item.code === 'MISMATCH',
+            )
+        ) {
+          return {
+            kind: 'blocked',
+            message:
+              'Hay una factura pendiente con este número y no se pudo confirmar en ARCA. Reintentala antes de emitir otra.',
+          };
+        }
+        return {
+          kind: 'blocked',
+          message:
+            'Hay una factura pendiente sin CAE. Reintentala antes de emitir otra.',
+        };
+      }
+
+      const rejected = await this.findByNumber(
+        afipEnv,
+        ptoVta,
+        cbteTipo,
+        candidate,
+        'rejected',
+      );
+      if (rejected) {
+        await this.releaseNumber(rejected);
+        return { kind: 'ok', cbteNro: candidate };
+      }
+
+      return { kind: 'ok', cbteNro: candidate };
+    }
+
+    return {
+      kind: 'blocked',
+      message: 'No se pudo asignar un número de comprobante.',
+    };
+  }
+
+  private async findByNumber(
+    afipEnv: InvoiceAfipEnv,
+    ptoVta: number,
+    cbteTipo: number,
+    cbteNro: number,
+    status: 'pending' | 'rejected',
+  ): Promise<Invoice | null> {
+    return this.invoices.findOne({
+      where: { afipEnv, ptoVta, cbteTipo, cbteNro, status },
+    });
+  }
+
+  private async releaseNumber(invoice: Invoice): Promise<void> {
+    const released = invoice.cbteNro;
+    const previous =
+      (invoice.arcaErrors as Record<string, unknown> | null) ?? {};
+    invoice.cbteNro = null;
+    invoice.arcaErrors = {
+      ...previous,
+      releasedCbteNro: released,
+    };
+    await this.invoices.save(invoice);
   }
 
   private solicitudFromInvoice(invoice: Invoice) {
@@ -449,33 +773,35 @@ export class InvoiceService {
       consumption: amounts.consumption,
       discountAmount: amounts.discountAmount,
       tipExcluded: Number(order.tip ?? 0),
-      emitter: {
-        cuit: settings.cuit,
-        razonSocial: settings.razonSocial,
-        domicilio: settings.domicilio,
-        condicionIva: 'Responsable Inscripto',
-        iibb: settings.iibb,
-        inicioActividades: settings.inicioActividades,
-      },
+      emitter: this.emitterSnapshot(),
     };
 
     return { amounts, snapshot };
   }
 
-  private async nextNumber(
-    afipEnv: InvoiceAfipEnv,
-    ptoVta: number,
-    cbteTipo: number,
-  ): Promise<number> {
-    const fromClient = await this.arca.ultimoAutorizado(ptoVta, cbteTipo);
-    const raw = await this.invoices
-      .createQueryBuilder('invoice')
-      .select('COALESCE(MAX(invoice.cbteNro), 0)', 'max')
-      .where('invoice.afipEnv = :afipEnv', { afipEnv })
-      .andWhere('invoice.ptoVta = :ptoVta', { ptoVta })
-      .andWhere('invoice.cbteTipo = :cbteTipo', { cbteTipo })
-      .getRawOne<{ max: string }>();
-    return Math.max(fromClient, Number(raw?.max ?? 0)) + 1;
+  private emitterSnapshot() {
+    const settings = this.config.settings;
+    return {
+      cuit: settings.cuit,
+      razonSocial: settings.razonSocial,
+      domicilio: settings.domicilio,
+      condicionIva: 'Responsable Inscripto',
+      iibb: settings.iibb,
+      inicioActividades: settings.inicioActividades,
+    };
+  }
+
+  private requireCondicionIvaReceptorId(): number {
+    const value = this.config.settings.condicionIvaReceptorId;
+    if (value != null && value > 0) {
+      return value;
+    }
+    if (this.config.settings.simulate) {
+      return 0;
+    }
+    throw new ConflictException(
+      'Falta AFIP_CONDICION_IVA_RECEPTOR_ID para facturar.',
+    );
   }
 
   private async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
@@ -512,13 +838,28 @@ function messageFor(invoice: Invoice): string {
   if (invoice.status === 'authorized') {
     return `Factura B autorizada. Número ${invoice.cbteNro}.`;
   }
+  const stored = firstErrorMessage(invoice.arcaErrors);
   if (invoice.status === 'rejected') {
-    const errors = (invoice.arcaErrors as { errors?: { msg: string }[] } | null)
-      ?.errors;
-    const reason = errors?.[0]?.msg ?? 'ARCA rechazó el comprobante.';
-    return `La orden está cobrada. ${reason}`;
+    const reason = stored ?? 'ARCA rechazó el comprobante.';
+    return invoice.origin === 'order'
+      ? `La orden está cobrada. ${reason}`
+      : reason;
   }
-  return 'La orden está cobrada. La factura quedó pendiente.';
+  if (stored) {
+    return invoice.origin === 'order'
+      ? `La orden está cobrada. ${stored}`
+      : stored;
+  }
+  return invoice.origin === 'order'
+    ? 'La orden está cobrada. La factura quedó pendiente.'
+    : 'La factura quedó pendiente.';
+}
+
+function firstErrorMessage(arcaErrors: unknown): string | null {
+  const errors = (arcaErrors as { errors?: { msg?: string }[] } | null)
+    ?.errors;
+  const msg = errors?.[0]?.msg;
+  return msg ? String(msg) : null;
 }
 
 function money(value: number): string {
@@ -532,11 +873,12 @@ function isoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function localIsoDate(date = new Date()): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+/** Fecha civil del comprobante en zona argentina, independiente del TZ del proceso. */
+export function argentinaIsoDate(date = new Date()): string {
+  const local = date
+    .toLocaleString('sv-SE', { timeZone: ARGENTINA_TZ })
+    .slice(0, 10);
+  return local;
 }
 
 function isoFromCompact(value: string): string {
@@ -544,4 +886,40 @@ function isoFromCompact(value: string): string {
     return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
   }
   return value;
+}
+
+function zeroAmounts(): InvoiceAmounts {
+  return {
+    consumption: 0,
+    discountAmount: 0,
+    impTotal: 0,
+    impNeto: 0,
+    impIva: 0,
+    impTotConc: 0,
+    impOpEx: 0,
+    impTrib: 0,
+    iva: [],
+  };
+}
+
+function emptySnapshot(
+  origin: 'order' | 'manual',
+  tableName: string | null,
+): InvoiceSnapshot {
+  return {
+    origin,
+    tableName,
+    lines: [],
+    consumption: 0,
+    discountAmount: 0,
+    tipExcluded: 0,
+    emitter: {
+      cuit: null,
+      razonSocial: null,
+      domicilio: null,
+      condicionIva: 'Responsable Inscripto',
+      iibb: null,
+      inicioActividades: null,
+    },
+  };
 }

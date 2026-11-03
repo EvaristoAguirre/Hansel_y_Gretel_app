@@ -199,6 +199,7 @@ export class ArcaWsfeClient extends ArcaClient {
       cae,
       caeFchVto: tag(xml, 'FchVto') ?? tag(xml, 'CAEFchVto') ?? '',
       impTotal: Number(tag(xml, 'ImpTotal') ?? 0),
+      cbteFch: tag(xml, 'CbteFch') ?? null,
     };
   }
 

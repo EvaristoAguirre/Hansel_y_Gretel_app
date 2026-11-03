@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
+import { AFIP_ALICUOTAS } from './afip-alicuotas';
 import {
   AFIP_ENVIRONMENTS,
   AFIP_URLS,
@@ -74,7 +75,6 @@ export function resolveAfipConfig(
 
   const shared = {
     alicuotaDefaultPct,
-    condicionIvaReceptorId,
     concepto,
     razonSocial: emptyToNull(env.AFIP_RAZON_SOCIAL),
     domicilio: emptyToNull(env.AFIP_DOMICILIO),
@@ -94,6 +94,7 @@ export function resolveAfipConfig(
       ptoVta: readOptionalPositiveInt(env.AFIP_PTO_VTA, 'AFIP_PTO_VTA') ?? 1,
       certPath: null,
       keyPath: null,
+      condicionIvaReceptorId,
       ...shared,
     };
   }
@@ -124,6 +125,12 @@ export function resolveAfipConfig(
     );
   }
 
+  if (condicionIvaReceptorId == null || condicionIvaReceptorId <= 0) {
+    throw new AfipConfigError(
+      'AFIP_CONDICION_IVA_RECEPTOR_ID es obligatorio y debe ser mayor a 0 cuando AFIP_SIMULATE=false.',
+    );
+  }
+
   return {
     simulate: false,
     simulateResult: 'authorized',
@@ -134,6 +141,7 @@ export function resolveAfipConfig(
     ptoVta,
     certPath,
     keyPath,
+    condicionIvaReceptorId,
     ...shared,
   };
 }
@@ -181,6 +189,14 @@ function readAlicuota(raw: string | undefined): number {
   if (!Number.isFinite(value) || value < 0) {
     throw new AfipConfigError(
       'AFIP_ALICUOTA_DEFAULT_PCT debe ser un porcentaje mayor o igual a 0.',
+    );
+  }
+  const known = AFIP_ALICUOTAS.some(
+    (item) => Math.abs(item.quota - value) < 0.001,
+  );
+  if (!known) {
+    throw new AfipConfigError(
+      'AFIP_ALICUOTA_DEFAULT_PCT debe ser una alícuota del mapa de ARCA (0, 2.5, 5, 10.5, 21 o 27).',
     );
   }
   return value;

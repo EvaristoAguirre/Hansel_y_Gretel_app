@@ -28,6 +28,7 @@ describe('resolveAfipConfig', () => {
     AFIP_PTO_VTA: '1',
     AFIP_CERT_PATH: certPath,
     AFIP_KEY_PATH: keyPath,
+    AFIP_CONDICION_IVA_RECEPTOR_ID: '5',
   });
 
   it('sin variables arranca en simulado y no consulta el certificado', () => {
@@ -143,5 +144,21 @@ describe('resolveAfipConfig', () => {
         AFIP_CUIT: '20-12345678-9',
       }),
     ).toThrow(/11 dígitos/);
+  });
+
+  it('sin simulación exige condición de IVA del receptor', () => {
+    const { AFIP_CONDICION_IVA_RECEPTOR_ID: _, ...without } = realEnv();
+    expect(() => resolveAfipConfig(without)).toThrow(
+      /AFIP_CONDICION_IVA_RECEPTOR_ID/,
+    );
+  });
+
+  it('rechaza una alícuota default fuera del mapa', () => {
+    expect(() =>
+      resolveAfipConfig({
+        AFIP_SIMULATE: 'true',
+        AFIP_ALICUOTA_DEFAULT_PCT: '19',
+      }),
+    ).toThrow(/AFIP_ALICUOTA_DEFAULT_PCT/);
   });
 });

@@ -62,6 +62,7 @@ export class ArcaSimulator extends ArcaClient {
       cae: fakeCae(solicitud.cbteNro),
       caeFchVto: addDays(solicitud.cbteFch, 10),
       impTotal: solicitud.impTotal,
+      cbteFch: solicitud.cbteFch,
     };
     this.authorized.set(key, comprobante);
 

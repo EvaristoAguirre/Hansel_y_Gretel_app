@@ -44,6 +44,8 @@ export interface ArcaComprobante {
   cae: string;
   caeFchVto: string;
   impTotal: number;
+  /** Fecha del comprobante en AAAAMMDD cuando ARCA la devuelve. */
+  cbteFch: string | null;
 }
 
 export interface ArcaTipoIva {

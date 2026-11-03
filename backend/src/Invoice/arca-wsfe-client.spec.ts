@@ -15,6 +15,7 @@ function settings() {
       AFIP_PTO_VTA: '5',
       AFIP_CERT_PATH: '/tmp/cert',
       AFIP_KEY_PATH: '/tmp/key',
+      AFIP_CONDICION_IVA_RECEPTOR_ID: '5',
     },
     () => true,
   );

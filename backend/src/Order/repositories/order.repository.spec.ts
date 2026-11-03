@@ -123,4 +123,59 @@ describe('OrderRepository.closeOrder', () => {
     expect(result.state).toBe(OrderState.CLOSED);
     expect(result.table.state).toBe(TableState.AVAILABLE);
   });
+
+  it('descuento con centavos: 100,40 y 10 % guarda 10,04 y propina sobre 90,36', async () => {
+    const pending = buildPendingOrder();
+    pending.orderDetails[0].subtotal = 100.4;
+    pending.orderDetails[0].unitaryPrice = 100.4;
+    const closed = {
+      ...pending,
+      state: OrderState.CLOSED,
+      table: { ...pending.table, state: TableState.AVAILABLE },
+      payments: [{ amount: 100.36, methodOfPayment: PaymentMethod.CASH }],
+      total: 100.4,
+      tip: 10,
+      discountPercent: 10,
+      discountAmount: 10.04,
+    };
+    let savedOrder: any;
+    const queryRunner = {
+      isTransactionActive: true,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+      manager: {
+        findOne: jest
+          .fn()
+          .mockResolvedValueOnce(pending)
+          .mockResolvedValueOnce(closed),
+        create: jest.fn((_entity, payload) => payload),
+        save: jest.fn(async (entity) => {
+          if (entity && entity.id === 'order-1') {
+            savedOrder = entity;
+          }
+          return entity;
+        }),
+      },
+    };
+    const dataSource = {
+      createQueryRunner: jest.fn().mockReturnValue(queryRunner),
+    };
+    const repository = new OrderRepository({} as any, dataSource as any);
+
+    await repository.closeOrder(
+      'order-1',
+      {
+        total: 100.36,
+        discountPercent: 10,
+        payments: [{ amount: 100.36, methodOfPayment: PaymentMethod.CASH }],
+      },
+      openDailyCash,
+    );
+
+    expect(savedOrder.discountAmount).toBe(10.04);
+    expect(savedOrder.tip).toBe(10);
+  });
 });

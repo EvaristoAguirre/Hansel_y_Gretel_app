@@ -7,6 +7,18 @@ export class InvoiceCalculationError extends Error {
   }
 }
 
+function resolveAlicuotaId(quota: number): number {
+  try {
+    return alicuotaId(quota);
+  } catch (error) {
+    throw new InvoiceCalculationError(
+      error instanceof Error
+        ? error.message
+        : `No hay id de ARCA para la alícuota ${quota}.`,
+    );
+  }
+}
+
 export interface InvoiceLineInput {
   subtotal: number;
   /** Null usa el default del entorno. */
@@ -32,14 +44,30 @@ export interface InvoiceAmounts {
   iva: InvoiceIvaBreakdown[];
 }
 
+/**
+ * Neto fiscal en pesos (centavos), misma base que el cobro y calculateInvoice.
+ * El descuento porcentual se redondea al centavo.
+ */
 export function previewFiscalTotal(
   consumption: number,
   discountPercent: number,
 ): number {
-  const gross = Math.round(consumption);
+  const consumptionCents = toCents(consumption);
   const pct = Math.min(100, Math.max(0, Math.round(discountPercent || 0)));
-  const discount = pct === 0 ? 0 : Math.round((gross * pct) / 100);
-  return gross - discount;
+  const discountCents =
+    pct === 0 ? 0 : Math.round((consumptionCents * pct) / 100);
+  return fromCents(consumptionCents - discountCents);
+}
+
+/** Descuento en pesos redondeado al centavo, misma regla que el cierre de orden. */
+export function discountFromPercent(
+  consumption: number,
+  discountPercent: number,
+): number {
+  const consumptionCents = toCents(consumption);
+  const pct = Math.min(100, Math.max(0, Math.round(discountPercent || 0)));
+  if (pct === 0) return 0;
+  return fromCents(Math.round((consumptionCents * pct) / 100));
 }
 
 export function calculateInvoice(input: {
@@ -58,7 +86,7 @@ export function calculateInvoice(input: {
       );
     }
     const quota = line.alicQuota ?? input.defaultAlicuotaPct;
-    alicuotaId(quota);
+    resolveAlicuotaId(quota);
     consumptionCents += subtotalCents;
     groups.set(quota, (groups.get(quota) ?? 0) + subtotalCents);
   }
@@ -88,7 +116,7 @@ export function calculateInvoice(input: {
     impNetoCents += netoCents;
     impIvaCents += ivaCents;
     iva.push({
-      id: alicuotaId(quota),
+      id: resolveAlicuotaId(quota),
       quota,
       baseImp: fromCents(netoCents),
       importe: fromCents(ivaCents),

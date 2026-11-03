@@ -3,7 +3,7 @@ import { renderInvoicePdf } from './invoice-pdf';
 import { ArcaClient, ArcaSolicitarResult } from './arca-client';
 import { AfipSettings } from './afip-config';
 import { Invoice } from './invoice.entity';
-import { InvoiceService } from './invoice.service';
+import { argentinaIsoDate, InvoiceService } from './invoice.service';
 
 const ORDER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const ORDER_B = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
@@ -20,6 +20,7 @@ function order(id: string, subtotal = 1210) {
         subtotal,
         quantity: 1,
         unitaryPrice: subtotal,
+        toppingsExtraCost: 0,
         commentOfProduct: null,
         product: {
           id: 'prod',
@@ -33,7 +34,7 @@ function order(id: string, subtotal = 1210) {
   };
 }
 
-function settings(): AfipSettings {
+function settings(overrides: Partial<AfipSettings> = {}): AfipSettings {
   return {
     simulate: true,
     simulateResult: 'authorized',
@@ -52,6 +53,7 @@ function settings(): AfipSettings {
     iibb: null,
     inicioActividades: null,
     timeoutMs: 8000,
+    ...overrides,
   };
 }
 
@@ -60,19 +62,39 @@ function harness(
     solicitar: (cbteNro: number) => Promise<ArcaSolicitarResult>;
     consultar?: (
       cbteNro: number,
-    ) => Promise<{ cae: string; caeFchVto: string } | null>;
+    ) => Promise<{
+      cae: string;
+      caeFchVto: string;
+      impTotal?: number;
+      cbteFch?: string | null;
+    } | null>;
     ultimo?: () => Promise<number>;
   },
-  source: { orderA?: ReturnType<typeof order> } = {},
+  source: {
+    orderA?: ReturnType<typeof order>;
+    orderB?: ReturnType<typeof order>;
+    afip?: Partial<AfipSettings>;
+  } = {},
 ) {
   const rows: Invoice[] = [];
   let seq = 0;
   const solicitar = jest.fn(async (input: { cbteNro: number }) =>
     behavior.solicitar(input.cbteNro),
   );
-  const consultar = jest.fn(async (_p: number, _t: number, nro: number) =>
-    behavior.consultar ? behavior.consultar(nro) : null,
-  );
+  const consultar = jest.fn(async (_p: number, _t: number, nro: number) => {
+    if (!behavior.consultar) return null;
+    const found = await behavior.consultar(nro);
+    if (!found) return null;
+    return {
+      ptoVta: 1,
+      cbteTipo: 6,
+      cbteNro: nro,
+      cae: found.cae,
+      caeFchVto: found.caeFchVto,
+      impTotal: found.impTotal ?? 1210,
+      cbteFch: found.cbteFch ?? argentinaIsoDate().replace(/-/g, ''),
+    };
+  });
   const arca = {
     ultimoAutorizado: jest.fn(async () =>
       behavior.ultimo ? behavior.ultimo() : 0,
@@ -92,34 +114,50 @@ function harness(
         seq += 1;
         row.id = `inv-${seq}`;
         rows.push(row);
+      } else if (!rows.find((r) => r.id === row.id)) {
+        rows.push(row);
       }
       return row;
     }),
     findOne: jest.fn(
-      async ({ where }: { where: { orderId?: string; id?: string } }) => {
+      async ({
+        where,
+      }: {
+        where: {
+          orderId?: string;
+          id?: string;
+          afipEnv?: string;
+          ptoVta?: number;
+          cbteTipo?: number;
+          cbteNro?: number;
+          status?: string;
+        };
+      }) => {
         if (where.id) return rows.find((row) => row.id === where.id) ?? null;
-        return rows.find((row) => row.orderId === where.orderId) ?? null;
+        if (where.orderId) {
+          return rows.find((row) => row.orderId === where.orderId) ?? null;
+        }
+        if (where.cbteNro != null) {
+          return (
+            rows.find(
+              (row) =>
+                row.cbteNro === where.cbteNro &&
+                row.afipEnv === where.afipEnv &&
+                row.ptoVta === where.ptoVta &&
+                row.cbteTipo === where.cbteTipo &&
+                row.status === where.status,
+            ) ?? null
+          );
+        }
+        return null;
       },
     ),
-    createQueryBuilder: () => {
-      const api = {
-        select: () => api,
-        where: () => api,
-        andWhere: () => api,
-        getRawOne: async () => ({
-          max: String(
-            rows.reduce((max, row) => Math.max(max, row.cbteNro ?? 0), 0),
-          ),
-        }),
-      };
-      return api;
-    },
   };
 
   const orders = {
     findOne: jest.fn(async ({ where }: { where: { id: string } }) => {
       if (where.id === ORDER_A) return source.orderA ?? order(ORDER_A);
-      if (where.id === ORDER_B) return order(ORDER_B);
+      if (where.id === ORDER_B) return source.orderB ?? order(ORDER_B);
       return null;
     }),
   };
@@ -127,11 +165,11 @@ function harness(
   const service = new InvoiceService(
     invoices as any,
     orders as any,
-    { settings: settings() } as any,
+    { settings: settings(source.afip) } as any,
     arca,
   );
 
-  return { service, rows, solicitar, consultar };
+  return { service, rows, solicitar, consultar, arca, orders };
 }
 
 describe('InvoiceService.emitForOrder', () => {
@@ -176,7 +214,12 @@ describe('InvoiceService.emitForOrder', () => {
   it('si el timeout igual dejó CAE, no vuelve a solicitar', async () => {
     const { service, rows, solicitar } = harness({
       solicitar: async () => ({ outcome: 'timeout' }),
-      consultar: async () => ({ cae: '00000000000099', caeFchVto: '20261022' }),
+      consultar: async () => ({
+        cae: '00000000000099',
+        caeFchVto: '20261022',
+        impTotal: 1210,
+        cbteFch: argentinaIsoDate().replace(/-/g, ''),
+      }),
     });
 
     const view = await service.emitForOrder(ORDER_A);
@@ -259,6 +302,7 @@ describe('InvoiceService.emitForOrder', () => {
           reproceso: false,
         };
       },
+      consultar: async () => null,
     });
 
     const first = await service.emitForOrder(ORDER_A);
@@ -279,6 +323,7 @@ describe('InvoiceService.emitForOrder', () => {
       subtotal: 1105,
       quantity: 1,
       unitaryPrice: 1105,
+      toppingsExtraCost: 0,
       commentOfProduct: null,
       product: {
         id: 'prod-2',
@@ -346,9 +391,141 @@ describe('InvoiceService.emitForOrder', () => {
     const orders = (service as any).orders;
     orders.findOne.mockResolvedValue(order(ORDER_A, 0));
 
-    await expect(service.emitForOrder(ORDER_A)).rejects.toBeInstanceOf(
-      ConflictException,
+    const view = await service.emitForOrder(ORDER_A);
+    expect(view.status).toBe('pending');
+    expect(view.id).toBeTruthy();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].cbteNro).toBeNull();
+    expect(view.message).toMatch(/importe cero|No se puede facturar/i);
+  });
+
+  it('tras un rechazo la siguiente factura reutiliza el número que ARCA espera', async () => {
+    let ultimo = 0;
+    const { service, rows, solicitar } = harness({
+      ultimo: async () => ultimo,
+      solicitar: async (cbteNro) => {
+        if (cbteNro === 1 && solicitar.mock.calls.length === 1) {
+          return {
+            outcome: 'rejected',
+            errors: [{ code: '1', msg: 'dato inválido' }],
+          };
+        }
+        return {
+          outcome: 'authorized',
+          cae: String(cbteNro).padStart(14, '0'),
+          caeFchVto: '20261022',
+          reproceso: false,
+        };
+      },
+      consultar: async () => null,
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    expect(first.status).toBe('rejected');
+    expect(rows[0].cbteNro).toBe(1);
+
+    const second = await service.emitForOrder(ORDER_B);
+    expect(second.status).toBe('authorized');
+    expect(second.cbteNro).toBe(1);
+    expect(rows[0].cbteNro).toBeNull();
+    expect(
+      (rows[0].arcaErrors as { releasedCbteNro?: number }).releasedCbteNro,
+    ).toBe(1);
+  });
+
+  it('con un pendiente sin CAE no emite un número nuevo', async () => {
+    const { service, rows } = harness({
+      solicitar: async () => ({ outcome: 'timeout' }),
+      consultar: async () => null,
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    expect(first.status).toBe('pending');
+    expect(first.cbteNro).toBe(1);
+
+    const second = await service.emitForOrder(ORDER_B);
+    expect(second.status).toBe('pending');
+    expect(second.cbteNro).toBeNull();
+    expect(second.message).toMatch(/pendiente/i);
+    expect(rows.filter((r) => r.cbteNro === 1)).toHaveLength(1);
+  });
+
+  it('si la consulta del reintento falla no pasa a rejected', async () => {
+    const { service, rows, consultar, solicitar } = harness({
+      solicitar: async () => ({ outcome: 'timeout' }),
+      consultar: async () => {
+        throw new Error('token caído');
+      },
+    });
+
+    const first = await service.emitForOrder(ORDER_A);
+    expect(first.status).toBe('pending');
+    const solicitarCalls = solicitar.mock.calls.length;
+
+    const retried = await service.retry(first.id);
+    expect(retried.status).toBe('pending');
+    expect(solicitar.mock.calls.length).toBe(solicitarCalls);
+    expect(consultar).toHaveBeenCalled();
+    expect(
+      (rows[0].arcaErrors as { errors: { code: string }[] }).errors[0].code,
+    ).toBe('CONSULTA');
+
+    consultar.mockResolvedValueOnce({
+      ptoVta: 1,
+      cbteTipo: 6,
+      cbteNro: 1,
+      cae: '00000000000077',
+      caeFchVto: '20261022',
+      impTotal: 1210,
+      cbteFch: argentinaIsoDate().replace(/-/g, ''),
+    });
+    const recovered = await service.retry(first.id);
+    expect(recovered.status).toBe('authorized');
+    expect(recovered.cae).toBe('00000000000077');
+  });
+
+  it('si el CAE consultado no coincide en importe no autoriza', async () => {
+    const { service, rows } = harness({
+      solicitar: async () => ({ outcome: 'timeout' }),
+      consultar: async () => ({
+        cae: '00000000000055',
+        caeFchVto: '20261022',
+        impTotal: 9999,
+        cbteFch: argentinaIsoDate().replace(/-/g, ''),
+      }),
+    });
+
+    const view = await service.emitForOrder(ORDER_A);
+    expect(view.status).toBe('pending');
+    expect(rows[0].cae).toBeUndefined();
+    expect(
+      (rows[0].arcaErrors as { errors: { code: string }[] }).errors[0].code,
+    ).toBe('MISMATCH');
+  });
+
+  it('cbteFch usa la fecha civil de Argentina', async () => {
+    const { service, rows } = harness({
+      solicitar: async (cbteNro) => ({
+        outcome: 'authorized',
+        cae: String(cbteNro).padStart(14, '0'),
+        caeFchVto: '20261022',
+        reproceso: false,
+      }),
+    });
+
+    // 2026-11-04 02:30 UTC = 2026-11-03 23:30 en Argentina.
+    const utcLate = new Date('2026-11-04T02:30:00.000Z');
+    expect(argentinaIsoDate(utcLate)).toBe('2026-11-03');
+
+    await service.emitForOrder(ORDER_A);
+    expect(rows[0].cbteFch).toBe(argentinaIsoDate());
+  });
+});
+
+describe('argentinaIsoDate', () => {
+  it('antes de la medianoche argentina no salta de día', () => {
+    expect(argentinaIsoDate(new Date('2026-11-04T02:30:00.000Z'))).toBe(
+      '2026-11-03',
     );
-    expect(rows).toHaveLength(0);
   });
 });

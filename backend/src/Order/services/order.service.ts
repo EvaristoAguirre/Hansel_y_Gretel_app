@@ -879,8 +879,11 @@ export class OrderService {
           status: 'pending',
           cbteNro: null,
           cae: null,
-          afipEnv: 'simulado',
-          message: 'La orden está cobrada. La factura no pudo registrarse.',
+          afipEnv: this.invoiceService.currentAfipEnv(),
+          message:
+            error instanceof Error && error.message
+              ? `La orden está cobrada. ${error.message}`
+              : 'La orden está cobrada. La factura no pudo registrarse.',
         };
       }
     }

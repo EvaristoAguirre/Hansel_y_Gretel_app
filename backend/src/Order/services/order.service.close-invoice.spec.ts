@@ -20,6 +20,7 @@ describe('OrderService.closeOrder factura', () => {
   const invoiceService = {
     emitForOrder: jest.fn(),
     fiscalTicket: jest.fn().mockResolvedValue({ afipEnv: 'simulado' }),
+    currentAfipEnv: jest.fn().mockReturnValue('homologacion'),
   };
   const orderRepo = { findOne: jest.fn() };
 
@@ -128,5 +129,26 @@ describe('OrderService.closeOrder factura', () => {
 
     expect(invoiceService.emitForOrder).not.toHaveBeenCalled();
     expect(result.invoice).toBeUndefined();
+  });
+
+  it('si emitForOrder explota después del cobro reporta el modo real y el error', async () => {
+    orderRepo.findOne.mockResolvedValue({
+      id: ORDER_ID,
+      orderDetails: [{ isActive: true, subtotal: 1000 }],
+    });
+    orderRepository.closeOrder.mockResolvedValue({
+      id: ORDER_ID,
+      table: { id: 't1' },
+    });
+    invoiceService.emitForOrder.mockRejectedValue(
+      new Error('falló el guardado de la factura'),
+    );
+
+    const result = await service.closeOrder(ORDER_ID, dto as any);
+
+    expect(result.invoice?.id).toBe('');
+    expect(result.invoice?.afipEnv).toBe('homologacion');
+    expect(result.invoice?.message).toMatch(/falló el guardado/);
+    expect(invoiceService.currentAfipEnv).toHaveBeenCalled();
   });
 });
