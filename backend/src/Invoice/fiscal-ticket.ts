@@ -1,5 +1,5 @@
 import { Invoice } from './invoice.entity';
-import { civilDate } from './invoice-format';
+import { civilDate, formatArgentinaTime } from './invoice-format';
 import { fiscalQrUrl } from './invoice-qr';
 import { InvoiceSnapshot } from './invoice.types';
 
@@ -14,6 +14,8 @@ export interface FiscalTicketPayload {
   ptoVta: number;
   cbteNro: number;
   cbteFch: string;
+  /** Hora HH:mm de autorización, en Argentina. Vacío si no hay instante. */
+  cbteTime?: string;
   lines: {
     name: string;
     quantity: number;
@@ -51,6 +53,7 @@ export function fiscalTicketFromInvoice(invoice: Invoice): FiscalTicketPayload {
     ptoVta: invoice.ptoVta,
     cbteNro: invoice.cbteNro ?? 0,
     cbteFch: civilDate(invoice.cbteFch),
+    cbteTime: formatArgentinaTime(invoice.authorizedAt ?? invoice.createdAt),
     lines: snapshot.lines ?? [],
     discountAmount: Number(invoice.discountAmount ?? 0),
     impNeto: Number(invoice.impNeto),

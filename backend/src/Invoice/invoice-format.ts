@@ -23,6 +23,23 @@ export function formatFiscalDate(
   return value instanceof Date ? '' : String(value);
 }
 
+/** Hora HH:mm en Argentina. Vacío si no hay un instante válido. */
+export function formatArgentinaTime(
+  value: Date | string | null | undefined,
+): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date
+    .toLocaleTimeString('sv-SE', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    .slice(0, 5);
+}
+
 export function formatFiscalMoney(value: number): string {
   const safe = Number.isFinite(value) ? value : 0;
   const negative = safe < 0;

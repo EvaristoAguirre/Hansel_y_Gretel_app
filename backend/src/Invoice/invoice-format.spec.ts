@@ -2,6 +2,7 @@ import {
   civilDate,
   comprobanteNumero,
   fiscalLegend,
+  formatArgentinaTime,
   formatFiscalDate,
   formatFiscalMoney,
 } from './invoice-format';
@@ -17,6 +18,13 @@ describe('formato fiscal', () => {
     expect(formatFiscalMoney(4958.68)).toBe('$ 4.958,68');
     expect(formatFiscalMoney(6000)).toBe('$ 6.000,00');
     expect(comprobanteNumero(6, 1)).toBe('0006-00000001');
+  });
+
+  it('la hora del ticket es la de Argentina', () => {
+    expect(formatArgentinaTime(new Date('2026-11-03T20:12:00.000Z'))).toBe(
+      '17:12',
+    );
+    expect(formatArgentinaTime(null)).toBe('');
   });
 
   it('la leyenda depende del ambiente', () => {
