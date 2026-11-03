@@ -1,7 +1,7 @@
 import { orderToClosed } from "@/api/order";
 import { useAuth } from "@/app/context/authContext";
 import { useRoomContext } from "@/app/context/room.context";
-import { AddCircleOutline, Close, Payment } from "@mui/icons-material";
+import { AddCircleOutline, Close, Email, Payment } from "@mui/icons-material";
 import {
   Button,
   FormControl,
@@ -34,7 +34,18 @@ import { useOrderStore } from "./useOrderStore";
 import { paymentMethod } from "../Enums/dailyCash";
 import { capitalizeFirstLetter } from "../Utils/CapitalizeFirstLetter";
 import { OrderState } from "../Enums/order";
-import { formatNumber } from "../Utils/FormatNumber";
+import {
+  formatCurrency,
+  formatNumber,
+  parseEsARNumber,
+} from "../Utils/FormatNumber";
+import {
+  consumptionFromLines,
+  discountAmountFromPercent,
+  netAfterDiscount,
+  remainingCents,
+  totalWithTip,
+} from "./payTotals";
 
 interface DraftPayment {
   productIds: string[];
@@ -68,15 +79,15 @@ const TipInputs: React.FC<TipInputsProps> = ({
 }) => {
   const computedTotal = baseAmount + (customTip || 0);
   const [propinaInput, setPropinaInput] = useState<string>(
-    formatNumber(customTip || 0)
+    formatCurrency(customTip || 0)
   );
   const [totalInput, setTotalInput] = useState<string>(
-    formatNumber(computedTotal)
+    formatCurrency(computedTotal)
   );
 
   useEffect(() => {
-    setTotalInput(formatNumber(baseAmount + (customTip || 0)));
-    setPropinaInput(formatNumber(customTip || 0));
+    setTotalInput(formatCurrency(baseAmount + (customTip || 0)));
+    setPropinaInput(formatCurrency(customTip || 0));
   }, [baseAmount, customTip]);
 
   return (
@@ -94,19 +105,17 @@ const TipInputs: React.FC<TipInputsProps> = ({
         placeholder="Ingresá el monto de propina"
         value={propinaInput}
         onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, "");
-          setPropinaInput(digits);
-          const nextTip = parseInt(digits || "0", 10);
-          const safeTip = isNaN(nextTip) ? 0 : Math.max(0, nextTip);
-          onChangeCustomTip(safeTip);
+          setPropinaInput(e.target.value);
+          const nextTip = parseEsARNumber(e.target.value);
+          onChangeCustomTip(Math.max(0, nextTip));
         }}
-        onBlur={() => setPropinaInput(formatNumber(customTip || 0))}
+        onBlur={() => setPropinaInput(formatCurrency(customTip || 0))}
         fullWidth
-        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+        inputProps={{ inputMode: "decimal" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
-        helperText={`$ ${formatNumber(customTip || 0)}`}
+        helperText={`$ ${formatCurrency(customTip || 0)}`}
       />
       <TextField
         type="text"
@@ -114,22 +123,22 @@ const TipInputs: React.FC<TipInputsProps> = ({
         placeholder="Ingresá el total a pagar"
         value={totalInput}
         onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, "");
-          setTotalInput(digits);
-          const nextTotal = parseInt(digits || "0", 10);
-          const safeTotal = isNaN(nextTotal) ? 0 : Math.max(0, nextTotal);
-          const computedTip = Math.max(0, safeTotal - baseAmount);
-          onChangeCustomTip(computedTip);
+          setTotalInput(e.target.value);
+          const nextTotal = parseEsARNumber(e.target.value);
+          const computedTip = Math.max(0, nextTotal - baseAmount);
+          onChangeCustomTip(
+            Math.round(computedTip * 100) / 100
+          );
         }}
         onBlur={() =>
-          setTotalInput(formatNumber(baseAmount + (customTip || 0)))
+          setTotalInput(formatCurrency(baseAmount + (customTip || 0)))
         }
         fullWidth
-        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+        inputProps={{ inputMode: "decimal" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
-        helperText={`$ ${formatNumber(baseAmount + (customTip || 0))}`}
+        helperText={`$ ${formatCurrency(baseAmount + (customTip || 0))}`}
       />
     </Box>
   );
@@ -172,6 +181,9 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   const [fullCustomTip, setFullCustomTip] = useState(0);
   const [fullDiscountPercent, setFullDiscountPercent] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emitInvoice, setEmitInvoice] = useState(false);
+  const [invoiceEmailOpen, setInvoiceEmailOpen] = useState(false);
+  const [invoiceEmail, setInvoiceEmail] = useState("");
   const [fullSplits, setFullSplits] = useState<FullSplit[]>([
     { id: "split-0", method: "", amount: "" },
   ]);
@@ -261,20 +273,15 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       Swal.fire("Producto ya asignado a otro pago", "", "error");
       return;
     }
-    const base = productIds.reduce(
-      (sum, id) =>
-        sum +
-        Number(
-          confirmedProducts.find((p) => p.internalId === id)?.unitaryPrice ?? 0
-        ),
-      0
+    const selected = productIds
+      .map((id) => confirmedProducts.find((p) => p.internalId === id))
+      .filter(Boolean) as { unitaryPrice?: number | string | null; quantity?: number }[];
+    const base = consumptionFromLines(selected);
+    const amount = totalWithTip(
+      base,
+      tipType === "10" ? "10" : tipType === "custom" ? "custom" : "none",
+      customTip
     );
-    const amount =
-      tipType === "10"
-        ? base * 1.1
-        : tipType === "custom"
-        ? base + customTip
-        : base;
     setConfirmedPayments((prev) => [
       ...prev,
       { productIds, methodOfPayment: method, amount },
@@ -288,47 +295,73 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
   };
 
   // ─── Cálculos modo total ────────────────────────────────────────────────────
-  const fullBaseAmount = confirmedProducts.reduce(
-    (sum, p) => sum + Number(p.unitaryPrice ?? 0),
-    0
+  const fullBaseAmount = consumptionFromLines(confirmedProducts);
+  const fullDiscountAmount = discountAmountFromPercent(
+    fullBaseAmount,
+    fullDiscountPercent
   );
-  const fullGrossRounded = Math.round(fullBaseAmount);
-  const fullDiscountAmount = Math.round(
-    (fullGrossRounded * fullDiscountPercent) / 100
+  const fullNetAfterDiscount = netAfterDiscount(
+    fullBaseAmount,
+    fullDiscountPercent
   );
-  const fullNetAfterDiscount = fullGrossRounded - fullDiscountAmount;
-  const fullTotalWithTip =
-    fullTipType === "10"
-      ? Math.round(fullNetAfterDiscount * 1.1)
-      : fullTipType === "custom"
-      ? fullNetAfterDiscount + fullCustomTip
-      : fullNetAfterDiscount;
+  const fullTotalWithTip = totalWithTip(
+    fullNetAfterDiscount,
+    fullTipType,
+    fullCustomTip
+  );
   const fullPaid = fullSplits.reduce(
-    (sum, s) => sum + (parseInt(s.amount.replace(/\D/g, ""), 10) || 0),
+    (sum, s) => sum + parseEsARNumber(s.amount),
     0
   );
-  const fullRemaining = Math.round(fullTotalWithTip) - Math.round(fullPaid);
+  const fullRemaining = remainingCents(fullTotalWithTip, fullPaid) / 100;
   const fullSplitsValid =
     fullSplits.length > 0 &&
-    fullSplits.every(
-      (s) => s.method && parseInt(s.amount.replace(/\D/g, ""), 10) > 0
-    );
+    fullSplits.every((s) => s.method && parseEsARNumber(s.amount) > 0);
 
   // ─── Cálculos modo parcial ─────────────────────────────────────────────────
-  const baseAmount = draftPayment.productIds.reduce(
-    (sum, id) =>
-      sum +
-      Number(
-        confirmedProducts.find((p) => p.internalId === id)?.unitaryPrice ?? 0
-      ),
-    0
-  );
-  const total10 = (baseAmount * 1.1).toFixed(2);
-  const totalCustom = (baseAmount + draftPayment.customTip).toFixed(2);
+  const selectedDraft = draftPayment.productIds
+    .map((id) => confirmedProducts.find((p) => p.internalId === id))
+    .filter(Boolean) as {
+    unitaryPrice?: number | string | null;
+    quantity?: number;
+  }[];
+  const baseAmount = consumptionFromLines(selectedDraft);
+  const total10 = totalWithTip(baseAmount, "10", 0).toFixed(2);
+  const totalCustom = totalWithTip(
+    baseAmount,
+    "custom",
+    draftPayment.customTip
+  ).toFixed(2);
+  const invoiceAmount = fullNetAfterDiscount;
+
+  const notifyClosed = (paidOrder: { invoice?: { status?: string; message?: string } } | null) => {
+    const invoice = paidOrder?.invoice;
+    if (!invoice) {
+      Swal.fire("Orden cerrada con éxito", "", "success");
+      return;
+    }
+    if (invoice.status === "authorized") {
+      Swal.fire("Cobro correcto y factura emitida", invoice.message || "", "success");
+      return;
+    }
+    Swal.fire("La orden quedó cobrada", invoice.message || "", "warning");
+  };
 
   const handlePayOrder = async () => {
     if (!token || !selectedOrderByTable || !selectedTable) return;
     if (isSubmitting) return;
+    const email = invoiceEmail.trim();
+    if (
+      emitInvoice &&
+      email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      Swal.fire("El email no tiene un formato válido", "", "warning");
+      return;
+    }
+    const invoiceRequest = emitInvoice
+      ? { emit: true, email: email || undefined }
+      : undefined;
 
     if (fullPaymentMode) {
       if (!fullSplitsValid) {
@@ -342,7 +375,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       if (fullRemaining !== 0) {
         Swal.fire(
           "Los montos no coinciden con el total",
-          `Diferencia: $${formatNumber(Math.abs(fullRemaining))} ${
+          `Diferencia: $${formatCurrency(Math.abs(fullRemaining))} ${
             fullRemaining > 0 ? "faltante" : "de más"
           }`,
           "warning"
@@ -352,7 +385,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       setIsSubmitting(true);
       try {
         const payments = fullSplits.map((s) => ({
-          amount: parseInt(s.amount.replace(/\D/g, ""), 10),
+          amount: parseEsARNumber(s.amount),
           methodOfPayment: s.method as paymentMethod,
         }));
         const paidOrder = await orderToClosed(
@@ -360,9 +393,10 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
           token,
           payments,
           undefined,
-          fullDiscountPercent
+          fullDiscountPercent,
+          invoiceRequest
         );
-        if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+        if (paidOrder) notifyClosed(paidOrder);
         setConfirmedProducts([]);
         clearSelectedProducts();
         if (paidOrder) {
@@ -404,9 +438,12 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
       const paidOrder = await orderToClosed(
         selectedOrderByTable.id,
         token,
-        payments
+        payments,
+        undefined,
+        0,
+        invoiceRequest
       );
-      if (paidOrder) Swal.fire("Orden cerrada con éxito", "", "success");
+      if (paidOrder) notifyClosed(paidOrder);
 
       setConfirmedProducts([]);
       clearSelectedProducts();
@@ -772,8 +809,8 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   InputLabelProps={{ shrink: true }}
                   value={
                     fullDiscountAmount > 0
-                      ? `-$${formatNumber(fullDiscountAmount)}`
-                      : `$${formatNumber(fullDiscountAmount)}`
+                      ? `-$${formatCurrency(fullDiscountAmount)}`
+                      : `$${formatCurrency(fullDiscountAmount)}`
                   }
                   InputProps={{ readOnly: true }}
                   inputProps={{
@@ -795,7 +832,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   variant="outlined"
                   label="Monto neto"
                   InputLabelProps={{ shrink: true }}
-                  value={`$${formatNumber(fullNetAfterDiscount)}`}
+                  value={`$${formatCurrency(fullNetAfterDiscount)}`}
                   InputProps={{ readOnly: true }}
                   inputProps={{
                     readOnly: true,
@@ -826,7 +863,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                   onChange={() => setFullTipType("none")}
                 />
                 <Typography>Total sin propina</Typography>
-                <Typography>${formatNumber(fullNetAfterDiscount)}</Typography>
+                <Typography>${formatCurrency(fullNetAfterDiscount)}</Typography>
 
                 <Radio
                   checked={fullTipType === "10"}
@@ -834,7 +871,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 />
                 <Typography>Total + 10% propina</Typography>
                 <Typography>
-                  ${formatNumber(Math.round(fullNetAfterDiscount * 1.1))}
+                  ${formatCurrency(totalWithTip(fullNetAfterDiscount, "10", 0))}
                 </Typography>
 
                 <Radio
@@ -843,7 +880,14 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 />
                 <Typography>Total + propina personalizada</Typography>
                 <Typography>
-                  ${formatNumber(fullNetAfterDiscount + fullCustomTip)}
+                  $
+                  {formatCurrency(
+                    totalWithTip(
+                      fullNetAfterDiscount,
+                      "custom",
+                      fullCustomTip
+                    )
+                  )}
                 </Typography>
               </Box>
               {fullTipType === "custom" && (
@@ -874,7 +918,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     Total a pagar
                   </Typography>
                   <Typography fontWeight="bold">
-                    ${formatNumber(fullTotalWithTip)}
+                    ${formatCurrency(fullTotalWithTip)}
                   </Typography>
                 </Box>
                 <Box>
@@ -882,7 +926,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     Ingresado
                   </Typography>
                   <Typography fontWeight="bold" color="success.main">
-                    ${formatNumber(fullPaid)}
+                    ${formatCurrency(fullPaid)}
                   </Typography>
                 </Box>
                 <Box>
@@ -893,7 +937,7 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     fontWeight="bold"
                     color={fullRemaining === 0 ? "success.main" : "error.main"}
                   >
-                    ${formatNumber(fullRemaining)}
+                    ${formatCurrency(Math.abs(fullRemaining))}
                   </Typography>
                 </Box>
               </Box>
@@ -932,23 +976,19 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                     label="Monto"
                     value={split.amount}
                     onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      updateFullSplit(split.id, "amount", digits);
+                      updateFullSplit(split.id, "amount", e.target.value);
                     }}
                     onBlur={() => {
-                      const parsed = parseInt(
-                        split.amount.replace(/\D/g, ""),
-                        10
-                      );
-                      if (!isNaN(parsed) && parsed > 0) {
+                      const parsed = parseEsARNumber(split.amount);
+                      if (parsed > 0) {
                         updateFullSplit(
                           split.id,
                           "amount",
-                          formatNumber(parsed)
+                          formatCurrency(parsed)
                         );
                       }
                     }}
-                    inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                    inputProps={{ inputMode: "decimal" }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">$</InputAdornment>
@@ -976,6 +1016,50 @@ const PayOrder: React.FC<PayOrderProps> = ({ handleComplete }) => {
                 Agregar método de pago
               </Button>
             </>
+          )}
+
+          <Box
+            mt={2}
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+          >
+            <Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={emitInvoice}
+                    onChange={(_, checked) => setEmitInvoice(checked)}
+                    color="default"
+                  />
+                }
+                label="Emitir Factura B"
+              />
+              <Typography variant="body2" color="text.secondary">
+                Se factura ${formatCurrency(invoiceAmount)} (sin propina)
+              </Typography>
+            </Box>
+            <Tooltip title="Email del cliente">
+              <IconButton
+                aria-label="Email del cliente"
+                onClick={() => setInvoiceEmailOpen((open) => !open)}
+                disabled={!emitInvoice}
+              >
+                <Email />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          {emitInvoice && invoiceEmailOpen && (
+            <TextField
+              fullWidth
+              size="small"
+              type="email"
+              label="Email"
+              value={invoiceEmail}
+              onChange={(e) => setInvoiceEmail(e.target.value)}
+              sx={{ mt: 1 }}
+            />
           )}
 
           {/* ─── Botón confirmar ──────────────────────────────────────────── */}

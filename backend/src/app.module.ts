@@ -24,6 +24,7 @@ import { ExportModule } from './ExportPdf/export.module';
 import { CostCascadeModule } from './CostCascade/cost-cascade.module';
 import { PrinterModule } from './Printer/printer.module';
 import { MonitoringModule } from './Monitoring/monitoring-logger.module';
+import { InvoiceModule } from './Invoice/invoice.module';
 
 @Module({
   imports: [
@@ -75,8 +76,9 @@ import { MonitoringModule } from './Monitoring/monitoring-logger.module';
     CostCascadeModule,
     PrinterModule,
     MonitoringModule,
+    InvoiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

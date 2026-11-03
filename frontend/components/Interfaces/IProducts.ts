@@ -15,6 +15,7 @@ interface IProduct {
   isActive: boolean;
   name: string;
   price: number | null;
+  alicQuota?: number | null;
   toppingsSettings: null;
   type: TypeProduct;
 }

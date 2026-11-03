@@ -19,6 +19,7 @@ describe('OrderService.tryPrintKitchenOrder', () => {
     {} as any,
     printerService as any,
     {} as any,
+    {} as any,
   );
 
   const printData = {

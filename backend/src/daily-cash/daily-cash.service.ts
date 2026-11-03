@@ -607,7 +607,7 @@ export class DailyCashService {
     day: number,
     month: number,
     year: number,
-  ): Promise<DailyCash | null> {
+  ): Promise<{ date: Date; orders: unknown[]; movements: unknown[] }> {
     const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
@@ -617,7 +617,9 @@ export class DailyCashService {
       },
       relations: ['orders', 'movements', 'orders.payments'],
     });
-    if (!dailyCash) throw new NotFoundException('Daily cash not found');
+    if (!dailyCash) {
+      return { date: startOfDay, orders: [], movements: [] };
+    }
     return DailyCashMapper.toResponse(dailyCash);
   }
 

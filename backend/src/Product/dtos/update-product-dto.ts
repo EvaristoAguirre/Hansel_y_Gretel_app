@@ -11,8 +11,9 @@ import {
   ValidateNested,
   IsEnum,
   IsNotEmpty,
+  IsIn,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PromotionProductDto } from '../../DTOs/create-promotion.dto';
 
 export class UpdateProductDto {
@@ -34,6 +35,16 @@ export class UpdateProductDto {
   @IsNumber()
   @Min(0)
   price?: number;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? null
+      : Number(value),
+  )
+  @IsNumber()
+  @IsIn([0, 2.5, 5, 10.5, 21, 27])
+  alicQuota?: number | null;
 
   @IsOptional()
   @IsNumber()
