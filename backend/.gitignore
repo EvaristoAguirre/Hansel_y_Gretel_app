@@ -60,7 +60,7 @@ afip-cert.pem
 afip-key.pem
 
 # Backups
-backups/*
+backups*/
 
 # Documentacion
 docs/*
