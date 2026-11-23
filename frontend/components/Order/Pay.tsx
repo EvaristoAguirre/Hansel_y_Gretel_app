@@ -46,6 +46,12 @@ import {
   remainingCents,
   totalWithTip,
 } from "./payTotals";
+import {
+  formatTipAmount,
+  parseTipInput,
+  sanitizeTipInput,
+  tipToEditString,
+} from "./tipInput";
 
 interface DraftPayment {
   productIds: string[];
@@ -77,18 +83,27 @@ const TipInputs: React.FC<TipInputsProps> = ({
   customTip,
   onChangeCustomTip,
 }) => {
-  const computedTotal = baseAmount + (customTip || 0);
-  const [propinaInput, setPropinaInput] = useState<string>(
-    formatCurrency(customTip || 0)
-  );
-  const [totalInput, setTotalInput] = useState<string>(
-    formatCurrency(computedTotal)
-  );
+  const [activeField, setActiveField] = useState<"tip" | "total" | null>(null);
+  const [propinaInput, setPropinaInput] = useState("");
+  const [totalInput, setTotalInput] = useState("");
 
   useEffect(() => {
-    setTotalInput(formatCurrency(baseAmount + (customTip || 0)));
-    setPropinaInput(formatCurrency(customTip || 0));
-  }, [baseAmount, customTip]);
+    if (activeField !== "tip") {
+      setPropinaInput(customTip > 0 ? formatTipAmount(customTip) : "");
+    }
+    if (activeField !== "total") {
+      setTotalInput(
+        customTip > 0 ? formatTipAmount(baseAmount + customTip) : ""
+      );
+    }
+  }, [activeField, baseAmount, customTip]);
+
+  const tipHelp =
+    customTip > 0 ? `$${formatTipAmount(customTip)}` : "Ej: 550 o 550.75";
+  const totalHelp =
+    customTip > 0
+      ? `$${formatTipAmount(baseAmount + customTip)}`
+      : "Ej: 2000 o 2000.50";
 
   return (
     <Box
@@ -102,43 +117,57 @@ const TipInputs: React.FC<TipInputsProps> = ({
       <TextField
         type="text"
         label="Propina"
-        placeholder="Ingresá el monto de propina"
+        placeholder="550 o 550.75"
         value={propinaInput}
-        onChange={(e) => {
-          setPropinaInput(e.target.value);
-          const nextTip = parseEsARNumber(e.target.value);
-          onChangeCustomTip(Math.max(0, nextTip));
+        onFocus={() => {
+          setActiveField("tip");
+          setPropinaInput(tipToEditString(customTip));
         }}
-        onBlur={() => setPropinaInput(formatCurrency(customTip || 0))}
+        onChange={(e) => {
+          const raw = sanitizeTipInput(e.target.value);
+          setPropinaInput(raw);
+          onChangeCustomTip(parseTipInput(raw));
+        }}
+        onBlur={() => {
+          setActiveField(null);
+          setPropinaInput(customTip > 0 ? formatTipAmount(customTip) : "");
+        }}
         fullWidth
-        inputProps={{ inputMode: "decimal" }}
+        inputProps={{ inputMode: "decimal", autoComplete: "off" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
-        helperText={`$ ${formatCurrency(customTip || 0)}`}
+        helperText={tipHelp}
       />
       <TextField
         type="text"
         label="Total (consumo + propina)"
-        placeholder="Ingresá el total a pagar"
+        placeholder="2000 o 2000.50"
         value={totalInput}
+        onFocus={() => {
+          setActiveField("total");
+          const total = baseAmount + (customTip || 0);
+          setTotalInput(customTip > 0 ? tipToEditString(total) : "");
+        }}
         onChange={(e) => {
-          setTotalInput(e.target.value);
-          const nextTotal = parseEsARNumber(e.target.value);
-          const computedTip = Math.max(0, nextTotal - baseAmount);
+          const raw = sanitizeTipInput(e.target.value);
+          setTotalInput(raw);
+          const nextTotal = parseTipInput(raw);
           onChangeCustomTip(
-            Math.round(computedTip * 100) / 100
+            Math.max(0, Math.round((nextTotal - baseAmount) * 100) / 100)
           );
         }}
-        onBlur={() =>
-          setTotalInput(formatCurrency(baseAmount + (customTip || 0)))
-        }
+        onBlur={() => {
+          const total = baseAmount + (customTip || 0);
+          setActiveField(null);
+          setTotalInput(customTip > 0 ? formatTipAmount(total) : "");
+        }}
         fullWidth
-        inputProps={{ inputMode: "decimal" }}
+        inputProps={{ inputMode: "decimal", autoComplete: "off" }}
         InputProps={{
           startAdornment: <InputAdornment position="start">$</InputAdornment>,
         }}
-        helperText={`$ ${formatCurrency(baseAmount + (customTip || 0))}`}
+        helperText={totalHelp}
       />
     </Box>
   );
